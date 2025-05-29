@@ -36,6 +36,10 @@ class MyClient(discord.Client):
 		if message.content.startswith('​'): # Don't log messages that start with a zero-width space
 			replied = True
 
+		if '<@1377636535968600135>' in message.content:
+			replied = True
+			await message.channel.send('Hello, I am just a statistics bot. For questions or concerns, please hesitate to contact <@542798185857286144>')
+
 		if message.content.startswith('._'):
 			if message.content.startswith('._ttotal'):
 				replied = True
