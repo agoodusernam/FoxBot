@@ -38,7 +38,7 @@ class MyClient(discord.Client):
 		if message.content.startswith('._'):
 			if message.content.startswith('._ttotal'):
 				replied = True
-				with open(f'{self.now}.json') as f:
+				with open(f'data/{self.now}.json') as f:
 					count = sum(1 for _ in f)
 
 				await message.channel.send(f'Total messages logged today: {count}')
