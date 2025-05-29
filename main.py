@@ -32,21 +32,25 @@ class MyClient(discord.Client):
 		print('------')
 
 	async def on_message(self, message):
-		replied = False
 		if message.content.startswith('​'): # Don't log messages that start with a zero-width space
-			replied = True
+			print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
+			return
 
 		if '<@1377636535968600135>' in message.content:
-			replied = True
 			await message.channel.send('Hello, I am just a statistics bot. For questions or concerns, please hesitate to contact <@542798185857286144>')
+			return
 
 		if message.content.startswith('._'):
 			if message.content.startswith('._ttotal'):
-				replied = True
 				with open(f'data/{self.now}.json') as f:
 					count = sum(1 for _ in f)
 
-				await message.channel.send(f'Total messages logged today: {count}')
+				await message.channel.send(f'Total messages logged today: {count}', delete_after=5)
+				return
+
+			if message.content.startswith('._ping'):
+				await message.channel.send(f'{self.latency*1000:.2f}ms', delete_after=5)
+				return
 
 			if message.content.startswith('._rek'):
 				if message.author.id not in self.rek_user_ids:
@@ -61,23 +65,23 @@ class MyClient(discord.Client):
 				try:
 					u_id = int(u_id)
 				except ValueError:
-					await message.channel.send('Invalid user ID format. Please provide a valid integer ID.')
+					await message.channel.send('Invalid user ID format. Please provide a valid integer ID.', delete_after=5)
 					return
 
 				guild = self.get_guild(1081760248433492140)
 				member = guild.get_member(u_id)
 				if member is None:
-					await message.channel.send(f'User with ID {u_id} not found.')
+					await message.channel.send(f'User with ID {u_id} not found.', delete_after=5)
 					return
 				await member.timeout(until, reason=reason)
 				await message.channel.send(f'<@{u_id}> has been rekt.')
-				replied = True
+				return
 
 
 		if (message.author != self.user) and (
                 message.author.id not in self.disallwed_user_ids) and (
 				message.channel.id not in self.disallwed_channel_ids) and (
-				message.channel.category_id not in self.disallwed_category_ids) and not replied:
+				message.channel.category_id not in self.disallwed_category_ids):
 			#TODO: Add uploading to a mongodb(?) server (hosted on hostinger?)
 			has_attachment = False
 			if message.attachments:
