@@ -31,10 +31,23 @@ class MyClient(discord.Client):
 		print('------')
 
 	async def on_message(self, message):
+		replied = False
+		if message.content.startswith('​'): # Don't log messages that start with a zero-width space
+			replied = True
+
+		if message.content.startswith('._'):
+			if message.content.startswith('._ttotal'):
+				replied = True
+				with open(f'{self.now}.json') as f:
+					count = sum(1 for _ in f)
+
+				await message.channel.send(f'Total messages logged today: {count}')
+
+
 		if (message.author != self.user) and (
                 message.author.id not in self.disallwed_user_ids) and (
 				message.channel.id not in self.disallwed_channel_ids) and (
-				message.channel.category_id not in self.disallwed_category_ids):
+				message.channel.category_id not in self.disallwed_category_ids) and not replied:
 			#TODO: Add uploading to a mongodb(?) server (hosted on hostinger?)
 			has_attachment = False
 			if message.attachments:
@@ -61,7 +74,7 @@ class MyClient(discord.Client):
 			with make_file(self.now) as file:
 				file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
 
-			print(f'Message from {message.author}: {message.content}')
+			print(f'Message from {message.author.nick}: {message.content} in {message.channel}')
 
 
 intents = discord.Intents.default()
