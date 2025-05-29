@@ -22,7 +22,7 @@ def make_empty_file(path):
 class MyClient(discord.Client):
 	now = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
 	disallwed_user_ids: list[int] = [1329366814517628969, 1329366963805491251, 1329367238146396211, 1329367408330145805,
-									 235148962103951360]
+									 235148962103951360, 1299640624848306177]
 	rek_user_ids: list[int] = [542798185857286144, 235644709714788352]
 	disallwed_channel_ids: list[int] = []
 	disallwed_category_ids: list[int] = [1329366612821938207]
@@ -89,18 +89,19 @@ class MyClient(discord.Client):
 
 
 			json_data = {
-					"author": message.author.name,
-					"author_id": str(message.author.id),
-					"content":   message.content,
-					"HasAttachments": has_attachment,
-					"timestamp": message.created_at.isoformat(),
-					"channel":   str(message.channel)
+				"author": message.author.name,
+				"author_id": str(message.author.id),
+				"author_global_name": message.author.global_name,
+				"content":   message.content,
+				"HasAttachments": has_attachment,
+				"timestamp": message.created_at.isoformat(),
+				"channel":   str(message.channel)
 				}
 
 			with make_file(self.now) as file:
 				file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
 
-			print(f'Message from {message.author.name}: {message.content} in {message.channel}')
+			print(f'Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 
 
 intents = discord.Intents.default()
