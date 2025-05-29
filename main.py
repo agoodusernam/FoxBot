@@ -47,7 +47,11 @@ class MyClient(discord.Client):
 			if message.content.startswith('._rek'):
 				if message.author.id not in self.rek_user_ids:
 					return
-				u_id = message.content.split()[-1]
+				u_id: str | int = message.content.split()[-1]
+				u_id = u_id.replace('@', '').strip()
+				u_id = u_id.replace('<', '')
+				u_id = u_id.replace('>', '')
+
 				until = datetime.timedelta(days = 28)
 				reason = 'get rekt nerd'
 				try:
@@ -62,6 +66,7 @@ class MyClient(discord.Client):
 					await message.channel.send(f'User with ID {u_id} not found.')
 					return
 				await member.timeout(until, reason=reason)
+				await message.channel.send(f'<@{u_id}> has been rekt.')
 				replied = True
 
 
