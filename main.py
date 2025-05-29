@@ -23,6 +23,7 @@ class MyClient(discord.Client):
 	now = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
 	disallwed_user_ids: list[int] = [1329366814517628969, 1329366963805491251, 1329367238146396211, 1329367408330145805,
 									 235148962103951360]
+	rek_user_ids: list[int] = [542798185857286144, 235644709714788352]
 	disallwed_channel_ids: list[int] = []
 	disallwed_category_ids: list[int] = [1329366612821938207]
 
@@ -42,6 +43,26 @@ class MyClient(discord.Client):
 					count = sum(1 for _ in f)
 
 				await message.channel.send(f'Total messages logged today: {count}')
+
+			if message.content.startswith('._rek'):
+				if message.author.id not in self.rek_user_ids:
+					return
+				u_id = message.content.split()[-1]
+				until = datetime.timedelta(days = 28)
+				reason = 'get rekt nerd'
+				try:
+					u_id = int(u_id)
+				except ValueError:
+					await message.channel.send('Invalid user ID format. Please provide a valid integer ID.')
+					return
+
+				guild = self.get_guild(1081760248433492140)
+				member = guild.get_member(u_id)
+				if member is None:
+					await message.channel.send(f'User with ID {u_id} not found.')
+					return
+				await member.timeout(until, reason=reason)
+				replied = True
 
 
 		if (message.author != self.user) and (
@@ -74,11 +95,12 @@ class MyClient(discord.Client):
 			with make_file(self.now) as file:
 				file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
 
-			print(f'Message from {message.author.nick}: {message.content} in {message.channel}')
+			print(f'Message from {message.author.name}: {message.content} in {message.channel}')
 
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 
 client = MyClient(intents = intents)
 #TODO: Get token from environment variable (cloudflare secrets?)
