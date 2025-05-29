@@ -44,11 +44,12 @@ class MyClient(discord.Client):
 			if message.content.startswith('._ttotal'):
 				with open(f'data/{self.now}.json') as f:
 					count = sum(1 for _ in f)
-
+				await message.delete()
 				await message.channel.send(f'Total messages logged today: {count}', delete_after=5)
 				return
 
 			if message.content.startswith('._ping'):
+				await message.delete()
 				await message.channel.send(f'{self.latency*1000:.2f}ms', delete_after=5)
 				return
 
