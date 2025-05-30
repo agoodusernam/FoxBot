@@ -5,7 +5,6 @@ from pymongo.server_api import ServerApi
 _mongo_client = None
 
 
-
 def _connect():
 	global _mongo_client
 	# Return existing connection if available
