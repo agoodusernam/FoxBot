@@ -174,3 +174,4 @@ cython_debug/
 .pypirc
 /token.txt
 /data/
+/uri.txt
