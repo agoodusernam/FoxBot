@@ -1,9 +1,13 @@
+import os
+
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from dotenv import load_dotenv
 
 # Global client instance
 _mongo_client = None
 
+load_dotenv()
 
 def _connect():
 	global _mongo_client
@@ -11,8 +15,7 @@ def _connect():
 	if _mongo_client is not None:
 		return _mongo_client
 
-	with open('uri.txt', 'r') as f:
-		uri = f.read().strip()
+	uri = os.getenv("MONGO_URI")
 
 	client = MongoClient(uri, server_api = ServerApi('1'))
 	try:

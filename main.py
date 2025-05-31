@@ -1,10 +1,12 @@
+import os
 import discord
 import json
 import datetime
-from Crypto.Cipher import AES
 import db_stuff
 import utils
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class MyClient(discord.Client):
 	today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
@@ -105,6 +107,7 @@ class MyClient(discord.Client):
 
 			print(f'Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 			await db_stuff.send_message(json_data)
+			self.today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
 
 
 intents = discord.Intents.default()
@@ -112,13 +115,4 @@ intents.message_content = True
 intents.members = True
 
 client = MyClient(intents = intents)
-#TODO: Get token from environment variable (cloudflare secrets?)
-key = input("Enter password to decrypt token: ")
-with open('token.txt', 'rb') as token_file:
-	token = token_file.read()
-nonce = token[:32]
-ciphertext = token[32:-16]
-tag = token[-16:]
-cipher = AES.new(key.encode('utf-8'), AES.MODE_GCM, nonce = nonce)
-decrypted_token = cipher.decrypt_and_verify(ciphertext, tag).decode('utf-8')
-client.run(decrypted_token)
+client.run(os.getenv("TOKEN"))
