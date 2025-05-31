@@ -4,7 +4,7 @@ import discord
 import json
 import datetime
 import db_stuff
-import nasa_stuff
+import api_stuff
 import utils
 from dotenv import load_dotenv
 import analysis
@@ -80,7 +80,7 @@ class MyClient(discord.Client):
 			return
 		await message.channel.send('Fetching NASA picture of the day...')
 		try:
-			nasa_data = await nasa_stuff.get_nasa_apod()
+			nasa_data = await api_stuff.get_nasa_apod()
 			if 'hdurl' in nasa_data:
 				url = nasa_data['hdurl']
 			else:
@@ -90,6 +90,26 @@ class MyClient(discord.Client):
 
 		except Exception as e:
 			await message.channel.send(f'Error fetching NASA picture: {e}')
+
+	async def dog_pic(self, message: discord.Message):
+		if message.author.id not in self.allow_cmds:
+			return
+		await message.channel.send('Fetching random dog picture...')
+		try:
+			dog_data = await api_stuff.get_dog_pic()
+			await message.channel.send(dog_data)
+		except Exception as e:
+			await message.channel.send(f'Error fetching dog picture: {e}')
+
+	async def cat_pic(self, message: discord.Message):
+		if message.author.id not in self.allow_cmds:
+			return
+		await message.channel.send('Fetching random cat picture...')
+		try:
+			cat_data = await api_stuff.get_cat_pic()
+			await message.channel.send(cat_data)
+		except Exception as e:
+			await message.channel.send(f'Error fetching cat picture: {e}')
 
 
 
@@ -131,6 +151,14 @@ class MyClient(discord.Client):
 
 			if message.content.startswith('nasa'):
 				await self.nasa_pic(message)
+				return
+
+			if message.content.startswith('dogpic'):
+				await self.dog_pic(message)
+				return
+
+			if message.content.startswith('catpic'):
+				await self.cat_pic(message)
 				return
 
 		if (message.author != self.user) and (
