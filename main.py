@@ -124,7 +124,6 @@ class MyClient(discord.Client):
 	async def insult(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
 			return
-		await message.channel.send('Fetching random insult...')
 		try:
 			insult = await api_stuff.get_insult()
 			await message.channel.send(insult)
