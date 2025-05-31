@@ -1,3 +1,4 @@
+import asyncio
 import os
 import discord
 import json
@@ -5,6 +6,7 @@ import datetime
 import db_stuff
 import utils
 from dotenv import load_dotenv
+import analysis
 
 load_dotenv()
 
@@ -15,11 +17,14 @@ class MyClient(discord.Client):
 	rek_user_ids: list[int] = [235644709714788352, 542798185857286144]
 	no_log_channel_ids: list[int] = []
 	no_log_category_ids: list[int] = [1329366612821938207]
-	del_after: int = 5
+	del_after: int = 3
 
 	async def on_ready(self):
 		print(f'Logged in as {self.user} (ID: {self.user.id})')
 		print('------')
+
+	async def set_time(self):
+		self.today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
 
 	async def rek(self, message: discord.Message):
 		if message.author.id not in self.rek_user_ids:
@@ -44,6 +49,22 @@ class MyClient(discord.Client):
 		await member.timeout(datetime.timedelta(days = 28), reason = 'get rekt nerd')
 		await message.channel.send(f'<@{u_id}> has been rekt.', delete_after = self.del_after)
 		return
+
+	@staticmethod
+	async def analyse(message: discord.Message):
+		print("Starting analysis...")
+		try:
+			result = analysis.analyse()
+			if result:
+				await message.channel.send(f'{result["total_messages"]} messages analyzed.\n')
+				await message.channel.send(f'Most common word: {result["most_common_word"]} ({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n')
+				await message.channel.send(f'Most active user: {result["most_active_user"]} with {result["most_active_user_count"]} messages.')
+
+			else:
+				print("No valid messages found for analysis.")
+		except Exception as e:
+			print(f"Error during analysis: {e}")
+
 
 	async def on_message(self, message: discord.Message):
 		if message.content.startswith('​'):  # Don't log messages that start with a zero-width space
@@ -106,8 +127,9 @@ class MyClient(discord.Client):
 				file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
 
 			print(f'Message from {message.author.global_name} [#{message.channel}]: {message.content}')
-			await db_stuff.send_message(json_data)
-			self.today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
+
+			asyncio.create_task(db_stuff.send_message(json_data))
+			asyncio.create_task(self.set_time())
 
 
 intents = discord.Intents.default()
