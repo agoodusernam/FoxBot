@@ -85,6 +85,9 @@ class MyClient(discord.Client):
 					await message.channel.send(f"**{nasa_data['title']}**\n{nasa_data['hdurl']}")
 				else:
 					await message.channel.send(f"**{nasa_data['title']}**\n{nasa_data['url']}")
+
+				if 'explanation' in nasa_data:
+					await message.channel.send(f"**Explanation:** {nasa_data['explanation']}")
 			else:
 				await message.channel.send('Failed to retrieve NASA picture of the day.')
 		except Exception as e:
