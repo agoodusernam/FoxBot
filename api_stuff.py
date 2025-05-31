@@ -55,3 +55,16 @@ async def get_cat_pic() -> str:
 		raise ValueError("Unexpected response format from cat API")
 
 	return data['url']
+
+async def get_insult() -> str:
+	url = "https://evilinsult.com/generate_insult.php?lang=en&type=json"
+	response = requests.get(url)
+
+	if response.status_code != 200:
+		raise Exception(f"Failed to fetch insult: {response.status_code}")
+
+	data = response.json()
+	if 'insult' not in data:
+		raise ValueError("Unexpected response format from insult API")
+
+	return data['insult']
