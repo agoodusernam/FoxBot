@@ -111,6 +111,16 @@ class MyClient(discord.Client):
 		except Exception as e:
 			await message.channel.send(f'Error fetching cat picture: {e}')
 
+	async def fox_pic(self, message: discord.Message):
+		if message.author.id not in self.allow_cmds:
+			return
+		await message.channel.send('Fetching random fox picture...')
+		try:
+			fox_data = await api_stuff.get_fox_pic()
+			await message.channel.send(fox_data)
+		except Exception as e:
+			await message.channel.send(f'Error fetching fox picture: {e}')
+
 
 
 	async def on_message(self, message: discord.Message):
@@ -160,6 +170,10 @@ class MyClient(discord.Client):
 			if message.content.startswith('catpic'):
 				await self.cat_pic(message)
 				return
+
+		if message.content.startswith('foxpic'):
+			await self.fox_pic(message)
+			return
 
 		if (message.author != self.user) and (
 				message.author.id not in self.no_log_user_ids) and (
