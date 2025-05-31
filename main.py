@@ -81,9 +81,8 @@ class MyClient(discord.Client):
 		await message.channel.send('Fetching NASA picture of the day...')
 		try:
 			nasa_data = await nasa_stuff.get_nasa_apod()
-			await message.channel.send(f"**{nasa_data['title']}**", embed = discord.Embed(title = nasa_data[
-				'title']).set_image(url = nasa_data['url']))
-
+			embed = discord.Embed().set_image(url = nasa_data['url']).set_thumbnail(url = nasa_data['thumbnail_url'])
+			await message.channel.send(f"**{nasa_data['title']}**", embed = embed)
 			await message.channel.send(f"**Explanation:** {nasa_data['explanation']}")
 
 		except Exception as e:
