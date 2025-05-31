@@ -81,7 +81,10 @@ class MyClient(discord.Client):
 		await message.channel.send('Fetching NASA picture of the day...')
 		try:
 			nasa_data = await nasa_stuff.get_nasa_apod()
-			embed = discord.Embed().set_image(url = nasa_data['url']).set_thumbnail(url = nasa_data['thumbnail_url'])
+			if 'thumbnail_url' in nasa_data:
+				embed = discord.Embed().set_image(url = nasa_data['url']).set_thumbnail(url = nasa_data['thumbnail_url'])
+			else:
+				embed = discord.Embed().set_image(url = nasa_data['url'])
 			await message.channel.send(f"**{nasa_data['title']}**", embed = embed)
 			await message.channel.send(f"**Explanation:** {nasa_data['explanation']}")
 
