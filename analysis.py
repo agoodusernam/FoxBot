@@ -14,7 +14,7 @@ def check_valid_syntax(message: dict) -> bool:
 	return True
 
 
-def analyse() -> dict | None:
+def analyse() -> dict | Exception | str | None:
 	try:
 		messages = db_stuff.download_all()
 
@@ -68,20 +68,16 @@ def analyse() -> dict | None:
 			return {
 				"total_messages":     len(valid_messages),
 				"most_common_word":   most_common_word,
+				"most_common_word_count": word_count[most_common_word],
 				"total_unique_words": len(unique_words),
 				"average_length":     average_length,
 				"most_active_user": most_active_user[0],
 				"most_active_user_count": most_active_user[1],
-
 			}
 
-
-
-
 		else:
-			print("No valid messages found to analyze.")
-			return None
+			return "No valid messages found to analyse."
 
 	except Exception as e:
 		print(f"An error occurred: {e}")
-		return None
+		return e

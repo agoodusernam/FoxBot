@@ -17,7 +17,7 @@ def formatted_time() -> str:
 	return datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y_%H-%M-%S")
 
 
-def make_file(name="messages"):
+def make_file(name :str ="messages"):
 	if not os.path.exists('data'):
 		os.makedirs('data')
 	if not os.path.exists('data/attachments'):
@@ -25,7 +25,7 @@ def make_file(name="messages"):
 	return open(f'data/{name}.json', 'a+', encoding = 'utf-8')
 
 
-def make_empty_file(path):
+def make_empty_file(path: str | Path):
 	if not os.path.exists(path):
 		with open(path, 'x'):
 			pass

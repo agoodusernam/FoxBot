@@ -4,6 +4,7 @@ import discord
 import json
 import datetime
 import db_stuff
+import nasa_stuff
 import utils
 from dotenv import load_dotenv
 import analysis
@@ -14,7 +15,7 @@ class MyClient(discord.Client):
 	today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
 	no_log_user_ids: list[int] = [1329366814517628969, 1329366963805491251, 1329367238146396211, 1329367408330145805,
 								  235148962103951360, 1299640624848306177]
-	rek_user_ids: list[int] = [235644709714788352, 542798185857286144]
+	allow_cmds: list[int] = [235644709714788352, 542798185857286144]
 	no_log_channel_ids: list[int] = []
 	no_log_category_ids: list[int] = [1329366612821938207]
 	del_after: int = 3
@@ -27,7 +28,7 @@ class MyClient(discord.Client):
 		self.today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
 
 	async def rek(self, message: discord.Message):
-		if message.author.id not in self.rek_user_ids:
+		if message.author.id not in self.allow_cmds:
 			return
 		await message.delete()
 
@@ -50,20 +51,44 @@ class MyClient(discord.Client):
 		await message.channel.send(f'<@{u_id}> has been rekt.', delete_after = self.del_after)
 		return
 
-	@staticmethod
-	async def analyse(message: discord.Message):
-		await message.channel.send('Analyzing...')
+	async def analyse(self, message: discord.Message):
+		if message.author.id not in self.allow_cmds:
+			return
+		await message.channel.send('Analysing...')
 		try:
 			result = analysis.analyse()
-			if result:
-				await message.channel.send(f'{result["total_messages"]} messages analyzed.\n')
-				await message.channel.send(f'Most common word: {result["most_common_word"]} ({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n')
-				await message.channel.send(f'Most active user: {result["most_active_user"]} with {result["most_active_user_count"]} messages.')
+			if isinstance(result, dict):
+				msg = (f'{result["total_messages"]} total messages analysed\n' 
+					f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n' 
+					f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
+					f'Most active user: {result["most_active_user"]} with {result["most_active_user_count"]} messages.')
+				await message.channel.send(msg)
+			elif isinstance(result, Exception):
+				await message.channel.send(f'Error during analysis: {result}')
+				await message.channel.send(f'Contact HardlineMouse16 about this.')
+			elif isinstance(result, str):
+				await message.channel.send(result)
 
 			else:
 				print("No valid messages found for analysis.")
 		except Exception as e:
 			print(f"Error during analysis: {e}")
+
+	async def nasa_pic(self, message: discord.Message):
+		if message.author.id not in self.allow_cmds:
+			return
+		await message.channel.send('Fetching NASA picture of the day...')
+		try:
+			nasa_data = await nasa_stuff.get_nasa_apod()
+			if 'url' in nasa_data and 'title' in nasa_data:
+				if 'hdurl' in nasa_data:
+					await message.channel.send(f"**{nasa_data['title']}**\n{nasa_data['hdurl']}")
+				else:
+					await message.channel.send(f"**{nasa_data['title']}**\n{nasa_data['url']}")
+			else:
+				await message.channel.send('Failed to retrieve NASA picture of the day.')
+		except Exception as e:
+			await message.channel.send(f'Error fetching NASA picture: {e}')
 
 
 	async def on_message(self, message: discord.Message):
@@ -93,11 +118,17 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.startswith('rek'):
+				await message.delete()
 				await self.rek(message)
 				return
 
 			if message.content.startswith('analyse'):
+				await message.delete()
 				await self.analyse(message)
+				return
+
+			if message.content.startswith('nasa'):
+				await self.nasa_pic(message)
 				return
 
 		if (message.author != self.user) and (
@@ -127,8 +158,9 @@ class MyClient(discord.Client):
 				"channel":            str(message.channel)
 			}
 
-			with utils.make_file(self.today) as file:
-				file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
+			if os.getenv("LOCAL_SAVE") == 'True':
+				with utils.make_file(self.today) as file:
+					file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
 
 			print(f'Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 
