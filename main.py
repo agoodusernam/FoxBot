@@ -52,7 +52,7 @@ class MyClient(discord.Client):
 
 	@staticmethod
 	async def analyse(message: discord.Message):
-		print("Starting analysis...")
+		await message.channel.send('Analyzing...')
 		try:
 			result = analysis.analyse()
 			if result:
@@ -94,6 +94,10 @@ class MyClient(discord.Client):
 
 			if message.content.startswith('rek'):
 				await self.rek(message)
+				return
+
+			if message.content.startswith('analyse'):
+				await self.analyse(message)
 				return
 
 		if (message.author != self.user) and (
