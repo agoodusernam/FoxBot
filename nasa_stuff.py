@@ -14,13 +14,4 @@ async def get_nasa_apod() -> dict:
 	if response.status_code != 200:
 		raise Exception(f"Failed to fetch data from NASA API: {response.status_code}")
 
-	download_image(response.json()['url'], response.json()['date'])
-
 	return response.json()
-
-def download_image(url: str, date: str) -> None:
-	if not os.path.isfile(f'{date}.png'):
-		raw_image = requests.get(url).content
-
-		with open(f'{date}.jpg', 'wb') as file:
-			file.write(raw_image)

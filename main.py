@@ -14,7 +14,6 @@ load_dotenv()
 class MyClient(discord.Client):
 	today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
 	# So nasa picture will always be deleted after use
-	todayYMD = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
 	no_log_user_ids: list[int] = [1329366814517628969, 1329366963805491251, 1329367238146396211, 1329367408330145805,
 								  235148962103951360, 1299640624848306177]
 	allow_cmds: list[int] = [235644709714788352, 542798185857286144]
@@ -28,7 +27,6 @@ class MyClient(discord.Client):
 
 	async def set_time(self):
 		self.today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
-		self.todayYMD = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
 
 	async def rek(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
@@ -83,18 +81,13 @@ class MyClient(discord.Client):
 		await message.channel.send('Fetching NASA picture of the day...')
 		try:
 			nasa_data = await nasa_stuff.get_nasa_apod()
-			with open(f'{nasa_data["date"]}.jpg', 'rb') as file:
-				await message.channel.send(f"**{nasa_data['title']}**", file = discord.File(file, nasa_data[
-					'title']))
+			await message.channel.send(f"**{nasa_data['title']}**", embed = discord.Embed(url = nasa_data['url'], title = nasa_data['title']))
 
 			await message.channel.send(f"**Explanation:** {nasa_data['explanation']}")
 
 		except Exception as e:
 			await message.channel.send(f'Error fetching NASA picture: {e}')
 
-		finally:
-			if os.path.isfile(f'{self.todayYMD}.jpg'):
-				os.remove(f'{self.todayYMD}.jpg')
 
 
 	async def on_message(self, message: discord.Message):
