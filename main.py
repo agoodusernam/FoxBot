@@ -85,7 +85,7 @@ class MyClient(discord.Client):
 				url = nasa_data['hdurl']
 			else:
 				url = nasa_data['url']
-			await message.channel.send(f"**{nasa_data['title']}**\n{url} ")
+			await message.channel.send(f"**{nasa_data['title']}**\n{url}\nBlame discord for not embedding it properly.")
 			await message.channel.send(f"**Explanation:** {nasa_data['explanation']}")
 
 		except Exception as e:
