@@ -39,6 +39,7 @@ async def get_cat_pic() -> str:
 
 	data = response.json()
 	if 'url' not in data:
+		print(data)
 		raise ValueError("Unexpected response format from cat API")
 
 	return data['url']
