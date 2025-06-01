@@ -13,16 +13,6 @@ import time
 load_dotenv()
 
 
-def check_cooldown(last_time: int, cooldown: int) -> bool:
-	"""
-	Check if the cooldown period has passed since the last command execution.
-	:param last_time: The last time the command was executed.
-	:param cooldown: The cooldown period in seconds.
-	:return: True if the cooldown has passed, False otherwise.
-	"""
-	current_time = int(time.time())
-	return (current_time - last_time) >= cooldown
-
 
 class MyClient(discord.Client):
 	today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
@@ -44,6 +34,31 @@ class MyClient(discord.Client):
 
 	async def set_time(self):
 		self.today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
+
+	async def check_global_cooldown(self) -> bool:
+		"""
+		Check if the cooldown period has passed since the last command execution.
+		:return: True if the cooldown has passed, False otherwise.
+		"""
+		current_time = int(time.time())
+		complete = (current_time - self.last_cmd_time) >= self.global_cooldown
+		if complete:
+			self.last_cmd_time = current_time
+			return True
+		return False
+
+
+	async def check_analyse_cooldown(self) -> bool:
+		"""
+		Check if the cooldown period has passed since the last command execution.
+		:return: True if the cooldown has passed, False otherwise.
+		"""
+		current_time = int(time.time())
+		complete = (current_time - self.last_analyse_time) >= self.analyse_cooldown
+		if complete:
+			self.last_analyse_time = current_time
+			return True
+		return False
 
 	async def rek(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
@@ -73,11 +88,10 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not check_cooldown(self.last_analyse_time, self.analyse_cooldown):
+		if not self.check_analyse_cooldown():
 			await message.channel.send(f'Please wait {self.analyse_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
-		self.last_analyse_time = int(time.time())
 
 		await message.channel.send('Analysing...')
 		try:
@@ -108,11 +122,10 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not check_cooldown(self.last_cmd_time, self.global_cooldown):
+		if not self.check_global_cooldown():
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
-		self.last_cmd_time = int(time.time())
 
 		await message.channel.send('Fetching NASA picture of the day...')
 		try:
@@ -131,11 +144,10 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not check_cooldown(self.last_cmd_time, self.global_cooldown):
+		if not self.check_global_cooldown():
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
-		self.last_cmd_time = int(time.time())
 
 		await message.channel.send('Fetching random dog picture...')
 		try:
@@ -148,11 +160,10 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not check_cooldown(self.last_cmd_time, self.global_cooldown):
+		if not self.check_global_cooldown():
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
-		self.last_cmd_time = int(time.time())
 
 		await message.channel.send('Fetching random cat picture...')
 		try:
@@ -165,11 +176,10 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not check_cooldown(self.last_cmd_time, self.global_cooldown):
+		if not self.check_global_cooldown():
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
-		self.last_cmd_time = int(time.time())
 
 		await message.channel.send('Fetching random fox picture...')
 		try:
@@ -182,11 +192,10 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not check_cooldown(self.last_cmd_time, self.global_cooldown):
+		if not self.check_global_cooldown():
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
-		self.last_cmd_time = int(time.time())
 
 		try:
 			await message.delete()
@@ -194,6 +203,22 @@ class MyClient(discord.Client):
 			await message.channel.send(insult)
 		except Exception as e:
 			await message.channel.send(f'Error fetching insult: {e}')
+
+	async def advice(self, message: discord.Message):
+		if message.author.id not in self.allow_cmds:
+			return
+
+		if not self.check_global_cooldown():
+			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
+									   delete_after = self.del_after)
+			return
+
+		try:
+			await message.delete()
+			advice = await api_stuff.get_advice()
+			await message.channel.send(advice)
+		except Exception as e:
+			await message.channel.send(f'Error fetching advice: {e}')
 
 	async def on_message(self, message: discord.Message):
 		if message.content.startswith('​'):  # Don't log messages that start with a zero-width space
