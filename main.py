@@ -135,7 +135,7 @@ class MyClient(discord.Client):
 	async def admin_help(self, message: discord.Message):
 		admin_help_text = (
 			"**Admin Commands:**\n"
-			f"`{self.prefix}rek <user_id>` - Timeout a user for 28 days\n"
+			f"`{self.prefix}rek <user_id>` - Absolutely rek a user\n"
 			f"`{self.prefix}analyse` - Analyse the server's messages ({self.cooldowns['analyse']['duration']}s "
 			f"cooldown)\n"
 			f"`{self.prefix}blacklist <user_id>` - Blacklist a user from using commands\n"
