@@ -44,35 +44,31 @@ def analyse() -> dict | Exception | str | None:
 						word_count[word] = 0
 					word_count[word] += 1
 
-			most_common_word = max(word_count, key=word_count.get)
+			most_common_word = max(word_count, key = word_count.get)
 			print(f"Most common word: '{most_common_word}' with {word_count[most_common_word]} occurrences")
 
 			unique_words = set(word_count.keys())
 			print(f"Total unique words: {len(unique_words)}")
 			average_length = sum(len(word) for word in unique_words) / len(unique_words)
 			print(f"Average length of unique words: {average_length:.2f} characters")
-			longest_word = max(unique_words, key=len)
-			print(f"Longest unique word: '{longest_word}' with {len(longest_word)} characters")
 
-
+			most_active_users: list[dict[str, int]] = [{}]
 			user_message_count = {}
 			for message in valid_messages:
 				user_id = message['author_global_name']
 				if user_id not in user_message_count:
 					user_message_count[user_id] = 0
 				user_message_count[user_id] += 1
-			most_active_user = max(user_message_count.items(), key=lambda x: x[1], default=None)
 
-			print(f"Most active user: {most_active_user[0]} with {most_active_user[1]} messages")
+			most_active_users = [{"user": user, "num_messages": count} for user, count in user_message_count.items()]
 
 			return {
-				"total_messages":     len(valid_messages),
-				"most_common_word":   most_common_word,
+				"total_messages":         len(valid_messages),
+				"most_common_word":       most_common_word,
 				"most_common_word_count": word_count[most_common_word],
-				"total_unique_words": len(unique_words),
-				"average_length":     average_length,
-				"most_active_user": most_active_user[0],
-				"most_active_user_count": most_active_user[1],
+				"total_unique_words":     len(unique_words),
+				"average_length":         average_length,
+				"active_users_lb":        most_active_users,
 			}
 
 		else:

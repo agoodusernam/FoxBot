@@ -59,10 +59,15 @@ class MyClient(discord.Client):
 		try:
 			result = analysis.analyse()
 			if isinstance(result, dict):
+				top_3_active_users = sorted(result["active_users_lb"], key=lambda x: x["num_messages"], reverse=True)[:3]
 				msg = (f'{result["total_messages"]} total messages analysed\n' 
 					f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n' 
 					f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
-					f'Most active user: {result["most_active_user"]} with {result["most_active_user_count"]} messages.')
+					f'Top 3 most active users:\n')
+				for user in top_3_active_users:
+					msg += f'**{user["user"]}** with {user["num_messages"]} messages\n'
+
+
 				await message.channel.send(msg)
 			elif isinstance(result, Exception):
 				await message.channel.send(f'Error during analysis: {result}')
