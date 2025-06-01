@@ -30,7 +30,7 @@ class MyClient(discord.Client):
 			'category_ids': [1329366612821938207]
 		}
 		self.prefix = 'f!'
-		self.admin_ids = [235644709714788352, 542798185857286144]
+		self.admin_ids = [235644709714788352, 542798185857286144, 937278965557641227]
 		self.blacklist_ids = {"ids": []}
 
 		self.send_blacklist = {
