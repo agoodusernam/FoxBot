@@ -182,7 +182,7 @@ class MyClient(discord.Client):
 
 		self.blacklist_ids['ids'].append(u_id)
 		if os.path.isfile(f'blacklist_users.json'):
-			os.rmdir(f'blacklist_users.json')
+			os.remove(f'blacklist_users.json')
 
 		with open('blacklist_users.json', 'w') as f:
 			json.dump(self.blacklist_ids, f, indent = 4)
@@ -246,6 +246,7 @@ class MyClient(discord.Client):
 
 		if message.content.startswith('._'):
 			if message.author.id in self.blacklist_ids['ids']:
+				await message.delete()
 				await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
 				return
 			message.content = message.content.replace('._', '')
