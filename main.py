@@ -29,7 +29,13 @@ class MyClient(discord.Client):
 			'channel_ids':  [],
 			'category_ids': [1329366612821938207]
 		}
-		self.allow_cmds = [235644709714788352, 542798185857286144]
+		self.admin_ids = [235644709714788352, 542798185857286144]
+		self.blacklist_ids = {"ids": []}
+
+		self.send_blacklist = {
+			'channel_ids': [],
+			'category_ids': []
+		}
 
 		# Cooldown settings
 		self.cooldowns = {
@@ -50,8 +56,7 @@ class MyClient(discord.Client):
 		print(f'Logged in as {self.user} (ID: {self.user.id})')
 		print('------')
 		# Check for environment variables
-		# TOKEN is checked by discord.py so this won't run in the first place if it's not set
-
+		# TOKEN is checked by discord.py and this won't run in the first place if it's not set.
 		if not os.getenv("MONGO_URI"):
 			print('No MONGO_URI found in environment variables. Please set it to connect to a database.')
 
@@ -64,6 +69,17 @@ class MyClient(discord.Client):
 		if not os.getenv("LOCAL_SAVE"):
 			print('No LOCAL_SAVE found in environment variables. Defaulting to False.')
 			os.environ["LOCAL_SAVE"] = 'False'
+
+		if os.getenv("LOCAL_SAVE") not in ['True', 'False']:
+			print('Invalid LOCAL_SAVE value. Please set it to True or False. Defaulting to False.')
+			os.environ["LOCAL_SAVE"] = 'False'
+
+		if not os.path.isfile('blacklist_users.json'):
+			with open('blacklist_users.json', 'w') as f:
+				json.dump(self.blacklist_ids, f, indent = 4)
+		else:
+			with open('blacklist_users.json', 'r') as f:
+				self.blacklist_ids = json.load(f)
 
 	def check_global_cooldown(self) -> bool:
 		current_time = int(time.time())
@@ -83,7 +99,9 @@ class MyClient(discord.Client):
 		return False
 
 	async def rek(self, message: discord.Message):
-		if message.author.id not in self.allow_cmds:
+		if message.author.id not in self.admin_ids:
+			await message.delete()
+			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
 			return
 		await message.delete()
 
@@ -107,7 +125,9 @@ class MyClient(discord.Client):
 		return
 
 	async def analyse(self, message: discord.Message):
-		if message.author.id not in self.allow_cmds:
+		if message.author.id not in self.admin_ids:
+			await message.delete()
+			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
 			return
 
 		if not self.check_analyse_cooldown():
@@ -141,9 +161,35 @@ class MyClient(discord.Client):
 		except Exception as e:
 			print(f"Error during analysis: {e}")
 
-	async def get_from_api(self, message: discord.Message, api_func: Callable, success_msg: str | None):
-		if message.author.id not in self.allow_cmds:
+	async def blacklist_id(self, message: discord.Message):
+		if message.author.id not in self.admin_ids:
+			await message.delete()
+			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
 			return
+
+		u_id = utils.get_id_from_msg(message)
+
+		try:
+			u_id = int(u_id)
+		except ValueError:
+			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
+									   delete_after = self.del_after)
+			return
+
+		if u_id in self.blacklist_ids:
+			await message.channel.send(f'User with ID {u_id} is already blacklisted.', delete_after = self.del_after)
+			return
+
+		self.blacklist_ids['ids'].append(u_id)
+		if os.path.isfile(f'blacklist_users.json'):
+			os.rmdir(f'blacklist_users.json')
+
+		with open('blacklist_users.json', 'w') as f:
+			json.dump(self.blacklist_ids, f, indent = 4)
+
+		await message.channel.send(f'User with ID {u_id} has been blacklisted.', delete_after = self.del_after)
+
+	async def get_from_api(self, message: discord.Message, api_func: Callable, success_msg: str | None):
 
 		if not self.check_global_cooldown():
 			await message.delete()
@@ -160,8 +206,6 @@ class MyClient(discord.Client):
 
 
 	async def nasa_pic(self, message: discord.Message):
-		if message.author.id not in self.allow_cmds:
-			return
 
 		if not self.check_global_cooldown():
 			await message.delete()
@@ -184,6 +228,11 @@ class MyClient(discord.Client):
 			await message.channel.send(f'Error fetching NASA picture: {e}')
 
 	async def on_message(self, message: discord.Message):
+		if isinstance(message.channel, discord.DMChannel):
+			await message.channel.send(f'This bot does not support direct messages. Please use it in the Foxes Haven '
+									   f'Discord server.')
+			return
+
 		if message.content.startswith('​'):  # Don't log messages that start with a zero-width space
 			print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 			return
@@ -194,9 +243,12 @@ class MyClient(discord.Client):
 			return
 
 		if message.content.startswith('._'):
+			if message.author.id in self.blacklist_ids['ids']:
+				await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+				return
 			message.content = message.content.replace('._', '')
 
-			if message.content.startswith('ttotal'):
+			if message.content.replace('._', '').startswith('ttotal'):
 				with open(f'data/{self.today}.json', 'r', errors = 'ignore') as fp:
 					for count, line in enumerate(fp):
 						pass

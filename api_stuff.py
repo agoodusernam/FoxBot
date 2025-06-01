@@ -50,7 +50,6 @@ async def get_cat_pic() -> str:
 		raise Exception(f"Failed to fetch cat picture: {response.status_code}")
 
 	data = response.json()
-	print(data)
 	if not data or 'url' not in data[0]:
 		raise ValueError("Unexpected response format from cat API")
 
