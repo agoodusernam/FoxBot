@@ -23,13 +23,14 @@ class MyClient(discord.Client):
 		self.today = utils.formatted_time()
 
 		# Access control
+		self.prefix = 'f!'
 		self.no_log = {
 			'user_ids':     [1329366814517628969, 1329366963805491251, 1329367238146396211,
 							 1329367408330145805, 235148962103951360, 1299640624848306177],
 			'channel_ids':  [],
 			'category_ids': [1329366612821938207]
 		}
-		self.prefix = 'f!'
+
 		self.admin_ids = [235644709714788352, 542798185857286144, 937278965557641227]
 		self.blacklist_ids = {"ids": []}
 
@@ -54,13 +55,14 @@ class MyClient(discord.Client):
 		self.del_after = 3
 
 	async def on_ready(self):
-		await self.change_presence(activity = discord.CustomActivity(name = 'f!help for help'))
+		await self.change_presence(activity = discord.CustomActivity(name = 'f!help'))
 		print(f'Logged in as {self.user} (ID: {self.user.id})')
 		print('------')
 		# Check for environment variables
 		# TOKEN is checked by discord.py and this won't run in the first place if it's not set.
 		if not os.getenv("MONGO_URI"):
 			print('No MONGO_URI found in environment variables. Please set it to connect to a database.')
+			os.environ['LOCAL_SAVE'] = "True"
 
 		if not os.getenv("NASA_API_KEY"):
 			print('No NASA_API_KEY found in environment variables. Please set it to fetch NASA pictures.')
@@ -124,6 +126,29 @@ class MyClient(discord.Client):
 		)
 
 		await message.channel.send(help_text)
+
+	async def admin_help(self, message: discord.Message):
+		await message.delete()
+		if message.author.id not in self.admin_ids:
+			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+			return
+
+		if not self.check_global_cooldown():
+			await message.channel.send(f'Please wait {self.cooldowns["global"]["duration"]} seconds before using this command again.',
+									   delete_after = self.del_after)
+			return
+
+		admin_help_text = (
+			"**Admin Commands:**\n"
+			f"`{self.prefix}rek <user_id>` - Timeout a user for 28 days\n"
+			f"`{self.prefix}analyse` - Analyse the server's messages ({self.cooldowns['analyse']['duration']}s "
+			f"cooldown)\n"
+			f"`{self.prefix}blacklist <user_id>` - Blacklist a user from using commands\n"
+			f"`{self.prefix}unblacklist <user_id>` - Remove a user from the blacklist\n"
+			f"NOTE: There is a global cooldown of {self.cooldowns['global']['duration']} seconds for all commands.\n"
+		)
+
+		await message.author.create_dm().send(admin_help_text)
 
 	async def rek(self, message: discord.Message):
 		if message.author.id not in self.admin_ids:
