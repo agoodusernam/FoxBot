@@ -408,3 +408,4 @@ intents.members = True
 
 client = MyClient(intents = intents)
 client.run(os.getenv("TOKEN"))
+client.change_presence(activity = discord.CustomActivity(name = 'f!help for help'))
