@@ -114,7 +114,7 @@ class MyClient(discord.Client):
 			return
 
 		if message.author.id in self.admin_ids:
-			asyncio.run(self.admin_help(message))
+			await self.admin_help(message)
 
 
 
