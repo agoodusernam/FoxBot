@@ -193,6 +193,7 @@ class MyClient(discord.Client):
 			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
 			return
 
+
 		u_id = utils.get_id_from_msg(message)
 
 		try:
@@ -204,6 +205,10 @@ class MyClient(discord.Client):
 
 		if u_id in self.blacklist_ids:
 			await message.channel.send(f'User with ID {u_id} is already blacklisted.', delete_after = self.del_after)
+			return
+
+		if u_id in self.admin_ids:
+			await message.channel.send('You cannot blacklist an admin.', delete_after = self.del_after)
 			return
 
 		self.blacklist_ids['ids'].append(u_id)
