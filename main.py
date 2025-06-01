@@ -125,6 +125,7 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 		try:
+			await message.delete()
 			insult = await api_stuff.get_insult()
 			await message.channel.send(insult)
 		except Exception as e:
