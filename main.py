@@ -35,7 +35,7 @@ class MyClient(discord.Client):
 	async def set_time(self):
 		self.today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
 
-	async def check_global_cooldown(self) -> bool:
+	def check_global_cooldown(self) -> bool:
 		"""
 		Check if the cooldown period has passed since the last command execution.
 		:return: True if the cooldown has passed, False otherwise.
@@ -48,7 +48,7 @@ class MyClient(discord.Client):
 		return False
 
 
-	async def check_analyse_cooldown(self) -> bool:
+	def check_analyse_cooldown(self) -> bool:
 		"""
 		Check if the cooldown period has passed since the last command execution.
 		:return: True if the cooldown has passed, False otherwise.
