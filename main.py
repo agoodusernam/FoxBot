@@ -101,7 +101,7 @@ class MyClient(discord.Client):
 
 	async def help(self, message: discord.Message):
 		await message.delete()
-		if message.author.id not in self.admin_ids:
+		if message.author.id in self.blacklist_ids['ids']:
 			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
 			return
 
