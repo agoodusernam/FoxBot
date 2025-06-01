@@ -290,8 +290,8 @@ class MyClient(discord.Client):
 
 	async def on_message(self, message: discord.Message):
 		if isinstance(message.channel, discord.DMChannel):
-			await message.channel.send(f'This bot does not support direct messages. Please use it in the Foxes Haven '
-									   f'Discord server.')
+			await message.channel.send('This bot does not support direct messages. Please use it in the Foxes Haven '
+									   'Discord server.', delete_after = self.del_after)
 			return
 
 		if message.content.startswith('​'):  # Don't log messages that start with a zero-width space
