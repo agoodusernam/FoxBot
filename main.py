@@ -29,6 +29,7 @@ class MyClient(discord.Client):
 			'channel_ids':  [],
 			'category_ids': [1329366612821938207]
 		}
+		self.prefix = 'f!'
 		self.admin_ids = [235644709714788352, 542798185857286144]
 		self.blacklist_ids = {"ids": []}
 
@@ -97,6 +98,31 @@ class MyClient(discord.Client):
 			self.cooldowns['analyse']['last_time'] = current_time
 			return True
 		return False
+
+	async def help(self, message: discord.Message):
+		await message.delete()
+		if message.author.id not in self.admin_ids:
+			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+			return
+
+		if not self.check_global_cooldown():
+			await message.channel.send(f'Please wait {self.cooldowns["global"]["duration"]} seconds before using this command again.',
+									   delete_after = self.del_after)
+			return
+
+		help_text = (
+			"**Available Commands:**\n"
+			f"`{self.prefix}ping` - Check the bot's latency\n"
+			f"`{self.prefix}nasa` - Get NASA's picture of the day\n"
+			f"`{self.prefix}dogpic` - Get a random dog picture\n"
+			f"`{self.prefix}catpic` - Get a random cat picture\n"
+			f"`{self.prefix}foxpic` - Get a random fox picture\n"
+			f"`{self.prefix}insult` - Get a random insult\n"
+			f"`{self.prefix}advice` - Get a random piece of advice\n"
+			f"`{self.prefix}help` - Show this help message"
+		)
+
+		await message.channel.send(help_text)
 
 	async def rek(self, message: discord.Message):
 		if message.author.id not in self.admin_ids:
@@ -269,17 +295,24 @@ class MyClient(discord.Client):
 
 		if '<@1377636535968600135>' in message.content:
 			await message.channel.send(
-					'Hello, I am just a statistics bot. For questions or concerns, please hesitate to contact HardlineMouse16')
+					'Hello, I am the custom bot for Foxes Haven. For questions or concerns, please hesitate to contact '
+					'HardlineMouse16')
 			return
 
-		if message.content.startswith('._'):
+		if message.content.startswith(self.prefix):
 			if message.author.id in self.blacklist_ids['ids']:
 				await message.delete()
 				await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
 				return
-			message.content = message.content.replace('._', '')
+
+			message.content = message.content.replace(self.prefix, '')
 
 			if message.content.startswith('ping'):
+				if not self.check_global_cooldown():
+					await message.channel.send(f'Please wait {self.cooldowns["global"]["duration"]} seconds before using this command again.',
+											   delete_after = self.del_after)
+					await message.delete()
+					return
 				await message.channel.send(f'{self.latency * 1000:.2f}ms', delete_after = self.del_after)
 				await message.delete()
 				return
@@ -303,6 +336,11 @@ class MyClient(discord.Client):
 			if message.content.startswith('nasa'):
 				await self.nasa_pic(message)
 				return
+
+			if message.content.startswith('help'):
+				await self.help(message)
+				return
+
 
 			if message.content.startswith('dogpic'):
 				await self.get_from_api(message, api_stuff.get_dog_pic, 'Fetching random dog picture...')
