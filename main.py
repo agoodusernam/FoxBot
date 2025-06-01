@@ -143,7 +143,8 @@ class MyClient(discord.Client):
 			f"NOTE: There is a global cooldown of {self.cooldowns['global']['duration']} seconds for all commands.\n"
 		)
 
-		await message.author.create_dm().send(admin_help_text)
+		dm = message.author.create_dm()
+		await dm.send(admin_help_text)
 
 	async def rek(self, message: discord.Message):
 		if message.author.id not in self.admin_ids:
