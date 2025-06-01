@@ -100,8 +100,8 @@ class MyClient(discord.Client):
 
 	async def rek(self, message: discord.Message):
 		if message.author.id not in self.admin_ids:
-			await message.delete()
 			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+			await message.delete()
 			return
 		await message.delete()
 
@@ -122,18 +122,19 @@ class MyClient(discord.Client):
 
 		await member.timeout(datetime.timedelta(days = 28), reason = 'get rekt nerd')
 		await message.channel.send(f'<@{u_id}> has been rekt.', delete_after = self.del_after)
+		await message.delete()
 		return
 
 	async def analyse(self, message: discord.Message):
 		if message.author.id not in self.admin_ids:
-			await message.delete()
 			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+			await message.delete()
 			return
 
 		if not self.check_analyse_cooldown():
-			await message.delete()
 			await message.channel.send(f'Please wait {self.cooldowns['analyse']['duration']} seconds before using this command again.',
 									   delete_after = self.del_after)
+			await message.delete()
 			return
 
 		await message.channel.send('Analysing...')
@@ -161,10 +162,12 @@ class MyClient(discord.Client):
 		except Exception as e:
 			print(f"Error during analysis: {e}")
 
+		await message.delete()
+
 	async def blacklist_id(self, message: discord.Message):
 		if message.author.id not in self.admin_ids:
-			await message.delete()
 			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+			await message.delete()
 			return
 
 		u_id = utils.get_id_from_msg(message)
@@ -192,9 +195,10 @@ class MyClient(discord.Client):
 	async def get_from_api(self, message: discord.Message, api_func: Callable, success_msg: str | None):
 
 		if not self.check_global_cooldown():
-			await message.delete()
+
 			await message.channel.send(f'Please wait {self.cooldowns['global']['last_time']} seconds before using this command again.',
 									   delete_after = self.del_after)
+			await message.delete()
 			return
 		if success_msg is not None:
 			await message.channel.send(success_msg)
@@ -208,9 +212,9 @@ class MyClient(discord.Client):
 	async def nasa_pic(self, message: discord.Message):
 
 		if not self.check_global_cooldown():
-			await message.delete()
 			await message.channel.send(f'Please wait {self.cooldowns['global']['last_time']} seconds before using this command again.',
 									   delete_after = self.del_after)
+			await message.delete()
 			return
 
 		await message.channel.send('Fetching NASA picture of the day...')
@@ -248,26 +252,16 @@ class MyClient(discord.Client):
 				return
 			message.content = message.content.replace('._', '')
 
-			if message.content.replace('._', '').startswith('ttotal'):
-				with open(f'data/{self.today}.json', 'r', errors = 'ignore') as fp:
-					for count, line in enumerate(fp):
-						pass
-				await message.delete()
-				await message.channel.send(f'Total messages logged today: {count + 1}', delete_after = self.del_after)
-				return
-
 			if message.content.startswith('ping'):
-				await message.delete()
 				await message.channel.send(f'{self.latency * 1000:.2f}ms', delete_after = self.del_after)
+				await message.delete()
 				return
 
 			if message.content.startswith('rek'):
-				await message.delete()
 				await self.rek(message)
 				return
 
 			if message.content.startswith('analyse'):
-				await message.delete()
 				await self.analyse(message)
 				return
 
