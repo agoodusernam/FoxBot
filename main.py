@@ -276,6 +276,10 @@ class MyClient(discord.Client):
 				await self.insult(message)
 				return
 
+			if message.content.startswith('advice'):
+				await self.advice(message)
+				return
+
 		if (message.author != self.user) and (
 				message.author.id not in self.no_log_user_ids) and (
 				message.channel.id not in self.no_log_channel_ids) and (
