@@ -77,6 +77,7 @@ class MyClient(discord.Client):
 			await message.channel.send(f'Please wait {self.analyse_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
+		self.last_analyse_time = int(time.time())
 
 		await message.channel.send('Analysing...')
 		try:
@@ -111,6 +112,7 @@ class MyClient(discord.Client):
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
+		self.last_cmd_time = int(time.time())
 
 		await message.channel.send('Fetching NASA picture of the day...')
 		try:
@@ -133,6 +135,7 @@ class MyClient(discord.Client):
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
+		self.last_cmd_time = int(time.time())
 
 		await message.channel.send('Fetching random dog picture...')
 		try:
@@ -149,6 +152,7 @@ class MyClient(discord.Client):
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
+		self.last_cmd_time = int(time.time())
 
 		await message.channel.send('Fetching random cat picture...')
 		try:
@@ -165,6 +169,7 @@ class MyClient(discord.Client):
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
+		self.last_cmd_time = int(time.time())
 
 		await message.channel.send('Fetching random fox picture...')
 		try:
@@ -181,6 +186,7 @@ class MyClient(discord.Client):
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
+		self.last_cmd_time = int(time.time())
 
 		try:
 			await message.delete()
