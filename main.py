@@ -89,6 +89,7 @@ class MyClient(discord.Client):
 			return
 
 		if not self.check_analyse_cooldown():
+			await message.delete()
 			await message.channel.send(f'Please wait {self.analyse_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -123,6 +124,7 @@ class MyClient(discord.Client):
 			return
 
 		if not self.check_global_cooldown():
+			await message.delete()
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -145,6 +147,7 @@ class MyClient(discord.Client):
 			return
 
 		if not self.check_global_cooldown():
+			await message.delete()
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -161,6 +164,7 @@ class MyClient(discord.Client):
 			return
 
 		if not self.check_global_cooldown():
+			await message.delete()
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -177,6 +181,7 @@ class MyClient(discord.Client):
 			return
 
 		if not self.check_global_cooldown():
+			await message.delete()
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -193,6 +198,7 @@ class MyClient(discord.Client):
 			return
 
 		if not self.check_global_cooldown():
+			await message.delete()
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -209,6 +215,7 @@ class MyClient(discord.Client):
 			return
 
 		if not self.check_global_cooldown():
+			await message.delete()
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
