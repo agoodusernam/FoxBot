@@ -191,6 +191,7 @@ class MyClient(discord.Client):
 			json.dump(self.blacklist_ids, f, indent = 4)
 
 		await message.channel.send(f'User with ID {u_id} has been blacklisted.', delete_after = self.del_after)
+		await message.delete()
 
 	async def get_from_api(self, message: discord.Message, api_func: Callable, success_msg: str | None):
 
@@ -263,6 +264,10 @@ class MyClient(discord.Client):
 
 			if message.content.startswith('analyse'):
 				await self.analyse(message)
+				return
+
+			if message.content.startswith('blacklist'):
+				await self.blacklist_id(message)
 				return
 
 			if message.content.startswith('nasa'):
