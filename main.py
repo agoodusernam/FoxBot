@@ -16,6 +16,10 @@ class MyClient(discord.Client):
 	# So nasa picture will always be deleted after use
 	no_log_user_ids: list[int] = [1329366814517628969, 1329366963805491251, 1329367238146396211, 1329367408330145805,
 								  235148962103951360, 1299640624848306177]
+	analyse_cooldown: int = 60  # Cooldown in seconds for the "analyse" command
+	last_analyse_time: datetime.datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=analyse_cooldown)
+	global_cooldown: int = 5  # Cooldown in seconds for picture commands
+	last_cmd_time: datetime.datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=global_cooldown)
 	allow_cmds: list[int] = [235644709714788352, 542798185857286144]
 	no_log_channel_ids: list[int] = []
 	no_log_category_ids: list[int] = [1329366612821938207]
@@ -27,6 +31,10 @@ class MyClient(discord.Client):
 
 	async def set_time(self):
 		self.today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
+
+	def check_cooldown(self, last_time: datetime.datetime, cooldown: int) -> bool:
+		current_time = datetime.datetime.now(datetime.timezone.utc)
+		return (current_time - last_time).total_seconds() >= cooldown
 
 	async def rek(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
@@ -55,6 +63,12 @@ class MyClient(discord.Client):
 	async def analyse(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
 			return
+
+		if not self.check_cooldown(self.last_analyse_time, self.analyse_cooldown):
+			await message.channel.send(f'Please wait {self.analyse_cooldown} seconds before using this command again.',
+									   delete_after = self.del_after)
+			return
+
 		await message.channel.send('Analysing...')
 		try:
 			result = analysis.analyse()
@@ -83,6 +97,12 @@ class MyClient(discord.Client):
 	async def nasa_pic(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
 			return
+
+		if not self.check_cooldown(self.last_cmd_time, self.global_cooldown):
+			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
+									   delete_after = self.del_after)
+			return
+
 		await message.channel.send('Fetching NASA picture of the day...')
 		try:
 			nasa_data = await api_stuff.get_nasa_apod()
@@ -99,6 +119,12 @@ class MyClient(discord.Client):
 	async def dog_pic(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
 			return
+
+		if not self.check_cooldown(self.last_cmd_time, self.global_cooldown):
+			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
+									   delete_after = self.del_after)
+			return
+
 		await message.channel.send('Fetching random dog picture...')
 		try:
 			dog_data = await api_stuff.get_dog_pic()
@@ -109,6 +135,12 @@ class MyClient(discord.Client):
 	async def cat_pic(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
 			return
+
+		if not self.check_cooldown(self.last_cmd_time, self.global_cooldown):
+			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
+									   delete_after = self.del_after)
+			return
+
 		await message.channel.send('Fetching random cat picture...')
 		try:
 			cat_data = await api_stuff.get_cat_pic()
@@ -119,6 +151,12 @@ class MyClient(discord.Client):
 	async def fox_pic(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
 			return
+
+		if not self.check_cooldown(self.last_cmd_time, self.global_cooldown):
+			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
+									   delete_after = self.del_after)
+			return
+
 		await message.channel.send('Fetching random fox picture...')
 		try:
 			fox_data = await api_stuff.get_fox_pic()
@@ -129,6 +167,12 @@ class MyClient(discord.Client):
 	async def insult(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
 			return
+
+		if not self.check_cooldown(self.last_cmd_time, self.global_cooldown):
+			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
+									   delete_after = self.del_after)
+			return
+
 		try:
 			await message.delete()
 			insult = await api_stuff.get_insult()
