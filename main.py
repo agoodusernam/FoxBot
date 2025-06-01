@@ -289,6 +289,9 @@ class MyClient(discord.Client):
 			await message.channel.send(f'Error fetching NASA picture: {e}')
 
 	async def on_message(self, message: discord.Message):
+		if isinstance(message.channel, discord.DMChannel):
+			return
+
 		if message.content.startswith('​'):  # Don't log messages that start with a zero-width space
 			print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 			return
