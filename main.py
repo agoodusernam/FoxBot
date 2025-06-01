@@ -104,14 +104,19 @@ class MyClient(discord.Client):
 
 	async def help(self, message: discord.Message):
 		await message.delete()
-		if message.author.id in self.blacklist_ids['ids']:
-			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
-			return
-
 		if not self.check_global_cooldown():
 			await message.channel.send(f'Please wait {self.cooldowns["global"]["duration"]} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
+
+		if message.author.id in self.blacklist_ids['ids']:
+			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+			return
+
+		if message.author.id in self.admin_ids:
+			asyncio.run(self.admin_help(message))
+
+
 
 		help_text = (
 			"**Available Commands:**\n"
@@ -128,16 +133,6 @@ class MyClient(discord.Client):
 		await message.channel.send(help_text)
 
 	async def admin_help(self, message: discord.Message):
-		await message.delete()
-		if message.author.id not in self.admin_ids:
-			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
-			return
-
-		if not self.check_global_cooldown():
-			await message.channel.send(f'Please wait {self.cooldowns["global"]["duration"]} seconds before using this command again.',
-									   delete_after = self.del_after)
-			return
-
 		admin_help_text = (
 			"**Admin Commands:**\n"
 			f"`{self.prefix}rek <user_id>` - Timeout a user for 28 days\n"
