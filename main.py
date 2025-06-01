@@ -189,6 +189,34 @@ class MyClient(discord.Client):
 
 		await message.channel.send(f'User with ID {u_id} has been blacklisted.', delete_after = self.del_after)
 
+	async def unblacklist_id(self, message: discord.Message):
+		await message.delete()
+		if message.author.id not in self.admin_ids:
+			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+			return
+
+		u_id = utils.get_id_from_msg(message)
+
+		try:
+			u_id = int(u_id)
+		except ValueError:
+			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
+									   delete_after = self.del_after)
+			return
+
+		if u_id not in self.blacklist_ids['ids']:
+			await message.channel.send(f'User with ID {u_id} is not blacklisted.', delete_after = self.del_after)
+			return
+
+		self.blacklist_ids['ids'].remove(u_id)
+		if os.path.isfile(f'blacklist_users.json'):
+			os.remove(f'blacklist_users.json')
+
+		with open('blacklist_users.json', 'w') as f:
+			json.dump(self.blacklist_ids, f, indent = 4)
+
+		await message.channel.send(f'User with ID {u_id} has been unblacklisted.', delete_after = self.del_after)
+
 	async def get_from_api(self, message: discord.Message, api_func: Callable, success_msg: str | None):
 
 		if not self.check_global_cooldown():
@@ -266,6 +294,10 @@ class MyClient(discord.Client):
 
 			if message.content.startswith('blacklist'):
 				await self.blacklist_id(message)
+				return
+
+			if message.content.startswith('unblacklist'):
+				await self.unblacklist_id(message)
 				return
 
 			if message.content.startswith('nasa'):
