@@ -54,6 +54,7 @@ class MyClient(discord.Client):
 		self.del_after = 3
 
 	async def on_ready(self):
+		await self.change_presence(activity = discord.CustomActivity(name = 'f!help for help'))
 		print(f'Logged in as {self.user} (ID: {self.user.id})')
 		print('------')
 		# Check for environment variables
@@ -408,4 +409,3 @@ intents.members = True
 
 client = MyClient(intents = intents)
 client.run(os.getenv("TOKEN"))
-client.change_presence(activity = discord.CustomActivity(name = 'f!help for help'))
