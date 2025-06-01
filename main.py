@@ -1,5 +1,7 @@
 import asyncio
 import os
+from typing import Callable
+
 import discord
 import json
 import datetime
@@ -13,50 +15,70 @@ import time
 load_dotenv()
 
 
-
 class MyClient(discord.Client):
-	today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
-	# So nasa picture will always be deleted after use
-	no_log_user_ids: list[int] = [1329366814517628969, 1329366963805491251, 1329367238146396211, 1329367408330145805,
-								  235148962103951360, 1299640624848306177]
-	analyse_cooldown: int = 60  # Cooldown in seconds for the "analyse" command
-	last_analyse_time = int(time.time()) - analyse_cooldown
-	global_cooldown: int = 5  # Cooldown in seconds for picture commands
-	last_cmd_time = int(time.time()) - global_cooldown
-	allow_cmds: list[int] = [235644709714788352, 542798185857286144]
-	no_log_channel_ids: list[int] = []
-	no_log_category_ids: list[int] = [1329366612821938207]
-	del_after: int = 3
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+
+		# Date tracking
+		self.today = utils.formatted_time()
+
+		# Access control
+		self.no_log = {
+			'user_ids':     [1329366814517628969, 1329366963805491251, 1329367238146396211,
+							 1329367408330145805, 235148962103951360, 1299640624848306177],
+			'channel_ids':  [],
+			'category_ids': [1329366612821938207]
+		}
+		self.allow_cmds = [235644709714788352, 542798185857286144]
+
+		# Cooldown settings
+		self.cooldowns = {
+			'analyse': {
+				'duration':  60,
+				'last_time': int(time.time()) - 60
+			},
+			'global':  {
+				'duration':  5,
+				'last_time': int(time.time()) - 5
+			}
+		}
+
+		# UI settings
+		self.del_after = 3
 
 	async def on_ready(self):
 		print(f'Logged in as {self.user} (ID: {self.user.id})')
 		print('------')
+		# Check for environment variables
+		# TOKEN is checked by discord.py so this won't run in the first place if it's not set
 
-	async def set_time(self):
-		self.today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
+		if not os.getenv("MONGO_URI"):
+			print('No MONGO_URI found in environment variables. Please set it to connect to a database.')
+
+		if not os.getenv("NASA_API_KEY"):
+			print('No NASA_API_KEY found in environment variables. Please set it to fetch NASA pictures.')
+
+		if not os.getenv("CAT_API_KEY"):
+			print('No CAT_API_KEY found in environment variables. Please set it to fetch cat pictures.')
+
+		if not os.getenv("LOCAL_SAVE"):
+			print('No LOCAL_SAVE found in environment variables. Defaulting to False.')
+			os.environ["LOCAL_SAVE"] = 'False'
 
 	def check_global_cooldown(self) -> bool:
-		"""
-		Check if the cooldown period has passed since the last command execution.
-		:return: True if the cooldown has passed, False otherwise.
-		"""
 		current_time = int(time.time())
-		complete = (current_time - self.last_cmd_time) >= self.global_cooldown
+		complete = (current_time - self.cooldowns['global']['last_time']) >= self.cooldowns['global']['duration']
 		if complete:
-			self.last_cmd_time = current_time
+			self.cooldowns['global']['last_time'] = current_time
 			return True
 		return False
 
 
 	def check_analyse_cooldown(self) -> bool:
-		"""
-		Check if the cooldown period has passed since the last command execution.
-		:return: True if the cooldown has passed, False otherwise.
-		"""
 		current_time = int(time.time())
-		complete = (current_time - self.last_analyse_time) >= self.analyse_cooldown
+		complete = (current_time - self.cooldowns['analyse']['last_time']) >= self.cooldowns['analyse']['duration']
 		if complete:
-			self.last_analyse_time = current_time
+			self.cooldowns['analyse']['last_time'] = current_time
 			return True
 		return False
 
@@ -90,7 +112,7 @@ class MyClient(discord.Client):
 
 		if not self.check_analyse_cooldown():
 			await message.delete()
-			await message.channel.send(f'Please wait {self.analyse_cooldown} seconds before using this command again.',
+			await message.channel.send(f'Please wait {self.cooldowns['analyse']['duration']} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
 
@@ -119,13 +141,31 @@ class MyClient(discord.Client):
 		except Exception as e:
 			print(f"Error during analysis: {e}")
 
+	async def get_from_api(self, message: discord.Message, api_func: Callable, success_msg: str | None):
+		if message.author.id not in self.allow_cmds:
+			return
+
+		if not self.check_global_cooldown():
+			await message.delete()
+			await message.channel.send(f'Please wait {self.cooldowns['global']['last_time']} seconds before using this command again.',
+									   delete_after = self.del_after)
+			return
+		if success_msg is not None:
+			await message.channel.send(success_msg)
+		try:
+			data = await api_func()
+			await message.channel.send(data)
+		except Exception as e:
+			await message.channel.send(f'Error fetching data: {e}')
+
+
 	async def nasa_pic(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
 			return
 
 		if not self.check_global_cooldown():
 			await message.delete()
-			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
+			await message.channel.send(f'Please wait {self.cooldowns['global']['last_time']} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
 
@@ -136,96 +176,12 @@ class MyClient(discord.Client):
 				url = nasa_data['hdurl']
 			else:
 				url = nasa_data['url']
+
 			await message.channel.send(f"**{nasa_data['title']}**\n{url}\nBlame discord for not embedding it properly.")
 			await message.channel.send(f"**Explanation:** {nasa_data['explanation']}")
 
 		except Exception as e:
 			await message.channel.send(f'Error fetching NASA picture: {e}')
-
-	async def dog_pic(self, message: discord.Message):
-		if message.author.id not in self.allow_cmds:
-			return
-
-		if not self.check_global_cooldown():
-			await message.delete()
-			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
-									   delete_after = self.del_after)
-			return
-
-		await message.channel.send('Fetching random dog picture...')
-		try:
-			dog_data = await api_stuff.get_dog_pic()
-			await message.channel.send(dog_data)
-		except Exception as e:
-			await message.channel.send(f'Error fetching dog picture: {e}')
-
-	async def cat_pic(self, message: discord.Message):
-		if message.author.id not in self.allow_cmds:
-			return
-
-		if not self.check_global_cooldown():
-			await message.delete()
-			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
-									   delete_after = self.del_after)
-			return
-
-		await message.channel.send('Fetching random cat picture...')
-		try:
-			cat_data = await api_stuff.get_cat_pic()
-			await message.channel.send(cat_data)
-		except Exception as e:
-			await message.channel.send(f'Error fetching cat picture: {e}')
-
-	async def fox_pic(self, message: discord.Message):
-		if message.author.id not in self.allow_cmds:
-			return
-
-		if not self.check_global_cooldown():
-			await message.delete()
-			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
-									   delete_after = self.del_after)
-			return
-
-		await message.channel.send('Fetching random fox picture...')
-		try:
-			fox_data = await api_stuff.get_fox_pic()
-			await message.channel.send(fox_data)
-		except Exception as e:
-			await message.channel.send(f'Error fetching fox picture: {e}')
-
-	async def insult(self, message: discord.Message):
-		if message.author.id not in self.allow_cmds:
-			return
-
-		if not self.check_global_cooldown():
-			await message.delete()
-			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
-									   delete_after = self.del_after)
-			return
-
-		try:
-			await message.delete()
-			insult = await api_stuff.get_insult()
-			await message.channel.send(insult)
-		except Exception as e:
-			await message.channel.send(f'Error fetching insult: {e}')
-
-	async def advice(self, message: discord.Message):
-		if message.author.id not in self.allow_cmds:
-			return
-
-		if not self.check_global_cooldown():
-			await message.delete()
-			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
-									   delete_after = self.del_after)
-			return
-
-		try:
-			await message.delete()
-			advice = await api_stuff.get_advice()
-			await message.channel.send(advice)
-		except Exception as e:
-			await message.channel.send(f'Error fetching advice: {e}')
 
 	async def on_message(self, message: discord.Message):
 		if message.content.startswith('​'):  # Don't log messages that start with a zero-width space
@@ -268,29 +224,29 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.startswith('dogpic'):
-				await self.dog_pic(message)
+				await self.get_from_api(message, api_stuff.get_dog_pic, 'Fetching random dog picture...')
 				return
 
 			if message.content.startswith('catpic'):
-				await self.cat_pic(message)
+				await self.get_from_api(message, api_stuff.get_cat_pic, 'Fetching random cat picture...')
 				return
 
 			if message.content.startswith('foxpic'):
-				await self.fox_pic(message)
+				await self.get_from_api(message, api_stuff.get_fox_pic, 'Fetching random fox picture...')
 				return
 
 			if message.content.startswith('insult'):
-				await self.insult(message)
+				await self.get_from_api(message, api_stuff.get_insult, None)
 				return
 
 			if message.content.startswith('advice'):
-				await self.advice(message)
+				await self.get_from_api(message, api_stuff.get_advice, 'Fetching random advice...')
 				return
 
 		if (message.author != self.user) and (
-				message.author.id not in self.no_log_user_ids) and (
-				message.channel.id not in self.no_log_channel_ids) and (
-				message.channel.category_id not in self.no_log_category_ids):
+				message.author.id not in self.no_log["user_ids"]) and (
+				message.channel.id not in self.no_log["channel_ids"]) and (
+				message.channel.category_id not in self.no_log["category_ids"]):
 
 			has_attachment = False
 			if message.attachments:
@@ -321,7 +277,7 @@ class MyClient(discord.Client):
 			print(f'Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 
 			asyncio.create_task(db_stuff.send_message(json_data))
-			asyncio.create_task(self.set_time())
+			self.today = utils.formatted_time()
 
 
 intents = discord.Intents.default()

@@ -1,5 +1,3 @@
-import asyncio
-
 import requests
 from dotenv import load_dotenv
 import os
@@ -7,8 +5,6 @@ load_dotenv()
 
 async def get_nasa_apod() -> dict:
 	api_key = os.getenv("NASA_API_KEY")
-	if not api_key:
-		raise ValueError("NASA API key is not set in the environment variables.")
 
 	url = f"https://api.nasa.gov/planetary/apod?api_key={api_key}"
 	response = requests.get(url)
@@ -46,6 +42,7 @@ async def get_fox_pic() -> str:
 
 async def get_cat_pic() -> str:
 	url = "https://api.thecatapi.com/v1/images/search"
+
 	header = {'x-api-key':os.getenv("CAT_API_KEY"), 'Content-Type': 'application/json'}
 	response = requests.get(url, headers=header)
 
@@ -84,24 +81,3 @@ async def get_advice() -> str:
 		raise ValueError("Unexpected response format from advice API")
 
 	return data['slip']['advice']
-
-async def main() -> None:
-	try:
-
-		print("Fetching random cat picture...")
-		cat_pic = await get_cat_pic()
-		print(f"Cat Picture: {cat_pic}")
-
-		print("Fetching random insult...")
-		insult = await get_insult()
-		print(f"Insult: {insult}")
-
-		print("Fetching random advice...")
-		advice = await get_advice()
-		print(f"Advice: {advice}")
-
-	except Exception as e:
-		print(f"An error occurred: {e}")
-
-if __name__ == '__main__':
-	asyncio.run(main())

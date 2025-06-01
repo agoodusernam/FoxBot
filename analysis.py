@@ -52,7 +52,6 @@ def analyse() -> dict | Exception | str | None:
 			average_length = sum(len(word) for word in unique_words) / len(unique_words)
 			print(f"Average length of unique words: {average_length:.2f} characters")
 
-			most_active_users: list[dict[str, int]] = [{}]
 			user_message_count = {}
 			for message in valid_messages:
 				user_id = message['author_global_name']
