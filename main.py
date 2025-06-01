@@ -8,8 +8,21 @@ import api_stuff
 import utils
 from dotenv import load_dotenv
 import analysis
+import time
 
 load_dotenv()
+
+
+def check_cooldown(last_time: int, cooldown: int) -> bool:
+	"""
+	Check if the cooldown period has passed since the last command execution.
+	:param last_time: The last time the command was executed.
+	:param cooldown: The cooldown period in seconds.
+	:return: True if the cooldown has passed, False otherwise.
+	"""
+	current_time = int(time.time())
+	return (current_time - last_time) >= cooldown
+
 
 class MyClient(discord.Client):
 	today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
@@ -17,9 +30,9 @@ class MyClient(discord.Client):
 	no_log_user_ids: list[int] = [1329366814517628969, 1329366963805491251, 1329367238146396211, 1329367408330145805,
 								  235148962103951360, 1299640624848306177]
 	analyse_cooldown: int = 60  # Cooldown in seconds for the "analyse" command
-	last_analyse_time: datetime.datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=analyse_cooldown)
+	last_analyse_time = int(time.time()) - analyse_cooldown
 	global_cooldown: int = 5  # Cooldown in seconds for picture commands
-	last_cmd_time: datetime.datetime = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=global_cooldown)
+	last_cmd_time = int(time.time()) - global_cooldown
 	allow_cmds: list[int] = [235644709714788352, 542798185857286144]
 	no_log_channel_ids: list[int] = []
 	no_log_category_ids: list[int] = [1329366612821938207]
@@ -31,10 +44,6 @@ class MyClient(discord.Client):
 
 	async def set_time(self):
 		self.today = datetime.datetime.now(datetime.timezone.utc).strftime("%d-%m-%Y")
-
-	def check_cooldown(self, last_time: datetime.datetime, cooldown: int) -> bool:
-		current_time = datetime.datetime.now(datetime.timezone.utc)
-		return (current_time - last_time).total_seconds() >= cooldown
 
 	async def rek(self, message: discord.Message):
 		if message.author.id not in self.allow_cmds:
@@ -64,7 +73,7 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not self.check_cooldown(self.last_analyse_time, self.analyse_cooldown):
+		if not check_cooldown(self.last_analyse_time, self.analyse_cooldown):
 			await message.channel.send(f'Please wait {self.analyse_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -73,14 +82,14 @@ class MyClient(discord.Client):
 		try:
 			result = analysis.analyse()
 			if isinstance(result, dict):
-				top_3_active_users = sorted(result["active_users_lb"], key=lambda x: x["num_messages"], reverse=True)[:3]
-				msg = (f'{result["total_messages"]} total messages analysed\n' 
-					f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n' 
-					f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
-					f'Top 3 most active users:\n')
+				top_3_active_users = sorted(result["active_users_lb"], key = lambda x: x["num_messages"],
+											reverse = True)[:3]
+				msg = (f'{result["total_messages"]} total messages analysed\n'
+					   f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n'
+					   f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
+					   f'Top 3 most active users:\n')
 				for user in top_3_active_users:
 					msg += f'**{user["user"]}** with {user["num_messages"]} messages\n'
-
 
 				await message.channel.send(msg)
 			elif isinstance(result, Exception):
@@ -98,7 +107,7 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not self.check_cooldown(self.last_cmd_time, self.global_cooldown):
+		if not check_cooldown(self.last_cmd_time, self.global_cooldown):
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -120,7 +129,7 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not self.check_cooldown(self.last_cmd_time, self.global_cooldown):
+		if not check_cooldown(self.last_cmd_time, self.global_cooldown):
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -136,7 +145,7 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not self.check_cooldown(self.last_cmd_time, self.global_cooldown):
+		if not check_cooldown(self.last_cmd_time, self.global_cooldown):
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -152,7 +161,7 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not self.check_cooldown(self.last_cmd_time, self.global_cooldown):
+		if not check_cooldown(self.last_cmd_time, self.global_cooldown):
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -168,7 +177,7 @@ class MyClient(discord.Client):
 		if message.author.id not in self.allow_cmds:
 			return
 
-		if not self.check_cooldown(self.last_cmd_time, self.global_cooldown):
+		if not check_cooldown(self.last_cmd_time, self.global_cooldown):
 			await message.channel.send(f'Please wait {self.global_cooldown} seconds before using this command again.',
 									   delete_after = self.del_after)
 			return
@@ -180,8 +189,6 @@ class MyClient(discord.Client):
 		except Exception as e:
 			await message.channel.send(f'Error fetching insult: {e}')
 
-
-
 	async def on_message(self, message: discord.Message):
 		if message.content.startswith('​'):  # Don't log messages that start with a zero-width space
 			print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
@@ -189,7 +196,7 @@ class MyClient(discord.Client):
 
 		if '<@1377636535968600135>' in message.content:
 			await message.channel.send(
-				'Hello, I am just a statistics bot. For questions or concerns, please hesitate to contact HardlineMouse16')
+					'Hello, I am just a statistics bot. For questions or concerns, please hesitate to contact HardlineMouse16')
 			return
 
 		if message.content.startswith('._'):
