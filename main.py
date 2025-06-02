@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import analysis
 import time
 import help_cmd
+import hardlockdown
 
 load_dotenv()
 
@@ -167,6 +168,33 @@ class MyClient(discord.Client):
 				print("No valid messages found for analysis.")
 		except Exception as e:
 			print(f"Error during analysis: {e}")
+
+	async def hard_lockdown(self, message: discord.Message):
+		await message.delete()
+		if message.author.id not in self.admin_ids:
+			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+			return
+
+		await hardlockdown.hardlockdown(self, message)
+		"""
+		for member in message.guild.members:
+			if member.id in self.admin_ids:
+				continue
+
+			if member.id not in self.blacklist_ids['ids']:
+				self.blacklist_ids['ids'].append(member.id)
+
+		for member in message.guild.members:
+			if member.id not in self.admin_ids:
+				try:
+					await member.timeout(datetime.timedelta(days = 28), reason = 'Hard lockdown initiated by admin')
+				except Exception as e:
+					print(f'Error during hard lockdown for user {member.id}: {e}')
+					continue
+		"""
+
+
+		# await message.channel.send('Hard lockdown initiated.', delete_after = self.del_after)
 
 
 	async def blacklist_id(self, message: discord.Message):
