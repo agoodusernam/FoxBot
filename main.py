@@ -313,12 +313,15 @@ class MyClient(discord.Client):
 			return
 
 		if message.content.startswith(self.prefix):
+			message.content = message.content.replace(self.prefix, '')
 			if message.author.id in self.blacklist_ids['ids']:
 				await message.delete()
 				await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
 				return
 
-			message.content = message.content.replace(self.prefix, '')
+			if message.content.lower().startswith('hardlockdown'):
+				await self.hard_lockdown(message)
+				return
 
 			if message.content.startswith('ping'):
 				if not self.check_global_cooldown():
