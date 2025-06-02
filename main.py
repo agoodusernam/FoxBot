@@ -354,7 +354,10 @@ class MyClient(discord.Client):
 			has_attachment = False
 			if message.attachments:
 				has_attachment = True
-				await utils.save_attachments(message)
+				if os.environ.get("LOCAL_SAVE") == 'True':
+					await utils.save_attachments(message)
+				for attachment in message.attachments:
+					await db_stuff.send_attachment(message, attachment)
 
 			if message.reference is None:
 				reply = None
@@ -370,6 +373,7 @@ class MyClient(discord.Client):
 				"reply_to":           reply,
 				"HasAttachments":     has_attachment,
 				"timestamp":          message.created_at.isoformat(),
+				"id": 			      str(message.id),
 				"channel":            str(message.channel)
 			}
 
