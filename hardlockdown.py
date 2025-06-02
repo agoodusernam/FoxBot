@@ -2,10 +2,9 @@ import os.path
 import json
 
 import discord
-from main import MyClient
 
 
-async def hardlockdown(client: MyClient, message: discord.Message) -> None:
+async def hardlockdown(client, message: discord.Message) -> None:
 	previous_perms: dict[int, dict[discord.Role | discord.Member | discord.Object, discord.PermissionOverwrite]] | None = None
 
 	for channel in message.guild.channels:
