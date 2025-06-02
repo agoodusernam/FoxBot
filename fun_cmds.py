@@ -1,4 +1,5 @@
 import math
+import base64
 
 import discord
 import random
@@ -15,10 +16,9 @@ async def dice_roll(client, message: discord.Message) -> None:
 	oversize = False
 	if math.log10(num) > 1900:
 		oversize = True
-		num = hex(num)
-
+		num = base64.b64encode(bytes(num))
 
 	await message.channel.send(f"You rolled a {num}")
 	if oversize:
-		await message.channel.send("The number is too large to display in decimal format, so it has been converted to hexadecimal.")
+		await message.channel.send("The number is too large to display in decimal format, so it has been converted to base64.")
 	return
