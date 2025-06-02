@@ -322,7 +322,7 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.startswith('help'):
-				await help_stuff.help_cmds(self, message)
+				await help_stuff.help_(self, message)
 				return
 
 

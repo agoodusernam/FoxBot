@@ -1,10 +1,8 @@
 import discord
 
-from main import MyClient
-
 NO_ARGS_STR = "Usage: Just type the command without any arguments."
 
-async def help_cmds(client: MyClient, message: discord.Message):
+async def help_cmds(client, message: discord.Message):
 	if not message.content.replace("help", "").strip() == "":
 		cmd = message.content.replace("help", "", 1).strip()
 
@@ -83,41 +81,41 @@ async def admin_help(self, message: discord.Message):
 
 
 
-def nasa_help(self: MyClient):
+def nasa_help(self):
 	help_text = f"`{self.prefix}nasa` - Get NASA's picture of the day.\n" + NO_ARGS_STR
 	return help_text
 
-def dogpic_help(self: MyClient):
+def dogpic_help(self):
 	help_text = f"`{self.prefix}dogpic` - Get a random dog picture.\n" + NO_ARGS_STR
 
 	return help_text
 
-def catpic_help(self: MyClient):
+def catpic_help(self):
 	help_text = f"`{self.prefix}catpic` - Get a random cat picture.\n" + NO_ARGS_STR
 
 	return help_text
 
-def foxpic_help(self: MyClient):
+def foxpic_help(self):
 	help_text = f"`{self.prefix}foxpic` - Get a random fox picture.\n" + NO_ARGS_STR
 
 	return help_text
 
-def insult_help(self: MyClient):
+def insult_help(self):
 	help_text = f"`{self.prefix}insult` - Get a random insult.\n" + NO_ARGS_STR
 
 	return help_text
 
-def advice_help(self: MyClient):
+def advice_help(self):
 	help_text = f"`{self.prefix}advice` - Get a random piece of advice.\n" + NO_ARGS_STR
 
 	return help_text
 
-def ping_help(self: MyClient):
+def ping_help(self):
 	help_text = f"`{self.prefix}ping` - Check the bot's latency.\n" + NO_ARGS_STR
 
 	return help_text
 
-def help_help(self: MyClient):
+def help_help(self):
 	help_text = (
 		f"`{self.prefix}help` - Show this help message.\n"
 		"Usage: `{self.prefix}help` [Command]."
