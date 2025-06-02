@@ -12,11 +12,14 @@ async def dice_roll(client, message: discord.Message) -> None:
 		await message.channel.send("Please choose 2 numbers to roll the dice, e.g. `dice 1 6`", delete_after=client.del_after)
 		return
 	nums = list(map(int, nums))
-	num: int | bytes = random.randint(nums[0], nums[1])
+	if nums[0] > nums[1]:
+		num: int | str = random.randint(nums[1], nums[0])
+	else:
+		num = random.randint(nums[0], nums[1])
 	oversize = False
-	if math.log10(num) > 1900:
+	if math.log10(num) > 1960:
 		oversize = True
-		num = str(num).encode()
+		num = hex(num)
 
 	await message.channel.send(f"You rolled a {num}")
 	if oversize:
