@@ -11,7 +11,7 @@ import utils
 from dotenv import load_dotenv
 import analysis
 import time
-import help_cmd
+import help_stuff
 
 load_dotenv()
 
@@ -322,7 +322,7 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.startswith('help'):
-				await help_cmd.help_cmds(self, message)
+				await help_stuff.help_cmds(self, message)
 				return
 
 
