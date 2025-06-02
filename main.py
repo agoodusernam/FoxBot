@@ -11,6 +11,7 @@ import utils
 from dotenv import load_dotenv
 import analysis
 import time
+import help_cmd
 
 load_dotenv()
 
@@ -102,49 +103,7 @@ class MyClient(discord.Client):
 			return True
 		return False
 
-	async def help(self, message: discord.Message):
-		await message.delete()
-		if not self.check_global_cooldown():
-			await message.channel.send(f'Please wait {self.cooldowns["global"]["duration"]} seconds before using this command again.',
-									   delete_after = self.del_after)
-			return
 
-		if message.author.id in self.blacklist_ids['ids']:
-			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
-			return
-
-		if message.author.id in self.admin_ids:
-			await self.admin_help(message)
-
-
-
-		help_text = (
-			"**Available Commands:**\n"
-			f"`{self.prefix}ping` - Check the bot's latency\n"
-			f"`{self.prefix}nasa` - Get NASA's picture of the day\n"
-			f"`{self.prefix}dogpic` - Get a random dog picture\n"
-			f"`{self.prefix}catpic` - Get a random cat picture\n"
-			f"`{self.prefix}foxpic` - Get a random fox picture\n"
-			f"`{self.prefix}insult` - Get a random insult\n"
-			f"`{self.prefix}advice` - Get a random piece of advice\n"
-			f"`{self.prefix}help` - Show this help message"
-		)
-
-		await message.channel.send(help_text)
-
-	async def admin_help(self, message: discord.Message):
-		admin_help_text = (
-			"**Admin Commands:**\n"
-			f"`{self.prefix}rek <user_id>` - Absolutely rek a user\n"
-			f"`{self.prefix}analyse` - Analyse the server's messages ({self.cooldowns['analyse']['duration']}s "
-			f"cooldown)\n"
-			f"`{self.prefix}blacklist <user_id>` - Blacklist a user from using commands\n"
-			f"`{self.prefix}unblacklist <user_id>` - Remove a user from the blacklist\n"
-			f"NOTE: There is a global cooldown of {self.cooldowns['global']['duration']} seconds for all commands.\n"
-		)
-
-		dm = await message.author.create_dm()
-		await dm.send(admin_help_text)
 
 	async def rek(self, message: discord.Message):
 		if message.author.id not in self.admin_ids:
@@ -363,7 +322,7 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.startswith('help'):
-				await self.help(message)
+				await help_cmd.help_cmds(self, message)
 				return
 
 
