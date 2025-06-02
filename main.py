@@ -92,10 +92,9 @@ class MyClient(discord.Client):
 				self.blacklist_ids = json.load(f)
 
 		channel = self.get_channel(1379193761791213618)
-		for id in self.blacklist_ids['ids']:
-			await channel.set_permissions(get(self.get_all_members(), id=id), send_messages=False)
+		for u_id in self.blacklist_ids['ids']:
+			await channel.set_permissions(get(self.get_all_members(), id=u_id), send_messages=False)
 
-		channel = None
 
 	def check_global_cooldown(self) -> bool:
 		current_time = int(time.time())
@@ -237,7 +236,10 @@ class MyClient(discord.Client):
 		with open('blacklist_users.json', 'w') as f:
 			json.dump(self.blacklist_ids, f, indent = 4)
 
-		await message.channel.send(f'User with ID {u_id} has been blacklisted.', delete_after = self.del_after)
+		channel = self.get_channel(1379193761791213618)
+		await channel.set_permissions(get(self.get_all_members(), id=u_id), send_messages=False)
+
+		await message.channel.send(f'User <@{u_id}> has been blacklisted.', delete_after = self.del_after)
 
 	async def unblacklist_id(self, message: discord.Message):
 		await message.delete()
