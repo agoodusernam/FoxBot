@@ -5,7 +5,7 @@ import discord
 
 
 async def hardlockdown(client, message: discord.Message) -> None:
-	previous_perms: dict[int, dict[discord.Role | discord.Member | discord.Object, discord.PermissionOverwrite]] | None = None
+	previous_perms: dict[int, dict[discord.Role | discord.Member | discord.Object, discord.PermissionOverwrite]] = {}
 
 	for channel in message.guild.channels:
 		previous_perms[channel.id] = channel.overwrites
