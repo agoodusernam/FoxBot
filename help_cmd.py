@@ -28,6 +28,9 @@ async def help_cmds(client, message: discord.Message):
 			case "ping":
 				await message.channel.send(ping_help(client))
 				return
+			case "dice" | "roll":
+				await message.channel.send(dice_help(client))
+				return
 			case "help":
 				await message.channel.send(help_help(client))
 				return
