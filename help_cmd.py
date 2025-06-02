@@ -59,6 +59,7 @@ async def help_cmds(client, message: discord.Message):
 		f"`{client.prefix}foxpic` - Get a random fox picture\n"
 		f"`{client.prefix}insult` - Get a random insult\n"
 		f"`{client.prefix}advice` - Get a random piece of advice\n"
+		f"`{client.prefix}dice` - Roll a dice between 2 values (Alias: Roll)\n"
 		f"`{client.prefix}help` - Show this help message"
 	)
 
@@ -113,6 +114,15 @@ def advice_help(self):
 def ping_help(self):
 	help_text = f"`{self.prefix}ping` - Check the bot's latency.\n" + NO_ARGS_STR
 
+	return help_text
+
+def dice_help(self):
+	help_text = (
+		f"`{self.prefix}dice <min> <max>` - Roll a dice between two values.\n"
+		f"Usage: `{self.prefix}dice 1 6` to roll a dice between 1 and 6."
+		f"Usage: `{self.prefix}dice -8 14` to roll a dice between -8 and 14.\n"
+		f"Alias: `{self.prefix}roll <min> <max>`\n"
+	)
 	return help_text
 
 def help_help(self):

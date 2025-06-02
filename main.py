@@ -7,6 +7,7 @@ import json
 import datetime
 import db_stuff
 import api_stuff
+import fun_cmds
 import utils
 from dotenv import load_dotenv
 import analysis
@@ -301,49 +302,53 @@ class MyClient(discord.Client):
 				await message.delete()
 				return
 
-			if message.content.startswith('rek'):
+			if message.content.lower().startswith('rek'):
 				await self.rek(message)
 				return
 
-			if message.content.startswith('analyse'):
+			if message.content.lower().startswith('analyse'):
 				await self.analyse(message)
 				return
 
-			if message.content.startswith('blacklist'):
+			if message.content.lower().startswith('blacklist'):
 				await self.blacklist_id(message)
 				return
 
-			if message.content.startswith('unblacklist'):
+			if message.content.lower().startswith('unblacklist'):
 				await self.unblacklist_id(message)
 				return
 
-			if message.content.startswith('nasa'):
+			if message.content.lower().startswith('nasa'):
 				await self.nasa_pic(message)
 				return
 
-			if message.content.startswith('help'):
+			if message.content.lower().startswith('help'):
 				await help_cmd.help_cmds(self, message)
 				return
 
 
-			if message.content.startswith('dogpic'):
+			if message.content.lower().startswith('dogpic'):
 				await self.get_from_api(message, api_stuff.get_dog_pic, 'Fetching random dog picture...')
 				return
 
-			if message.content.startswith('catpic'):
+			if message.content.lower().startswith('catpic'):
 				await self.get_from_api(message, api_stuff.get_cat_pic, 'Fetching random cat picture...')
 				return
 
-			if message.content.startswith('foxpic'):
+			if message.content.lower().startswith('foxpic'):
 				await self.get_from_api(message, api_stuff.get_fox_pic, 'Fetching random fox picture...')
 				return
 
-			if message.content.startswith('insult'):
+			if message.content.lower().startswith('insult'):
 				await self.get_from_api(message, api_stuff.get_insult, None)
 				return
 
-			if message.content.startswith('advice'):
+			if message.content.lower().startswith('advice'):
 				await self.get_from_api(message, api_stuff.get_advice, 'Fetching random advice...')
+				return
+
+			if message.content.lower().startswith('dice') or message.content.startswith('roll'):
+				await fun_cmds.dice_roll(self, message)
 				return
 
 		if (message.author != self.user) and (
