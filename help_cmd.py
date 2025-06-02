@@ -122,7 +122,7 @@ def ping_help(self):
 def dice_help(self):
 	help_text = (
 		f"`{self.prefix}dice <min> <max>` - Roll a dice between two values.\n"
-		f"Usage: `{self.prefix}dice 1 6` to roll a dice between 1 and 6."
+		f"Usage: `{self.prefix}dice 1 6` to roll a dice between 1 and 6.\n"
 		f"Usage: `{self.prefix}dice -8 14` to roll a dice between -8 and 14.\n"
 		f"Alias: `{self.prefix}roll <min> <max>`\n"
 	)
