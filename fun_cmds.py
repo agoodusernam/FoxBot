@@ -1,5 +1,4 @@
 import math
-import base64
 
 import discord
 import random

@@ -5,6 +5,9 @@ from typing import Callable
 import discord
 import json
 import datetime
+
+from discord.utils import get
+
 import db_stuff
 import api_stuff
 import fun_cmds
@@ -87,6 +90,12 @@ class MyClient(discord.Client):
 		else:
 			with open('blacklist_users.json', 'r') as f:
 				self.blacklist_ids = json.load(f)
+
+		channel = self.get_channel(1379193761791213618)
+		for id in self.blacklist_ids['ids']:
+			await channel.set_permissions(get(self.get_all_members(), id=id), send_messages=False)
+
+		channel = None
 
 	def check_global_cooldown(self) -> bool:
 		current_time = int(time.time())
