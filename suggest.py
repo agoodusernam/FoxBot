@@ -19,9 +19,10 @@ async def send_suggestion(client: "discord.Client", message: discord.Message) ->
 		channel = client.get_channel(1379193761791213618)
 		thread = await channel.create_thread(
 				name = f"suggestion-{message.author.display_name}",
-				embed = embed,
+				content=f" ",
 		)
-		await thread.message.add_reaction("👍")
+		msg = await thread.send(embed=embed)
+		await msg.add_reaction("👍")
 
 		print(f"Suggestion sent: {suggestion}")
 	except discord.HTTPException as e:
