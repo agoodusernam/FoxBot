@@ -1,6 +1,6 @@
 import os.path
 import json
-from typing import Union, Generator
+from typing import Union
 
 import discord
 
@@ -30,11 +30,11 @@ def format_permissions(permissions: dict[discord.Role | discord.Member | discord
 
 
 async def hardlockdown(client, message: discord.Message) -> None:
-	previous_perms: dict[int, dict[discord.Role | discord.Member | discord.Object, discord.PermissionOverwrite]] = {}
+	previous_perms: dict[int, dict[str, dict[str, Union[bool, None]]]] = {}
 
 	for channel in message.guild.channels:
 		pass
-		# previous_perms[channel.id] = format_permissions(channel.overwrites)
+		previous_perms[channel.id] = format_permissions(channel.overwrites)
 
 	if os.path.exists("hardlockdown.txt"):
 		os.rename("hardlockdown.txt", "hardlockdown_old.txt")

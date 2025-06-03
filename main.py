@@ -45,14 +45,31 @@ class MyClient(discord.Client):
 		# Cooldown settings
 		self.cooldowns = {
 			'analyse': {
-				'duration':  60,
-				'last_time': int(time.time()) - 60
+				'duration':  300,
+				'last_time': int(time.time()) - 300
+
 			},
 			'global':  {
 				'duration':  5,
 				'last_time': int(time.time()) - 5
 			}
 		}
+
+		# Command names/aliases
+		self.command_aliases: dict[str, list[str]] = {
+			'nasa': ['nasa', 'nasa_pic', 'nasa_apod'],
+			'dogpic': ['dogpic', 'dog', 'dog_pic'],
+			'catpic': ['catpic', 'cat', 'cat_pic'],
+			'foxpic': ['foxpic', 'fox', 'fox_pic'],
+			'dice': ['dice', 'roll', 'dice_roll'],
+			'insult': ['insult', 'insults', 'insult_me'],
+			'advice': ['advice', 'advise', 'give_advice'],
+			'help' : ['help', 'commands', 'cmds', 'command_list'],
+			'ping' : ['ping', 'latency']
+		}
+
+
+
 
 		# UI settings
 		self.del_after = 3
@@ -62,7 +79,7 @@ class MyClient(discord.Client):
 		print(f'Logged in as {self.user} (ID: {self.user.id})')
 		print('------')
 		# Check for environment variables
-		# TOKEN is checked by discord.py and this won't run in the first place if it's not set.
+		# TOKEN is checked by discord.py, and this won't run in the first place if it's not set.
 		if not os.getenv("MONGO_URI"):
 			print('No MONGO_URI found in environment variables. Please set it to connect to a database.')
 			os.environ['LOCAL_SAVE'] = "True"
@@ -349,7 +366,7 @@ class MyClient(discord.Client):
 				await self.unblacklist_id(message)
 				return
 
-			if message.content.lower().startswith('nasa'):
+			if message.content.lower().split()[0] in self.command_aliases['nasa']:
 				await self.nasa_pic(message)
 				return
 
@@ -358,15 +375,15 @@ class MyClient(discord.Client):
 				return
 
 
-			if message.content.lower().startswith('dogpic'):
+			if message.content.lower().split()[0] in self.command_aliases['dogpic']:
 				await self.get_from_api(message, api_stuff.get_dog_pic, 'Fetching random dog picture...')
 				return
 
-			if message.content.lower().startswith('catpic'):
+			if message.content.lower().split()[0] in self.command_aliases['catpic']:
 				await self.get_from_api(message, api_stuff.get_cat_pic, 'Fetching random cat picture...')
 				return
 
-			if message.content.lower().startswith('foxpic'):
+			if message.content.lower().split()[0] in self.command_aliases['foxpic']:
 				await self.get_from_api(message, api_stuff.get_fox_pic, 'Fetching random fox picture...')
 				return
 
@@ -378,7 +395,7 @@ class MyClient(discord.Client):
 				await self.get_from_api(message, api_stuff.get_advice, 'Fetching random advice...')
 				return
 
-			if message.content.lower().startswith('dice') or message.content.startswith('roll'):
+			if message.content.lower().split()[0] in self.command_aliases['dice']:
 				await fun_cmds.dice_roll(self, message)
 				return
 

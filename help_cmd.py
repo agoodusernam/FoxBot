@@ -1,43 +1,51 @@
 import discord
 
-NO_ARGS_STR = "Usage: Just type the command without any arguments."
+NO_ARGS_STR = "Usage: Just type the command without any arguments.\n"
 
 async def help_cmds(client, message: discord.Message):
 	if not message.content.replace("help", "").strip() == "":
 		cmd = message.content.replace("help", "", 1).strip()
 
-		match cmd:
-			case "nasa":
-				await message.channel.send(nasa_help(client))
-				return
-			case "dogpic":
-				await message.channel.send(dogpic_help(client))
-				return
-			case "catpic":
-				await message.channel.send(catpic_help(client))
-				return
-			case "foxpic":
-				await message.channel.send(foxpic_help(client))
-				return
-			case "insult":
-				await message.channel.send(insult_help(client))
-				return
-			case "advice":
-				await message.channel.send(advice_help(client))
-				return
-			case "ping":
-				await message.channel.send(ping_help(client))
-				return
-			case "dice" | "roll":
-				await message.channel.send(dice_help(client))
-				return
-			case "help":
-				await message.channel.send(help_help(client))
-				return
-			case _:
-				await message.channel.send("Unknown command. Use `help` to see available commands.", delete_after=client.del_after)
-				await message.delete()
-				return
+		if cmd in client.command_aliases["nasa"]:
+			await message.channel.send(nasa_help(client))
+			return
+
+		elif cmd in client.command_aliases["dogpic"]:
+			await message.channel.send(dogpic_help(client))
+			return
+
+		elif cmd in client.command_aliases["catpic"]:
+			await message.channel.send(catpic_help(client))
+			return
+
+		elif cmd in client.command_aliases["foxpic"]:
+			await message.channel.send(foxpic_help(client))
+			return
+
+		elif cmd in client.command_aliases["insult"]:
+			await message.channel.send(insult_help(client))
+			return
+
+		elif cmd in client.command_aliases["advice"]:
+			await message.channel.send(advice_help(client))
+			return
+
+		elif cmd in client.command_aliases["ping"]:
+			await message.channel.send(ping_help(client))
+			return
+
+		elif cmd in client.command_aliases["dice"]:
+			await message.channel.send(dice_help(client))
+			return
+
+		elif cmd in client.command_aliases["help"]:
+			await message.channel.send(help_help(client))
+			return
+
+		else:
+			await message.channel.send("Unknown command. Use `help` to see available commands.", delete_after=client.del_after)
+			await message.delete()
+			return
 
 	await message.delete()
 	if not client.check_global_cooldown():
@@ -87,35 +95,57 @@ async def admin_help(self, message: discord.Message):
 
 def nasa_help(self):
 	help_text = f"`{self.prefix}nasa` - Get NASA's picture of the day.\n" + NO_ARGS_STR
+	cmd_aliases = self.command_aliases["nasa"]
+	for cmds in cmd_aliases:
+		help_text += f"Alias: `{self.prefix}{cmds}`\n"
+
 	return help_text
 
 def dogpic_help(self):
 	help_text = f"`{self.prefix}dogpic` - Get a random dog picture.\n" + NO_ARGS_STR
+	cmd_aliases = self.command_aliases["dogpic"]
+	for cmds in cmd_aliases:
+		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
 	return help_text
 
 def catpic_help(self):
 	help_text = f"`{self.prefix}catpic` - Get a random cat picture.\n" + NO_ARGS_STR
+	cmd_aliases = self.command_aliases["catpic"]
+	for cmds in cmd_aliases:
+		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
 	return help_text
 
 def foxpic_help(self):
 	help_text = f"`{self.prefix}foxpic` - Get a random fox picture.\n" + NO_ARGS_STR
+	cmd_aliases = self.command_aliases["foxpic"]
+	for cmds in cmd_aliases:
+		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
 	return help_text
 
 def insult_help(self):
 	help_text = f"`{self.prefix}insult` - Get a random insult.\n" + NO_ARGS_STR
+	cmd_aliases = self.command_aliases["insult"]
+	for cmds in cmd_aliases:
+		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
 	return help_text
 
 def advice_help(self):
 	help_text = f"`{self.prefix}advice` - Get a random piece of advice.\n" + NO_ARGS_STR
+	cmd_aliases = self.command_aliases["advice"]
+	for cmds in cmd_aliases:
+		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
 	return help_text
 
 def ping_help(self):
 	help_text = f"`{self.prefix}ping` - Check the bot's latency.\n" + NO_ARGS_STR
+	cmd_aliases = self.command_aliases["ping"]
+	for cmds in cmd_aliases:
+		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
 	return help_text
 
@@ -124,13 +154,19 @@ def dice_help(self):
 		f"`{self.prefix}dice <min> <max>` - Roll a dice between two values.\n"
 		f"Usage: `{self.prefix}dice 1 6` to roll a dice between 1 and 6.\n"
 		f"Usage: `{self.prefix}dice -8 14` to roll a dice between -8 and 14.\n"
-		f"Alias: `{self.prefix}roll <min> <max>`\n"
 	)
+	cmd_aliases = self.command_aliases["dice"]
+	for cmds in cmd_aliases:
+		help_text += f"Alias: `{self.prefix}{cmds}`\n"
+
 	return help_text
 
 def help_help(self):
 	help_text = (
 		f"`{self.prefix}help` - Show this help message.\n"
-		"Usage: `{self.prefix}help` [Command]."
+		f"Usage: `{self.prefix}help` <Command>."
 	)
+	cmd_aliases = self.command_aliases["help"]
+	for cmds in cmd_aliases:
+		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 	return help_text
