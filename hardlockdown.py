@@ -40,4 +40,4 @@ async def hardlockdown(client, message: discord.Message) -> None:
 		os.rename("hardlockdown.txt", "hardlockdown_old.txt")
 
 	with open('hardlockdown.txt', 'w') as file:
-		json.dump(None, file, indent=4)
+		json.dump(previous_perms, file, indent=4)
