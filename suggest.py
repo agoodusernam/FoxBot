@@ -14,15 +14,14 @@ async def send_suggestion(client: "discord.Client", message: discord.Message) ->
 		embed = discord.Embed(title="Suggestion", description=suggestion, color=discord.Color.blue())
 		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
 		embed.timestamp = message.created_at
-		message = discord.Message(embed=embed)
-
-		# Send the suggestion as a reply
 		channel: discord.TextChannel = client.get_channel(1379193761791213618)
-		thread = await channel.create_thread(
+		msg = await channel.send(embed=embed)
+		await msg.add_reaction("👍")
+
+		await msg.create_thread(
 				name = f"suggestion-{message.author.display_name}",
-				message = message,
 		)
-		await thread.last_message.add_reaction("👍")
+
 
 		print(f"Suggestion sent: {suggestion}")
 	except discord.HTTPException as e:
