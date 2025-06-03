@@ -1,5 +1,6 @@
 import asyncio
 import os
+from copy import deepcopy
 from typing import Callable
 
 import discord
@@ -17,6 +18,7 @@ import analysis
 import time
 import help_cmd
 import hardlockdown
+from utils import send_image
 
 load_dotenv()
 
@@ -32,7 +34,7 @@ class MyClient(discord.Client):
 		self.prefix = 'f!'
 		self.no_log = {
 			'user_ids':     [1329366814517628969, 1329366963805491251, 1329367238146396211,
-							 1329367408330145805, 235148962103951360, 1299640624848306177],
+			                 1329367408330145805, 235148962103951360, 1299640624848306177],
 			'channel_ids':  [],
 			'category_ids': [1329366612821938207]
 		}
@@ -41,7 +43,7 @@ class MyClient(discord.Client):
 		self.blacklist_ids = {"ids": []}
 
 		self.send_blacklist = {
-			'channel_ids': [],
+			'channel_ids':  [],
 			'category_ids': []
 		}
 
@@ -60,47 +62,30 @@ class MyClient(discord.Client):
 
 		# Command names/aliases
 		self.command_aliases: dict[str, list[str]] = {
-			'nasa': ['nasa', 'nasa_pic', 'nasa_apod'],
+			'nasa':   ['nasa', 'nasa_pic', 'nasa_apod'],
 			'dogpic': ['dogpic', 'dog', 'dog_pic'],
 			'catpic': ['catpic', 'cat', 'cat_pic'],
 			'foxpic': ['foxpic', 'fox', 'fox_pic'],
-			'dice': ['dice', 'roll', 'dice_roll'],
+			'dice':   ['dice', 'roll', 'dice_roll'],
 			'insult': ['insult', 'insults', 'insult_me'],
 			'advice': ['advice', 'advise', 'give_advice'],
-			'help' : ['help', 'commands', 'cmds', 'command_list'],
-			'ping' : ['ping', 'latency'],
-			'karma' : ['karmapic', 'karma', 'karma_pic'],
+			'help':   ['help', 'commands', 'cmds', 'command_list'],
+			'ping':   ['ping', 'latency'],
+			'karma':  ['karmapic', 'karma', 'karma_pic'],
 		}
 
-
-
+		self.nasa_data: dict[str, str] = {}
 
 		# UI settings
 		self.del_after = 3
 
 	async def on_ready(self):
+		utils.check_env_variables()
+		utils.clean_up_APOD()
 		await self.change_presence(activity = discord.CustomActivity(name = 'f!help'))
 		print(f'Logged in as {self.user} (ID: {self.user.id})')
 		print('------')
-		# Check for environment variables
-		# TOKEN is checked by discord.py, and this won't run in the first place if it's not set.
-		if not os.getenv("MONGO_URI"):
-			print('No MONGO_URI found in environment variables. Please set it to connect to a database.')
-			os.environ['LOCAL_SAVE'] = "True"
 
-		if not os.getenv("NASA_API_KEY"):
-			print('No NASA_API_KEY found in environment variables. Please set it to fetch NASA pictures.')
-
-		if not os.getenv("CAT_API_KEY"):
-			print('No CAT_API_KEY found in environment variables. Please set it to fetch cat pictures.')
-
-		if not os.getenv("LOCAL_SAVE"):
-			print('No LOCAL_SAVE found in environment variables. Defaulting to False.')
-			os.environ["LOCAL_SAVE"] = 'False'
-
-		if os.getenv("LOCAL_SAVE") not in ['True', 'False']:
-			print('Invalid LOCAL_SAVE value. Please set it to True or False. Defaulting to False.')
-			os.environ["LOCAL_SAVE"] = 'False'
 
 		if not os.path.isfile('blacklist_users.json'):
 			with open('blacklist_users.json', 'w') as f:
@@ -111,8 +96,7 @@ class MyClient(discord.Client):
 
 		channel = self.get_channel(1379193761791213618)
 		for u_id in self.blacklist_ids['ids']:
-			await channel.set_permissions(get(self.get_all_members(), id=u_id), send_messages=False)
-
+			await channel.set_permissions(get(self.get_all_members(), id = u_id), send_messages = False)
 
 	def check_global_cooldown(self) -> bool:
 		current_time = int(time.time())
@@ -122,7 +106,6 @@ class MyClient(discord.Client):
 			return True
 		return False
 
-
 	def check_analyse_cooldown(self) -> bool:
 		current_time = int(time.time())
 		complete = (current_time - self.cooldowns['analyse']['last_time']) >= self.cooldowns['analyse']['duration']
@@ -130,8 +113,6 @@ class MyClient(discord.Client):
 			self.cooldowns['analyse']['last_time'] = current_time
 			return True
 		return False
-
-
 
 	async def rek(self, message: discord.Message):
 		if message.author.id not in self.admin_ids:
@@ -146,7 +127,7 @@ class MyClient(discord.Client):
 			u_id = int(u_id)
 		except ValueError:
 			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-									   delete_after = self.del_after)
+			                           delete_after = self.del_after)
 			return
 
 		member = self.get_guild(message.guild.id).get_member(u_id)
@@ -166,8 +147,9 @@ class MyClient(discord.Client):
 			return
 
 		if not self.check_analyse_cooldown():
-			await message.channel.send(f'Please wait {self.cooldowns['analyse']['duration']} seconds before using this command again.',
-									   delete_after = self.del_after)
+			await message.channel.send(
+				f'Please wait {self.cooldowns['analyse']['duration']} seconds before using this command again.',
+				delete_after = self.del_after)
 			return
 
 		await message.channel.send('Analysing...')
@@ -175,11 +157,11 @@ class MyClient(discord.Client):
 			result = analysis.analyse()
 			if isinstance(result, dict):
 				top_3_active_users = sorted(result["active_users_lb"], key = lambda x: x["num_messages"],
-											reverse = True)[:3]
+				                            reverse = True)[:3]
 				msg = (f'{result["total_messages"]} total messages analysed\n'
-					   f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n'
-					   f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
-					   f'Top 3 most active users:\n')
+				       f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n'
+				       f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
+				       f'Top 3 most active users:\n')
 				for user in top_3_active_users:
 					msg += f'**{user["user"]}** with {user["num_messages"]} messages\n'
 
@@ -219,9 +201,7 @@ class MyClient(discord.Client):
 					continue
 		"""
 
-
-		# await message.channel.send('Hard lockdown initiated.', delete_after = self.del_after)
-
+	# await message.channel.send('Hard lockdown initiated.', delete_after = self.del_after)
 
 	async def blacklist_id(self, message: discord.Message):
 		await message.delete()
@@ -229,14 +209,13 @@ class MyClient(discord.Client):
 			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
 			return
 
-
 		u_id = utils.get_id_from_msg(message)
 
 		try:
 			u_id = int(u_id)
 		except ValueError:
 			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-									   delete_after = self.del_after)
+			                           delete_after = self.del_after)
 			return
 
 		if u_id in self.blacklist_ids:
@@ -255,7 +234,7 @@ class MyClient(discord.Client):
 			json.dump(self.blacklist_ids, f, indent = 4)
 
 		channel = self.get_channel(1379193761791213618)
-		await channel.set_permissions(get(self.get_all_members(), id=u_id), send_messages=False)
+		await channel.set_permissions(get(self.get_all_members(), id = u_id), send_messages = False)
 
 		await message.channel.send(f'User <@{u_id}> has been blacklisted.', delete_after = self.del_after)
 
@@ -271,7 +250,7 @@ class MyClient(discord.Client):
 			u_id = int(u_id)
 		except ValueError:
 			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-									   delete_after = self.del_after)
+			                           delete_after = self.del_after)
 			return
 
 		if u_id not in self.blacklist_ids['ids']:
@@ -291,8 +270,8 @@ class MyClient(discord.Client):
 
 		if not self.check_global_cooldown():
 			await message.channel.send(f'Please wait {self.cooldowns['global']['duration']} seconds before using this '
-									   f'command again.',
-									   delete_after = self.del_after)
+			                           f'command again.',
+			                           delete_after = self.del_after)
 			await message.delete()
 			return
 
@@ -304,24 +283,34 @@ class MyClient(discord.Client):
 		except Exception as e:
 			await message.channel.send(f'Error fetching data: {e}')
 
-
 	async def nasa_pic(self, message: discord.Message):
 
 		if not self.check_global_cooldown():
-			await message.channel.send(f'Please wait {self.cooldowns['global']['duration']} seconds before using this command again.',
-									   delete_after = self.del_after)
+			await message.channel.send(
+				f'Please wait {self.cooldowns['global']['duration']} seconds before using this command again.',
+				delete_after = self.del_after)
 			await message.delete()
 			return
 
-		await message.channel.send('Fetching NASA picture of the day...')
+		if os.path.exists(f"nasa/nasa_pic_{self.today}.jpg"):
+			await message.channel.send(f"**{self.nasa_data['title']}**\n")
+			await send_image(message, f"nasa/nasa_pic_{self.today}.jpg", f"nasa_pic_{self.today}.jpg")
+			await message.channel.send(f"**Explanation:** {self.nasa_data['explanation']}")
+			return
+
 		try:
-			nasa_data = await api_stuff.get_nasa_apod()
+			await message.channel.send('Fetching NASA picture of the day...')
+			nasa_data = api_stuff.get_nasa_apod()
+			self.nasa_data = deepcopy(nasa_data)
 			if 'hdurl' in nasa_data:
 				url = nasa_data['hdurl']
 			else:
 				url = nasa_data['url']
 
-			await message.channel.send(f"**{nasa_data['title']}**\n{url}\nBlame discord for not embedding it properly.")
+			utils.download_from_url(f"nasa/nasa_pic_{self.today}.jpg", url)
+
+			await message.channel.send(f"**{nasa_data['title']}**\n")
+			await send_image(message, f"nasa/nasa_pic_{self.today}.jpg", f"nasa_pic_{self.today}.jpg")
 			await message.channel.send(f"**Explanation:** {nasa_data['explanation']}")
 
 		except Exception as e:
@@ -354,8 +343,9 @@ class MyClient(discord.Client):
 
 			if message.content.lower().split()[0] in self.command_aliases['ping']:
 				if not self.check_global_cooldown():
-					await message.channel.send(f'Please wait {self.cooldowns["global"]["duration"]} seconds before using this command again.',
-											   delete_after = self.del_after)
+					await message.channel.send(
+						f'Please wait {self.cooldowns["global"]["duration"]} seconds before using this command again.',
+						delete_after = self.del_after)
 					await message.delete()
 					return
 				await message.channel.send(f'{self.latency * 1000:.2f}ms', delete_after = self.del_after)
@@ -385,7 +375,6 @@ class MyClient(discord.Client):
 			if message.content.lower().split()[0] in self.command_aliases['help']:
 				await help_cmd.help_cmds(self, message)
 				return
-
 
 			if message.content.lower().split()[0] in self.command_aliases['dogpic']:
 				await self.get_from_api(message, api_stuff.get_dog_pic, 'Fetching random dog picture...')
@@ -417,7 +406,7 @@ class MyClient(discord.Client):
 					await message.channel.send('No karma pictures found.')
 					return
 				file_path, file_name = karma_pic
-				await utils.send_file(message, file_path, file_name)
+				await utils.send_image(message, file_path, file_name)
 				return
 
 		if (message.author != self.user) and (
@@ -447,7 +436,7 @@ class MyClient(discord.Client):
 				"reply_to":           reply,
 				"HasAttachments":     has_attachment,
 				"timestamp":          message.created_at.isoformat(),
-				"id": 			      str(message.id),
+				"id":                 str(message.id),
 				"channel":            str(message.channel)
 			}
 

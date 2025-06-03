@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
-async def get_nasa_apod() -> dict:
+def get_nasa_apod() -> dict[str, str]:
 	api_key = os.getenv("NASA_API_KEY")
 
 	url = f"https://api.nasa.gov/planetary/apod?api_key={api_key}"
