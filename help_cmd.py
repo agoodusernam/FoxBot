@@ -72,9 +72,9 @@ async def help_cmds(client, message: discord.Message):
 	help_text = (
 		"**Available Commands:**\n"
 		f"`{client.prefix}ping` - Check the bot's latency\n"
-		f"`{client.prefix}dogpic` - Get a random dog picture\n"
-		f"`{client.prefix}catpic` - Get a random cat picture\n"
-		f"`{client.prefix}foxpic` - Get a random fox picture\n"
+		f"`{client.prefix}dog` - Get a random dog picture\n"
+		f"`{client.prefix}cat` - Get a random cat picture\n"
+		f"`{client.prefix}fox` - Get a random fox picture\n"
 		f"`{client.prefix}karma` - Get a random karma picture\n"
 		f"`{client.prefix}nasa` - Get NASA's picture of the day\n"
 		f"`{client.prefix}insult` - Get a random insult\n"
