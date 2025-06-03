@@ -46,6 +46,10 @@ async def help_cmds(client, message: discord.Message):
 			await message.channel.send(karma_help(client))
 			return
 
+		elif cmd in client.command_aliases["joke"]:
+			await message.channel.send(joke_help(client))
+			return
+
 		else:
 			await message.channel.send("Unknown command. Use `help` to see available commands.", delete_after=client.del_after)
 			await message.delete()
@@ -168,6 +172,14 @@ def dice_help(self):
 		f"Usage: `{self.prefix}dice -8 14` to roll a dice between -8 and 14.\n"
 	)
 	cmd_aliases = self.command_aliases["dice"]
+	for cmds in cmd_aliases:
+		help_text += f"Alias: `{self.prefix}{cmds}`\n"
+
+	return help_text
+
+def joke_help(self):
+	help_text = f"`{self.prefix}joke` - Get a random joke.\n" + NO_ARGS_STR
+	cmd_aliases = self.command_aliases["joke"]
 	for cmds in cmd_aliases:
 		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 

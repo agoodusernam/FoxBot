@@ -333,6 +333,9 @@ class MyClient(discord.Client):
 
 		if message.content.startswith(self.prefix):
 			message.content = message.content.replace(self.prefix, '')
+			if message.channel.id == 1379193761791213618:
+				await message.add_reaction("👍")
+
 			if message.author.id in self.blacklist_ids['ids']:
 				await message.delete()
 				await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
