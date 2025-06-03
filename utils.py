@@ -102,3 +102,5 @@ def check_env_variables():
 	if os.getenv("LOCAL_SAVE") not in ['True', 'False']:
 		print('Invalid LOCAL_SAVE value. Please set it to True or False. Defaulting to False.')
 		os.environ["LOCAL_SAVE"] = 'False'
+
+

@@ -12,6 +12,7 @@ from discord.utils import get
 import db_stuff
 import api_stuff
 import fun_cmds
+import suggest
 import utils
 from dotenv import load_dotenv
 import analysis
@@ -72,7 +73,8 @@ class MyClient(discord.Client):
 			'help':   ['help', 'commands', 'cmds', 'command_list'],
 			'ping':   ['ping', 'latency'],
 			'karma':  ['karmapic', 'karma', 'karma_pic'],
-			'joke':   ['joke', 'jokes', 'tell_joke']
+			'joke':   ['joke', 'jokes'],
+			'suggest': ['suggest', 'suggestion']
 		}
 
 		self.nasa_data: dict[str, str] = {}
@@ -321,9 +323,6 @@ class MyClient(discord.Client):
 		if isinstance(message.channel, discord.DMChannel):
 			return
 
-		if message.channel.id == 1379193761791213618:
-			await message.add_reaction("👍")
-
 		if message.content.startswith('​'):  # Don't log messages that start with a zero-width space
 			print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 			return
@@ -408,6 +407,11 @@ class MyClient(discord.Client):
 			if message.content.lower().split()[0] in self.command_aliases['dice']:
 				await fun_cmds.dice_roll(self.del_after, message)
 				return
+
+			if message.content.lower().startswith('suggest'):
+				await suggest.send_suggestion(self, message)
+				return
+
 
 			if message.content.lower().split()[0] in self.command_aliases['karma']:
 				karma_pic = fun_cmds.get_karma_pic()
