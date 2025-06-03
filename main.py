@@ -321,6 +321,9 @@ class MyClient(discord.Client):
 		if isinstance(message.channel, discord.DMChannel):
 			return
 
+		if message.channel.id == 1379193761791213618:
+			await message.add_reaction("👍")
+
 		if message.content.startswith('​'):  # Don't log messages that start with a zero-width space
 			print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 			return
@@ -333,8 +336,6 @@ class MyClient(discord.Client):
 
 		if message.content.startswith(self.prefix):
 			message.content = message.content.replace(self.prefix, '')
-			if message.channel.id == 1379193761791213618:
-				await message.add_reaction("👍")
 
 			if message.author.id in self.blacklist_ids['ids']:
 				await message.delete()
