@@ -1,7 +1,8 @@
 import math
+import os
+import random
 
 import discord
-import random
 
 
 async def dice_roll(client, message: discord.Message) -> None:
@@ -27,3 +28,14 @@ async def dice_roll(client, message: discord.Message) -> None:
 	if oversize:
 		await message.channel.send("The number is too large to display in decimal format, so it has been converted to hex.")
 	return
+
+def get_karma_pic() -> tuple[str, str] | None:
+	karma_pics = [f for f in os.listdir('data/karma_pics') if os.path.isfile(os.path.join('data/karma_pics', f))]
+	if not karma_pics:
+		return None
+
+	# Choose a random file
+	chosen_pic = random.choice(karma_pics)
+	file_path = f"data/karma_pics/{chosen_pic}"
+
+	return file_path, chosen_pic

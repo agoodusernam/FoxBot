@@ -42,6 +42,10 @@ async def help_cmds(client, message: discord.Message):
 			await message.channel.send(help_help(client))
 			return
 
+		elif cmd in client.command_aliases["karma"]:
+			await message.channel.send(karma_help(client))
+			return
+
 		else:
 			await message.channel.send("Unknown command. Use `help` to see available commands.", delete_after=client.del_after)
 			await message.delete()
@@ -102,7 +106,7 @@ def nasa_help(self):
 	return help_text
 
 def dogpic_help(self):
-	help_text = f"`{self.prefix}dogpic` - Get a random dog picture.\n" + NO_ARGS_STR
+	help_text = f"`{self.prefix}dog` - Get a random dog picture.\n" + NO_ARGS_STR
 	cmd_aliases = self.command_aliases["dogpic"]
 	for cmds in cmd_aliases:
 		help_text += f"Alias: `{self.prefix}{cmds}`\n"
@@ -110,7 +114,7 @@ def dogpic_help(self):
 	return help_text
 
 def catpic_help(self):
-	help_text = f"`{self.prefix}catpic` - Get a random cat picture.\n" + NO_ARGS_STR
+	help_text = f"`{self.prefix}cat` - Get a random cat picture.\n" + NO_ARGS_STR
 	cmd_aliases = self.command_aliases["catpic"]
 	for cmds in cmd_aliases:
 		help_text += f"Alias: `{self.prefix}{cmds}`\n"
@@ -118,7 +122,7 @@ def catpic_help(self):
 	return help_text
 
 def foxpic_help(self):
-	help_text = f"`{self.prefix}foxpic` - Get a random fox picture.\n" + NO_ARGS_STR
+	help_text = f"`{self.prefix}fox` - Get a random fox picture.\n" + NO_ARGS_STR
 	cmd_aliases = self.command_aliases["foxpic"]
 	for cmds in cmd_aliases:
 		help_text += f"Alias: `{self.prefix}{cmds}`\n"
@@ -144,6 +148,14 @@ def advice_help(self):
 def ping_help(self):
 	help_text = f"`{self.prefix}ping` - Check the bot's latency.\n" + NO_ARGS_STR
 	cmd_aliases = self.command_aliases["ping"]
+	for cmds in cmd_aliases:
+		help_text += f"Alias: `{self.prefix}{cmds}`\n"
+
+	return help_text
+
+def karma_help(self):
+	help_text = f"`{self.prefix}karma` - Get a random karma picture.\n"	+ NO_ARGS_STR
+	cmd_aliases = self.command_aliases["karma"]
 	for cmds in cmd_aliases:
 		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
