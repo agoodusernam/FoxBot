@@ -72,6 +72,7 @@ class MyClient(discord.Client):
 			'help':   ['help', 'commands', 'cmds', 'command_list'],
 			'ping':   ['ping', 'latency'],
 			'karma':  ['karmapic', 'karma', 'karma_pic'],
+			'joke':   ['joke', 'jokes', 'tell_joke']
 		}
 
 		self.nasa_data: dict[str, str] = {}
@@ -278,7 +279,7 @@ class MyClient(discord.Client):
 		if success_msg is not None:
 			await message.channel.send(success_msg)
 		try:
-			data = await api_func()
+			data = api_func()
 			await message.channel.send(data)
 		except Exception as e:
 			await message.channel.send(f'Error fetching data: {e}')
@@ -396,8 +397,12 @@ class MyClient(discord.Client):
 				await self.get_from_api(message, api_stuff.get_advice, 'Fetching random advice...')
 				return
 
+			if message.content.lower().split()[0] in self.command_aliases['joke']:
+				await self.get_from_api(message, api_stuff.get_joke, 'Fetching random joke...')
+				return
+
 			if message.content.lower().split()[0] in self.command_aliases['dice']:
-				await fun_cmds.dice_roll(self, message)
+				await fun_cmds.dice_roll(self.del_after, message)
 				return
 
 			if message.content.lower().split()[0] in self.command_aliases['karma']:
@@ -417,10 +422,6 @@ class MyClient(discord.Client):
 			has_attachment = False
 			if message.attachments:
 				has_attachment = True
-				if os.environ.get("LOCAL_SAVE") == 'True':
-					await utils.save_attachments(message)
-				for attachment in message.attachments:
-					await db_stuff.send_attachment(message, attachment)
 
 			if message.reference is None:
 				reply = None
@@ -445,6 +446,11 @@ class MyClient(discord.Client):
 					file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
 
 			print(f'Message from {message.author.global_name} [#{message.channel}]: {message.content}')
+			if has_attachment:
+				if os.environ.get("LOCAL_SAVE") == 'True':
+					await utils.save_attachments(message)
+				for attachment in message.attachments:
+					await db_stuff.send_attachment(message, attachment)
 
 			asyncio.create_task(db_stuff.send_message(json_data))
 			self.today = utils.formatted_time()

@@ -14,7 +14,7 @@ def get_nasa_apod() -> dict[str, str]:
 
 	return response.json()
 
-async def get_dog_pic() -> str:
+def get_dog_pic() -> str:
 	url = "https://dog.ceo/api/breeds/image/random"
 	response = requests.get(url)
 
@@ -27,7 +27,7 @@ async def get_dog_pic() -> str:
 
 	return data['message']
 
-async def get_fox_pic() -> str:
+def get_fox_pic() -> str:
 	url = "https://randomfox.ca/floof/"
 	response = requests.get(url)
 
@@ -40,7 +40,7 @@ async def get_fox_pic() -> str:
 
 	return data['image']
 
-async def get_cat_pic() -> str:
+def get_cat_pic() -> str:
 	url = "https://api.thecatapi.com/v1/images/search"
 
 	header = {'x-api-key':os.getenv("CAT_API_KEY"), 'Content-Type': 'application/json'}
@@ -55,7 +55,7 @@ async def get_cat_pic() -> str:
 
 	return data[0]['url']
 
-async def get_insult() -> str:
+def get_insult() -> str:
 	url = "https://evilinsult.com/generate_insult.php?lang=en&type=json"
 	response = requests.get(url)
 
@@ -68,7 +68,7 @@ async def get_insult() -> str:
 
 	return data['insult']
 
-async def get_advice() -> str:
+def get_advice() -> str:
 	url = "https://api.adviceslip.com/advice"
 	response = requests.get(url)
 
@@ -80,3 +80,24 @@ async def get_advice() -> str:
 		raise ValueError("Unexpected response format from advice API")
 
 	return data['slip']['advice']
+
+def get_joke() -> str:
+	url = "https://v2.jokeapi.dev/joke/Any?blacklistFlags=racist,sexist"
+	response = requests.get(url)
+
+	if response.status_code != 200:
+		raise Exception(f"Failed to fetch joke: {response.status_code}")
+
+	data = response.json()
+	if 'joke' not in data and ('setup' not in data or 'delivery' not in data):
+		raise ValueError("Unexpected response format from joke API")
+
+	if 'joke' in data:
+		# Single joke format
+		return data['joke']
+
+	# Two-part joke format
+	if 'setup' in data and 'delivery' in data:
+		return f"{data['setup']}\n{data['delivery']}"
+	else:
+		raise ValueError("Unexpected joke format from joke API")
