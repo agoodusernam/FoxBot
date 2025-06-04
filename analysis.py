@@ -100,9 +100,10 @@ async def format_analysis(admin_ids: list[int], cooldown_duration: int, cooldown
 			delete_after = del_after)
 		return
 
-	await message.channel.send('Analysing...')
+	new_msg = await message.channel.send('Analysing...')
 	try:
 		result = analyse()
+		await new_msg.delete()
 		if isinstance(result, dict):
 			top_5_active_users = sorted(result["active_users_lb"], key = lambda x: x["num_messages"],
 										reverse = True)[:5]

@@ -1,13 +1,6 @@
 import discord
 
 async def send_suggestion(client: "discord.Client", message: discord.Message) -> None:
-	"""
-	Sends a suggestion message to the channel.
-
-	Args:
-		message (discord.Message): The original message.
-		client (discord.Client): A Discord client instance.
-	"""
 	await message.delete()
 	suggestion = message.content.replace('suggest', '').strip()
 	try:

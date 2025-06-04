@@ -205,7 +205,7 @@ class MyClient(discord.Client):
 
 		await message.channel.send(f'User with ID {u_id} has been unblacklisted.', delete_after = self.del_after)
 
-	async def get_from_api(self, message: discord.Message, api_func: Callable, success_msg: str | None):
+	async def get_from_api(self, message: discord.Message, api_func: Callable, success_msg: str | None = None):
 
 		if not self.check_global_cooldown():
 			await message.channel.send(f'Please wait {self.cooldowns['global']['duration']} seconds before using this '
@@ -215,7 +215,7 @@ class MyClient(discord.Client):
 			return
 
 		if success_msg is not None:
-			await message.channel.send(success_msg)
+			new_msg = await message.channel.send(success_msg)
 		try:
 			data = api_func()
 			await message.channel.send(data)
@@ -296,7 +296,7 @@ class MyClient(discord.Client):
 				await admin_cmds.rek(self.admin_ids, self.del_after, message, self.get_guild(message.guild.id))
 				return
 
-			if message.content.lower().startswith('analyse'):
+			if message.content.lower().split()[0] in self.command_aliases['analyse']:
 				await analysis.format_analysis(self.admin_ids, self.cooldowns['analyse']['duration'],
 											   self.check_analyse_cooldown(), self.del_after, message)
 				return
@@ -318,27 +318,27 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.lower().split()[0] in self.command_aliases['dogpic']:
-				await self.get_from_api(message, api_stuff.get_dog_pic, 'Fetching random dog picture...')
+				await self.get_from_api(message, api_stuff.get_dog_pic)
 				return
 
 			if message.content.lower().split()[0] in self.command_aliases['catpic']:
-				await self.get_from_api(message, api_stuff.get_cat_pic, 'Fetching random cat picture...')
+				await self.get_from_api(message, api_stuff.get_cat_pic)
 				return
 
 			if message.content.lower().split()[0] in self.command_aliases['foxpic']:
-				await self.get_from_api(message, api_stuff.get_fox_pic, 'Fetching random fox picture...')
+				await self.get_from_api(message, api_stuff.get_fox_pic)
 				return
 
 			if message.content.lower().startswith('insult'):
-				await self.get_from_api(message, api_stuff.get_insult, None)
+				await self.get_from_api(message, api_stuff.get_insult)
 				return
 
 			if message.content.lower().startswith('advice'):
-				await self.get_from_api(message, api_stuff.get_advice, 'Fetching random advice...')
+				await self.get_from_api(message, api_stuff.get_advice)
 				return
 
 			if message.content.lower().split()[0] in self.command_aliases['joke']:
-				await self.get_from_api(message, api_stuff.get_joke, 'Fetching random joke...')
+				await self.get_from_api(message, api_stuff.get_joke)
 				return
 
 			if message.content.lower().split()[0] in self.command_aliases['dice']:
