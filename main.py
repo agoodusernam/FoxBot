@@ -168,15 +168,15 @@ class MyClient(discord.Client):
 				msg = (f'{result["total_messages"]} total messages analysed\n'
 				       f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n'
 				       f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
+				       f'Total users: {result["total_users"]}\n'
 				       f'Top 5 most active users:\n')
-				for user in top_5_active_users:
-					msg += f'**{user["user"]}** with {user["num_messages"]} messages\n'
-
-				msg += f'Total users: {result["total_users"]}\n'
+				for i, user in enumerate(top_5_active_users):
+					msg += f'**{i}. {user["user"]}** with {user["num_messages"]} messages\n'
+				msg += '\n'
 
 				msg += f'Top 5 most active channels:\n'
-				for channel in top_5_active_channels:
-					msg += f'**{channel["channel"]}** with {channel["num_messages"]} messages\n'
+				for i, channel in enumerate(top_5_active_channels):
+					msg += f'**{i}. {channel["channel"]}** with {channel["num_messages"]} messages\n'
 
 				await message.channel.send(msg)
 			elif isinstance(result, Exception):
