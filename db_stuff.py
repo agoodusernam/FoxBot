@@ -105,7 +105,7 @@ def get_attachment(file_id: str | ObjectId) -> dict | None:
 		grid_out = fs.get(file_id)
 		return {
 			"filename":     grid_out.filename,
-			"content_type": grid_out.metadata.get("content_type"),
+			"content_type": grid_out.metadata.get("content_type"),  # type: ignore
 			"data":         grid_out.read(),
 			"metadata":     grid_out.metadata
 		}
