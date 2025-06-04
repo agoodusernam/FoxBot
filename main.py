@@ -159,23 +159,23 @@ class MyClient(discord.Client):
 		try:
 			result = analysis.analyse()
 			if isinstance(result, dict):
-				top_3_active_users = sorted(result["active_users_lb"], key = lambda x: x["num_messages"],
-				                            reverse = True)[:3]
+				top_5_active_users = sorted(result["active_users_lb"], key = lambda x: x["num_messages"],
+				                            reverse = True)[:5]
 
-				top_3_active_channels = sorted(result["active_channels_lb"], key = lambda x: x["num_messages"],
-				                               reverse = True)[:3]
+				top_5_active_channels = sorted(result["active_channels_lb"], key = lambda x: x["num_messages"],
+				                               reverse = True)[:5]
 
 				msg = (f'{result["total_messages"]} total messages analysed\n'
 				       f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n'
 				       f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
-				       f'Top 3 most active users:\n')
-				for user in top_3_active_users:
+				       f'Top 5 most active users:\n')
+				for user in top_5_active_users:
 					msg += f'**{user["user"]}** with {user["num_messages"]} messages\n'
 
 				msg += f'Total users: {result["total_users"]}\n'
 
-				msg += f'Top 3 most active channels:\n'
-				for channel in top_3_active_channels:
+				msg += f'Top 5 most active channels:\n'
+				for channel in top_5_active_channels:
 					msg += f'**{channel["channel"]}** with {channel["num_messages"]} messages\n'
 
 				await message.channel.send(msg)
