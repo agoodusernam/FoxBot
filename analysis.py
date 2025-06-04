@@ -61,6 +61,16 @@ def analyse() -> dict | Exception | str | None:
 
 			most_active_users = [{"user": user, "num_messages": count} for user, count in user_message_count.items()]
 
+			most_active_channels = {}
+			for message in valid_messages:
+				channel = message['channel']
+				if channel not in most_active_channels:
+					most_active_channels[channel] = 0
+				most_active_channels[channel] += 1
+
+			most_active_channels = [{"channel": channel, "num_messages": count} for channel, count in
+			                        most_active_channels.items()]
+
 			return {
 				"total_messages":         len(valid_messages),
 				"most_common_word":       most_common_word,
@@ -68,6 +78,8 @@ def analyse() -> dict | Exception | str | None:
 				"total_unique_words":     len(unique_words),
 				"average_length":         average_length,
 				"active_users_lb":        most_active_users,
+				"active_channels_lb":     most_active_channels,
+				"total_users":            len(user_message_count),
 			}
 
 		else:
