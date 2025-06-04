@@ -1,7 +1,7 @@
 import asyncio
 import os
 from copy import deepcopy
-from typing import Callable
+from typing import Callable, Any
 
 import discord
 import json
@@ -9,6 +9,7 @@ import datetime
 
 from discord.utils import get
 
+import admin_cmds
 import db_stuff
 import api_stuff
 import fun_cmds
@@ -117,78 +118,6 @@ class MyClient(discord.Client):
 			return True
 		return False
 
-	async def rek(self, message: discord.Message):
-		if message.author.id not in self.admin_ids:
-			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
-			await message.delete()
-			return
-		await message.delete()
-
-		u_id = utils.get_id_from_msg(message)
-
-		try:
-			u_id = int(u_id)
-		except ValueError:
-			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-			                           delete_after = self.del_after)
-			return
-
-		member = self.get_guild(message.guild.id).get_member(u_id)
-
-		if member is None:
-			await message.channel.send(f'User with ID {u_id} not found.', delete_after = self.del_after)
-			return
-
-		await member.timeout(datetime.timedelta(days = 28), reason = 'get rekt nerd')
-		await message.channel.send(f'<@{u_id}> has been rekt.', delete_after = self.del_after)
-		return
-
-	async def analyse(self, message: discord.Message):
-		await message.delete()
-		if message.author.id not in self.admin_ids:
-			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
-			return
-
-		if not self.check_analyse_cooldown():
-			await message.channel.send(
-				f'Please wait {self.cooldowns['analyse']['duration']} seconds before using this command again.',
-				delete_after = self.del_after)
-			return
-
-		await message.channel.send('Analysing...')
-		try:
-			result = analysis.analyse()
-			if isinstance(result, dict):
-				top_5_active_users = sorted(result["active_users_lb"], key = lambda x: x["num_messages"],
-				                            reverse = True)[:5]
-
-				top_5_active_channels = sorted(result["active_channels_lb"], key = lambda x: x["num_messages"],
-				                               reverse = True)[:5]
-
-				msg = (f'{result["total_messages"]} total messages analysed\n'
-				       f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n'
-				       f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
-				       f'Total users: {result["total_users"]}\n'
-				       f'Top 5 most active users:\n')
-				for i, user in enumerate(top_5_active_users):
-					msg += f'**{i}. {user["user"]}** with {user["num_messages"]} messages\n'
-				msg += '\n'
-
-				msg += f'Top 5 most active channels:\n'
-				for i, channel in enumerate(top_5_active_channels):
-					msg += f'**{i}. {channel["channel"]}** with {channel["num_messages"]} messages\n'
-
-				await message.channel.send(msg)
-			elif isinstance(result, Exception):
-				await message.channel.send(f'Error during analysis: {result}')
-				await message.channel.send(f'Contact HardlineMouse16 about this.')
-			elif isinstance(result, str):
-				await message.channel.send(result)
-
-			else:
-				print("No valid messages found for analysis.")
-		except Exception as e:
-			print(f"Error during analysis: {e}")
 
 	async def hard_lockdown(self, message: discord.Message):
 		await message.delete()
@@ -367,11 +296,12 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.lower().startswith('rek'):
-				await self.rek(message)
+				await admin_cmds.rek(self.admin_ids, self.del_after, message, self.get_guild(message.guild.id))
 				return
 
 			if message.content.lower().startswith('analyse'):
-				await self.analyse(message)
+				await analysis.format_analysis(self.admin_ids, self.cooldowns['analyse']['duration'],
+				                               self.check_analyse_cooldown(), self.del_after, message)
 				return
 
 			if message.content.lower().startswith('blacklist'):

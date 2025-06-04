@@ -1,17 +1,15 @@
+import discord
+
 import db_stuff
 
 
 def check_valid_syntax(message: dict) -> bool:
-	if 'author' not in message or 'author_id' not in message or 'author_global_name' not in message:
-		return False
-
-	if 'content' not in message or 'reply_to' not in message or 'HasAttachments' not in message:
-		return False
-
-	if 'timestamp' not in message or 'channel' not in message:
-		return False
-
-	return True
+	required_keys = {
+		'author', 'author_id', 'author_global_name',
+		'content', 'reply_to', 'HasAttachments',
+		'timestamp', 'channel'
+	}
+	return all(key in message for key in required_keys)
 
 
 def analyse() -> dict | Exception | str | None:
@@ -69,7 +67,7 @@ def analyse() -> dict | Exception | str | None:
 				most_active_channels[channel] += 1
 
 			most_active_channels = [{"channel": channel, "num_messages": count} for channel, count in
-			                        most_active_channels.items()]
+									most_active_channels.items()]
 
 			return {
 				"total_messages":         len(valid_messages),
@@ -88,3 +86,50 @@ def analyse() -> dict | Exception | str | None:
 	except Exception as e:
 		print(f"An error occurred: {e}")
 		return e
+
+async def format_analysis(admin_ids: list[int], cooldown_duration: int, cooldown: bool, del_after: int,
+						  message: discord.Message):
+	await message.delete()
+	if message.author.id not in admin_ids:
+		await message.channel.send('You are not allowed to use this command.', delete_after = del_after)
+		return
+
+	if not cooldown:
+		await message.channel.send(
+			f'Please wait {cooldown_duration} seconds before using this command again.',
+			delete_after = del_after)
+		return
+
+	await message.channel.send('Analysing...')
+	try:
+		result = analyse()
+		if isinstance(result, dict):
+			top_5_active_users = sorted(result["active_users_lb"], key = lambda x: x["num_messages"],
+										reverse = True)[:5]
+
+			top_5_active_channels = sorted(result["active_channels_lb"], key = lambda x: x["num_messages"],
+										   reverse = True)[:5]
+
+			msg = (f'{result["total_messages"]} total messages analysed\n'
+				   f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n'
+				   f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
+				   f'Total users: {result["total_users"]}\n'
+				   f'Top 5 most active users:\n')
+			for i, user in enumerate(top_5_active_users):
+				msg += f'**{i}. {user["user"]}** {user["num_messages"]} messages\n'
+			msg += '\n'
+
+			msg += f'Top 5 most active channels:\n'
+			for i, channel in enumerate(top_5_active_channels):
+				msg += f'**{i}. {channel["channel"]}** {channel["num_messages"]} messages\n'
+
+			await message.channel.send(msg)
+		elif isinstance(result, Exception):
+			await message.channel.send(f'Error during analysis: {result}')
+		elif isinstance(result, str):
+			await message.channel.send(result)
+
+		else:
+			print("No valid messages found for analysis.")
+	except Exception as e:
+		print(f"Error during analysis: {e}")
