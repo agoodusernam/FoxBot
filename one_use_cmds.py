@@ -5,7 +5,7 @@ import discord
 import db_stuff
 
 
-async def upload_all_history(channel: discord.TextChannel) -> None:
+async def upload_all_history(channel: discord.TextChannel, author: discord.Member) -> None:
 
 	print("Starting to download all messages from channel:", channel.name)
 	messages = [message async for message in channel.history(limit=None)]
@@ -41,3 +41,6 @@ async def upload_all_history(channel: discord.TextChannel) -> None:
 			bulk_data = []
 			print("Bulk uploaded 100 messages")
 			print(f"{len(messages) - i} messages remaining")
+
+	dm = await author.create_dm()
+	await dm.send(f"Finished uploading all messages from channel: {channel.name}")

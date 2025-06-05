@@ -315,7 +315,7 @@ class MyClient(discord.Client):
 					return
 
 				db_stuff.del_channel_from_db(channel)
-				await one_use_cmds.upload_all_history(channel)
+				await one_use_cmds.upload_all_history(channel, message.author)
 				return
 
 			if message.content.lower().split()[0] in self.command_aliases['nasa']:
