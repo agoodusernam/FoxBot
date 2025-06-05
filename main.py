@@ -302,12 +302,21 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.lower().startswith('uploadallhistory'):
-				if message.author.id not in self.admin_ids:
+				if message.author.id != 542798185857286144:
+					await message.delete()
 					await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
 					return
 				await message.delete()
-				db_stuff.del_channel_from_db(message.channel)
-				await one_use_cmds.upload_all_history(message)
+
+				try:
+					channel = message.guild.get_channel(int(message.content.split()[1]))
+				except (IndexError, ValueError):
+					await message.channel.send('Please provide a valid channel ID.', delete_after=self.del_after)
+					return
+
+				db_stuff.del_channel_from_db(channel)
+				await one_use_cmds.upload_all_history(channel)
+				return
 
 			if message.content.lower().split()[0] in self.command_aliases['nasa']:
 				await self.nasa_pic(message)
