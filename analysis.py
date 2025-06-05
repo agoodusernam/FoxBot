@@ -87,16 +87,16 @@ def analyse() -> dict | Exception | str | None:
 		print(f"An error occurred: {e}")
 		return e
 
-async def format_analysis(admin_ids: list[int], cooldown_duration: int, cooldown: bool, del_after: int,
+async def format_analysis(admin_ids: list[int], cooldown: bool | int, del_after: int,
 						  message: discord.Message):
 	await message.delete()
 	if message.author.id not in admin_ids:
 		await message.channel.send('You are not allowed to use this command.', delete_after = del_after)
 		return
 
-	if not cooldown:
+	if type(cooldown) == int:
 		await message.channel.send(
-			f'Please wait {cooldown_duration} seconds before using this command again.',
+			f'Please wait {cooldown} seconds before using this command again.',
 			delete_after = del_after)
 		return
 
@@ -116,12 +116,12 @@ async def format_analysis(admin_ids: list[int], cooldown_duration: int, cooldown
 				   f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
 				   f'Total users: {result["total_users"]}\n'
 				   f'Top 5 most active users:\n')
-			for i, user in enumerate(top_5_active_users):
+			for i, user in enumerate(top_5_active_users, 1):
 				msg += f'**{i}. {user["user"]}** {user["num_messages"]} messages\n'
 			msg += '\n'
 
 			msg += f'Top 5 most active channels:\n'
-			for i, channel in enumerate(top_5_active_channels):
+			for i, channel in enumerate(top_5_active_channels, 1):
 				msg += f'**{i}. {channel["channel"]}** {channel["num_messages"]} messages\n'
 
 			await message.channel.send(msg)

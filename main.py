@@ -35,7 +35,7 @@ class MyClient(discord.Client):
 		self.prefix = 'f!'
 		self.no_log = {
 			'user_ids':     [1329366814517628969, 1329366963805491251, 1329367238146396211,
-							 1329367408330145805, 235148962103951360, 1299640624848306177],
+			                 1329367408330145805, 235148962103951360, 1299640624848306177],
 			'channel_ids':  [],
 			'category_ids': [1329366612821938207]
 		}
@@ -109,13 +109,14 @@ class MyClient(discord.Client):
 			return True
 		return False
 
-	def check_analyse_cooldown(self) -> bool:
+	def check_analyse_cooldown(self) -> bool | int:
+		# int = time until cooldown complete, True = ready
 		current_time = int(time.time())
 		complete = (current_time - self.cooldowns['analyse']['last_time']) >= self.cooldowns['analyse']['duration']
 		if complete:
 			self.cooldowns['analyse']['last_time'] = current_time
 			return True
-		return False
+		return self.cooldowns['analyse']['duration'] - (current_time - self.cooldowns['analyse']['last_time'])
 
 	async def hard_lockdown(self, message: discord.Message):
 		await message.delete()
@@ -155,7 +156,7 @@ class MyClient(discord.Client):
 			u_id = int(u_id)
 		except ValueError:
 			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-									   delete_after = self.del_after)
+			                           delete_after = self.del_after)
 			return
 
 		if u_id in self.blacklist_ids:
@@ -190,7 +191,7 @@ class MyClient(discord.Client):
 			u_id = int(u_id)
 		except ValueError:
 			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-									   delete_after = self.del_after)
+			                           delete_after = self.del_after)
 			return
 
 		if u_id not in self.blacklist_ids['ids']:
@@ -206,17 +207,14 @@ class MyClient(discord.Client):
 
 		await message.channel.send(f'User with ID {u_id} has been unblacklisted.', delete_after = self.del_after)
 
-	async def get_from_api(self, message: discord.Message, api_func: Callable, success_msg: str | None = None):
+	async def get_from_api(self, message: discord.Message, api_func: Callable):
 
 		if not self.check_global_cooldown():
 			await message.channel.send(f'Please wait {self.cooldowns['global']['duration']} seconds before using this '
-									   f'command again.',
-									   delete_after = self.del_after)
+			                           f'command again.', delete_after = self.del_after)
 			await message.delete()
 			return
 
-		if success_msg is not None:
-			new_msg = await message.channel.send(success_msg)
 		try:
 			data = api_func()
 			await message.channel.send(data)
@@ -264,12 +262,6 @@ class MyClient(discord.Client):
 			print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 			return
 
-		if '<@1377636535968600135>' in message.content:
-			await message.channel.send(
-					'Hello, I am the custom bot for Foxes Haven. For questions or concerns, please hesitate to contact '
-					'HardlineMouse16')
-			return
-
 		if message.content.startswith(self.prefix):
 			message.content = message.content.replace(self.prefix, '')
 
@@ -298,8 +290,7 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.lower().split()[0] in self.command_aliases['analyse']:
-				await analysis.format_analysis(self.admin_ids, self.cooldowns['analyse']['duration'],
-											   self.check_analyse_cooldown(), self.del_after, message)
+				await analysis.format_analysis(self.admin_ids, self.check_analyse_cooldown(), self.del_after, message)
 				return
 
 			if message.content.lower().startswith('blacklist'):
