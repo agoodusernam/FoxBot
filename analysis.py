@@ -94,7 +94,7 @@ async def format_analysis(admin_ids: list[int], cooldown: bool | int, del_after:
 		await message.channel.send('You are not allowed to use this command.', delete_after = del_after)
 		return
 
-	if isinstance(cooldown, int):
+	if type(cooldown) == int:
 		await message.channel.send(
 			f'Please wait {cooldown} seconds before using this command again.',
 			delete_after = del_after)
