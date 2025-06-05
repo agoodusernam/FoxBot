@@ -391,7 +391,7 @@ class MyClient(discord.Client):
 				"HasAttachments":     has_attachment,
 				"timestamp":          message.created_at.isoformat(),
 				"id":                 str(message.id),
-				"channel":            str(message.channel)
+				"channel":            message.channel.name
 			}
 
 			if os.getenv("LOCAL_SAVE") == 'True':
