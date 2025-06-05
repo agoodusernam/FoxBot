@@ -116,12 +116,12 @@ async def format_analysis(admin_ids: list[int], cooldown: bool | int, del_after:
 				   f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
 				   f'Total users: {result["total_users"]}\n'
 				   f'Top 5 most active users:\n')
-			for i, user in enumerate(top_5_active_users):
+			for i, user in enumerate(top_5_active_users, 1):
 				msg += f'**{i}. {user["user"]}** {user["num_messages"]} messages\n'
 			msg += '\n'
 
 			msg += f'Top 5 most active channels:\n'
-			for i, channel in enumerate(top_5_active_channels):
+			for i, channel in enumerate(top_5_active_channels, 1):
 				msg += f'**{i}. {channel["channel"]}** {channel["num_messages"]} messages\n'
 
 			await message.channel.send(msg)
