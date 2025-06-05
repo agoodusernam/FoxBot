@@ -115,7 +115,7 @@ class MyClient(discord.Client):
 		if complete:
 			self.cooldowns['analyse']['last_time'] = current_time
 			return True
-		return current_time - self.cooldowns['analyse']['last_time']
+		return self.cooldowns['analyse']['duration'] - (current_time - self.cooldowns['analyse']['last_time'])
 
 	async def hard_lockdown(self, message: discord.Message):
 		await message.delete()
