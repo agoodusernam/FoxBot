@@ -8,7 +8,7 @@ import db_stuff
 async def upload_all_history(channel: discord.TextChannel) -> None:
 
 	print("Starting to download all messages from channel:", channel.name)
-	messages = [message async for message in channel.history(limit=None)]
+	messages = [message async for message in channel.history(limit=10000)]
 	print("Downloaded", len(messages), "messages from channel:", channel.name)
 	bulk_data: list[dict[str, Any]] = []
 	for i, message in enumerate(messages):
