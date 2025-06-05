@@ -1,12 +1,15 @@
 import os
-from typing import Any
+from typing import Any, Mapping
 
 import discord
 from pymongo.mongo_client import MongoClient
+from pymongo.results import DeleteResult
 from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
 from gridfs import GridFS
 from bson.objectid import ObjectId
+from pymongo.synchronous.collection import Collection
+from pymongo.synchronous.database import Database
 
 # Global client instance
 _mongo_client: MongoClient | None = None
@@ -34,20 +37,35 @@ def _connect():
 		return False
 
 
-async def send_message(message) -> None:
+def send_message(message: Mapping[str, Any]) -> None:
 	client = _connect()
 	if not client:
 		print("Failed to connect to MongoDB")
 		return
 
 	db = client["discord"]
-	collection = db["messages"]
+	collection: Collection[Mapping[str, Any]] = db["messages"]
 
 	try:
 		collection.insert_one(message)
 		print("Message saved successfully")
 	except Exception as e:
 		print(f"Error saving message: {e}")
+
+def bulk_send_messages(messages: list[Mapping[str, Any]]) -> None:
+	client = _connect()
+	if not client:
+		print("Failed to connect to MongoDB")
+		return
+
+	db: Database[Mapping[str, Any]] = client["discord"]
+	collection: Collection[Mapping[str, Any]] = db["messages"]
+
+	try:
+		collection.insert_many(messages)
+		print(f"{len(messages)} messages saved successfully")
+	except Exception as e:
+		print(f"Error saving messages: {e}")
 
 
 async def send_attachment(message: discord.Message, attachment: discord.Attachment) -> None:
@@ -172,3 +190,18 @@ def delete_message(ObjId: str) -> None:
 			print("No message found with the given ID")
 	except Exception as e:
 		print(f"Error deleting message: {e}")
+
+def del_channel_from_db(channel: discord.TextChannel) -> None:
+	client = _connect()
+	if not client:
+		print("Failed to connect to MongoDB")
+		return
+
+	db = client["discord"]
+	collection = db["messages"]
+
+	try:
+		result: DeleteResult = collection.delete_many({"channel": channel.name})
+		print(f"Deleted {result.deleted_count} messages from channel {channel.name}")
+	except Exception as e:
+		print(f"Error deleting messages from channel {channel.name}: {e}")

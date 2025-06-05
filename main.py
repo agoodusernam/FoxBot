@@ -12,6 +12,7 @@ import admin_cmds
 import db_stuff
 import api_stuff
 import fun_cmds
+import one_use_cmds
 import suggest
 import utils
 from dotenv import load_dotenv
@@ -309,6 +310,14 @@ class MyClient(discord.Client):
 				await self.unblacklist_id(message)
 				return
 
+			if message.content.lower().startswith('uploadallhistory'):
+				if message.author.id not in self.admin_ids:
+					await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
+					return
+				await message.delete()
+				db_stuff.del_channel_from_db(message.channel)
+				await one_use_cmds.upload_all_history(message)
+
 			if message.content.lower().split()[0] in self.command_aliases['nasa']:
 				await self.nasa_pic(message)
 				return
@@ -398,7 +407,7 @@ class MyClient(discord.Client):
 					for attachment in message.attachments:
 						await db_stuff.send_attachment(message, attachment)
 
-			asyncio.create_task(db_stuff.send_message(json_data))
+			db_stuff.send_message(json_data)
 			self.today = utils.formatted_time()
 
 
