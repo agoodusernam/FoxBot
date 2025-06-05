@@ -263,12 +263,6 @@ class MyClient(discord.Client):
 			print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 			return
 
-		if '<@1377636535968600135>' in message.content:
-			await message.channel.send(
-					'Hello, I am the custom bot for Foxes Haven. For questions or concerns, please hesitate to contact '
-					'HardlineMouse16')
-			return
-
 		if message.content.startswith(self.prefix):
 			message.content = message.content.replace(self.prefix, '')
 
