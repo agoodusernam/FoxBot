@@ -16,6 +16,7 @@ import db_stuff
 import api_stuff
 import fun_cmds
 import one_use_cmds
+import restart
 import suggest
 import utils
 import analysis
@@ -42,6 +43,7 @@ class MyClient(discord.Client):
 		}
 
 		self.admin_ids = [235644709714788352, 542798185857286144, 937278965557641227]
+		self.dev_ids = [542798185857286144]
 		self.blacklist_ids = {"ids": []}
 
 		self.send_blacklist = {
@@ -317,6 +319,13 @@ class MyClient(discord.Client):
 
 				db_stuff.del_channel_from_db(channel)
 				await one_use_cmds.upload_all_history(channel, message.author)
+				return
+
+			if message.content.lower().startswith('restart'):
+				if message.author.id not in self.dev_ids:
+					await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
+					return
+				await restart.restart(self)
 				return
 
 			if message.content.lower().split()[0] in self.command_aliases['nasa']:

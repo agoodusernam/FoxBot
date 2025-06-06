@@ -42,6 +42,17 @@ def _connect():
 		print(e)
 		return False
 
+def disconnect():
+	global _mongo_client
+	if _mongo_client is not None:
+		try:
+			_mongo_client.close()
+			print("MongoDB connection closed")
+		except Exception as e:
+			print(f"Error closing MongoDB connection: {e}")
+		finally:
+			_mongo_client = None
+
 
 def send_message(message: Mapping[str, Any]) -> None:
 	client = _connect()
