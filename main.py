@@ -115,7 +115,9 @@ class MyClient(discord.Client):
 		messages = [message async for message in channel.history(limit = 1)]
 		if messages[0].content != reaction_roles.to_send_msg:
 			await messages[0].delete()
-			await reaction_roles.send_reaction_role_msg(channel)
+			self.role_message_id = await reaction_roles.send_reaction_role_msg(channel)
+		else:
+			self.role_message_id = messages[0].id
 
 	def check_global_cooldown(self) -> bool:
 		current_time = int(time.time())

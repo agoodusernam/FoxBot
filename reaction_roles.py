@@ -9,10 +9,12 @@ fun fact ping:❔
 movie night ping: 🎬"""
 
 
-async def send_reaction_role_msg(channel: discord.TextChannel) -> None:
+async def send_reaction_role_msg(channel: discord.TextChannel) -> int:
 
 	msg = await channel.send(to_send_msg)
 
 	reactions = [':jjs:', '❕', ':grass_block:', ':Vrchat:', ':rust:', '❔', '🎬']
 	for reaction in reactions:
 		await msg.add_reaction(reaction)
+
+	return msg.id
