@@ -14,7 +14,7 @@ from discord.utils import get
 
 import commands.admin_cmds
 from utils import db_stuff, utils, api_stuff
-from commands import suggest, help_cmd, restart, admin_cmds, fun_cmds, analysis
+from commands import suggest, help_cmd, restart, admin_cmds, fun_cmds, analysis, echo
 import reaction_roles
 
 load_dotenv()
@@ -373,6 +373,13 @@ class MyClient(discord.Client):
 				await utils.send_image(message, file_path, file_name)
 				return
 
+			if message.content.lower().split()[0].startswith('echo'):
+				if message.author.id not in self.admin_ids:
+					await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
+					await message.delete()
+					return
+				await echo.echo(message, self.del_after, self)
+				return
 		if (message.author != self.user) and (
 				message.author.id not in self.no_log['user_ids']) and (
 				message.channel.id not in self.no_log['channel_ids']) and (
