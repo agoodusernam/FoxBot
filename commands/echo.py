@@ -8,12 +8,14 @@ async def echo(message: discord.Message, del_after: int, client: "discord.client
 	msg = message.content.replace('echo', '', 1)
 
 	# Send the message content back to the channel
-	split_message = message.content.split()
+	split_message = msg.split()
 	channel = message.channel
 	try:
 		channel_id = int(split_message[0])
 		channel = client.get_channel(channel_id)
+		msg = msg.replace(str(channel_id), '', 1)
 	except:
+		print(split_message)
 		pass
 
 	await channel.send(msg)
