@@ -37,10 +37,10 @@ def formatted_time() -> str:
 
 
 def make_file(name: str = 'messages'):
-	if not os.path.exists('data'):
-		os.makedirs('data')
-	if not os.path.exists('data/attachments'):
-		os.makedirs('data/attachments')
+	if not os.path.exists('../data'):
+		os.makedirs('../data')
+	if not os.path.exists('../data/attachments'):
+		os.makedirs('../data/attachments')
 	return open(f'data/{name}.json', 'a+', encoding='utf-8')
 
 

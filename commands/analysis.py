@@ -1,6 +1,8 @@
+import time
+
 import discord
 
-import db_stuff
+from utils import db_stuff
 
 
 def check_valid_syntax(message: dict) -> bool:
@@ -13,6 +15,7 @@ def check_valid_syntax(message: dict) -> bool:
 
 
 def analyse() -> dict | Exception | str | None:
+	#TODO: Add checking single user's messages
 	try:
 		messages = db_stuff.download_all()
 
@@ -55,6 +58,7 @@ def analyse() -> dict | Exception | str | None:
 				user_id = message['author_global_name']
 				if user_id is None:
 					user_id = message['author']
+
 				if user_id not in user_message_count:
 					user_message_count[user_id] = 0
 				user_message_count[user_id] += 1
@@ -143,3 +147,12 @@ async def format_analysis(admin_ids: list[int], cooldown: bool | int, del_after:
 			print('No valid messages found for analysis.')
 	except Exception as e:
 		print(f'Error during analysis: {e}')
+
+def check_analyse_cooldown(client) -> bool | int:
+	# int = time until cooldown complete, True = ready
+	current_time = int(time.time())
+	complete = (current_time - client.cooldowns['analyse']['last_time']) >= client.cooldowns['analyse']['duration']
+	if complete:
+		client.cooldowns['analyse']['last_time'] = current_time
+		return True
+	return client.cooldowns['analyse']['duration'] - (current_time - client.cooldowns['analyse']['last_time'])

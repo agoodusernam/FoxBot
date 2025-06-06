@@ -3,7 +3,7 @@ import sys
 
 import discord
 
-import db_stuff
+from utils import db_stuff
 
 
 async def restart(client: 'discord.Client') -> None:

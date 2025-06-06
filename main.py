@@ -4,24 +4,19 @@ import os
 from copy import deepcopy
 from typing import Callable
 import time
-from dotenv import load_dotenv
 
+from discord.app_commands import guilds
+from discord.ext.commands import MemberConverter
+from dotenv import load_dotenv
 
 import discord
 import json
 
 from discord.utils import get
 
-import admin_cmds
-import db_stuff
-import api_stuff
-import fun_cmds
-import restart
-import suggest
-import utils
-import analysis
-import help_cmd
-import hardlockdown
+import commands.admin_cmds
+from utils import db_stuff, utils, api_stuff
+from commands import suggest, help_cmd, restart, admin_cmds, fun_cmds, analysis
 
 load_dotenv()
 
@@ -113,22 +108,13 @@ class MyClient(discord.Client):
 			return True
 		return False
 
-	def check_analyse_cooldown(self) -> bool | int:
-		# int = time until cooldown complete, True = ready
-		current_time = int(time.time())
-		complete = (current_time - self.cooldowns['analyse']['last_time']) >= self.cooldowns['analyse']['duration']
-		if complete:
-			self.cooldowns['analyse']['last_time'] = current_time
-			return True
-		return self.cooldowns['analyse']['duration'] - (current_time - self.cooldowns['analyse']['last_time'])
-
 	async def hard_lockdown(self, message: discord.Message):
 		await message.delete()
 		if message.author.id not in self.admin_ids:
 			await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
 			return
 
-		await hardlockdown.hardlockdown(self, message)
+		await commands.admin_cmds.hardlockdown(self, message)
 
 		for member in message.guild.members:
 			if member.id in self.admin_ids:
@@ -257,7 +243,7 @@ class MyClient(discord.Client):
 			await message.channel.send(f'Error fetching NASA picture: {e}')
 
 	async def on_message(self, message: discord.Message):
-		if isinstance(message.channel, discord.DMChannel):
+		if message.author.bot:
 			return
 
 		if message.content.startswith('​'):  # Don't log messages that start with a zero-width space
@@ -292,7 +278,8 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.lower().split()[0] in self.command_aliases['analyse']:
-				await analysis.format_analysis(self.admin_ids, self.check_analyse_cooldown(), self.del_after, message)
+				await analysis.format_analysis(self.admin_ids, analysis.check_analyse_cooldown(self), self.del_after,
+											   message)
 				return
 
 			if message.content.lower().startswith('blacklist'):
@@ -408,6 +395,96 @@ class MyClient(discord.Client):
 
 			db_stuff.send_message(json_data)
 			self.today = utils.formatted_time()
+
+	async def on_reaction_add(self, reaction: discord.Reaction, member: discord.Member):
+		if member.bot:
+			return
+
+		if reaction.message.id != 1380618378158538833:
+			return
+
+		if reaction.emoji == ':jjs:':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='JJS')
+			await member.add_roles(role)
+			return
+
+		if reaction.emoji == ':❕:':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='JJS PING')
+			await member.add_roles(role)
+			return
+
+		if reaction.emoji == ':grass_block:':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='Minecraft')
+			await member.remove_roles(role)
+			return
+
+		if reaction.emoji == ':Vrchat:':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='VRChat')
+			await member.add_roles(role)
+			return
+
+		if reaction.emoji == ':rust:':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='Rust')
+			await member.add_roles(role)
+			return
+
+		if reaction.emoji == '❔':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='Fun Fact Ping')
+			await member.add_roles(role)
+			return
+
+		if reaction.emoji == '🎬':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='Movie Night Ping')
+			await member.add_roles(role)
+			return
+
+	async def on_reaction_remove(self, reaction: discord.Reaction, member: discord.Member):
+		if member.bot:
+			return
+
+		if reaction.message.id != 1380618378158538833:
+			return
+
+		if reaction.emoji == ':grass_block:':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='Minecraft')
+			await member.add_roles(role)
+			return
+
+		if reaction.emoji == ':Vrchat:':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='VRChat')
+			await member.remove_roles(role)
+			return
+
+		if reaction.emoji == ':rust:':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='Rust')
+			await member.remove_roles(role)
+			return
+
+		if reaction.emoji == '❔':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='Fun Fact Ping')
+			await member.remove_roles(role)
+			return
+
+		if reaction.emoji == '🎬':
+			guild = await self.fetch_guild(1081760248433492140)
+			role = get(guild.roles, name='Movie Night Ping')
+			await member.remove_roles(role)
+			return
+
+
+
+
 
 
 intents = discord.Intents.default()
