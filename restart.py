@@ -13,4 +13,4 @@ async def restart(client: "discord.Client") -> None:
 	# run git pull to update the codebase, then restart the script
 	os.system("git pull https://github.com/agoodusernam/DiscordStatBot.git")
 
-	os.execv(sys.argv[0], sys.argv)
+	os.execv(sys.executable, ['python'] + sys.argv)
