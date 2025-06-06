@@ -16,7 +16,6 @@ def check_valid_syntax(message: dict) -> bool:
 
 
 def analyse() -> dict | Exception | str | None:
-	#TODO: Add checking single user's messages
 	try:
 		messages = db_stuff.download_all()
 
@@ -94,7 +93,7 @@ def analyse() -> dict | Exception | str | None:
 		print(f'An error occurred: {e}')
 		return e
 
-async def analyse_single_user(message: discord.Message, member: discord.Member) -> None | str | dict[str, int | Any]:
+async def analyse_single_user(member: discord.Member) -> None | str | dict[str, int | Any]:
 	try:
 		messages = db_stuff.download_all()
 
@@ -234,15 +233,17 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.Memb
 		await message.channel.send('You are not allowed to use this command.', delete_after=del_after)
 		return
 
-	result = await analyse_single_user(message, member)
+	result = await analyse_single_user(member)
 
 	if isinstance(result, dict):
-		msg = (f'{result['total_messages']} messages found for {member.mention}\n'
+		top_5_active_channels = sorted(result['active_channels_lb'], key = lambda x: x['num_messages'],
+									   reverse = True)[:5]
+		msg = (f'{result['total_messages']} messages found for **{member.name}**\n'
 		       f'Most common word: {result['most_common_word']} said {result['most_common_word_count']} times \n'
 		       f'({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n'
 		       f'Top 5 most active channels:\n')
 
-		for i, channel in enumerate(result['active_channels_lb'], 1):
+		for i, channel in enumerate(top_5_active_channels, 1):
 			msg += f'**{i}. {channel['channel']}** {channel['num_messages']} messages\n'
 
 		await message.channel.send(msg)
