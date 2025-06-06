@@ -53,6 +53,8 @@ def analyse() -> dict | Exception | str | None:
 			user_message_count = {}
 			for message in valid_messages:
 				user_id = message['author_global_name']
+				if user_id is None:
+					print(message)
 				if user_id not in user_message_count:
 					user_message_count[user_id] = 0
 				user_message_count[user_id] += 1
@@ -121,7 +123,7 @@ async def format_analysis(admin_ids: list[int], cooldown: bool | int, del_after:
 				realUser = user['user']
 
 				if realUser is None:
-					realUser = f'Unknown User {user['user']}'
+					realUser = f'Unknown User'
 
 				msg += f'**{i}. {realUser}** {user['num_messages']} messages\n'
 
