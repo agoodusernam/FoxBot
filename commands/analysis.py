@@ -230,7 +230,6 @@ async def format_analysis(admin_ids: list[int], cooldown: bool | int, del_after:
 
 async def analyse_single_user_cmd(message: discord.Message, member: discord.Member, del_after: int,
 								  admin_ids: list[int]) -> None:
-	await message.delete()
 	if message.author.id not in admin_ids:
 		await message.channel.send('You are not allowed to use this command.', delete_after=del_after)
 		return
