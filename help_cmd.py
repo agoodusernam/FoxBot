@@ -2,6 +2,7 @@ import discord
 
 NO_ARGS_STR = "Usage: Just type the command without any arguments.\n"
 
+
 async def help_cmds(client, message: discord.Message):
 	if not message.content.replace("help", "").strip() == "":
 		cmd = message.content.replace("help", "", 1).strip()
@@ -51,19 +52,20 @@ async def help_cmds(client, message: discord.Message):
 			return
 
 		else:
-			await message.channel.send("Unknown command. Use `help` to see available commands.", delete_after=client.del_after)
+			await message.channel.send("Unknown command. Use `help` to see available commands.",
+			                           delete_after=client.del_after)
 			await message.delete()
 			return
 
 	await message.delete()
 	if not client.check_global_cooldown():
 		await message.channel.send(
-			f'Please wait {client.cooldowns["global"]["duration"]} seconds before using this command again.',
-			delete_after = client.del_after)
+				f'Please wait {client.cooldowns["global"]["duration"]} seconds before using this command again.',
+				delete_after=client.del_after)
 		return
 
 	if message.author.id in client.blacklist_ids['ids']:
-		await message.channel.send('You are not allowed to use this command.', delete_after = client.del_after)
+		await message.channel.send('You are not allowed to use this command.', delete_after=client.del_after)
 		return
 
 	if message.author.id in client.admin_ids:
@@ -102,7 +104,6 @@ async def admin_help(self, message: discord.Message):
 	await dm.send(admin_help_text)
 
 
-
 def nasa_help(self):
 	help_text = f"`{self.prefix}nasa` - Get NASA's picture of the day.\n" + NO_ARGS_STR
 	cmd_aliases = self.command_aliases["nasa"]
@@ -110,6 +111,7 @@ def nasa_help(self):
 		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
 	return help_text
+
 
 def dogpic_help(self):
 	help_text = f"`{self.prefix}dog` - Get a random dog picture.\n" + NO_ARGS_STR
@@ -119,6 +121,7 @@ def dogpic_help(self):
 
 	return help_text
 
+
 def catpic_help(self):
 	help_text = f"`{self.prefix}cat` - Get a random cat picture.\n" + NO_ARGS_STR
 	cmd_aliases = self.command_aliases["catpic"]
@@ -126,6 +129,7 @@ def catpic_help(self):
 		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
 	return help_text
+
 
 def foxpic_help(self):
 	help_text = f"`{self.prefix}fox` - Get a random fox picture.\n" + NO_ARGS_STR
@@ -135,6 +139,7 @@ def foxpic_help(self):
 
 	return help_text
 
+
 def insult_help(self):
 	help_text = f"`{self.prefix}insult` - Get a random insult.\n" + NO_ARGS_STR
 	cmd_aliases = self.command_aliases["insult"]
@@ -142,6 +147,7 @@ def insult_help(self):
 		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
 	return help_text
+
 
 def advice_help(self):
 	help_text = f"`{self.prefix}advice` - Get a random piece of advice.\n" + NO_ARGS_STR
@@ -151,6 +157,7 @@ def advice_help(self):
 
 	return help_text
 
+
 def ping_help(self):
 	help_text = f"`{self.prefix}ping` - Check the bot's latency.\n" + NO_ARGS_STR
 	cmd_aliases = self.command_aliases["ping"]
@@ -159,13 +166,15 @@ def ping_help(self):
 
 	return help_text
 
+
 def karma_help(self):
-	help_text = f"`{self.prefix}karma` - Get a random karma picture.\n"	+ NO_ARGS_STR
+	help_text = f"`{self.prefix}karma` - Get a random karma picture.\n" + NO_ARGS_STR
 	cmd_aliases = self.command_aliases["karma"]
 	for cmds in cmd_aliases:
 		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
 	return help_text
+
 
 def dice_help(self):
 	help_text = (
@@ -179,6 +188,7 @@ def dice_help(self):
 
 	return help_text
 
+
 def joke_help(self):
 	help_text = f"`{self.prefix}joke` - Get a random joke.\n" + NO_ARGS_STR
 	cmd_aliases = self.command_aliases["joke"]
@@ -186,6 +196,7 @@ def joke_help(self):
 		help_text += f"Alias: `{self.prefix}{cmds}`\n"
 
 	return help_text
+
 
 def help_help(self):
 	help_text = (

@@ -1,7 +1,10 @@
-import requests
 from dotenv import load_dotenv
 import os
+
+import requests
+
 load_dotenv()
+
 
 def get_nasa_apod() -> dict[str, str]:
 	api_key = os.getenv("NASA_API_KEY")
@@ -13,6 +16,7 @@ def get_nasa_apod() -> dict[str, str]:
 		raise Exception(f"Failed to fetch data from NASA API: {response.status_code}")
 
 	return response.json()
+
 
 def get_dog_pic() -> str:
 	url = "https://dog.ceo/api/breeds/image/random"
@@ -27,6 +31,7 @@ def get_dog_pic() -> str:
 
 	return data['message']
 
+
 def get_fox_pic() -> str:
 	url = "https://randomfox.ca/floof/"
 	response = requests.get(url)
@@ -40,10 +45,11 @@ def get_fox_pic() -> str:
 
 	return data['image']
 
+
 def get_cat_pic() -> str:
 	url = "https://api.thecatapi.com/v1/images/search"
 
-	header = {'x-api-key':os.getenv("CAT_API_KEY"), 'Content-Type': 'application/json'}
+	header = {'x-api-key': os.getenv("CAT_API_KEY"), 'Content-Type': 'application/json'}
 	response = requests.get(url, headers=header)
 
 	if response.status_code != 200:
@@ -54,6 +60,7 @@ def get_cat_pic() -> str:
 		raise ValueError("Unexpected response format from cat API")
 
 	return data[0]['url']
+
 
 def get_insult() -> str:
 	url = "https://evilinsult.com/generate_insult.php?lang=en&type=json"
@@ -68,6 +75,7 @@ def get_insult() -> str:
 
 	return data['insult']
 
+
 def get_advice() -> str:
 	url = "https://api.adviceslip.com/advice"
 	response = requests.get(url)
@@ -80,6 +88,7 @@ def get_advice() -> str:
 		raise ValueError("Unexpected response format from advice API")
 
 	return data['slip']['advice']
+
 
 def get_joke() -> str:
 	url = "https://v2.jokeapi.dev/joke/Any?blacklistFlags=racist,sexist"

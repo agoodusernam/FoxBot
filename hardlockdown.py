@@ -4,6 +4,7 @@ from typing import Union
 
 import discord
 
+
 def format_perms_overwrite(overwrite: discord.PermissionOverwrite) -> dict[str, Union[bool, None]]:
 	perms: dict[str, Union[bool, None]] = {}
 	for permission in overwrite:
@@ -15,7 +16,7 @@ def format_perms_overwrite(overwrite: discord.PermissionOverwrite) -> dict[str, 
 
 
 def format_permissions(permissions: dict[discord.Role | discord.Member | discord.Object,
-					   discord.PermissionOverwrite]) -> dict[str, dict[str, Union[bool, None]]]:
+discord.PermissionOverwrite]) -> dict[str, dict[str, Union[bool, None]]]:
 	formatted = {}
 
 	for key in permissions:

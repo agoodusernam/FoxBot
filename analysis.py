@@ -42,7 +42,7 @@ def analyse() -> dict | Exception | str | None:
 						word_count[word] = 0
 					word_count[word] += 1
 
-			most_common_word = max(word_count, key = word_count.get)
+			most_common_word = max(word_count, key=word_count.get)
 			print(f"Most common word: '{most_common_word}' with {word_count[most_common_word]} occurrences")
 
 			unique_words = set(word_count.keys())
@@ -67,7 +67,7 @@ def analyse() -> dict | Exception | str | None:
 				most_active_channels[channel] += 1
 
 			most_active_channels = [{"channel": channel, "num_messages": count} for channel, count in
-									most_active_channels.items()]
+			                        most_active_channels.items()]
 
 			return {
 				"total_messages":         len(valid_messages),
@@ -87,17 +87,18 @@ def analyse() -> dict | Exception | str | None:
 		print(f"An error occurred: {e}")
 		return e
 
+
 async def format_analysis(admin_ids: list[int], cooldown: bool | int, del_after: int,
-						  message: discord.Message):
+                          message: discord.Message):
 	await message.delete()
 	if message.author.id not in admin_ids:
-		await message.channel.send('You are not allowed to use this command.', delete_after = del_after)
+		await message.channel.send('You are not allowed to use this command.', delete_after=del_after)
 		return
 
 	if type(cooldown) == int:
 		await message.channel.send(
-			f'Please wait {cooldown} seconds before using this command again.',
-			delete_after = del_after)
+				f'Please wait {cooldown} seconds before using this command again.',
+				delete_after=del_after)
 		return
 
 	new_msg = await message.channel.send('Analysing...')
@@ -105,19 +106,25 @@ async def format_analysis(admin_ids: list[int], cooldown: bool | int, del_after:
 		result = analyse()
 		await new_msg.delete()
 		if isinstance(result, dict):
-			top_5_active_users = sorted(result["active_users_lb"], key = lambda x: x["num_messages"],
-										reverse = True)[:5]
+			top_5_active_users = sorted(result["active_users_lb"], key=lambda x: x["num_messages"],
+			                            reverse=True)[:5]
 
-			top_5_active_channels = sorted(result["active_channels_lb"], key = lambda x: x["num_messages"],
-										   reverse = True)[:5]
+			top_5_active_channels = sorted(result["active_channels_lb"], key=lambda x: x["num_messages"],
+			                               reverse=True)[:5]
 
 			msg = (f'{result["total_messages"]} total messages analysed\n'
-				   f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n'
-				   f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
-				   f'Total users: {result["total_users"]}\n'
-				   f'Top 5 most active users:\n')
-			for i, user in enumerate(top_5_active_users, 1):
-				msg += f'**{i}. {user["user"]}** {user["num_messages"]} messages\n'
+			       f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n'
+			       f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
+			       f'Total users: {result["total_users"]}\n'
+			       f'Top 5 most active users:\n')
+			for i, user in enumerate(top_5_active_users, start=1):
+				realUser = user["user"]
+
+				if realUser is None:
+					realUser = f"Unknown User {user['user']}"
+
+				msg += f'**{i}. {realUser}** {user["num_messages"]} messages\n'
+
 			msg += '\n'
 
 			msg += f'Top 5 most active channels:\n'

@@ -5,16 +5,17 @@ from pathlib import Path
 
 import discord
 
+
 async def send_image(message: discord.Message, file_path: str | Path, file_name: str) -> None:
 	if not os.path.exists(file_path):
 		print(f"File {file_path} does not exist.")
 		return
 
 	try:
-		file = discord.File(file_path, filename = file_name)
+		file = discord.File(file_path, filename=file_name)
 		embed = discord.Embed()
-		embed.set_image(url = f"attachment://{file_name}")
-		await message.channel.send(file = file, embed = embed)
+		embed.set_image(url=f"attachment://{file_name}")
+		await message.channel.send(file=file, embed=embed)
 
 		print(f"Sent file: {file_path}")
 	except discord.HTTPException as e:
@@ -40,7 +41,7 @@ def make_file(name: str = "messages"):
 		os.makedirs('data')
 	if not os.path.exists('data/attachments'):
 		os.makedirs('data/attachments')
-	return open(f'data/{name}.json', 'a+', encoding = 'utf-8')
+	return open(f'data/{name}.json', 'a+', encoding='utf-8')
 
 
 def make_empty_file(path: str | Path):
@@ -57,8 +58,8 @@ async def save_attachments(message: discord.Message):
 		await attachment.save(file_path)
 		print(f'Saved attachment: {file_path}')
 
-def download_from_url(path: str | Path, url: str):
 
+def download_from_url(path: str | Path, url: str):
 	with urllib.request.urlopen(url) as f:
 		pic = f.read()
 
@@ -68,8 +69,8 @@ def download_from_url(path: str | Path, url: str):
 	print(f"Downloaded file from {url} to {path}")
 	return None
 
-def clean_up_APOD():
 
+def clean_up_APOD():
 	"""Cleans up old APOD images from the data directory."""
 	apod_dir = Path('nasa/')
 	if not apod_dir.exists():
@@ -83,6 +84,7 @@ def clean_up_APOD():
 				print(f"Deleted old APOD image: {file.name}")
 			except Exception as e:
 				print(f"Failed to delete {file.name}: {e}")
+
 
 def check_env_variables():
 	if not os.getenv("MONGO_URI"):
@@ -102,5 +104,3 @@ def check_env_variables():
 	if os.getenv("LOCAL_SAVE") not in ['True', 'False']:
 		print('Invalid LOCAL_SAVE value. Please set it to True or False. Defaulting to False.')
 		os.environ["LOCAL_SAVE"] = 'False'
-
-

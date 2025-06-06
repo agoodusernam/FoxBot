@@ -1,5 +1,6 @@
-import discord
+import os
 
+import discord
 
 HELP_MSG = """Please post your suggestions for the <@1377636535968600135> in here using `f!suggest [suggestion]`.
 If you have any additional comments, please use the thread.
@@ -9,6 +10,7 @@ If you have any additional comments, please use the thread.
 
 👍: Vote for suggestion
 """
+
 
 async def send_suggestion(client: "discord.Client", message: discord.Message) -> None:
 	await message.delete()
@@ -28,12 +30,34 @@ async def send_suggestion(client: "discord.Client", message: discord.Message) ->
 		await msg.add_reaction("👍")
 
 		await msg.create_thread(
-				name = f"suggestion-{message.author.display_name}",
+				name=f"suggestion-{message.author.display_name}",
 		)
 
-		await channel.send(HELP_MSG)
+		msg = await channel.send(HELP_MSG)
 		print(f"Suggestion sent: {suggestion}")
+		await save_h_msg_id(client, msg)
 	except discord.HTTPException as e:
 		print(f"Failed to send suggestion: {e}")
 	except Exception as e:
 		print(f"An error occurred while sending suggestion: {e}")
+
+async def save_h_msg_id(client: "discord.Client", message: discord.Message) -> None:
+	"""
+	Saves the ID of the help message to a file.
+	"""
+	if os.path.exists("h_msg_id.txt"):
+		with open('data/help_msg_id.txt', 'r') as f:
+			old_id = f.read().strip()
+			if old_id:
+				try:
+					old_message = client.get_channel(1379193761791213618).get_partial_message(int(old_id))
+					if old_message:
+						print(f"Deleting old help message ID: {old_id}")
+						await old_message.delete()
+				except discord.NotFound:
+					print(f"Old help message ID {old_id} not found, skipping deletion.")
+				except Exception as e:
+					print(f"Error deleting old help message: {e}")
+	with open('data/help_msg_id.txt', 'w') as f:
+		f.write(str(message.id))
+	print(f"Help message ID saved: {message.id}")

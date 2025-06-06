@@ -5,16 +5,22 @@ import discord
 from pymongo.mongo_client import MongoClient
 from pymongo.results import DeleteResult
 from pymongo.server_api import ServerApi
-from dotenv import load_dotenv
 from gridfs import GridFS
 from bson.objectid import ObjectId
+
+# Purely for type hinting
 from pymongo.synchronous.collection import Collection
 from pymongo.synchronous.database import Database
+
+
+from dotenv import load_dotenv
+
 
 # Global client instance
 _mongo_client: MongoClient | None = None
 
 load_dotenv()
+
 
 def _connect():
 	global _mongo_client
@@ -24,7 +30,7 @@ def _connect():
 
 	uri = os.getenv("MONGO_URI")
 
-	client = MongoClient(uri, server_api = ServerApi('1'))
+	client = MongoClient(uri, server_api=ServerApi('1'))
 	try:
 		client.admin.command('ping')
 		_mongo_client = client  # Store the connection
@@ -51,6 +57,7 @@ def send_message(message: Mapping[str, Any]) -> None:
 		print("Message saved successfully")
 	except Exception as e:
 		print(f"Error saving message: {e}")
+
 
 def bulk_send_messages(messages: list[Mapping[str, Any]]) -> None:
 	client = _connect()
@@ -83,17 +90,17 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
 
 		# Store metadata
 		metadata = {
-			"message_id": str(message.id),
+			"message_id":         str(message.id),
 			"author_global_name": message.author.global_name,
-			"content_type": attachment.content_type,
-			"timestamp": message.created_at.isoformat()
+			"content_type":       attachment.content_type,
+			"timestamp":          message.created_at.isoformat()
 		}
 
 		# Store file in GridFS
 		file_id = fs.put(
-			attachment_bytes,
-			filename=attachment.filename,
-			metadata=metadata
+				attachment_bytes,
+				filename=attachment.filename,
+				metadata=metadata
 		)
 		print(f"Attachment saved successfully: {attachment.filename}")
 		return None
@@ -131,6 +138,7 @@ def get_attachment(file_id: str | ObjectId) -> dict | None:
 		print(f"Error retrieving attachment: {e}")
 		return None
 
+
 def list_message_attachments(message_id: str | int) -> list[dict[str, str | Any]] | None:
 	client = _connect()
 	if not client:
@@ -145,10 +153,10 @@ def list_message_attachments(message_id: str | int) -> list[dict[str, str | Any]
 		files = fs.find({"metadata.message_id": str(message_id)})
 		return [
 			{
-				"file_id": str(file._id),
-				"filename": file.filename,
+				"file_id":      str(file._id),
+				"filename":     file.filename,
 				"content_type": file.metadata.get("content_type"),
-				"timestamp": file.metadata.get("timestamp")
+				"timestamp":    file.metadata.get("timestamp")
 			}
 			for file in files
 		]
@@ -190,6 +198,7 @@ def delete_message(ObjId: str) -> None:
 			print("No message found with the given ID")
 	except Exception as e:
 		print(f"Error deleting message: {e}")
+
 
 def del_channel_from_db(channel: discord.TextChannel) -> None:
 	client = _connect()

@@ -16,7 +16,7 @@ async def dice_roll(del_after: int, message: discord.Message) -> None:
 	except ValueError:
 		await message.delete()
 		await message.channel.send("Please provide valid numbers for the dice roll, e.g. `dice 1 6`",
-								   delete_after=del_after)
+		                           delete_after=del_after)
 		return
 	if nums[0] > nums[1]:
 		num: int | str = random.randint(nums[1], nums[0])
@@ -32,8 +32,10 @@ async def dice_roll(del_after: int, message: discord.Message) -> None:
 
 	await message.channel.send(f"You rolled a {num}")
 	if oversize:
-		await message.channel.send("The number is too large to display in decimal format, so it has been converted to hex.")
+		await message.channel.send(
+				"The number is too large to display in decimal format, so it has been converted to hex.")
 	return
+
 
 def get_karma_pic() -> tuple[str, str] | None:
 	karma_pics = [f for f in os.listdir('data/karma_pics') if os.path.isfile(os.path.join('data/karma_pics', f))]

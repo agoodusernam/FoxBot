@@ -2,6 +2,9 @@ import asyncio  # type: ignore
 import os
 from copy import deepcopy
 from typing import Callable
+import time
+from dotenv import load_dotenv
+
 
 import discord
 import json
@@ -15,9 +18,7 @@ import fun_cmds
 import one_use_cmds
 import suggest
 import utils
-from dotenv import load_dotenv
 import analysis
-import time
 import help_cmd
 import hardlockdown
 
@@ -86,20 +87,20 @@ class MyClient(discord.Client):
 	async def on_ready(self):
 		utils.check_env_variables()
 		utils.clean_up_APOD()
-		await self.change_presence(activity = discord.CustomActivity(name = 'f!help'))
+		await self.change_presence(activity=discord.CustomActivity(name='f!help'))
 		print(f'Logged in as {self.user} (ID: {self.user.id})')
 		print('------')
 
 		if not os.path.isfile('blacklist_users.json'):
 			with open('blacklist_users.json', 'w') as f:
-				json.dump(self.blacklist_ids, f, indent = 4)
+				json.dump(self.blacklist_ids, f, indent=4)
 		else:
 			with open('blacklist_users.json', 'r') as f:
 				self.blacklist_ids = json.load(f)
 
 		channel = self.get_channel(1379193761791213618)
 		for u_id in self.blacklist_ids['ids']:
-			await channel.set_permissions(get(self.get_all_members(), id = u_id), send_messages = False)
+			await channel.set_permissions(get(self.get_all_members(), id=u_id), send_messages=False)
 
 	def check_global_cooldown(self) -> bool:
 		current_time = int(time.time())
@@ -121,7 +122,7 @@ class MyClient(discord.Client):
 	async def hard_lockdown(self, message: discord.Message):
 		await message.delete()
 		if message.author.id not in self.admin_ids:
-			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+			await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
 			return
 
 		await hardlockdown.hardlockdown(self, message)
@@ -147,7 +148,7 @@ class MyClient(discord.Client):
 	async def blacklist_id(self, message: discord.Message):
 		await message.delete()
 		if message.author.id not in self.admin_ids:
-			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+			await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
 			return
 
 		u_id = utils.get_id_from_msg(message)
@@ -156,15 +157,15 @@ class MyClient(discord.Client):
 			u_id = int(u_id)
 		except ValueError:
 			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-			                           delete_after = self.del_after)
+			                           delete_after=self.del_after)
 			return
 
 		if u_id in self.blacklist_ids:
-			await message.channel.send(f'User with ID {u_id} is already blacklisted.', delete_after = self.del_after)
+			await message.channel.send(f'User with ID {u_id} is already blacklisted.', delete_after=self.del_after)
 			return
 
 		if u_id in self.admin_ids:
-			await message.channel.send('You cannot blacklist an admin.', delete_after = self.del_after)
+			await message.channel.send('You cannot blacklist an admin.', delete_after=self.del_after)
 			return
 
 		self.blacklist_ids['ids'].append(u_id)
@@ -172,17 +173,17 @@ class MyClient(discord.Client):
 			os.remove(f'blacklist_users.json')
 
 		with open('blacklist_users.json', 'w') as f:
-			json.dump(self.blacklist_ids, f, indent = 4)
+			json.dump(self.blacklist_ids, f, indent=4)
 
 		channel = self.get_channel(1379193761791213618)
-		await channel.set_permissions(get(self.get_all_members(), id = u_id), send_messages = False)
+		await channel.set_permissions(get(self.get_all_members(), id=u_id), send_messages=False)
 
-		await message.channel.send(f'User <@{u_id}> has been blacklisted.', delete_after = self.del_after)
+		await message.channel.send(f'User <@{u_id}> has been blacklisted.', delete_after=self.del_after)
 
 	async def unblacklist_id(self, message: discord.Message):
 		await message.delete()
 		if message.author.id not in self.admin_ids:
-			await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+			await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
 			return
 
 		u_id = utils.get_id_from_msg(message)
@@ -191,11 +192,11 @@ class MyClient(discord.Client):
 			u_id = int(u_id)
 		except ValueError:
 			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-			                           delete_after = self.del_after)
+			                           delete_after=self.del_after)
 			return
 
 		if u_id not in self.blacklist_ids['ids']:
-			await message.channel.send(f'User with ID {u_id} is not blacklisted.', delete_after = self.del_after)
+			await message.channel.send(f'User with ID {u_id} is not blacklisted.', delete_after=self.del_after)
 			return
 
 		self.blacklist_ids['ids'].remove(u_id)
@@ -203,15 +204,15 @@ class MyClient(discord.Client):
 			os.remove(f'blacklist_users.json')
 
 		with open('blacklist_users.json', 'w') as f:
-			json.dump(self.blacklist_ids, f, indent = 4)
+			json.dump(self.blacklist_ids, f, indent=4)
 
-		await message.channel.send(f'User with ID {u_id} has been unblacklisted.', delete_after = self.del_after)
+		await message.channel.send(f'User with ID {u_id} has been unblacklisted.', delete_after=self.del_after)
 
 	async def get_from_api(self, message: discord.Message, api_func: Callable):
 
 		if not self.check_global_cooldown():
 			await message.channel.send(f'Please wait {self.cooldowns['global']['duration']} seconds before using this '
-			                           f'command again.', delete_after = self.del_after)
+			                           f'command again.', delete_after=self.del_after)
 			await message.delete()
 			return
 
@@ -226,7 +227,7 @@ class MyClient(discord.Client):
 		if not self.check_global_cooldown():
 			await message.channel.send(
 					f'Please wait {self.cooldowns['global']['duration']} seconds before using this command again.',
-					delete_after = self.del_after)
+					delete_after=self.del_after)
 			await message.delete()
 			return
 
@@ -267,7 +268,7 @@ class MyClient(discord.Client):
 
 			if message.author.id in self.blacklist_ids['ids']:
 				await message.delete()
-				await message.channel.send('You are not allowed to use this command.', delete_after = self.del_after)
+				await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
 				return
 
 			if message.content.lower().startswith('hardlockdown'):
@@ -278,10 +279,10 @@ class MyClient(discord.Client):
 				if not self.check_global_cooldown():
 					await message.channel.send(
 							f'Please wait {self.cooldowns["global"]["duration"]} seconds before using this command again.',
-							delete_after = self.del_after)
+							delete_after=self.del_after)
 					await message.delete()
 					return
-				await message.channel.send(f'{self.latency * 1000:.2f}ms', delete_after = self.del_after)
+				await message.channel.send(f'{self.latency * 1000:.2f}ms', delete_after=self.del_after)
 				await message.delete()
 				return
 
@@ -396,7 +397,7 @@ class MyClient(discord.Client):
 
 			if os.getenv("LOCAL_SAVE") == 'True':
 				with utils.make_file(self.today) as file:
-					file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
+					file.write(json.dumps(json_data, ensure_ascii=False) + '\n')
 
 			print(f'Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 			if has_attachment:
@@ -415,5 +416,5 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-client = MyClient(intents = intents)
+client = MyClient(intents=intents)
 client.run(os.getenv("TOKEN"))
