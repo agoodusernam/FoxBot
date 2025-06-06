@@ -298,6 +298,7 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.lower().split()[0] in self.command_aliases['analyse']:
+
 				await analysis.format_analysis(self.admin_ids, analysis.check_analyse_cooldown(self), self.del_after,
 											   message)
 				return
