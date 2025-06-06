@@ -15,6 +15,7 @@ from discord.utils import get
 import commands.admin_cmds
 from utils import db_stuff, utils, api_stuff
 from commands import suggest, help_cmd, restart, admin_cmds, fun_cmds, analysis
+import reaction_roles
 
 load_dotenv()
 
@@ -80,6 +81,18 @@ class MyClient(discord.Client):
 		# UI settings
 		self.del_after = 3
 
+		# Reaction roles
+		self.role_message_id = 0  # ID of the message that can be reacted to to add/remove a role.
+		self.emoji_to_role = {
+			discord.PartialEmoji(name = ':jjs:'):             1314274909815439420,
+			discord.PartialEmoji(name = '❕'):             1321214081977421916,
+			discord.PartialEmoji(name = ':grass_block:'): 1380623674918310079,
+			discord.PartialEmoji(name = ':Vrchat:'):            1380623882574368939,
+			discord.PartialEmoji(name = ':rust:'):            1130284770757197896,
+			discord.PartialEmoji(name = '❔'):        1352341336459841688,
+			discord.PartialEmoji(name = '🎬'): 1380624012090150913,
+		}
+
 	async def on_ready(self):
 		utils.check_env_variables()
 		utils.clean_up_APOD()
@@ -97,6 +110,12 @@ class MyClient(discord.Client):
 		channel = self.get_channel(1379193761791213618)
 		for u_id in self.blacklist_ids['ids']:
 			await channel.set_permissions(get(self.get_all_members(), id=u_id), send_messages=False)
+
+		channel = self.get_channel(1337465612875595776)
+		messages = [message async for message in channel.history(limit = 1)]
+		if messages[0].content != reaction_roles.to_send_msg:
+			await messages[0].delete()
+			await reaction_roles.send_reaction_role_msg(channel)
 
 	def check_global_cooldown(self) -> bool:
 		current_time = int(time.time())
@@ -394,92 +413,70 @@ class MyClient(discord.Client):
 			db_stuff.send_message(json_data)
 			self.today = utils.formatted_time()
 
-	async def on_reaction_add(self, reaction: discord.Reaction, member: discord.Member):
-		print("Reaction added:", reaction.emoji, "by", member.name)
-		if member.bot:
+	async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+		"""Gives a role based on a reaction emoji."""
+		# Make sure that the message the user is reacting to is the one we care about.
+		if payload.message_id != self.role_message_id:
 			return
 
-		if reaction.message.id != 1380618378158538833:
+		guild = self.get_guild(payload.guild_id)
+		if guild is None:
+			# Check if we're still in the guild and it's cached.
 			return
 
-		if reaction.emoji == ':jjs:':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='JJS')
-			await member.add_roles(role)
+		try:
+			role_id = self.emoji_to_role[payload.emoji]
+		except KeyError:
+			# If the emoji isn't the one we care about then exit as well.
 			return
 
-		if reaction.emoji == ':❕:':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='JJS PING')
-			await member.add_roles(role)
+		role = guild.get_role(role_id)
+		if role is None:
+			# Make sure the role still exists and is valid.
 			return
 
-		if reaction.emoji == ':grass_block:':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='Minecraft')
+		try:
+			# Finally, add the role.
+			await payload.member.add_roles(role)
+		except discord.HTTPException:
+			# If we want to do something in case of errors we'd do it here.
+			pass
+
+	async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+		"""Removes a role based on a reaction emoji."""
+		# Make sure that the message the user is reacting to is the one we care about.
+		if payload.message_id != self.role_message_id:
+			return
+
+		guild = self.get_guild(payload.guild_id)
+		if guild is None:
+			# Check if we're still in the guild and it's cached.
+			return
+
+		try:
+			role_id = self.emoji_to_role[payload.emoji]
+		except KeyError:
+			# If the emoji isn't the one we care about then exit as well.
+			return
+
+		role = guild.get_role(role_id)
+		if role is None:
+			# Make sure the role still exists and is valid.
+			return
+
+		# The payload for `on_raw_reaction_remove` does not provide `.member`
+		# so we must get the member ourselves from the payload's `.user_id`.
+		member = guild.get_member(payload.user_id)
+		if member is None:
+			# Make sure the member still exists and is valid.
+			return
+
+		try:
+			# Finally, remove the role.
 			await member.remove_roles(role)
-			return
-
-		if reaction.emoji == ':Vrchat:':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='VRChat')
-			await member.add_roles(role)
-			return
-
-		if reaction.emoji == ':rust:':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='Rust')
-			await member.add_roles(role)
-			return
-
-		if reaction.emoji == '❔':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='Fun Fact Ping')
-			await member.add_roles(role)
-			return
-
-		if reaction.emoji == '🎬':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='Movie Night Ping')
-			await member.add_roles(role)
-			return
-
-	async def on_reaction_remove(self, reaction: discord.Reaction, member: discord.Member):
-		if member.bot:
-			return
-
-		if reaction.message.id != 1380618378158538833:
-			return
-
-		if reaction.emoji == ':grass_block:':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='Minecraft')
-			await member.add_roles(role)
-			return
-
-		if reaction.emoji == ':Vrchat:':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='VRChat')
-			await member.remove_roles(role)
-			return
-
-		if reaction.emoji == ':rust:':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='Rust')
-			await member.remove_roles(role)
-			return
-
-		if reaction.emoji == '❔':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='Fun Fact Ping')
-			await member.remove_roles(role)
-			return
-
-		if reaction.emoji == '🎬':
-			guild = await self.fetch_guild(1081760248433492140)
-			role = get(guild.roles, name='Movie Night Ping')
-			await member.remove_roles(role)
-			return
+		except discord.HTTPException:
+			# If we want to do something in case of errors we'd do it here.
+			pass
 
 
 
