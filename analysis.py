@@ -54,7 +54,7 @@ def analyse() -> dict | Exception | str | None:
 			for message in valid_messages:
 				user_id = message['author_global_name']
 				if user_id is None:
-					print(message)
+					user_id = message['author']
 				if user_id not in user_message_count:
 					user_message_count[user_id] = 0
 				user_message_count[user_id] += 1

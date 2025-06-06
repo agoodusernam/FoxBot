@@ -203,7 +203,7 @@ def joke_help(self):
 
 def flip_coin_help(self):
 	help_text = f'`{self.prefix}flipcoin` - Flip a coin and get Heads or Tails.\n' + NO_ARGS_STR
-	cmd_aliases = self.command_aliases['flipcoin']
+	cmd_aliases = self.command_aliases['flip']
 	for cmds in cmd_aliases:
 		help_text += f'Alias: `{self.prefix}{cmds}`\n'
 
