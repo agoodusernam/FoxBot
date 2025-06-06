@@ -368,7 +368,7 @@ class MyClient(discord.Client):
 
 			if message.content.lower().split()[0] in self.command_aliases['flip']:
 				coin_flip = fun_cmds.flip_coin()
-				await message.channel.send(f'You flipped a coin and got: **{coin_flip}**', delete_after=self.del_after)
+				await message.channel.send(f'You flipped a coin and got: **{coin_flip}**')
 				return
 
 			if message.content.lower().startswith('suggest'):
