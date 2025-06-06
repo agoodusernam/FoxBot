@@ -5,8 +5,6 @@ from copy import deepcopy
 from typing import Callable
 import time
 
-from discord.app_commands import guilds
-from discord.ext.commands import MemberConverter
 from dotenv import load_dotenv
 
 import discord
@@ -114,7 +112,7 @@ class MyClient(discord.Client):
 			await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
 			return
 
-		await commands.admin_cmds.hardlockdown(self, message)
+		await commands.admin_cmds.hardlockdown(message)
 
 		for member in message.guild.members:
 			if member.id in self.admin_ids:
@@ -397,6 +395,7 @@ class MyClient(discord.Client):
 			self.today = utils.formatted_time()
 
 	async def on_reaction_add(self, reaction: discord.Reaction, member: discord.Member):
+		print("Reaction added:", reaction.emoji, "by", member.name)
 		if member.bot:
 			return
 

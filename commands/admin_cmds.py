@@ -64,7 +64,6 @@ async def hardlockdown(message: discord.Message) -> None:
 	previous_perms: dict[int, dict[str, dict[str, Union[bool, None]]]] = {}
 
 	for channel in message.guild.channels:
-		pass
 		previous_perms[channel.id] = format_permissions(channel.overwrites)
 
 	if os.path.exists('hardlockdown.txt'):
