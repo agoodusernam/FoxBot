@@ -113,7 +113,7 @@ class MyClient(discord.Client):
 
 		channel = self.get_channel(1337465612875595776)
 		messages = [message async for message in channel.history(limit = 1)]
-		if (messages is None) or (messages[0].content != reaction_roles.to_send_msg):
+		if (messages == []) or (messages[0].content != reaction_roles.to_send_msg):
 			await messages[0].delete()
 			self.role_message_id = await reaction_roles.send_reaction_role_msg(channel)
 		else:
