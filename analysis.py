@@ -17,7 +17,7 @@ def analyse() -> dict | Exception | str | None:
 		messages = db_stuff.download_all()
 
 		if messages is None:
-			print("No messages found or failed to connect to the database.")
+			print('No messages found or failed to connect to the database.')
 			return None
 
 		valid_messages = []
@@ -31,7 +31,7 @@ def analyse() -> dict | Exception | str | None:
 			valid_messages.append(message)
 			content.append(message['content'])
 
-		print(f"Total valid messages: {len(valid_messages)}")
+		print(f'Total valid messages: {len(valid_messages)}')
 
 		if content:
 			word_count = {}
@@ -43,12 +43,12 @@ def analyse() -> dict | Exception | str | None:
 					word_count[word] += 1
 
 			most_common_word = max(word_count, key=word_count.get)
-			print(f"Most common word: '{most_common_word}' with {word_count[most_common_word]} occurrences")
+			print(f'Most common word: \'{most_common_word}\' with {word_count[most_common_word]} occurrences')
 
 			unique_words = set(word_count.keys())
-			print(f"Total unique words: {len(unique_words)}")
+			print(f'Total unique words: {len(unique_words)}')
 			average_length = sum(len(word) for word in unique_words) / len(unique_words)
-			print(f"Average length of unique words: {average_length:.2f} characters")
+			print(f'Average length of unique words: {average_length:.2f} characters')
 
 			user_message_count = {}
 			for message in valid_messages:
@@ -57,7 +57,7 @@ def analyse() -> dict | Exception | str | None:
 					user_message_count[user_id] = 0
 				user_message_count[user_id] += 1
 
-			most_active_users = [{"user": user, "num_messages": count} for user, count in user_message_count.items()]
+			most_active_users = [{'user': user, 'num_messages': count} for user, count in user_message_count.items()]
 
 			most_active_channels = {}
 			for message in valid_messages:
@@ -66,25 +66,25 @@ def analyse() -> dict | Exception | str | None:
 					most_active_channels[channel] = 0
 				most_active_channels[channel] += 1
 
-			most_active_channels = [{"channel": channel, "num_messages": count} for channel, count in
+			most_active_channels = [{'channel': channel, 'num_messages': count} for channel, count in
 			                        most_active_channels.items()]
 
 			return {
-				"total_messages":         len(valid_messages),
-				"most_common_word":       most_common_word,
-				"most_common_word_count": word_count[most_common_word],
-				"total_unique_words":     len(unique_words),
-				"average_length":         average_length,
-				"active_users_lb":        most_active_users,
-				"active_channels_lb":     most_active_channels,
-				"total_users":            len(user_message_count),
+				'total_messages':         len(valid_messages),
+				'most_common_word':       most_common_word,
+				'most_common_word_count': word_count[most_common_word],
+				'total_unique_words':     len(unique_words),
+				'average_length':         average_length,
+				'active_users_lb':        most_active_users,
+				'active_channels_lb':     most_active_channels,
+				'total_users':            len(user_message_count),
 			}
 
 		else:
-			return "No valid messages found to analyse."
+			return 'No valid messages found to analyse.'
 
 	except Exception as e:
-		print(f"An error occurred: {e}")
+		print(f'An error occurred: {e}')
 		return e
 
 
@@ -106,30 +106,30 @@ async def format_analysis(admin_ids: list[int], cooldown: bool | int, del_after:
 		result = analyse()
 		await new_msg.delete()
 		if isinstance(result, dict):
-			top_5_active_users = sorted(result["active_users_lb"], key=lambda x: x["num_messages"],
+			top_5_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'],
 			                            reverse=True)[:5]
 
-			top_5_active_channels = sorted(result["active_channels_lb"], key=lambda x: x["num_messages"],
+			top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'],
 			                               reverse=True)[:5]
 
-			msg = (f'{result["total_messages"]} total messages analysed\n'
-			       f'Most common word: {result["most_common_word"]} said {result["most_common_word_count"]} times \n'
-			       f'({result["total_unique_words"]} unique words, average length: {result["average_length"]:.2f} characters)\n'
-			       f'Total users: {result["total_users"]}\n'
+			msg = (f'{result['total_messages']} total messages analysed\n'
+			       f'Most common word: {result['most_common_word']} said {result['most_common_word_count']} times \n'
+			       f'({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n'
+			       f'Total users: {result['total_users']}\n'
 			       f'Top 5 most active users:\n')
 			for i, user in enumerate(top_5_active_users, start=1):
-				realUser = user["user"]
+				realUser = user['user']
 
 				if realUser is None:
-					realUser = f"Unknown User {user['user']}"
+					realUser = f'Unknown User {user['user']}'
 
-				msg += f'**{i}. {realUser}** {user["num_messages"]} messages\n'
+				msg += f'**{i}. {realUser}** {user['num_messages']} messages\n'
 
 			msg += '\n'
 
 			msg += f'Top 5 most active channels:\n'
 			for i, channel in enumerate(top_5_active_channels, 1):
-				msg += f'**{i}. {channel["channel"]}** {channel["num_messages"]} messages\n'
+				msg += f'**{i}. {channel['channel']}** {channel['num_messages']} messages\n'
 
 			await message.channel.send(msg)
 		elif isinstance(result, Exception):
@@ -138,6 +138,6 @@ async def format_analysis(admin_ids: list[int], cooldown: bool | int, del_after:
 			await message.channel.send(result)
 
 		else:
-			print("No valid messages found for analysis.")
+			print('No valid messages found for analysis.')
 	except Exception as e:
-		print(f"Error during analysis: {e}")
+		print(f'Error during analysis: {e}')

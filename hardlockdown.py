@@ -37,8 +37,8 @@ async def hardlockdown(client, message: discord.Message) -> None:
 		pass
 		previous_perms[channel.id] = format_permissions(channel.overwrites)
 
-	if os.path.exists("hardlockdown.txt"):
-		os.rename("hardlockdown.txt", "hardlockdown_old.txt")
+	if os.path.exists('hardlockdown.txt'):
+		os.rename('hardlockdown.txt', 'hardlockdown_old.txt')
 
 	with open('hardlockdown.txt', 'w') as file:
 		json.dump(previous_perms, file, indent=4)

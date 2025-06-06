@@ -1,4 +1,5 @@
 import asyncio  # type: ignore
+import datetime
 import os
 from copy import deepcopy
 from typing import Callable
@@ -44,7 +45,7 @@ class MyClient(discord.Client):
 
 		self.admin_ids = [235644709714788352, 542798185857286144, 937278965557641227]
 		self.dev_ids = [542798185857286144]
-		self.blacklist_ids = {"ids": []}
+		self.blacklist_ids = {'ids': []}
 
 		self.send_blacklist = {
 			'channel_ids':  [],
@@ -79,6 +80,7 @@ class MyClient(discord.Client):
 			'joke':    ['joke', 'jokes'],
 			'suggest': ['suggest', 'suggestion'],
 			'analyse': ['analyse', 'analysis', 'analyze', 'stats', 'statistics'],
+			'flip':   ['flip', 'coin_flip', 'coinflip'],
 		}
 
 		self.nasa_data: dict[str, str] = {}
@@ -128,7 +130,7 @@ class MyClient(discord.Client):
 			return
 
 		await hardlockdown.hardlockdown(self, message)
-		"""
+
 		for member in message.guild.members:
 			if member.id in self.admin_ids:
 				continue
@@ -143,9 +145,7 @@ class MyClient(discord.Client):
 				except Exception as e:
 					print(f'Error during hard lockdown for user {member.id}: {e}')
 					continue
-		"""
 
-	# await message.channel.send('Hard lockdown initiated.', delete_after = self.del_after)
 
 	async def blacklist_id(self, message: discord.Message):
 		await message.delete()
@@ -233,10 +233,10 @@ class MyClient(discord.Client):
 			await message.delete()
 			return
 
-		if os.path.exists(f"nasa/nasa_pic_{self.today}.jpg"):
-			await message.channel.send(f"**{self.nasa_data['title']}**\n")
-			await utils.send_image(message, f"nasa/nasa_pic_{self.today}.jpg", f"nasa_pic_{self.today}.jpg")
-			await message.channel.send(f"**Explanation:** {self.nasa_data['explanation']}")
+		if os.path.exists(f'nasa/nasa_pic_{self.today}.jpg'):
+			await message.channel.send(f'**{self.nasa_data['title']}**\n')
+			await utils.send_image(message, f'nasa/nasa_pic_{self.today}.jpg', f'nasa_pic_{self.today}.jpg')
+			await message.channel.send(f'**Explanation:** {self.nasa_data['explanation']}')
 			return
 
 		try:
@@ -248,11 +248,11 @@ class MyClient(discord.Client):
 			else:
 				url = nasa_data['url']
 
-			utils.download_from_url(f"nasa/nasa_pic_{self.today}.jpg", url)
+			utils.download_from_url(f'nasa/nasa_pic_{self.today}.jpg', url)
 
-			await message.channel.send(f"**{nasa_data['title']}**\n")
-			await utils.send_image(message, f"nasa/nasa_pic_{self.today}.jpg", f"nasa_pic_{self.today}.jpg")
-			await message.channel.send(f"**Explanation:** {nasa_data['explanation']}")
+			await message.channel.send(f'**{nasa_data['title']}**\n')
+			await utils.send_image(message, f'nasa/nasa_pic_{self.today}.jpg', f'nasa_pic_{self.today}.jpg')
+			await message.channel.send(f'**Explanation:** {nasa_data['explanation']}')
 
 		except Exception as e:
 			await message.channel.send(f'Error fetching NASA picture: {e}')
@@ -280,7 +280,7 @@ class MyClient(discord.Client):
 			if message.content.lower().split()[0] in self.command_aliases['ping']:
 				if not self.check_global_cooldown():
 					await message.channel.send(
-							f'Please wait {self.cooldowns["global"]["duration"]} seconds before using this command again.',
+							f'Please wait {self.cooldowns['global']['duration']} seconds before using this command again.',
 							delete_after=self.del_after)
 					await message.delete()
 					return
@@ -322,9 +322,11 @@ class MyClient(discord.Client):
 				return
 
 			if message.content.lower().startswith('restart'):
+				await message.delete()
 				if message.author.id not in self.dev_ids:
 					await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
 					return
+
 				await restart.restart(self)
 				return
 
@@ -364,6 +366,11 @@ class MyClient(discord.Client):
 				await fun_cmds.dice_roll(self.del_after, message)
 				return
 
+			if message.content.lower().split()[0] in self.command_aliases['flip']:
+				coin_flip = fun_cmds.flip_coin()
+				await message.channel.send(f'You flipped a coin and got: **{coin_flip}**', delete_after=self.del_after)
+				return
+
 			if message.content.lower().startswith('suggest'):
 				await suggest.send_suggestion(self, message)
 				return
@@ -378,9 +385,9 @@ class MyClient(discord.Client):
 				return
 
 		if (message.author != self.user) and (
-				message.author.id not in self.no_log["user_ids"]) and (
-				message.channel.id not in self.no_log["channel_ids"]) and (
-				message.channel.category_id not in self.no_log["category_ids"]):
+				message.author.id not in self.no_log['user_ids']) and (
+				message.channel.id not in self.no_log['channel_ids']) and (
+				message.channel.category_id not in self.no_log['category_ids']):
 
 			has_attachment = False
 			if message.attachments:
@@ -393,24 +400,24 @@ class MyClient(discord.Client):
 				reply = str(message.reference.message_id)
 
 			json_data = {
-				"author":             message.author.name,
-				"author_id":          str(message.author.id),
-				"author_global_name": message.author.global_name,
-				"content":            message.content,
-				"reply_to":           reply,
-				"HasAttachments":     has_attachment,
-				"timestamp":          message.created_at.isoformat(),
-				"id":                 str(message.id),
-				"channel":            message.channel.name
+				'author':             message.author.name,
+				'author_id':          str(message.author.id),
+				'author_global_name': message.author.global_name,
+				'content':            message.content,
+				'reply_to':           reply,
+				'HasAttachments':     has_attachment,
+				'timestamp':          message.created_at.isoformat(),
+				'id':                 str(message.id),
+				'channel':            message.channel.name
 			}
 
-			if os.getenv("LOCAL_SAVE") == 'True':
+			if os.getenv('LOCAL_SAVE') == 'True':
 				with utils.make_file(self.today) as file:
 					file.write(json.dumps(json_data, ensure_ascii=False) + '\n')
 
 			print(f'Message from {message.author.global_name} [#{message.channel}]: {message.content}')
 			if has_attachment:
-				if os.environ.get("LOCAL_IMG_SAVE") == 'True':
+				if os.environ.get('LOCAL_IMG_SAVE') == 'True':
 					await utils.save_attachments(message)
 
 				else:
@@ -426,4 +433,4 @@ intents.message_content = True
 intents.members = True
 
 client = MyClient(intents=intents)
-client.run(os.getenv("TOKEN"))
+client.run(os.getenv('TOKEN'))

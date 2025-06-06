@@ -6,9 +6,9 @@ import db_stuff
 
 
 async def upload_all_history(channel: discord.TextChannel, author: discord.Member) -> None:
-	print("Starting to download all messages from channel:", channel.name)
+	print('Starting to download all messages from channel:', channel.name)
 	messages = [message async for message in channel.history(limit=None)]
-	print("Downloaded", len(messages), "messages from channel:", channel.name)
+	print('Downloaded', len(messages), 'messages from channel:', channel.name)
 	bulk_data: list[dict[str, Any]] = []
 	for i, message in enumerate(messages):
 
@@ -23,23 +23,23 @@ async def upload_all_history(channel: discord.TextChannel, author: discord.Membe
 			reply = str(message.reference.message_id)
 
 		json_data = {
-			"author":             message.author.name,
-			"author_id":          str(message.author.id),
-			"author_global_name": message.author.global_name,
-			"content":            message.content,
-			"reply_to":           reply,
-			"HasAttachments":     has_attachment,
-			"timestamp":          message.created_at.isoformat(),
-			"id":                 str(message.id),
-			"channel":            message.channel.name,
-			"channel_id":         str(message.channel.id)
+			'author':             message.author.name,
+			'author_id':          str(message.author.id),
+			'author_global_name': message.author.global_name,
+			'content':            message.content,
+			'reply_to':           reply,
+			'HasAttachments':     has_attachment,
+			'timestamp':          message.created_at.isoformat(),
+			'id':                 str(message.id),
+			'channel':            message.channel.name,
+			'channel_id':         str(message.channel.id)
 		}
 		bulk_data.append(json_data)
 		if i % 100 == 0:
 			db_stuff.bulk_send_messages(bulk_data)
 			bulk_data = []
-			print("Bulk uploaded 100 messages")
-			print(f"{len(messages) - i} messages remaining")
+			print('Bulk uploaded 100 messages')
+			print(f'{len(messages) - i} messages remaining')
 
 	dm = await author.create_dm()
-	await dm.send(f"Finished uploading all messages from channel: {channel.name}")
+	await dm.send(f'Finished uploading all messages from channel: {channel.name}')
