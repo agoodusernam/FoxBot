@@ -489,6 +489,7 @@ class MyClient(discord.Client):
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+intents.reactions = True
 
 client = MyClient(intents=intents)
 client.run(os.getenv('TOKEN'))
