@@ -16,7 +16,6 @@ import admin_cmds
 import db_stuff
 import api_stuff
 import fun_cmds
-import one_use_cmds
 import restart
 import suggest
 import utils
@@ -302,23 +301,6 @@ class MyClient(discord.Client):
 
 			if message.content.lower().startswith('unblacklist'):
 				await self.unblacklist_id(message)
-				return
-
-			if message.content.lower().startswith('uploadallhistory'):
-				if message.author.id != 542798185857286144:
-					await message.delete()
-					await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
-					return
-				await message.delete()
-
-				try:
-					channel = message.guild.get_channel(int(message.content.split()[1]))
-				except (IndexError, ValueError):
-					await message.channel.send('Please provide a valid channel ID.', delete_after=self.del_after)
-					return
-
-				db_stuff.del_channel_from_db(channel)
-				await one_use_cmds.upload_all_history(channel, message.author)
 				return
 
 			if message.content.lower().startswith('restart'):
