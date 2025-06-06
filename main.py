@@ -84,11 +84,11 @@ class MyClient(discord.Client):
 		# Reaction roles
 		self.role_message_id = 0  # ID of the message that can be reacted to to add/remove a role.
 		self.emoji_to_role = {
-			discord.PartialEmoji(name = ':jjs:'):             1314274909815439420,
+			discord.PartialEmoji.from_str('<:jjs:1380607586231128155>'):             1314274909815439420,
 			discord.PartialEmoji(name = '❕'):             1321214081977421916,
-			discord.PartialEmoji(name = ':grass_block:'): 1380623674918310079,
-			discord.PartialEmoji(name = ':Vrchat:'):            1380623882574368939,
-			discord.PartialEmoji(name = ':rust:'):            1130284770757197896,
+			discord.PartialEmoji.from_str('<:grass_block:1380607192717328505>'): 1380623674918310079,
+			discord.PartialEmoji.from_str('<:Vrchat:1380607441691214048>'):            1380623882574368939,
+			discord.PartialEmoji.from_str('<:rust:1380606572127850639>'):            1130284770757197896,
 			discord.PartialEmoji(name = '❔'):        1352341336459841688,
 			discord.PartialEmoji(name = '🎬'): 1380624012090150913,
 		}
@@ -113,9 +113,9 @@ class MyClient(discord.Client):
 
 		channel = self.get_channel(1337465612875595776)
 		messages = [message async for message in channel.history(limit = 1)]
-		if messages[0].content != reaction_roles.to_send_msg:
+		if (messages is None) or (messages[0].content != reaction_roles.to_send_msg):
 			await messages[0].delete()
-			self.role_message_id = await reaction_roles.send_reaction_role_msg(channel)
+			self.role_message_id = await reaction_roles.send_reaction_role_msg(channel, self.emoji_to_role)
 		else:
 			self.role_message_id = messages[0].id
 
