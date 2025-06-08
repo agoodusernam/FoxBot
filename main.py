@@ -334,7 +334,7 @@ async def nasa_pic(ctx):
 
 	if os.path.exists(f'nasa/nasa_pic_{bot.today}.jpg'):
 		await ctx.send(f'**{bot.nasa_data["title"]}**\n')
-		await utils.send_image(ctx.message, f'nasa/nasa_pic_{bot.today}.jpg', f'nasa_pic_{bot.today}.jpg')
+		await ctx.send(file = discord.File(f'nasa/nasa_pic_{bot.today}.jpg', filename = f'nasa_pic_{bot.today}.jpg'))
 		await ctx.send(f'**Explanation:** {bot.nasa_data["explanation"]}')
 		return
 
@@ -350,7 +350,7 @@ async def nasa_pic(ctx):
 		utils.download_from_url(f'nasa/nasa_pic_{bot.today}.jpg', url)
 
 		await ctx.send(f'**{nasa_data["title"]}**\n')
-		await utils.send_image(ctx.message, f'nasa/nasa_pic_{bot.today}.jpg', f'nasa_pic_{bot.today}.jpg')
+		await ctx.send(file = discord.File(f'nasa/nasa_pic_{bot.today}.jpg', filename = f'nasa_pic_{bot.today}.jpg'))
 		await ctx.send(f'**Explanation:** {nasa_data["explanation"]}')
 
 	except Exception as e:
@@ -450,7 +450,7 @@ async def karma(ctx):
 		await ctx.send('No karma pictures found.')
 		return
 	file_path, file_name = karma_pic
-	await utils.send_image(ctx.message, file_path, file_name)
+	await ctx.message.channel.send(file=discord.File(file_path, filename=file_name))
 
 
 @bot.command(name = "echo",

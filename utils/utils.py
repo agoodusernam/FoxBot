@@ -6,24 +6,6 @@ from pathlib import Path
 import discord
 
 
-async def send_image(message: discord.Message, file_path: str | Path, file_name: str) -> None:
-	if not os.path.exists(file_path):
-		print(f'File {file_path} does not exist.')
-		return
-
-	try:
-		file = discord.File(file_path, filename=file_name)
-		embed = discord.Embed()
-		embed.set_image(url=f'attachment://{file_name}')
-		await message.channel.send(file=file, embed=embed)
-
-		print(f'Sent file: {file_path}')
-	except discord.HTTPException as e:
-		print(f'Failed to send file {file_path}: {e}')
-	except Exception as e:
-		print(f'An error occurred while sending file {file_path}: {e}')
-
-
 def get_id_from_msg(message: discord.Message) -> str:
 	u_id: str | int = message.content.split()[-1]
 	u_id = u_id.replace('@', '').strip()
@@ -74,8 +56,8 @@ def clean_up_APOD():
 	"""Cleans up old APOD images from the data directory."""
 	apod_dir = Path('nasa/')
 	if not apod_dir.exists():
-		print('APOD directory does not exist.')
-		return
+		print('APOD directory does not exist, creating it.')
+		apod_dir.mkdir(parents=True, exist_ok=True)
 
 	for file in apod_dir.iterdir():
 		if file.is_file() and file.suffix.lower() in ['.jpg', '.jpeg', '.png']:
@@ -104,3 +86,12 @@ def check_env_variables():
 	if os.getenv('LOCAL_SAVE') not in ['True', 'False']:
 		print('Invalid LOCAL_SAVE value. Please set it to True or False. Defaulting to False.')
 		os.environ['LOCAL_SAVE'] = 'False'
+
+	if os.getenv('LOCAL_IMG_SAVE') is None:
+		print('No LOCAL_IMG_SAVE found in environment variables. Defaulting to False.')
+		os.environ['LOCAL_IMG_SAVE'] = 'False'
+
+
+	if os.getenv('LOCAL_IMG_SAVE') not in ['True', 'False']:
+		print('Invalid LOCAL_IMG_SAVE value. Please set it to True or False. Defaulting to False.')
+		os.environ['LOCAL_IMG_SAVE'] = 'False'
