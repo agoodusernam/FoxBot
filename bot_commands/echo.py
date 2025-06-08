@@ -15,7 +15,6 @@ async def echo(message: discord.Message, del_after: int, client: "discord.client
 		channel = client.get_channel(channel_id)
 		msg = msg.replace(str(channel_id), '', 1)
 	except:
-		print(split_message)
 		pass
 
 	await channel.send(msg)

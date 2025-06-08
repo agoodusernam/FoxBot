@@ -116,11 +116,11 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 		if ctx.author.id in bot.admin_ids:
 			admin_help_text = (
 				"**Admin Commands:**\n"
-				f"`{ctx.prefix}rek <user_id>` - Absolutely rek a user\n"
-				f"`{ctx.prefix}analyse` - Analyse the server's messages\n"
-				f"`{ctx.prefix}blacklist <user_id>` - Blacklist a user from using commands\n"
-				f"`{ctx.prefix}unblacklist <user_id>` - Remove a user from the blacklist\n"
-				f"`{ctx.prefix}echo <message>` - Make the bot say something\n"
+				f"`{ctx.prefix}rek <user_id/mention>` - Absolutely rek a user\n"
+				f"`{ctx.prefix}analyse [user_id/mention]` - Analyse the server's messages\n"
+				f"`{ctx.prefix}blacklist <user_id/mention>` - Blacklist a user from using commands\n"
+				f"`{ctx.prefix}unblacklist <user_id/mention>` - Remove a user from the blacklist\n"
+				f"`{ctx.prefix}echo [channel id] <message>` - Make the bot say something\n"
 				f"`{ctx.prefix}hardlockdown` - Lock down the entire server\n"
 				f"`{ctx.prefix}unhardlockdown` - Unlock the server from hard lockdown\n"
 				f"`{ctx.prefix}restart` - Restart the bot\n"
@@ -134,18 +134,15 @@ bot.help_command = CustomHelpCommand()
 
 # Command checks
 def not_blacklisted(ctx):
-	print(f'Checking if {ctx.author.global_name} is blacklisted...')
 	return ctx.author.id not in bot.blacklist_ids['ids']
 
 
 
 def is_admin(ctx):
-	print(f'Checking if {ctx.author.global_name} is admin...')
 	return ctx.author.id in bot.admin_ids
 
 
 def is_dev(ctx):
-	print(f'Checking if {ctx.author.global_name} is a developer...')
 	return ctx.author.id in bot.dev_ids
 
 
@@ -206,12 +203,10 @@ async def unhard_lockdown(ctx):
 		if member.id in bot.blacklist_ids['ids']:
 			bot.blacklist_ids['ids'].remove(member.id)
 
-
-
 		try:
 			await member.timeout(None, reason = 'Hard lockdown lifted by admin')
 		except Exception as e:
-			print(f'Error during unhard lockdown for user {member.id}: {e}')
+			print(f'Error during unhardlockdown for user {member.id}: {e}')
 			continue
 
 	if os.path.isfile('blacklist_users.json'):
@@ -234,7 +229,8 @@ async def ping(ctx):
 
 @bot.command(name = "rek",
 			 brief = "Absolutely rek a user",
-			 help = "Admin only: Timeout a user for 28 days and add them to blacklist", hidden=True)
+			 help = "Admin only: Timeout a user for 28 days and add them to blacklist", hidden=True,
+			 usage = "rek <user_id/mention>")
 @commands.check(is_admin)
 async def rek(ctx):
 	await admin_cmds.rek(bot.admin_ids, bot.del_after, ctx.message, bot.get_guild(ctx.guild.id))
@@ -242,7 +238,8 @@ async def rek(ctx):
 
 @bot.command(name = "analyse", aliases = ["analysis", "analyze", "stats", "statistics"],
 			 brief = "Analyze server message data",
-			 help = "Provides statistics about messages sent in the server", hidden=True)
+			 help = "Provides statistics about messages sent in the server", hidden=True,
+			 usage = "analyse [user_id/mention]")
 @commands.cooldown(1, 300, commands.BucketType.user)
 @commands.check(is_admin)
 async def analyse(ctx):
@@ -251,7 +248,8 @@ async def analyse(ctx):
 
 @bot.command(name = "blacklist",
 			 brief = "Blacklist a user",
-			 help = "Admin only: Prevent a user from using bot commands", hidden=True)
+			 help = "Admin only: Prevent a user from using bot commands", hidden=True,
+			 usage = "blacklist <user_id/mention>")
 @commands.check(is_admin)
 async def blacklist_id(ctx):
 	await ctx.message.delete()
@@ -288,7 +286,8 @@ async def blacklist_id(ctx):
 
 @bot.command(name = "unblacklist",
 			 brief = "Remove user from blacklist",
-			 help = "Admin only: Allow a blacklisted user to use bot commands again", hidden=True)
+			 help = "Admin only: Allow a blacklisted user to use bot commands again", hidden=True,
+			 usage = "unblacklist <user_id/mention>")
 @commands.check(is_admin)
 async def unblacklist_id(ctx):
 	await ctx.message.delete()
@@ -339,7 +338,7 @@ async def nasa_pic(ctx):
 		return
 
 	try:
-		await ctx.send('Fetching NASA picture of the day...')
+		fetch_msg = await ctx.send('Fetching NASA picture of the day...')
 		nasa_data = api_stuff.get_nasa_apod()
 		bot.nasa_data = deepcopy(nasa_data)
 		if 'hdurl' in nasa_data:
@@ -352,6 +351,7 @@ async def nasa_pic(ctx):
 		await ctx.send(f'**{nasa_data["title"]}**\n')
 		await ctx.send(file = discord.File(f'nasa/nasa_pic_{bot.today}.jpg', filename = f'nasa_pic_{bot.today}.jpg'))
 		await ctx.send(f'**Explanation:** {nasa_data["explanation"]}')
+		await fetch_msg.delete()
 
 	except Exception as e:
 		await ctx.send(f'Error fetching NASA picture: {e}')
@@ -413,7 +413,8 @@ async def joke(ctx):
 
 @bot.command(name = "dice", aliases = ["roll", "dice_roll"],
 			 brief = "Roll a dice",
-			 help = "Roll a dice between two values, e.g. 'dice 1 6'")
+			 help = "Roll a dice between two values",
+			 usage = "dice <min> <max>")
 @commands.cooldown(1, 5, commands.BucketType.user)
 @commands.check(not_blacklisted)
 async def dice(ctx):
@@ -432,7 +433,8 @@ async def flip(ctx):
 
 @bot.command(name = "suggest", aliases = ["suggestion"],
 			 brief = "Submit a suggestion",
-			 help = "Submit a suggestion for the server or bot")
+			 help = "Submit a suggestion for the bot",
+			 usage = "suggest <suggestion>")
 @commands.cooldown(1, 5, commands.BucketType.user)
 @commands.check(not_blacklisted)
 async def suggest_cmd(ctx):
@@ -455,7 +457,8 @@ async def karma(ctx):
 
 @bot.command(name = "echo",
 			 brief = "Make the bot say something",
-			 help = "Admin only: Makes the bot say the specified message", hidden=True)
+			 help = "Admin only: Makes the bot say the specified message", hidden=True,
+			 usage = "echo [channel id] <message>")
 @commands.check(is_admin)
 async def echo_cmd(ctx):
 	await echo.echo(ctx.message, bot.del_after, bot)
@@ -478,7 +481,8 @@ async def on_message(message):
 	if message.content.startswith(bot.command_prefix):
 		return
 
-	if message.channel.id == 1346720879651848202 and message.author.id == 542798185857286144:
+	if ((message.channel.id == 1346720879651848202) and (message.author.id == 542798185857286144) and
+			(message.content.startswith('FUN FACT'))):
 		await message.channel.send('<@1352341336459841688>', delete_after = 0.5)
 
 	# Log regular messages
