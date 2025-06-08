@@ -1,8 +1,6 @@
-import asyncio
 import datetime
 import os
 from copy import deepcopy
-from typing import Callable
 import time
 
 from dotenv import load_dotenv
@@ -23,72 +21,74 @@ intents.presences = False
 bot = commands.Bot(command_prefix = 'f!', intents = intents)
 
 
+# Initialize bot configuration
+bot.today = utils.formatted_time()
+
+# Access control
+bot.no_log = {
+	'user_ids':     [1329366814517628969, 1329366963805491251, 1329367238146396211,
+					 1329367408330145805, 235148962103951360, 1299640624848306177],
+	'channel_ids':  [],
+	'category_ids': [1329366612821938207]
+}
+
+bot.admin_ids = [235644709714788352, 542798185857286144, 937278965557641227]
+bot.dev_ids = [542798185857286144]
+bot.blacklist_ids = {'ids': []}
+
+bot.send_blacklist = {
+	'channel_ids':  [],
+	'category_ids': []
+}
+
+# Cooldown settings
+bot.cooldowns = {
+	'analyse': {
+		'duration':  300,
+		'last_time': int(time.time()) - 300
+	},
+	'global':  {
+		'duration':  5,
+		'last_time': int(time.time()) - 5
+	}
+}
+
+# UI settings
+bot.del_after = 3
+
+# NASA data
+bot.nasa_data = {}
+
+# Reaction roles
+bot.role_message_id = 0
+bot.emoji_to_role = {
+	discord.PartialEmoji.from_str('<:jjs:1380607586231128155>'):         1314274909815439420,
+	discord.PartialEmoji(name = '❕'):                                    1321214081977421916,
+	discord.PartialEmoji.from_str('<:grass_block:1380607192717328505>'): 1380623674918310079,
+	discord.PartialEmoji.from_str('<:Vrchat:1380607441691214048>'):      1380623882574368939,
+	discord.PartialEmoji.from_str('<:rust:1380606572127850639>'):        1130284770757197896,
+	discord.PartialEmoji(name = '❔'):                                    1352341336459841688,
+	discord.PartialEmoji(name = '🎬'):                                    1380624012090150913,
+}
+
+# Load blacklist
+if not os.path.isfile('blacklist_users.json'):
+	with open('blacklist_users.json', 'w') as f:
+		json.dump(bot.blacklist_ids, f, indent = 4)
+else:
+	with open('blacklist_users.json', 'r') as f:
+		bot.blacklist_ids = json.load(f)
+
+
 # Bot configuration
 @bot.event
 async def on_ready():
-	# Initialize bot configuration
-	bot.today = utils.formatted_time()
-
-	# Access control
-	bot.no_log = {
-		'user_ids':     [1329366814517628969, 1329366963805491251, 1329367238146396211,
-						 1329367408330145805, 235148962103951360, 1299640624848306177],
-		'channel_ids':  [],
-		'category_ids': [1329366612821938207]
-	}
-
-	bot.admin_ids = [235644709714788352, 542798185857286144, 937278965557641227]
-	bot.dev_ids = [542798185857286144]
-	bot.blacklist_ids = {'ids': []}
-
-	bot.send_blacklist = {
-		'channel_ids':  [],
-		'category_ids': []
-	}
-
-	# Cooldown settings
-	bot.cooldowns = {
-		'analyse': {
-			'duration':  300,
-			'last_time': int(time.time()) - 300
-		},
-		'global':  {
-			'duration':  5,
-			'last_time': int(time.time()) - 5
-		}
-	}
-
-	# UI settings
-	bot.del_after = 3
-
-	# NASA data
-	bot.nasa_data = {}
-
-	# Reaction roles
-	bot.role_message_id = 0
-	bot.emoji_to_role = {
-		discord.PartialEmoji.from_str('<:jjs:1380607586231128155>'):         1314274909815439420,
-		discord.PartialEmoji(name = '❕'):                                    1321214081977421916,
-		discord.PartialEmoji.from_str('<:grass_block:1380607192717328505>'): 1380623674918310079,
-		discord.PartialEmoji.from_str('<:Vrchat:1380607441691214048>'):      1380623882574368939,
-		discord.PartialEmoji.from_str('<:rust:1380606572127850639>'):        1130284770757197896,
-		discord.PartialEmoji(name = '❔'):                                    1352341336459841688,
-		discord.PartialEmoji(name = '🎬'):                                    1380624012090150913,
-	}
 
 	utils.check_env_variables()
 	utils.clean_up_APOD()
 	await bot.change_presence(activity = discord.CustomActivity(name = 'f!help'))
 	print(f'Logged in as {bot.user} (ID: {bot.user.id})')
 	print('------')
-
-	# Load blacklist
-	if not os.path.isfile('blacklist_users.json'):
-		with open('blacklist_users.json', 'w') as f:
-			json.dump(bot.blacklist_ids, f, indent = 4)
-	else:
-		with open('blacklist_users.json', 'r') as f:
-			bot.blacklist_ids = json.load(f)
 
 	# Apply blacklist to channel
 	channel = bot.get_channel(1379193761791213618)
@@ -116,19 +116,6 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 				dm_help = False
 		)
 
-	async def filter_commands(self, commands, *, sort=False, key=None):
-		"""Filter commands based on user permissions."""
-		commands = await super().filter_commands(commands, sort = sort, key = key)
-
-		# If not admin, remove admin commands
-		if self.context.author.id not in self.context.bot.admin_ids:
-			commands = [cmd for cmd in commands if not (
-					cmd.name in ['hardlockdown', 'blacklist', 'unblacklist', 'restart', 'echo'] or
-					cmd.name == 'analyse' and not cmd.hidden
-			)]
-
-		return commands
-
 	async def send_bot_help(self, mapping):
 		ctx = self.context
 		if ctx.author.id in ctx.bot.blacklist_ids['ids']:
@@ -146,6 +133,8 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 				f"`{ctx.prefix}blacklist <user_id>` - Blacklist a user from using commands\n"
 				f"`{ctx.prefix}unblacklist <user_id>` - Remove a user from the blacklist\n"
 				f"`{ctx.prefix}echo <message>` - Make the bot say something\n"
+				f"`{ctx.prefix}hardlockdown` - Lock down the entire server\n"
+				f"`{ctx.prefix}unhardlockdown` - Unlock the server from hard lockdown\n"
 				f"`{ctx.prefix}restart` - Restart the bot\n"
 			)
 			dm = await ctx.author.create_dm()
@@ -200,14 +189,13 @@ def is_dev():
 	return commands.check(predicate)
 
 
-# Bot commands with help text
 @bot.command(name = "hardlockdown",
 			 brief = "Lock down the entire server",
 			 help = "Admin only: Timeout all non-admin users for 28 days and add them to blacklist", hidden=True)
 @is_admin()
 async def hard_lockdown(ctx):
 	await ctx.message.delete()
-	await commands.admin_cmds.hardlockdown(ctx.message)
+	# await admin_cmds.hardlockdown(ctx.message)
 
 	for member in ctx.guild.members:
 		if member.id in bot.admin_ids:
@@ -223,6 +211,39 @@ async def hard_lockdown(ctx):
 			except Exception as e:
 				print(f'Error during hard lockdown for user {member.id}: {e}')
 				continue
+
+	await ctx.send('Hard lockdown initiated. All non-admin users have been timed out for 28 days and added to the blacklist.',
+				   delete_after = bot.del_after)
+
+
+@bot.command(name = "unhardlockdown",
+			 brief = "Unlock the server from hard lockdown",
+			 help = "Admin only: Remove timeouts and blacklist from all users", hidden=True)
+@is_admin()
+async def unhard_lockdown(ctx):
+	await ctx.message.delete()
+
+	for member in ctx.guild.members:
+		if member.id in bot.admin_ids:
+			continue
+
+		if member.id in bot.blacklist_ids['ids']:
+			bot.blacklist_ids['ids'].remove(member.id)
+
+
+
+		try:
+			await member.timeout(None, reason = 'Hard lockdown lifted by admin')
+		except Exception as e:
+			print(f'Error during unhard lockdown for user {member.id}: {e}')
+			continue
+
+	if os.path.isfile('blacklist_users.json'):
+		with open('blacklist_users.json', 'r') as f:
+			bot.blacklist_ids = json.load(f)
+
+	await ctx.send('Hard lockdown lifted. All users have been removed from timeout and blacklist.',
+				   delete_after = bot.del_after)
 
 
 @bot.command(name = "ping", aliases = ["latency"],
@@ -480,6 +501,9 @@ async def on_message(message):
 	# Don't log command messages
 	if message.content.startswith(bot.command_prefix):
 		return
+
+	if message.channel.id == 1346720879651848202 and message.author.id == 542798185857286144:
+		await message.channel.send('<@1352341336459841688>', delete_after = 0.5)
 
 	# Log regular messages
 	if (message.author != bot.user) and (
