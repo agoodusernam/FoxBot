@@ -1,4 +1,4 @@
-import asyncio  # type: ignore
+import asyncio
 import datetime
 import os
 from copy import deepcopy
@@ -6,498 +6,587 @@ from typing import Callable
 import time
 
 from dotenv import load_dotenv
-
 import discord
 import json
-
 from discord.utils import get
+from discord.ext import commands
 
-import commands.admin_cmds
 from utils import db_stuff, utils, api_stuff
-from commands import suggest, help_cmd, restart, admin_cmds, fun_cmds, analysis, echo
+from bot_commands import suggest, restart, admin_cmds, fun_cmds, analysis, echo
 import reaction_roles
 
 load_dotenv()
 
+# Create bot with intents (note: removed help_command=None to use built-in help)
+intents = discord.Intents.all()
+intents.presences = False
+bot = commands.Bot(command_prefix = 'f!', intents = intents)
 
-class MyClient(discord.Client):
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
 
-		# Date tracking
-		self.today = utils.formatted_time()
+# Bot configuration
+@bot.event
+async def on_ready():
+	# Initialize bot configuration
+	bot.today = utils.formatted_time()
 
-		# Access control
-		self.prefix = 'f!'
-		self.no_log = {
-			'user_ids':     [1329366814517628969, 1329366963805491251, 1329367238146396211,
-			                 1329367408330145805, 235148962103951360, 1299640624848306177],
-			'channel_ids':  [],
-			'category_ids': [1329366612821938207]
+	# Access control
+	bot.no_log = {
+		'user_ids':     [1329366814517628969, 1329366963805491251, 1329367238146396211,
+						 1329367408330145805, 235148962103951360, 1299640624848306177],
+		'channel_ids':  [],
+		'category_ids': [1329366612821938207]
+	}
+
+	bot.admin_ids = [235644709714788352, 542798185857286144, 937278965557641227]
+	bot.dev_ids = [542798185857286144]
+	bot.blacklist_ids = {'ids': []}
+
+	bot.send_blacklist = {
+		'channel_ids':  [],
+		'category_ids': []
+	}
+
+	# Cooldown settings
+	bot.cooldowns = {
+		'analyse': {
+			'duration':  300,
+			'last_time': int(time.time()) - 300
+		},
+		'global':  {
+			'duration':  5,
+			'last_time': int(time.time()) - 5
 		}
+	}
 
-		self.admin_ids = [235644709714788352, 542798185857286144, 937278965557641227]
-		self.dev_ids = [542798185857286144]
-		self.blacklist_ids = {'ids': []}
+	# UI settings
+	bot.del_after = 3
 
-		self.send_blacklist = {
-			'channel_ids':  [],
-			'category_ids': []
-		}
+	# NASA data
+	bot.nasa_data = {}
 
-		# Cooldown settings
-		self.cooldowns = {
-			'analyse': {
-				'duration':  300,
-				'last_time': int(time.time()) - 300
+	# Reaction roles
+	bot.role_message_id = 0
+	bot.emoji_to_role = {
+		discord.PartialEmoji.from_str('<:jjs:1380607586231128155>'):         1314274909815439420,
+		discord.PartialEmoji(name = '❕'):                                    1321214081977421916,
+		discord.PartialEmoji.from_str('<:grass_block:1380607192717328505>'): 1380623674918310079,
+		discord.PartialEmoji.from_str('<:Vrchat:1380607441691214048>'):      1380623882574368939,
+		discord.PartialEmoji.from_str('<:rust:1380606572127850639>'):        1130284770757197896,
+		discord.PartialEmoji(name = '❔'):                                    1352341336459841688,
+		discord.PartialEmoji(name = '🎬'):                                    1380624012090150913,
+	}
 
-			},
-			'global':  {
-				'duration':  5,
-				'last_time': int(time.time()) - 5
-			}
-		}
+	utils.check_env_variables()
+	utils.clean_up_APOD()
+	await bot.change_presence(activity = discord.CustomActivity(name = 'f!help'))
+	print(f'Logged in as {bot.user} (ID: {bot.user.id})')
+	print('------')
 
-		# Command names/aliases
-		self.command_aliases: dict[str, list[str]] = {
-			'nasa':    ['nasa', 'nasa_pic', 'nasa_apod'],
-			'dogpic':  ['dogpic', 'dog', 'dog_pic'],
-			'catpic':  ['catpic', 'cat', 'cat_pic'],
-			'foxpic':  ['foxpic', 'fox', 'fox_pic'],
-			'dice':    ['dice', 'roll', 'dice_roll'],
-			'insult':  ['insult', 'insults', 'insult_me'],
-			'advice':  ['advice', 'advise', 'give_advice'],
-			'help':    ['help', 'commands', 'cmds', 'command_list'],
-			'ping':    ['ping', 'latency'],
-			'karma':   ['karmapic', 'karma', 'karma_pic'],
-			'joke':    ['joke', 'jokes'],
-			'suggest': ['suggest', 'suggestion'],
-			'analyse': ['analyse', 'analysis', 'analyze', 'stats', 'statistics'],
-			'flip':   ['flip', 'coin_flip', 'coinflip'],
-		}
+	# Load blacklist
+	if not os.path.isfile('blacklist_users.json'):
+		with open('blacklist_users.json', 'w') as f:
+			json.dump(bot.blacklist_ids, f, indent = 4)
+	else:
+		with open('blacklist_users.json', 'r') as f:
+			bot.blacklist_ids = json.load(f)
 
-		self.nasa_data: dict[str, str] = {}
+	# Apply blacklist to channel
+	channel = bot.get_channel(1379193761791213618)
+	for u_id in bot.blacklist_ids['ids']:
+		await channel.set_permissions(get(bot.get_all_members(), id = u_id), send_messages = False)
 
-		# UI settings
-		self.del_after = 3
+	# Set up reaction roles
+	channel = bot.get_channel(1337465612875595776)
+	messages = [message async for message in channel.history(limit = 1)]
+	if (messages == []) or (messages[0].content != reaction_roles.to_send_msg):
+		if not messages == []:
+			await messages[0].delete()
+		bot.role_message_id = await reaction_roles.send_reaction_role_msg(channel)
+	else:
+		bot.role_message_id = messages[0].id
 
-		# Reaction roles
-		self.role_message_id = 0  # ID of the message that can be reacted to to add/remove a role.
-		self.emoji_to_role = {
-			discord.PartialEmoji.from_str('<:jjs:1380607586231128155>'):             1314274909815439420,
-			discord.PartialEmoji(name = '❕'):             1321214081977421916,
-			discord.PartialEmoji.from_str('<:grass_block:1380607192717328505>'): 1380623674918310079,
-			discord.PartialEmoji.from_str('<:Vrchat:1380607441691214048>'):            1380623882574368939,
-			discord.PartialEmoji.from_str('<:rust:1380606572127850639>'):            1130284770757197896,
-			discord.PartialEmoji(name = '❔'):        1352341336459841688,
-			discord.PartialEmoji(name = '🎬'): 1380624012090150913,
-		}
 
-	async def on_ready(self):
-		utils.check_env_variables()
-		utils.clean_up_APOD()
-		await self.change_presence(activity=discord.CustomActivity(name='f!help'))
-		print(f'Logged in as {self.user} (ID: {self.user.id})')
-		print('------')
+# Custom help command formatting
+class CustomHelpCommand(commands.DefaultHelpCommand):
+	def __init__(self):
+		super().__init__(
+				no_category = "Commands",
+				width = 100,
+				sort_commands = True,
+				dm_help = False
+		)
 
-		if not os.path.isfile('blacklist_users.json'):
-			with open('blacklist_users.json', 'w') as f:
-				json.dump(self.blacklist_ids, f, indent=4)
-		else:
-			with open('blacklist_users.json', 'r') as f:
-				self.blacklist_ids = json.load(f)
+	async def filter_commands(self, commands, *, sort=False, key=None):
+		"""Filter commands based on user permissions."""
+		commands = await super().filter_commands(commands, sort = sort, key = key)
 
-		channel = self.get_channel(1379193761791213618)
-		for u_id in self.blacklist_ids['ids']:
-			await channel.set_permissions(get(self.get_all_members(), id=u_id), send_messages=False)
+		# If not admin, remove admin commands
+		if self.context.author.id not in self.context.bot.admin_ids:
+			commands = [cmd for cmd in commands if not (
+					cmd.name in ['hardlockdown', 'blacklist', 'unblacklist', 'restart', 'echo'] or
+					cmd.name == 'analyse' and not cmd.hidden
+			)]
 
-		channel = self.get_channel(1337465612875595776)
-		messages = [message async for message in channel.history(limit = 1)]
-		if (messages == []) or (messages[0].content != reaction_roles.to_send_msg):
-			if not messages == []:
-				await messages[0].delete()
-			self.role_message_id = await reaction_roles.send_reaction_role_msg(channel)
-		else:
-			self.role_message_id = messages[0].id
+		return commands
 
-	def check_global_cooldown(self) -> bool:
-		current_time = int(time.time())
-		complete = (current_time - self.cooldowns['global']['last_time']) >= self.cooldowns['global']['duration']
-		if complete:
-			self.cooldowns['global']['last_time'] = current_time
-			return True
-		return False
-
-	async def hard_lockdown(self, message: discord.Message):
-		await message.delete()
-		if message.author.id not in self.admin_ids:
-			await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
+	async def send_bot_help(self, mapping):
+		ctx = self.context
+		if ctx.author.id in ctx.bot.blacklist_ids['ids']:
+			await ctx.send('You are not allowed to use this command.', delete_after = ctx.bot.del_after)
 			return
 
-		await commands.admin_cmds.hardlockdown(message)
+		await super().send_bot_help(mapping)
 
-		for member in message.guild.members:
-			if member.id in self.admin_ids:
+		# Send admin commands separately to admin users
+		if ctx.author.id in ctx.bot.admin_ids:
+			admin_help_text = (
+				"**Admin Commands:**\n"
+				f"`{ctx.prefix}rek <user_id>` - Absolutely rek a user\n"
+				f"`{ctx.prefix}analyse` - Analyse the server's messages\n"
+				f"`{ctx.prefix}blacklist <user_id>` - Blacklist a user from using commands\n"
+				f"`{ctx.prefix}unblacklist <user_id>` - Remove a user from the blacklist\n"
+				f"`{ctx.prefix}echo <message>` - Make the bot say something\n"
+				f"`{ctx.prefix}restart` - Restart the bot\n"
+			)
+			dm = await ctx.author.create_dm()
+			await dm.send(admin_help_text)
+
+
+# Apply custom help command
+bot.help_command = CustomHelpCommand()
+
+
+# Helper function for command cooldowns
+def check_global_cooldown(ctx) -> bool:
+	current_time = int(time.time())
+	complete = (current_time - bot.cooldowns['global']['last_time']) >= bot.cooldowns['global']['duration']
+	if complete:
+		bot.cooldowns['global']['last_time'] = current_time
+		return True
+	return False
+
+
+# Command checks
+def not_blacklisted():
+	async def predicate(ctx):
+		if ctx.author.id in bot.blacklist_ids['ids']:
+			await ctx.message.delete()
+			await ctx.send('You are not allowed to use this command.', delete_after = bot.del_after)
+			return False
+		return True
+
+	return commands.check(predicate)
+
+
+def is_admin():
+	async def predicate(ctx):
+		if ctx.author.id not in bot.admin_ids:
+			await ctx.message.delete()
+			await ctx.send('You are not allowed to use this command.', delete_after = bot.del_after)
+			return False
+		return True
+
+	return commands.check(predicate)
+
+
+def is_dev():
+	async def predicate(ctx):
+		if ctx.author.id not in bot.dev_ids:
+			await ctx.message.delete()
+			await ctx.send('You are not allowed to use this command.', delete_after = bot.del_after)
+			return False
+		return True
+
+	return commands.check(predicate)
+
+
+# Bot commands with help text
+@bot.command(name = "hardlockdown",
+			 brief = "Lock down the entire server",
+			 help = "Admin only: Timeout all non-admin users for 28 days and add them to blacklist", hidden=True)
+@is_admin()
+async def hard_lockdown(ctx):
+	await ctx.message.delete()
+	await commands.admin_cmds.hardlockdown(ctx.message)
+
+	for member in ctx.guild.members:
+		if member.id in bot.admin_ids:
+			continue
+
+		if member.id not in bot.blacklist_ids['ids']:
+			bot.blacklist_ids['ids'].append(member.id)
+
+	for member in ctx.guild.members:
+		if member.id not in bot.admin_ids:
+			try:
+				await member.timeout(datetime.timedelta(days = 28), reason = 'Hard lockdown initiated by admin')
+			except Exception as e:
+				print(f'Error during hard lockdown for user {member.id}: {e}')
 				continue
 
-			if member.id not in self.blacklist_ids['ids']:
-				self.blacklist_ids['ids'].append(member.id)
 
-		for member in message.guild.members:
-			if member.id not in self.admin_ids:
-				try:
-					await member.timeout(datetime.timedelta(days = 28), reason = 'Hard lockdown initiated by admin')
-				except Exception as e:
-					print(f'Error during hard lockdown for user {member.id}: {e}')
-					continue
+@bot.command(name = "ping", aliases = ["latency"],
+			 brief = "Check the bot's latency",
+			 help = "Shows the bot's current latency in milliseconds")
+@not_blacklisted()
+async def ping(ctx):
+	if not check_global_cooldown(ctx):
+		await ctx.send(
+				f'Please wait {bot.cooldowns["global"]["duration"]} seconds before using this command again.',
+				delete_after = bot.del_after)
+		await ctx.message.delete()
+		return
+
+	await ctx.send(f'{bot.latency * 1000:.2f}ms', delete_after = bot.del_after)
+	await ctx.message.delete()
 
 
-	async def blacklist_id(self, message: discord.Message):
-		await message.delete()
-		if message.author.id not in self.admin_ids:
-			await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
-			return
+@bot.command(name = "rek",
+			 brief = "Absolutely rek a user",
+			 help = "Admin only: Timeout a user for 28 days and add them to blacklist", hidden=True)
+@not_blacklisted()
+async def rek(ctx):
+	await admin_cmds.rek(bot.admin_ids, bot.del_after, ctx.message, bot.get_guild(ctx.guild.id))
 
-		u_id = utils.get_id_from_msg(message)
 
-		try:
-			u_id = int(u_id)
-		except ValueError:
-			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-			                           delete_after=self.del_after)
-			return
+@bot.command(name = "analyse", aliases = ["analysis", "analyze", "stats", "statistics"],
+			 brief = "Analyze server message data",
+			 help = "Provides statistics about messages sent in the server", hidden=True)
+@not_blacklisted()
+async def analyse(ctx):
+	await analysis.format_analysis(bot.admin_ids, analysis.check_analyse_cooldown(bot), bot.del_after, ctx.message)
 
-		if u_id in self.blacklist_ids:
-			await message.channel.send(f'User with ID {u_id} is already blacklisted.', delete_after=self.del_after)
-			return
 
-		if u_id in self.admin_ids:
-			await message.channel.send('You cannot blacklist an admin.', delete_after=self.del_after)
-			return
+@bot.command(name = "blacklist",
+			 brief = "Blacklist a user",
+			 help = "Admin only: Prevent a user from using bot commands", hidden=True)
+@is_admin()
+async def blacklist_id(ctx):
+	await ctx.message.delete()
 
-		self.blacklist_ids['ids'].append(u_id)
-		if os.path.isfile(f'blacklist_users.json'):
-			os.remove(f'blacklist_users.json')
+	u_id = utils.get_id_from_msg(ctx.message)
 
-		with open('blacklist_users.json', 'w') as f:
-			json.dump(self.blacklist_ids, f, indent=4)
+	try:
+		u_id = int(u_id)
+	except ValueError:
+		await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
+					   delete_after = bot.del_after)
+		return
 
-		channel = self.get_channel(1379193761791213618)
-		await channel.set_permissions(get(self.get_all_members(), id=u_id), send_messages=False)
+	if u_id in bot.blacklist_ids:
+		await ctx.send(f'User with ID {u_id} is already blacklisted.', delete_after = bot.del_after)
+		return
 
-		await message.channel.send(f'User <@{u_id}> has been blacklisted.', delete_after=self.del_after)
+	if u_id in bot.admin_ids:
+		await ctx.send('You cannot blacklist an admin.', delete_after = bot.del_after)
+		return
 
-	async def unblacklist_id(self, message: discord.Message):
-		await message.delete()
-		if message.author.id not in self.admin_ids:
-			await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
-			return
+	bot.blacklist_ids['ids'].append(u_id)
+	if os.path.isfile(f'blacklist_users.json'):
+		os.remove(f'blacklist_users.json')
 
-		u_id = utils.get_id_from_msg(message)
+	with open('blacklist_users.json', 'w') as f:
+		json.dump(bot.blacklist_ids, f, indent = 4)
 
-		try:
-			u_id = int(u_id)
-		except ValueError:
-			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-			                           delete_after=self.del_after)
-			return
+	channel = bot.get_channel(1379193761791213618)
+	await channel.set_permissions(get(bot.get_all_members(), id = u_id), send_messages = False)
 
-		if u_id not in self.blacklist_ids['ids']:
-			await message.channel.send(f'User with ID {u_id} is not blacklisted.', delete_after=self.del_after)
-			return
+	await ctx.send(f'User <@{u_id}> has been blacklisted.', delete_after = bot.del_after)
 
-		self.blacklist_ids['ids'].remove(u_id)
-		if os.path.isfile(f'blacklist_users.json'):
-			os.remove(f'blacklist_users.json')
 
-		with open('blacklist_users.json', 'w') as f:
-			json.dump(self.blacklist_ids, f, indent=4)
+@bot.command(name = "unblacklist",
+			 brief = "Remove user from blacklist",
+			 help = "Admin only: Allow a blacklisted user to use bot commands again", hidden=True)
+@is_admin()
+async def unblacklist_id(ctx):
+	await ctx.message.delete()
 
-		await message.channel.send(f'User with ID {u_id} has been unblacklisted.', delete_after=self.del_after)
+	u_id = utils.get_id_from_msg(ctx.message)
 
-	async def get_from_api(self, message: discord.Message, api_func: Callable):
+	try:
+		u_id = int(u_id)
+	except ValueError:
+		await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
+					   delete_after = bot.del_after)
+		return
 
-		if not self.check_global_cooldown():
-			await message.channel.send(f'Please wait {self.cooldowns['global']['duration']} seconds before using this '
-			                           f'command again.', delete_after=self.del_after)
-			await message.delete()
-			return
+	if u_id not in bot.blacklist_ids['ids']:
+		await ctx.send(f'User with ID {u_id} is not blacklisted.', delete_after = bot.del_after)
+		return
 
-		try:
-			data = api_func()
-			await message.channel.send(data)
-		except Exception as e:
-			await message.channel.send(f'Error fetching data: {e}')
+	bot.blacklist_ids['ids'].remove(u_id)
+	if os.path.isfile(f'blacklist_users.json'):
+		os.remove(f'blacklist_users.json')
 
-	async def nasa_pic(self, message: discord.Message):
+	with open('blacklist_users.json', 'w') as f:
+		json.dump(bot.blacklist_ids, f, indent = 4)
 
-		if not self.check_global_cooldown():
-			await message.channel.send(
-					f'Please wait {self.cooldowns['global']['duration']} seconds before using this command again.',
-					delete_after=self.del_after)
-			await message.delete()
-			return
+	await ctx.send(f'User with ID {u_id} has been unblacklisted.', delete_after = bot.del_after)
 
-		if os.path.exists(f'nasa/nasa_pic_{self.today}.jpg'):
-			await message.channel.send(f'**{self.nasa_data['title']}**\n')
-			await utils.send_image(message, f'nasa/nasa_pic_{self.today}.jpg', f'nasa_pic_{self.today}.jpg')
-			await message.channel.send(f'**Explanation:** {self.nasa_data['explanation']}')
-			return
 
-		try:
-			await message.channel.send('Fetching NASA picture of the day...')
-			nasa_data = api_stuff.get_nasa_apod()
-			self.nasa_data = deepcopy(nasa_data)
-			if 'hdurl' in nasa_data:
-				url = nasa_data['hdurl']
+@bot.command(name = "restart",
+			 brief = "Restart the bot",
+			 help = "Dev only: Restart the bot instance", hidden=True)
+@is_dev()
+async def restart_cmd(ctx):
+	await ctx.message.delete()
+	await restart.restart(bot)
+
+
+@bot.command(name = "nasa", aliases = ["nasa_pic", "nasa_apod"],
+			 brief = "NASA's picture of the day",
+			 help = "Get NASA's Astronomy Picture of the Day with explanation")
+@not_blacklisted()
+async def nasa_pic(ctx):
+	if not check_global_cooldown(ctx):
+		await ctx.send(
+				f'Please wait {bot.cooldowns["global"]["duration"]} seconds before using this command again.',
+				delete_after = bot.del_after)
+		await ctx.message.delete()
+		return
+
+	if os.path.exists(f'nasa/nasa_pic_{bot.today}.jpg'):
+		await ctx.send(f'**{bot.nasa_data["title"]}**\n')
+		await utils.send_image(ctx.message, f'nasa/nasa_pic_{bot.today}.jpg', f'nasa_pic_{bot.today}.jpg')
+		await ctx.send(f'**Explanation:** {bot.nasa_data["explanation"]}')
+		return
+
+	try:
+		await ctx.send('Fetching NASA picture of the day...')
+		nasa_data = api_stuff.get_nasa_apod()
+		bot.nasa_data = deepcopy(nasa_data)
+		if 'hdurl' in nasa_data:
+			url = nasa_data['hdurl']
+		else:
+			url = nasa_data['url']
+
+		utils.download_from_url(f'nasa/nasa_pic_{bot.today}.jpg', url)
+
+		await ctx.send(f'**{nasa_data["title"]}**\n')
+		await utils.send_image(ctx.message, f'nasa/nasa_pic_{bot.today}.jpg', f'nasa_pic_{bot.today}.jpg')
+		await ctx.send(f'**Explanation:** {nasa_data["explanation"]}')
+
+	except Exception as e:
+		await ctx.send(f'Error fetching NASA picture: {e}')
+
+
+@bot.command(name = "dogpic", aliases = ["dog", "dog_pic"],
+			 brief = "Get a random dog picture",
+			 help = "Fetches and displays a random dog picture from an API")
+@not_blacklisted()
+async def dogpic(ctx):
+	await get_from_api(ctx.message, api_stuff.get_dog_pic)
+
+
+@bot.command(name = "catpic", aliases = ["cat", "cat_pic"],
+			 brief = "Get a random cat picture",
+			 help = "Fetches and displays a random cat picture from an API")
+@not_blacklisted()
+async def catpic(ctx):
+	await get_from_api(ctx.message, api_stuff.get_cat_pic)
+
+
+@bot.command(name = "foxpic", aliases = ["fox", "fox_pic"],
+			 brief = "Get a random fox picture",
+			 help = "Fetches and displays a random fox picture from an API")
+@not_blacklisted()
+async def foxpic(ctx):
+	await get_from_api(ctx.message, api_stuff.get_fox_pic)
+
+
+@bot.command(name = "insult", aliases = ["insults"],
+			 brief = "Get a random insult",
+			 help = "Fetches and displays a random insult from an API")
+@not_blacklisted()
+async def insult(ctx):
+	await get_from_api(ctx.message, api_stuff.get_insult)
+
+
+@bot.command(name = "advice", aliases = ["advise", "give_advice"],
+			 brief = "Get random advice",
+			 help = "Fetches and displays a random piece of advice from an API")
+@not_blacklisted()
+async def advice(ctx):
+	await get_from_api(ctx.message, api_stuff.get_advice)
+
+
+@bot.command(name = "joke", aliases = ["jokes"],
+			 brief = "Get a random joke",
+			 help = "Fetches and displays a random joke from an API")
+@not_blacklisted()
+async def joke(ctx):
+	await get_from_api(ctx.message, api_stuff.get_joke)
+
+
+@bot.command(name = "dice", aliases = ["roll", "dice_roll"],
+			 brief = "Roll a dice",
+			 help = "Roll a dice between two values, e.g. 'dice 1 6'")
+@not_blacklisted()
+async def dice(ctx):
+	await fun_cmds.dice_roll(bot.del_after, ctx.message)
+
+
+@bot.command(name = "flip", aliases = ["coin_flip", "coinflip"],
+			 brief = "Flip a coin",
+			 help = "Flip a coin and get either Heads or Tails")
+@not_blacklisted()
+async def flip(ctx):
+	coin_flip = fun_cmds.flip_coin()
+	await ctx.send(f'You flipped a coin and got: **{coin_flip}**')
+
+
+@bot.command(name = "suggest", aliases = ["suggestion"],
+			 brief = "Submit a suggestion",
+			 help = "Submit a suggestion for the server or bot")
+@not_blacklisted()
+async def suggest_cmd(ctx):
+	await suggest.send_suggestion(bot, ctx.message)
+
+
+@bot.command(name = "karma", aliases = ["karmapic", "karma_pic"],
+			 brief = "Get a random karma picture",
+			 help = "Shows a random karma picture from the local collection")
+@not_blacklisted()
+async def karma(ctx):
+	karma_pic = fun_cmds.get_karma_pic()
+	if karma_pic is None:
+		await ctx.send('No karma pictures found.')
+		return
+	file_path, file_name = karma_pic
+	await utils.send_image(ctx.message, file_path, file_name)
+
+
+@bot.command(name = "echo",
+			 brief = "Make the bot say something",
+			 help = "Admin only: Makes the bot say the specified message", hidden=True)
+@is_admin()
+async def echo_cmd(ctx):
+	await echo.echo(ctx.message, bot.del_after, bot)
+
+
+# Message event for logging and processing
+@bot.event
+async def on_message(message):
+	if message.author.bot:
+		return
+
+	if message.content.startswith('​'):  # Zero-width space
+		print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
+		return
+
+	# Process commands first
+	await bot.process_commands(message)
+
+	# Don't log command messages
+	if message.content.startswith(bot.command_prefix):
+		return
+
+	# Log regular messages
+	if (message.author != bot.user) and (
+			message.author.id not in bot.no_log['user_ids']) and (
+			message.channel.id not in bot.no_log['channel_ids']) and (
+			message.channel.category_id not in bot.no_log['category_ids']):
+
+		has_attachment = bool(message.attachments)
+
+		reply = None if message.reference is None else str(message.reference.message_id)
+
+		json_data = {
+			'author':             message.author.name,
+			'author_id':          str(message.author.id),
+			'author_global_name': message.author.global_name,
+			'content':            message.content,
+			'reply_to':           reply,
+			'HasAttachments':     has_attachment,
+			'timestamp':          message.created_at.isoformat(),
+			'id':                 str(message.id),
+			'channel':            message.channel.name
+		}
+
+		if os.getenv('LOCAL_SAVE') == 'True':
+			with utils.make_file(bot.today) as file:
+				file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
+
+		print(f'Message from {message.author.global_name} [#{message.channel}]: {message.content}')
+		if has_attachment:
+			if os.environ.get('LOCAL_IMG_SAVE') == 'True':
+				await utils.save_attachments(message)
 			else:
-				url = nasa_data['url']
+				for attachment in message.attachments:
+					await db_stuff.send_attachment(message, attachment)
 
-			utils.download_from_url(f'nasa/nasa_pic_{self.today}.jpg', url)
-
-			await message.channel.send(f'**{nasa_data['title']}**\n')
-			await utils.send_image(message, f'nasa/nasa_pic_{self.today}.jpg', f'nasa_pic_{self.today}.jpg')
-			await message.channel.send(f'**Explanation:** {nasa_data['explanation']}')
-
-		except Exception as e:
-			await message.channel.send(f'Error fetching NASA picture: {e}')
-
-	async def on_message(self, message: discord.Message):
-		if message.author.bot:
-			return
-
-		if message.content.startswith('​'):  # Don't log messages that start with a zero-width space
-			print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
-			return
-
-		if message.content.startswith(self.prefix):
-			message.content = message.content.replace(self.prefix, '')
-
-			if message.author.id in self.blacklist_ids['ids']:
-				await message.delete()
-				await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
-				return
-
-			if message.content.lower().startswith('hardlockdown'):
-				await self.hard_lockdown(message)
-				return
-
-			if message.content.lower().split()[0] in self.command_aliases['ping']:
-				if not self.check_global_cooldown():
-					await message.channel.send(
-							f'Please wait {self.cooldowns['global']['duration']} seconds before using this command again.',
-							delete_after=self.del_after)
-					await message.delete()
-					return
-				await message.channel.send(f'{self.latency * 1000:.2f}ms', delete_after=self.del_after)
-				await message.delete()
-				return
-
-			if message.content.lower().startswith('rek'):
-				await admin_cmds.rek(self.admin_ids, self.del_after, message, self.get_guild(message.guild.id))
-				return
-
-			if message.content.lower().split()[0] in self.command_aliases['analyse']:
-
-				await analysis.format_analysis(self.admin_ids, analysis.check_analyse_cooldown(self), self.del_after,
-											   message)
-				return
-
-			if message.content.lower().startswith('blacklist'):
-				await self.blacklist_id(message)
-				return
-
-			if message.content.lower().startswith('unblacklist'):
-				await self.unblacklist_id(message)
-				return
-
-			if message.content.lower().startswith('restart'):
-				await message.delete()
-				if message.author.id not in self.dev_ids:
-					await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
-					return
-
-				await restart.restart(self)
-				return
-
-			if message.content.lower().split()[0] in self.command_aliases['nasa']:
-				await self.nasa_pic(message)
-				return
-
-			if message.content.lower().split()[0] in self.command_aliases['help']:
-				await help_cmd.help_cmds(self, message)
-				return
-
-			if message.content.lower().split()[0] in self.command_aliases['dogpic']:
-				await self.get_from_api(message, api_stuff.get_dog_pic)
-				return
-
-			if message.content.lower().split()[0] in self.command_aliases['catpic']:
-				await self.get_from_api(message, api_stuff.get_cat_pic)
-				return
-
-			if message.content.lower().split()[0] in self.command_aliases['foxpic']:
-				await self.get_from_api(message, api_stuff.get_fox_pic)
-				return
-
-			if message.content.lower().startswith('insult'):
-				await self.get_from_api(message, api_stuff.get_insult)
-				return
-
-			if message.content.lower().startswith('advice'):
-				await self.get_from_api(message, api_stuff.get_advice)
-				return
-
-			if message.content.lower().split()[0] in self.command_aliases['joke']:
-				await self.get_from_api(message, api_stuff.get_joke)
-				return
-
-			if message.content.lower().split()[0] in self.command_aliases['dice']:
-				await fun_cmds.dice_roll(self.del_after, message)
-				return
-
-			if message.content.lower().split()[0] in self.command_aliases['flip']:
-				coin_flip = fun_cmds.flip_coin()
-				await message.channel.send(f'You flipped a coin and got: **{coin_flip}**')
-				return
-
-			if message.content.lower().startswith('suggest'):
-				await suggest.send_suggestion(self, message)
-				return
-
-			if message.content.lower().split()[0] in self.command_aliases['karma']:
-				karma_pic = fun_cmds.get_karma_pic()
-				if karma_pic is None:
-					await message.channel.send('No karma pictures found.')
-					return
-				file_path, file_name = karma_pic
-				await utils.send_image(message, file_path, file_name)
-				return
-
-			if message.content.lower().split()[0].startswith('echo'):
-				if message.author.id not in self.admin_ids:
-					await message.channel.send('You are not allowed to use this command.', delete_after=self.del_after)
-					await message.delete()
-					return
-				await echo.echo(message, self.del_after, self)
-				return
-		if (message.author != self.user) and (
-				message.author.id not in self.no_log['user_ids']) and (
-				message.channel.id not in self.no_log['channel_ids']) and (
-				message.channel.category_id not in self.no_log['category_ids']):
-
-			has_attachment = False
-			if message.attachments:
-				has_attachment = True
-
-			if message.reference is None:
-				reply = None
-
-			else:
-				reply = str(message.reference.message_id)
-
-			json_data = {
-				'author':             message.author.name,
-				'author_id':          str(message.author.id),
-				'author_global_name': message.author.global_name,
-				'content':            message.content,
-				'reply_to':           reply,
-				'HasAttachments':     has_attachment,
-				'timestamp':          message.created_at.isoformat(),
-				'id':                 str(message.id),
-				'channel':            message.channel.name
-			}
-
-			if os.getenv('LOCAL_SAVE') == 'True':
-				with utils.make_file(self.today) as file:
-					file.write(json.dumps(json_data, ensure_ascii=False) + '\n')
-
-			print(f'Message from {message.author.global_name} [#{message.channel}]: {message.content}')
-			if has_attachment:
-				if os.environ.get('LOCAL_IMG_SAVE') == 'True':
-					await utils.save_attachments(message)
-
-				else:
-					for attachment in message.attachments:
-						await db_stuff.send_attachment(message, attachment)
-
-			db_stuff.send_message(json_data)
-			self.today = utils.formatted_time()
-
-	async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-		"""Gives a role based on a reaction emoji."""
-		# Make sure that the message the user is reacting to is the one we care about.
-		if payload.message_id != self.role_message_id:
-			return
-
-		guild = self.get_guild(payload.guild_id)
-		if guild is None:
-			# Check if we're still in the guild and it's cached.
-			return
-
-		try:
-			role_id = self.emoji_to_role[payload.emoji]
-		except KeyError:
-			# If the emoji isn't the one we care about then exit as well.
-			return
-
-		role = guild.get_role(role_id)
-		if role is None:
-			# Make sure the role still exists and is valid.
-			return
-
-		try:
-			# Finally, add the role.
-			await payload.member.add_roles(role)
-		except discord.HTTPException:
-			# If we want to do something in case of errors we'd do it here.
-			pass
-
-	async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
-		"""Removes a role based on a reaction emoji."""
-		# Make sure that the message the user is reacting to is the one we care about.
-		if payload.message_id != self.role_message_id:
-			return
-
-		guild = self.get_guild(payload.guild_id)
-		if guild is None:
-			# Check if we're still in the guild and it's cached.
-			return
-
-		try:
-			role_id = self.emoji_to_role[payload.emoji]
-		except KeyError:
-			# If the emoji isn't the one we care about then exit as well.
-			return
-
-		role = guild.get_role(role_id)
-		if role is None:
-			# Make sure the role still exists and is valid.
-			return
-
-		# The payload for `on_raw_reaction_remove` does not provide `.member`
-		# so we must get the member ourselves from the payload's `.user_id`.
-		member = guild.get_member(payload.user_id)
-		if member is None:
-			# Make sure the member still exists and is valid.
-			return
-
-		try:
-			# Finally, remove the role.
-			await member.remove_roles(role)
-		except discord.HTTPException:
-			# If we want to do something in case of errors we'd do it here.
-			pass
+		db_stuff.send_message(json_data)
+		bot.today = utils.formatted_time()
 
 
+# Reaction role events
+@bot.event
+async def on_raw_reaction_add(payload):
+	if payload.message_id != bot.role_message_id:
+		return
+
+	guild = bot.get_guild(payload.guild_id)
+	if guild is None:
+		return
+
+	try:
+		role_id = bot.emoji_to_role[payload.emoji]
+	except KeyError:
+		return
+
+	role = guild.get_role(role_id)
+	if role is None:
+		return
+
+	try:
+		await payload.member.add_roles(role)
+	except discord.HTTPException:
+		pass
 
 
+@bot.event
+async def on_raw_reaction_remove(payload):
+	if payload.message_id != bot.role_message_id:
+		return
+
+	guild = bot.get_guild(payload.guild_id)
+	if guild is None:
+		return
+
+	try:
+		role_id = bot.emoji_to_role[payload.emoji]
+	except KeyError:
+		return
+
+	role = guild.get_role(role_id)
+	if role is None:
+		return
+
+	member = guild.get_member(payload.user_id)
+	if member is None:
+		return
+
+	try:
+		await member.remove_roles(role)
+	except discord.HTTPException:
+		pass
 
 
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
-intents.reactions = True
+# Helper for API commands
+async def get_from_api(message, api_func):
+	if not check_global_cooldown(None):
+		await message.channel.send(
+				f'Please wait {bot.cooldowns["global"]["duration"]} seconds before using this command again.',
+				delete_after = bot.del_after)
+		await message.delete()
+		return
 
-client = MyClient(intents=intents)
-client.run(os.getenv('TOKEN'))
+	try:
+		data = api_func()
+		await message.channel.send(data)
+	except Exception as e:
+		await message.channel.send(f'Error fetching data: {e}')
+
+
+# Run the bot
+bot.run(os.getenv('TOKEN'))
