@@ -1,4 +1,3 @@
-import time
 from typing import Dict, List, Optional, Union, Any
 
 import discord
@@ -154,19 +153,9 @@ async def analyse_single_user(member: discord.Member) -> Optional[Union[Dict[str
 		return None
 
 
-async def format_analysis(admin_ids: List[int], cooldown: Union[bool, int], del_after: int,
-						  message: discord.Message) -> None:
+async def format_analysis(message: discord.Message) -> None:
 	"""Format and send analysis results."""
 	await message.delete()
-	if message.author.id not in admin_ids:
-		await message.channel.send('You are not allowed to use this command.', delete_after = del_after)
-		return
-
-	if type(cooldown) == int:
-		await message.channel.send(
-				f'Please wait {cooldown} seconds before using this command again.',
-				delete_after = del_after)
-		return
 
 	new_msg = await message.channel.send('Analysing...')
 	if len(message.content.split()) > 1:
@@ -238,17 +227,3 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.Memb
 		await message.channel.send(result)
 	else:
 		await message.channel.send('An error occurred during analysis.')
-
-
-def check_analyse_cooldown(client) -> Union[bool, int]:
-	"""Check if analysis cooldown has expired.
-	Returns True if ready, or seconds remaining if on cooldown.
-	"""
-	current_time = int(time.time())
-	time_elapsed = current_time - client.cooldowns['analyse']['last_time']
-	cooldown_complete = time_elapsed >= client.cooldowns['analyse']['duration']
-
-	if cooldown_complete:
-		client.cooldowns['analyse']['last_time'] = current_time
-		return True
-	return client.cooldowns['analyse']['duration'] - time_elapsed
