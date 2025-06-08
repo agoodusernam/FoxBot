@@ -1,6 +1,7 @@
 import datetime
 import os
 from copy import deepcopy
+from typing import Any, Union
 
 from dotenv import load_dotenv
 import discord
@@ -9,6 +10,7 @@ from discord.utils import get
 from discord.ext import commands
 from discord.ext.commands import BucketType
 
+from custom_logging import voice_log
 from utils import db_stuff, utils, api_stuff
 from bot_commands import suggest, restart, admin_cmds, fun_cmds, analysis, echo
 import reaction_roles
@@ -31,6 +33,12 @@ bot.no_log = {
 	'channel_ids':  [],
 	'category_ids': [1329366612821938207]
 }
+
+logging_channels: dict[str, Union[discord.VoiceChannel, discord.StageChannel, discord.ForumChannel,
+					   discord.TextChannel, discord.CategoryChannel, discord.Thread, None | int]] = {
+	'voice': 1329366741909770261
+}
+bot.logging_channels = logging_channels
 
 bot.admin_ids = [235644709714788352, 542798185857286144, 937278965557641227]
 bot.dev_ids = [542798185857286144]
@@ -92,6 +100,10 @@ async def on_ready():
 		bot.role_message_id = await reaction_roles.send_reaction_role_msg(channel)
 	else:
 		bot.role_message_id = messages[0].id
+
+	for key, value in bot.logging_channels.items():
+		channel = bot.get_channel(value)
+		bot.logging_channels[key] = channel
 
 
 # Custom help command formatting
@@ -161,7 +173,28 @@ async def on_command_error(ctx, error):
 	else:
 		print(f"Unhandled error: {error}")
 
+# Dev commands
+@bot.command(name = "restart",
+			 brief = "Restart the bot",
+			 help = "Dev only: Git pull and restart the bot instance", hidden=True)
+@commands.check(is_dev)
+async def restart_cmd(ctx):
+	await ctx.message.delete()
+	await restart.restart(bot)
 
+
+@bot.command(name = 'reset_cooldowns',
+			 brief = 'Reset command cooldowns',
+			 help = 'Dev only: Reset all command cooldowns for the bot', hidden=True)
+@commands.check(is_dev)
+async def reset_cooldowns(ctx):
+	await ctx.message.delete()
+	for command in bot.commands:
+		if command.is_on_cooldown(ctx):
+			command.reset_cooldown(ctx)
+	await ctx.send('All command cooldowns have been reset.', delete_after = bot.del_after)
+
+# Admin commands
 @bot.command(name = "hardlockdown",
 			 brief = "Lock down the entire server",
 			 help = "Admin only: Timeout all non-admin users for 28 days and add them to blacklist", hidden=True)
@@ -215,16 +248,6 @@ async def unhard_lockdown(ctx):
 
 	await ctx.send('Hard lockdown lifted. All users have been removed from timeout and blacklist.',
 				   delete_after = bot.del_after)
-
-
-@bot.command(name = "ping", aliases = ["latency"],
-			 brief = "Check the bot's latency",
-			 help = "Shows the bot's current latency in milliseconds")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def ping(ctx):
-	await ctx.send(f'{bot.latency * 1000:.2f}ms', delete_after = bot.del_after)
-	await ctx.message.delete()
 
 
 @bot.command(name = "rek",
@@ -315,13 +338,15 @@ async def unblacklist_id(ctx):
 	await ctx.send(f'User with ID {u_id} has been unblacklisted.', delete_after = bot.del_after)
 
 
-@bot.command(name = "restart",
-			 brief = "Restart the bot",
-			 help = "Dev only: Git pull and restart the bot instance", hidden=True)
-@commands.check(is_dev)
-async def restart_cmd(ctx):
+# User commands
+@bot.command(name = "ping", aliases = ["latency"],
+			 brief = "Check the bot's latency",
+			 help = "Shows the bot's current latency in milliseconds")
+@commands.cooldown(1, 5, commands.BucketType.user)
+@commands.check(not_blacklisted)
+async def ping(ctx):
+	await ctx.send(f'{bot.latency * 1000:.2f}ms', delete_after = bot.del_after)
 	await ctx.message.delete()
-	await restart.restart(bot)
 
 
 @bot.command(name = "nasa", aliases = ["nasa_pic", "nasa_apod"],
@@ -574,6 +599,23 @@ async def on_raw_reaction_remove(payload):
 		await member.remove_roles(role)
 	except discord.HTTPException:
 		pass
+
+async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+	if member.bot:
+		return
+
+	# Member joined channel
+	if before.channel is None and after.channel is not None:
+		voice_log.handle_join(member, after)
+
+	# Member left channel
+	elif before.channel is not None and after.channel is None:
+		voice_log.handle_leave(member, before)
+
+	# Member moved to another channel
+	elif before.channel != after.channel:
+		assert after.channel is not None
+		voice_log.handle_move(member, before, after)
 
 
 # Helper for API commands
