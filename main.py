@@ -1,7 +1,7 @@
 import datetime
 import os
 from copy import deepcopy
-from typing import Any, Union
+from typing import Union
 
 from dotenv import load_dotenv
 import discord
@@ -611,7 +611,7 @@ async def on_raw_reaction_remove(payload):
 	except discord.HTTPException:
 		pass
 
-# @bot.event
+@bot.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
 	if member.bot:
 		return
@@ -620,7 +620,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	# Member joined channel
 	if before.channel is None and after.channel is not None:
 		voice_log.handle_join(member, after)
-		embed = discord.Embed(title=f'{member.global_name} joined {after.channel.name}', color=discord.Color.green())
+		embed = discord.Embed(title=f'{member.global_name} joined #{after.channel.name}', color=discord.Color.green())
 		embed.set_author(name=member.display_name, icon_url=member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
 		if logging_channel:
@@ -630,7 +630,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	# Member left channel
 	elif before.channel is not None and after.channel is None:
 		voice_log.handle_leave(member, before)
-		embed = discord.Embed(title=f'{member.global_name} left {before.channel.name}', color=discord.Color.red())
+		embed = discord.Embed(title=f'{member.global_name} left #{before.channel.name}', color=discord.Color.red())
 		embed.set_author(name=member.display_name, icon_url=member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
 		if logging_channel:
@@ -640,7 +640,8 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	elif before.channel != after.channel:
 		assert after.channel is not None
 		voice_log.handle_move(member, before, after)
-		embed = discord.Embed(title=f'{member.global_name} moved from {before.channel.name} to {after.channel.name}', color=discord.Color.blue())
+		embed = discord.Embed(title=f'{member.global_name} moved from #{before.channel.name} to'
+									f' #{after.channel.name}', color=discord.Color.blue())
 		embed.set_author(name=member.display_name, icon_url=member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
 		if logging_channel:
