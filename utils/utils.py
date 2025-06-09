@@ -1,6 +1,7 @@
 import datetime
 import os
 import urllib.request
+from datetime import datetime
 from pathlib import Path
 
 import discord
@@ -95,3 +96,13 @@ def check_env_variables():
 	if os.getenv('LOCAL_IMG_SAVE') not in ['True', 'False']:
 		print('Invalid LOCAL_IMG_SAVE value. Please set it to True or False. Defaulting to False.')
 		os.environ['LOCAL_IMG_SAVE'] = 'False'
+
+def parse_utciso8601(date_str: str) -> datetime | None:
+	"""
+	Parses a UTC ISO 8601 date string into a datetime object.
+	"""
+	try:
+		return datetime.datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+	except ValueError as e:
+		print(f'Error parsing date string "{date_str}": {e}')
+		return None

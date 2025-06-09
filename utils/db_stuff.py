@@ -225,92 +225,17 @@ def del_channel_from_db(channel: discord.TextChannel) -> None:
 	except Exception as e:
 		print(f'Error deleting messages from channel {channel.name}: {e}')
 
-
-def get_voice_stats_user(u_id: int) -> Mapping[str, Any] | None:
+def send_voice_session(session_data: Mapping[str, Any]) -> None:
 	client = _connect()
 	if not client:
 		print('Failed to connect to MongoDB')
-		return None
+		return
 
 	db = client['discord']
-	collection = db["voice_stats"]
+	collection: Collection[Mapping[str, Any]] = db['voice_sessions']
 
 	try:
-		stats = collection.find_one({'u_id': u_id})
-		if stats:
-			return stats
-		else:
-			return create_voice_stats(u_id)
+		collection.insert_one(session_data)
+		print(f'Voice session for {session_data["user_name"]} saved successfully')
 	except Exception as e:
-		print(f'Error creating voice stats collection: {e}')
-		return None
-
-
-def create_voice_stats(u_id: int) -> dict[str, int | None] | None:
-	client = _connect()
-	if not client:
-		print('Failed to connect to MongoDB')
-		return None
-
-	db = client['discord']
-	collection = db["voice_stats"]
-
-	try:
-		data = {
-			'u_id':            u_id,
-			'total_time':      0,
-			'last_channel_id': None,
-			'last_joined':     None,
-		}
-		collection.insert_one(data)
-		print(f'Created voice stats for user {u_id}')
-		return data
-	except Exception as e:
-		print(f'Error creating voice stats collection: {e}')
-		return None
-
-
-def member_joined_vc(member: discord.Member, channel: discord.VoiceChannel) -> None:
-	client = _connect()
-	if not client:
-		print('Failed to connect to MongoDB')
-		return None
-
-	db = client['discord']
-	collection = db['voice_log']
-
-	try:
-		data = {
-			'member_id':  member.id,
-			'channel_id': channel.id,
-			'timestamp':  member.joined_at.isoformat() if member.joined_at else None
-		}
-		collection.insert_one(data)
-		print(f'Recorded {member.name} joining {channel.name}')
-		return None
-	except Exception as e:
-		print(f'Error recording voice activity: {e}')
-		return None
-
-
-def member_left_vc(member: discord.Member, channel: discord.VoiceChannel) -> None:
-	client = _connect()
-	if not client:
-		print('Failed to connect to MongoDB')
-		return None
-
-	db = client['discord']
-	collection = db['voice_log']
-
-	try:
-		data = {
-			'member_id':  member.id,
-			'channel_id': None,
-			'timestamp':  member.joined_at.isoformat() if member.joined_at else None
-		}
-		collection.insert_one(data)
-		print(f'Recorded {member.name} leaving {channel.name}')
-		return None
-	except Exception as e:
-		print(f'Error recording voice activity: {e}')
-		return None
+		print(f'Error saving voice session: {e}')

@@ -1,14 +1,72 @@
 import discord
+import datetime
+from typing import Dict
+from utils import db_stuff
+
+# Store active voice sessions: user_id -> {channel_id, joined_at}
+active_voice_sessions: Dict[int, Dict[str, any]] = {}
 
 
 def handle_join(member: discord.Member, after: discord.VoiceState):
+	"""Track when a user joins a voice channel"""
 	print(f'{member.name} joined {after.channel.name}')
-	raise NotImplementedError
+
+	# Record join time
+	active_voice_sessions[member.id] = {
+		'channel_id':   str(after.channel.id),
+		'channel_name': after.channel.name,
+		'joined_at':    datetime.datetime.now(datetime.timezone.utc)
+	}
+
 
 def handle_leave(member: discord.Member, before: discord.VoiceState):
+	"""Track when a user leaves a voice channel and upload session data"""
 	print(f'{member.name} left {before.channel.name}')
-	raise NotImplementedError
+
+	# Get join data
+	if member.id not in active_voice_sessions:
+		print(f"No join record found for {member.name}")
+		return
+
+	join_data = active_voice_sessions[member.id]
+	leave_time = datetime.datetime.now(datetime.timezone.utc)
+	join_time = join_data['joined_at']
+
+	# Calculate duration
+	duration_seconds = int((leave_time - join_time).total_seconds())
+
+	# Create voice session document
+	voice_session = {
+		'user_id':          str(member.id),
+		'user_name':        member.name,
+		'user_global_name': member.global_name,
+		'channel_id':       join_data['channel_id'],
+		'channel_name':     join_data['channel_name'],
+		'join_time':        join_time.isoformat(),
+		'leave_time':       leave_time.isoformat(),
+		'duration_seconds': duration_seconds
+	}
+
+	send_voice_session(voice_session)
+
+	# Clear session data
+	del active_voice_sessions[member.id]
+
 
 def handle_move(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+	"""Handle a user moving from one channel to another"""
 	print(f'{member.name} moved from {before.channel.name} to {after.channel.name}')
-	raise NotImplementedError
+
+	# First record the "leave" from the previous channel
+	handle_leave(member, before)
+
+	# Then record the "join" to the new channel
+	handle_join(member, after)
+
+
+def send_voice_session(session_data: Dict[str, any]) -> None:
+	"""Send voice session data to MongoDB"""
+	try:
+		db_stuff.send_voice_session(session_data)
+	except Exception as e:
+		print(f"Error saving voice session data: {e}")

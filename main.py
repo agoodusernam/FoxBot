@@ -194,6 +194,17 @@ async def reset_cooldowns(ctx):
 			command.reset_cooldown(ctx)
 	await ctx.send('All command cooldowns have been reset.', delete_after = bot.del_after)
 
+@bot.command(name = "shutdown",
+			 brief = "Shutdown the bot",
+			 help = "Dev only: Shutdown the bot instance", hidden=True)
+@commands.check(is_dev)
+async def shutdown_cmd(ctx):
+	await ctx.message.delete()
+	await ctx.send('Shutting down the bot...', delete_after = bot.del_after)
+	print('Bot is shutting down...')
+	db_stuff.disconnect()
+	await bot.close()
+
 # Admin commands
 @bot.command(name = "hardlockdown",
 			 brief = "Lock down the entire server",
@@ -349,7 +360,7 @@ async def ping(ctx):
 	await ctx.message.delete()
 
 
-@bot.command(name = "nasa", aliases = ["nasa_pic", "nasa_apod"],
+@bot.command(name = "nasa", aliases = ["nasa_pic", "nasa_apod", "nasapic"],
 			 brief = "NASA's picture of the day",
 			 help = "Get NASA's Astronomy Picture of the Day with explanation")
 @commands.cooldown(1, 5, BucketType.user)
@@ -382,7 +393,7 @@ async def nasa_pic(ctx):
 		await ctx.send(f'Error fetching NASA picture: {e}')
 
 
-@bot.command(name = "dogpic", aliases = ["dog", "dog_pic"],
+@bot.command(name = "dog", aliases = ["dogpic", "dog_pic"],
 			 brief = "Get a random dog picture",
 			 help = "Fetches and displays a random dog picture from an API")
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -391,7 +402,7 @@ async def dogpic(ctx):
 	await get_from_api(ctx.message, api_stuff.get_dog_pic)
 
 
-@bot.command(name = "catpic", aliases = ["cat", "cat_pic"],
+@bot.command(name = "cat", aliases = ["catpic", "cat_pic"],
 			 brief = "Get a random cat picture",
 			 help = "Fetches and displays a random cat picture from an API")
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -400,7 +411,7 @@ async def catpic(ctx):
 	await get_from_api(ctx.message, api_stuff.get_cat_pic)
 
 
-@bot.command(name = "foxpic", aliases = ["fox", "fox_pic"],
+@bot.command(name = "fox", aliases = ["foxpic", "fox_pic"],
 			 brief = "Get a random fox picture",
 			 help = "Fetches and displays a random fox picture from an API")
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -600,22 +611,40 @@ async def on_raw_reaction_remove(payload):
 	except discord.HTTPException:
 		pass
 
+# @bot.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
 	if member.bot:
 		return
+	logging_channel = bot.logging_channels.get('voice')
 
 	# Member joined channel
 	if before.channel is None and after.channel is not None:
 		voice_log.handle_join(member, after)
+		embed = discord.Embed(title=f'{member.global_name} joined {after.channel.name}', color=discord.Color.green())
+		embed.set_author(name=member.display_name, icon_url=member.avatar.url)
+		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
+		if logging_channel:
+			await logging_channel.send(embed=embed)
+
 
 	# Member left channel
 	elif before.channel is not None and after.channel is None:
 		voice_log.handle_leave(member, before)
+		embed = discord.Embed(title=f'{member.global_name} left {before.channel.name}', color=discord.Color.red())
+		embed.set_author(name=member.display_name, icon_url=member.avatar.url)
+		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
+		if logging_channel:
+			await logging_channel.send(embed=embed)
 
 	# Member moved to another channel
 	elif before.channel != after.channel:
 		assert after.channel is not None
 		voice_log.handle_move(member, before, after)
+		embed = discord.Embed(title=f'{member.global_name} moved from {before.channel.name} to {after.channel.name}', color=discord.Color.blue())
+		embed.set_author(name=member.display_name, icon_url=member.avatar.url)
+		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
+		if logging_channel:
+			await logging_channel.send(embed=embed)
 
 
 # Helper for API commands
