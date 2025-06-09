@@ -239,3 +239,20 @@ def send_voice_session(session_data: Mapping[str, Any]) -> None:
 		print(f'Voice session for {session_data["user_name"]} saved successfully')
 	except Exception as e:
 		print(f'Error saving voice session: {e}')
+
+
+def download_voice_sessions() -> list[Mapping[str, Any]] | None:
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		return None
+
+	db = client['discord']
+	collection: Collection[Mapping[str, Any]] = db['voice_sessions']
+
+	try:
+		sessions = collection.find({})
+		return list(sessions)
+	except Exception as e:
+		print(f'Error retrieving voice sessions: {e}')
+		return None

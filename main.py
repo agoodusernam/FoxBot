@@ -279,6 +279,15 @@ async def rek(ctx):
 async def analyse(ctx):
 	await analysis.format_analysis(ctx.message)
 
+@bot.command(name = "analyse_voice", aliases = ["voice_analysis", "voice_stats"],
+			 brief = "Analyze voice channel usage",
+			 help = "Provides statistics about voice channel usage in the server", hidden=True,
+			 usage = "analyse_voice [user_id/mention]")
+@commands.cooldown(1, 300, commands.BucketType.user)
+@commands.check(is_admin)
+async def analyse_voice(ctx):
+	await analysis.format_voice_analysis(ctx.message)
+
 
 @bot.command(name = "blacklist",
 			 brief = "Blacklist a user",

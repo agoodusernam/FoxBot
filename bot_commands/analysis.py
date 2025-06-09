@@ -206,7 +206,6 @@ async def format_analysis(message: discord.Message) -> None:
 	except Exception as e:
 		await message.channel.send(f'Error during analysis: {e}')
 
-	await add_voice_analysis(message)
 
 
 async def analyse_single_user_cmd(message: discord.Message, member: discord.Member) -> None:
@@ -233,16 +232,7 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.Memb
 
 def get_voice_statistics() -> Optional[Dict[str, Any]]:
 	"""Retrieve voice statistics from MongoDB and calculate user and channel totals"""
-	client = db_stuff._connect()
-	if not client:
-		print('Failed to connect to MongoDB')
-		return None
-
-	db = client['discord']
-	voice_sessions = db['voice_sessions']
-
-	# Get all voice sessions
-	sessions = list(voice_sessions.find({}))
+	sessions = db_stuff.download_voice_sessions()
 
 	if not sessions:
 		return None
@@ -311,7 +301,7 @@ def format_duration(seconds: int) -> str:
 		return f"{int(seconds)}s"
 
 
-async def add_voice_analysis(message: discord.Message) -> None:
+async def voice_analysis(message: discord.Message) -> None:
 	"""Generate voice activity statistics and send as a message"""
 	stats = get_voice_statistics()
 
@@ -331,6 +321,103 @@ async def add_voice_analysis(message: discord.Message) -> None:
 
 	# Top channels
 	result += "**Top 5 Voice Channels**\n"
+	for i, channel in enumerate(stats['channels'], 1):
+		formatted_time = format_duration(channel['total_seconds'])
+		result += f"{i}. {channel['name']}: {formatted_time}\n"
+
+	await message.channel.send(result)
+
+
+async def format_voice_analysis(message: discord.Message) -> None:
+	"""Format and send voice analysis results."""
+	await message.delete()
+
+	new_msg = await message.channel.send('Analysing voice statistics...')
+
+	if len(message.content.split()) > 1:
+		try:
+			member_id = int(message.content.split()[1].replace('@', '').replace('<', '').replace('>', '').strip())
+			member = message.guild.get_member(member_id)
+			if member is None:
+				await new_msg.edit(content = f'User with ID {member_id} not found.')
+				return
+
+			await add_voice_analysis_for_user(message, member)
+			await new_msg.delete()
+			return
+		except ValueError:
+			await new_msg.edit(content = 'Invalid user ID format. Please provide a valid integer ID.')
+			return
+
+	# No user specified, show general voice stats
+	try:
+		await voice_analysis(message)
+		await new_msg.delete()
+	except Exception as e:
+		await message.channel.send(f'Error during voice analysis: {e}')
+
+
+def get_user_voice_statistics(user_id: str) -> Optional[Dict[str, Any]]:
+	"""Retrieve voice statistics for a specific user"""
+	sessions = db_stuff.download_voice_sessions()
+
+	if not sessions:
+		return None
+
+	# Filter sessions for this user
+	user_sessions = [s for s in sessions if s.get('user_id') == user_id]
+
+	if not user_sessions:
+		return None
+
+	user_name = user_sessions[0].get('user_global_name') or user_sessions[0].get('user_name')
+
+	total_seconds = sum(s.get('duration_seconds', 0) for s in user_sessions)
+
+	# Calculate per-channel stats
+	channel_stats = {}
+	for session in user_sessions:
+		channel_id = session.get('channel_id')
+		channel_name = session.get('channel_name')
+		duration = session.get('duration_seconds', 0)
+
+		if channel_id not in channel_stats:
+			channel_stats[channel_id] = {
+				'name':          channel_name,
+				'total_seconds': 0
+			}
+
+		channel_stats[channel_id]['total_seconds'] += duration
+
+	top_channels = sorted(
+			[{'id': channel_id, 'name': data['name'], 'total_seconds': data['total_seconds']}
+			 for channel_id, data in channel_stats.items()],
+			key = lambda x: x['total_seconds'],
+			reverse = True
+	)
+
+	return {
+		'user_id':       user_id,
+		'user_name':     user_name,
+		'total_seconds': total_seconds,
+		'channels':      top_channels[:5]  # Top 5 channels
+	}
+
+
+async def add_voice_analysis_for_user(message: discord.Message, member: discord.Member) -> None:
+	"""Generate voice activity statistics for a specific user"""
+	stats = get_user_voice_statistics(str(member.id))
+
+	if not stats:
+		await message.channel.send(f"No voice activity data available for {member.mention}.")
+		return
+
+	formatted_total_time = format_duration(stats['total_seconds'])
+
+	result = f"**Voice Activity for {stats['user_name']}**\n\n"
+	result += f"**Total time in voice channels:** {formatted_total_time}\n\n"
+
+	result += "**Top 5 Most Used Voice Channels**\n"
 	for i, channel in enumerate(stats['channels'], 1):
 		formatted_time = format_duration(channel['total_seconds'])
 		result += f"{i}. {channel['name']}: {formatted_time}\n"
