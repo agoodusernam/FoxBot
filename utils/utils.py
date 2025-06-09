@@ -1,7 +1,6 @@
 import datetime
 import os
 import urllib.request
-from datetime import datetime
 from pathlib import Path
 
 import discord
@@ -24,7 +23,7 @@ def make_file(name: str = 'messages'):
 		os.makedirs('../data')
 	if not os.path.exists('../data/attachments'):
 		os.makedirs('../data/attachments')
-	return open(f'data/{name}.json', 'a+', encoding='utf-8')
+	return open(f'data/{name}.json', 'a+', encoding = 'utf-8')
 
 
 def make_empty_file(path: str | Path):
@@ -58,7 +57,7 @@ def clean_up_APOD():
 	apod_dir = Path('nasa/')
 	if not apod_dir.exists():
 		print('APOD directory does not exist, creating it.')
-		apod_dir.mkdir(parents=True, exist_ok=True)
+		apod_dir.mkdir(parents = True, exist_ok = True)
 
 	for file in apod_dir.iterdir():
 		if file.is_file() and file.suffix.lower() in ['.jpg', '.jpeg', '.png']:
@@ -92,12 +91,12 @@ def check_env_variables():
 		print('No LOCAL_IMG_SAVE found in environment variables. Defaulting to False.')
 		os.environ['LOCAL_IMG_SAVE'] = 'False'
 
-
 	if os.getenv('LOCAL_IMG_SAVE') not in ['True', 'False']:
 		print('Invalid LOCAL_IMG_SAVE value. Please set it to True or False. Defaulting to False.')
 		os.environ['LOCAL_IMG_SAVE'] = 'False'
 
-def parse_utciso8601(date_str: str) -> datetime | None:
+
+def parse_utciso8601(date_str: str) -> datetime.datetime | None:
 	"""
 	Parses a UTC ISO 8601 date string into a datetime object.
 	"""
