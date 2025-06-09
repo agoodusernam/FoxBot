@@ -12,9 +12,7 @@ from bson.objectid import ObjectId
 from pymongo.synchronous.collection import Collection
 from pymongo.synchronous.database import Database
 
-
 from dotenv import load_dotenv
-
 
 # Global client instance
 _mongo_client: MongoClient | None = None
@@ -30,7 +28,7 @@ def _connect():
 
 	uri = os.getenv('MONGO_URI')
 
-	client = MongoClient(uri, server_api=ServerApi('1'))
+	client = MongoClient(uri, server_api = ServerApi('1'))
 	try:
 		client.admin.command('ping')
 		_mongo_client = client  # Store the connection
@@ -41,6 +39,7 @@ def _connect():
 	except Exception as e:
 		print(e)
 		return False
+
 
 def disconnect():
 	global _mongo_client
@@ -110,8 +109,8 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
 		# Store file in GridFS
 		file_id = fs.put(
 				attachment_bytes,
-				filename=attachment.filename,
-				metadata=metadata
+				filename = attachment.filename,
+				metadata = metadata
 		)
 		print(f'Attachment saved successfully: {attachment.filename}')
 		return None
@@ -225,3 +224,93 @@ def del_channel_from_db(channel: discord.TextChannel) -> None:
 		print(f'Deleted {result.deleted_count} messages from channel {channel.name}')
 	except Exception as e:
 		print(f'Error deleting messages from channel {channel.name}: {e}')
+
+
+def get_voice_stats_user(u_id: int) -> Mapping[str, Any] | None:
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		return None
+
+	db = client['discord']
+	collection = db["voice_stats"]
+
+	try:
+		stats = collection.find_one({'u_id': u_id})
+		if stats:
+			return stats
+		else:
+			return create_voice_stats(u_id)
+	except Exception as e:
+		print(f'Error creating voice stats collection: {e}')
+		return None
+
+
+def create_voice_stats(u_id: int) -> dict[str, int | None] | None:
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		return None
+
+	db = client['discord']
+	collection = db["voice_stats"]
+
+	try:
+		data = {
+			'u_id':            u_id,
+			'total_time':      0,
+			'last_channel_id': None,
+			'last_joined':     None,
+		}
+		collection.insert_one(data)
+		print(f'Created voice stats for user {u_id}')
+		return data
+	except Exception as e:
+		print(f'Error creating voice stats collection: {e}')
+		return None
+
+
+def member_joined_vc(member: discord.Member, channel: discord.VoiceChannel) -> None:
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		return None
+
+	db = client['discord']
+	collection = db['voice_log']
+
+	try:
+		data = {
+			'member_id':  member.id,
+			'channel_id': channel.id,
+			'timestamp':  member.joined_at.isoformat() if member.joined_at else None
+		}
+		collection.insert_one(data)
+		print(f'Recorded {member.name} joining {channel.name}')
+		return None
+	except Exception as e:
+		print(f'Error recording voice activity: {e}')
+		return None
+
+
+def member_left_vc(member: discord.Member, channel: discord.VoiceChannel) -> None:
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		return None
+
+	db = client['discord']
+	collection = db['voice_log']
+
+	try:
+		data = {
+			'member_id':  member.id,
+			'channel_id': None,
+			'timestamp':  member.joined_at.isoformat() if member.joined_at else None
+		}
+		collection.insert_one(data)
+		print(f'Recorded {member.name} leaving {channel.name}')
+		return None
+	except Exception as e:
+		print(f'Error recording voice activity: {e}')
+		return None

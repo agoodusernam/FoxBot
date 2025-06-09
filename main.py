@@ -508,7 +508,7 @@ async def on_message(message):
 
 	if ((message.channel.id == 1346720879651848202) and (message.author.id == 542798185857286144) and
 			(message.content.startswith('FUN FACT'))):
-		await message.channel.send('<@1352341336459841688>', delete_after = 0.5)
+		await message.channel.send('<@&1352341336459841688>', delete_after = 0.5)
 
 	# Log regular messages
 	if (message.author != bot.user) and (
