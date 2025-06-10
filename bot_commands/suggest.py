@@ -17,10 +17,10 @@ async def send_suggestion(client: 'discord.Client', message: discord.Message) ->
 	suggestion = message.content.replace('suggest', '').strip()
 
 	channel: discord.TextChannel = client.get_channel(1379193761791213618)
-	last_msges = [message async for message in channel.history(limit=10)]
-	for message in last_msges:
-		if HELP_MSG in message.content:
-			await message.delete()
+	last_msges = [a_message async for a_message in channel.history(limit=10)]
+	for b_message in last_msges:
+		if HELP_MSG in b_message.content:
+			await b_message.delete()
 
 	try:
 		embed = discord.Embed(title='Suggestion', description=suggestion, color=discord.Color.blue())
