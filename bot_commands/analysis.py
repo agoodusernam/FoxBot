@@ -320,7 +320,7 @@ async def voice_analysis(message: discord.Message) -> None:
 	result += "\n"
 
 	# Top channels
-	result += "**Top 5 Voice Channels using [Man Hours](https://en.wikipedia.org/wiki/Man-hour)**\n"
+	result += "**Top 5 Voice Channels by [Man Hours](https://en.wikipedia.org/wiki/Man-hour)**\n"
 	for i, channel in enumerate(stats['channels'], 1):
 		formatted_time = format_duration(channel['total_seconds'])
 		result += f"{i}. {channel['name']}: {formatted_time}\n"
