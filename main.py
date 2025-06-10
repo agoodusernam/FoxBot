@@ -386,10 +386,7 @@ async def nasa_pic(ctx):
 		fetch_msg = await ctx.send('Fetching NASA picture of the day...')
 		nasa_data = api_stuff.get_nasa_apod()
 		bot.nasa_data = deepcopy(nasa_data)
-		if 'hdurl' in nasa_data:
-			url = nasa_data['hdurl']
-		else:
-			url = nasa_data['url']
+		url = nasa_data['url']
 
 		utils.download_from_url(f'nasa/nasa_pic_{bot.today}.jpg', url)
 
@@ -454,6 +451,15 @@ async def advice(ctx):
 @commands.check(not_blacklisted)
 async def joke(ctx):
 	await get_from_api(ctx.message, api_stuff.get_joke)
+
+@bot.command(name = "wyr", aliases = ["would_you_rather", "wouldyourather"],
+			 brief = "Get a random 'Would You Rather' question",
+			 help = "Fetches and displays a random 'Would You Rather' question from an API")
+@commands.cooldown(1, 5, commands.BucketType.user)
+@commands.check(not_blacklisted)
+async def wyr(ctx):
+	await get_from_api(ctx.message, api_stuff.get_wyr)
+
 
 
 @bot.command(name = "dice", aliases = ["roll", "dice_roll"],
@@ -630,7 +636,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	if before.channel is None and after.channel is not None:
 		voice_log.handle_join(member, after)
 		embed = discord.Embed(title=f'{member.global_name} joined #{after.channel.name}', color=discord.Color.green())
-		embed.set_author(name=member.display_name, icon_url=member.avatar.url)
+		embed.set_author(name=member.name, icon_url=member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
 		if logging_channel:
 			await logging_channel.send(embed=embed)
@@ -640,7 +646,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	elif before.channel is not None and after.channel is None:
 		voice_log.handle_leave(member, before)
 		embed = discord.Embed(title=f'{member.global_name} left #{before.channel.name}', color=discord.Color.red())
-		embed.set_author(name=member.display_name, icon_url=member.avatar.url)
+		embed.set_author(name=member.name, icon_url=member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
 		if logging_channel:
 			await logging_channel.send(embed=embed)
@@ -651,7 +657,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 		voice_log.handle_move(member, before, after)
 		embed = discord.Embed(title=f'{member.global_name} moved from #{before.channel.name} to'
 									f' #{after.channel.name}', color=discord.Color.blue())
-		embed.set_author(name=member.display_name, icon_url=member.avatar.url)
+		embed.set_author(name=member.name, icon_url=member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
 		if logging_channel:
 			await logging_channel.send(embed=embed)

@@ -28,7 +28,7 @@ def _connect():
 
 	uri = os.getenv('MONGO_URI')
 
-	client = MongoClient(uri, server_api = ServerApi('1'))
+	client = MongoClient(uri, server_api = ServerApi('1'), serverSelectionTimeoutMS = 5000)
 	try:
 		client.admin.command('ping')
 		_mongo_client = client  # Store the connection
@@ -39,6 +39,18 @@ def _connect():
 	except Exception as e:
 		print(e)
 		return False
+
+def get_connection() -> MongoClient:
+
+	"""
+	Get the current MongoDB connection.
+	Returns None if not connected.
+	"""
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		raise ConnectionError
+	return client
 
 
 def disconnect():

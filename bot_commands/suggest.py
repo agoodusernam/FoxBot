@@ -2,7 +2,7 @@ import os
 
 import discord
 
-HELP_MSG = '''Please post your suggestions for the <@1377636535968600135> in here using `f!suggest [suggestion]`.
+HELP_MSG = '''Please post your suggestions for the <@1377636535968600135> in here using `f!suggest <suggestion>.
 If you have any additional comments, please use the thread.
 ✅: Implemented
 💻: Working on it

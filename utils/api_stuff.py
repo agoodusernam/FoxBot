@@ -110,3 +110,16 @@ def get_joke() -> str:
 		return f'{data['setup']}\n{data['delivery']}'
 	else:
 		raise ValueError('Unexpected joke format from joke API')
+
+def get_wyr() -> str:
+	url = 'https://api.truthordarebot.xyz/api/wyr'
+	response = requests.get(url)
+
+	if response.status_code != 200:
+		raise Exception(f'Failed to fetch Would You Rather question: {response.status_code}')
+
+	data = response.json()
+	if 'question' not in data:
+		raise ValueError('Unexpected response format from Would You Rather API')
+
+	return data['question']
