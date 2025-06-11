@@ -5,7 +5,7 @@ async def echo(message: discord.Message, del_after: int, client: "discord.client
 		await message.channel.send('Nothing to echo.', delete_after=del_after)
 		return
 
-	msg = message.content.replace('echo', '', 1)
+	msg = message.content.replace('f!echo', '', 1)
 
 	# Send the message content back to the channel
 	split_message = msg.split()
@@ -14,7 +14,7 @@ async def echo(message: discord.Message, del_after: int, client: "discord.client
 		channel_id = int(split_message[0])
 		channel = client.get_channel(channel_id)
 		msg = msg.replace(str(channel_id), '', 1)
-	except:
+	except ValueError:
 		pass
 
 	await channel.send(msg)
