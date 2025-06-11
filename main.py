@@ -1,7 +1,8 @@
 import datetime
 import os
 from copy import deepcopy
-from typing import Union
+from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 import discord
@@ -17,43 +18,70 @@ import reaction_roles
 
 load_dotenv()
 
-# Create bot with intents (note: removed help_command=None to use built-in help)
+
+def load_config():
+	"""Load configuration from config.json file or create default if not exists"""
+	config_path = Path("config.json")
+
+	# Default configuration
+	default_config: dict[str, Any] = {
+		"command_prefix":   "f!",
+		"del_after":        3,
+		"admin_ids":        [235644709714788352, 542798185857286144, 937278965557641227],
+		"dev_ids":          [542798185857286144],
+		"no_log":           {
+			"user_ids":     [1329366814517628969, 1329366963805491251, 1329367238146396211,
+							 1329367408330145805, 235148962103951360, 1299640624848306177],
+			"channel_ids":  [],
+			"category_ids": [1329366612821938207]
+		},
+		"send_blacklist":   {
+			"channel_ids":  [],
+			"category_ids": []
+		},
+		"logging_channels": {
+			"voice": 1329366741909770261
+		}
+	}
+
+	# Create config file with defaults if it doesn't exist
+	if not config_path.exists():
+		with open(config_path, "w", encoding = "utf-8") as f:
+			json.dump(default_config, f, indent = 4)
+		print("Created default config.json file")
+		return default_config
+
+	# Load existing config
+	try:
+		with open(config_path, "r", encoding = "utf-8") as _f:
+			_config = json.load(_f)
+		print("Configuration loaded successfully")
+		return _config
+	except Exception as e:
+		print(f"Error loading config: {e}")
+		print("Using default configuration")
+		return default_config
+
+
+# Update main.py initialization
+# Replace the hardcoded configuration with this:
+
+# Load configuration
+config = load_config()
+
+# Create bot with intents
 intents = discord.Intents.all()
 intents.presences = False
-bot = commands.Bot(command_prefix = 'f!', intents = intents)
+bot = commands.Bot(command_prefix = config["command_prefix"], intents = intents)
 
-
-# Initialize bot configuration
+# Initialize bot configuration from loaded config
 bot.today = utils.formatted_time()
-
-# Access control
-bot.no_log = {
-	'user_ids':     [1329366814517628969, 1329366963805491251, 1329367238146396211,
-					 1329367408330145805, 235148962103951360, 1299640624848306177],
-	'channel_ids':  [],
-	'category_ids': [1329366612821938207]
-}
-
-logging_channels: dict[str, Union[discord.VoiceChannel, discord.StageChannel, discord.ForumChannel,
-					   discord.TextChannel, discord.CategoryChannel, discord.Thread, None | int]] = {
-	'voice': 1329366741909770261
-}
-bot.logging_channels = logging_channels
-
-bot.admin_ids = [235644709714788352, 542798185857286144, 937278965557641227]
-bot.dev_ids = [542798185857286144]
-bot.blacklist_ids = {'ids': []}
-
-bot.send_blacklist = {
-	'channel_ids':  [],
-	'category_ids': []
-}
-
-# UI settings
-bot.del_after = 3
-
-# NASA data
-bot.nasa_data = {}
+bot.del_after = config["del_after"]
+bot.admin_ids = config["admin_ids"]
+bot.dev_ids = config["dev_ids"]
+bot.no_log = config["no_log"]
+bot.logging_channels = config["logging_channels"]
+bot.send_blacklist = config["send_blacklist"]
 
 # Reaction roles
 bot.role_message_id = 0
@@ -179,7 +207,8 @@ async def on_command_error(ctx, error):
 			 help = "Dev only: Git pull and restart the bot instance", hidden=True)
 @commands.check(is_dev)
 async def restart_cmd(ctx):
-	await ctx.message.delete()
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
 	await restart.restart(bot)
 
 
@@ -188,7 +217,8 @@ async def restart_cmd(ctx):
 			 help = 'Dev only: Reset all command cooldowns for the bot', hidden=True)
 @commands.check(is_dev)
 async def reset_cooldowns(ctx):
-	await ctx.message.delete()
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
 	for command in bot.commands:
 		if command.is_on_cooldown(ctx):
 			command.reset_cooldown(ctx)
@@ -199,7 +229,8 @@ async def reset_cooldowns(ctx):
 			 help = "Dev only: Shutdown the bot instance", hidden=True)
 @commands.check(is_dev)
 async def shutdown_cmd(ctx):
-	await ctx.message.delete()
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
 	await ctx.send('Shutting down the bot...', delete_after = bot.del_after)
 	print('Bot is shutting down...')
 	db_stuff.disconnect()
@@ -211,7 +242,8 @@ async def shutdown_cmd(ctx):
 			 help = "Admin only: Timeout all non-admin users for 28 days and add them to blacklist", hidden=True)
 @commands.check(is_admin)
 async def hard_lockdown(ctx):
-	await ctx.message.delete()
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
 	# await admin_cmds.hardlockdown(ctx.message)
 
 	for member in ctx.guild.members:
@@ -238,7 +270,8 @@ async def hard_lockdown(ctx):
 			 help = "Admin only: Remove timeouts and blacklist from all users", hidden=True)
 @commands.check(is_admin)
 async def unhard_lockdown(ctx):
-	await ctx.message.delete()
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
 
 	for member in ctx.guild.members:
 		if member.id in bot.admin_ids:
@@ -295,7 +328,8 @@ async def analyse_voice(ctx):
 			 usage = "blacklist <user_id/mention>")
 @commands.check(is_admin)
 async def blacklist_id(ctx):
-	await ctx.message.delete()
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
 
 	u_id = utils.get_id_from_msg(ctx.message)
 
@@ -333,7 +367,8 @@ async def blacklist_id(ctx):
 			 usage = "unblacklist <user_id/mention>")
 @commands.check(is_admin)
 async def unblacklist_id(ctx):
-	await ctx.message.delete()
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
 
 	u_id = utils.get_id_from_msg(ctx.message)
 
@@ -366,7 +401,6 @@ async def unblacklist_id(ctx):
 @commands.check(not_blacklisted)
 async def ping(ctx):
 	await ctx.send(f'{bot.latency * 1000:.2f}ms', delete_after = bot.del_after)
-	await ctx.message.delete()
 
 
 @bot.command(name = "nasa", aliases = ["nasa_pic", "nasa_apod", "nasapic"],

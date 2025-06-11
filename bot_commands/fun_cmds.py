@@ -6,7 +6,7 @@ import discord
 
 
 async def dice_roll(del_after: int, message: discord.Message) -> None:
-	nums: list[int | str] = message.content.replace('dice', '').replace('roll', '').split()
+	nums: list[int | str] = message.content.replace('f!dice', '').replace('f!roll', '').split()
 	if len(nums) < 2:
 		await message.delete()
 		await message.channel.send('Please choose 2 numbers to roll the dice, e.g. `dice 1 6`', delete_after=del_after)

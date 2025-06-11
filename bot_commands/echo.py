@@ -11,7 +11,7 @@ async def echo(message: discord.Message, del_after: int, client: "discord.client
 	split_message = msg.split()
 	channel = message.channel
 	try:
-		channel_id = int(split_message[0].replace('#', '').replace('<', '').replace('>', ''))
+		channel_id = int(split_message[0].replace('#', '', 1).replace('<', '', 1).replace('>', '', 1))
 		channel = client.get_channel(channel_id)
 		msg = msg.replace(str(channel_id), '', 1)
 	except ValueError:

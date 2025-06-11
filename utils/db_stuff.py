@@ -2,6 +2,7 @@ import os
 from typing import Any, Mapping
 
 import discord
+import pymongo
 from pymongo.mongo_client import MongoClient
 from pymongo.results import DeleteResult
 from pymongo.server_api import ServerApi
@@ -40,8 +41,8 @@ def _connect():
 		print(e)
 		return False
 
-def get_connection() -> MongoClient:
 
+def get_connection() -> MongoClient:
 	"""
 	Get the current MongoDB connection.
 	Returns None if not connected.
@@ -237,6 +238,7 @@ def del_channel_from_db(channel: discord.TextChannel) -> None:
 	except Exception as e:
 		print(f'Error deleting messages from channel {channel.name}: {e}')
 
+
 def send_voice_session(session_data: Mapping[str, Any]) -> None:
 	client = _connect()
 	if not client:
@@ -267,4 +269,66 @@ def download_voice_sessions() -> list[Mapping[str, Any]] | None:
 		return list(sessions)
 	except Exception as e:
 		print(f'Error retrieving voice sessions: {e}')
+		return None
+
+
+def send_to_db(collection_name: str, data: Mapping[str, Any]) -> None:
+	"""
+	Generic function to send data to a specified MongoDB collection.
+	"""
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		return
+
+	db = client['discord']
+	collection: Collection[Mapping[str, Any]] = db[collection_name]
+
+	try:
+		collection.insert_one(data)
+		print(f'Data sent successfully to {collection_name} collection')
+	except Exception as e:
+		print(f'Error sending data to {collection_name} collection: {e}')
+
+def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_data: Mapping[str, Any]) -> None:
+	"""
+	Generic function to edit an entry in a specified MongoDB collection.
+	"""
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		return
+
+	db = client['discord']
+	collection: Collection[Mapping[str, Any]] = db[collection_name]
+
+	try:
+		result = collection.update_one(query, {'$set': update_data})
+		if result.modified_count > 0:
+			print(f'Entry updated successfully in {collection_name} collection')
+		else:
+			print(f'No entry matched the query in {collection_name} collection')
+	except Exception as e:
+		print(f'Error updating entry in {collection_name} collection: {e}')
+
+
+def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[str, Any] | bool:
+	"""
+	Generic function to retrieve data from a specified MongoDB collection.
+	"""
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		return None
+
+	db = client['discord']
+	collection: Collection[Mapping[str, Any]] = db[collection_name]
+
+	try:
+		results = collection.find_one(query)
+		if results is None:
+			return False
+		return dict(results)
+	except Exception as e:
+		print(f'Error retrieving data from {collection_name} collection: {e}')
 		return None

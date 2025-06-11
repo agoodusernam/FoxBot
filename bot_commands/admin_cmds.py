@@ -14,7 +14,8 @@ async def rek(admin_ids: list[int], del_after: int, message: discord.Message, gu
 		await message.delete()
 		return
 
-	await message.delete()
+	if not isinstance(message.channel, discord.DMChannel):
+		await message.delete()
 
 	u_id = utils.get_id_from_msg(message)
 

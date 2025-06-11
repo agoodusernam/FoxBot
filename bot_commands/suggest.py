@@ -1,8 +1,9 @@
+import datetime
 import os
 
 import discord
 
-HELP_MSG = '''Please post your suggestions for the <@1377636535968600135> in here using `f!suggest <suggestion>.
+HELP_MSG = '''Please post your suggestions for the <@1377636535968600135> in here using `f!suggest <suggestion>`.
 If you have any additional comments, please use the thread.
 ✅: Implemented
 💻: Working on it
@@ -14,7 +15,7 @@ If you have any additional comments, please use the thread.
 
 async def send_suggestion(client: 'discord.Client', message: discord.Message) -> None:
 	await message.delete()
-	suggestion = message.content.replace('suggest', '').strip()
+	suggestion = message.content.replace('f!suggest', '').strip()
 
 	channel: discord.TextChannel = client.get_channel(1379193761791213618)
 	last_msges = [a_message async for a_message in channel.history(limit=10)]
@@ -25,7 +26,7 @@ async def send_suggestion(client: 'discord.Client', message: discord.Message) ->
 	try:
 		embed = discord.Embed(title='Suggestion', description=suggestion, color=discord.Color.blue())
 		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
-		embed.timestamp = message.created_at
+		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
 		msg = await channel.send(embed=embed)
 		await msg.add_reaction('👍')
 
