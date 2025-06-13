@@ -2,7 +2,6 @@ import datetime
 import os
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
 
 from dotenv import load_dotenv
 import discord
@@ -13,7 +12,7 @@ from discord.ext.commands import BucketType
 
 from custom_logging import voice_log
 from utils import db_stuff, utils, api_stuff
-from bot_commands import suggest, restart, admin_cmds, fun_cmds, analysis, echo
+from bot_commands import suggest, dev_cmds, admin_cmds, fun_cmds, analysis, echo
 import reaction_roles
 
 load_dotenv()
@@ -24,7 +23,7 @@ def load_config():
 	config_path = Path("config.json")
 
 	# Default configuration
-	default_config: dict[str, Any] = {
+	default_config: dict[str, str | int | list[int] | dict[str, int | dict[str, list[int]] | discord.TextChannel]] = {
 		"command_prefix":   "f!",
 		"del_after":        3,
 		"admin_ids":        [235644709714788352, 542798185857286144, 937278965557641227],
@@ -46,8 +45,8 @@ def load_config():
 
 	# Create config file with defaults if it doesn't exist
 	if not config_path.exists():
-		with open(config_path, "w", encoding = "utf-8") as f:
-			json.dump(default_config, f, indent = 4)
+		with open(config_path, "w", encoding = "utf-8") as _f:
+			json.dump(default_config, _f, indent = 4)
 		print("Created default config.json file")
 		return default_config
 
@@ -61,10 +60,6 @@ def load_config():
 		print(f"Error loading config: {e}")
 		print("Using default configuration")
 		return default_config
-
-
-# Update main.py initialization
-# Replace the hardcoded configuration with this:
 
 # Load configuration
 config = load_config()
@@ -97,11 +92,11 @@ bot.emoji_to_role = {
 
 # Load blacklist
 if not os.path.isfile('blacklist_users.json'):
-	with open('blacklist_users.json', 'w') as f:
-		json.dump(bot.blacklist_ids, f, indent = 4)
+	with open('blacklist_users.json', 'w') as blacklist_file:
+		json.dump(bot.blacklist_ids, blacklist_file, indent = 4)
 else:
-	with open('blacklist_users.json', 'r') as f:
-		bot.blacklist_ids = json.load(f)
+	with open('blacklist_users.json', 'r') as blacklist_file:
+		bot.blacklist_ids = json.load(blacklist_file)
 
 
 # Bot configuration
@@ -130,7 +125,7 @@ async def on_ready():
 		bot.role_message_id = messages[0].id
 
 	for key, value in bot.logging_channels.items():
-		channel = bot.get_channel(value)
+		channel: discord.TextChannel = bot.get_channel(value)
 		bot.logging_channels[key] = channel
 
 
@@ -158,12 +153,12 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 				"**Admin Commands:**\n"
 				f"`{ctx.prefix}rek <user_id/mention>` - Absolutely rek a user\n"
 				f"`{ctx.prefix}analyse [user_id/mention]` - Analyse the server's messages\n"
+				f"`{ctx.prefix}analyse_voice [user_id/mention]` - Analyse the server's voice channel usage\n"
 				f"`{ctx.prefix}blacklist <user_id/mention>` - Blacklist a user from using commands\n"
 				f"`{ctx.prefix}unblacklist <user_id/mention>` - Remove a user from the blacklist\n"
 				f"`{ctx.prefix}echo [channel id] <message>` - Make the bot say something\n"
 				f"`{ctx.prefix}hardlockdown` - Lock down the entire server\n"
 				f"`{ctx.prefix}unhardlockdown` - Unlock the server from hard lockdown\n"
-				f"`{ctx.prefix}restart` - Restart the bot\n"
 			)
 			dm = await ctx.author.create_dm()
 			await dm.send(admin_help_text)
@@ -184,6 +179,18 @@ def is_admin(ctx):
 
 def is_dev(ctx):
 	return ctx.author.id in bot.dev_ids
+
+def default_check(ctx):
+	# Check if the user is not blacklisted
+	if ctx.author.id in bot.blacklist_ids['ids']:
+		return False
+
+	# Check if the command is not in a no-log channel or category
+	if (ctx.channel.id in bot.no_log['channel_ids']) or (
+			ctx.channel.category_id in bot.no_log['category_ids']):
+		return False
+
+	return True
 
 
 @bot.event
@@ -209,7 +216,7 @@ async def on_command_error(ctx, error):
 async def restart_cmd(ctx):
 	if not isinstance(ctx.message.channel, discord.DMChannel):
 		await ctx.message.delete()
-	await restart.restart(bot)
+	await dev_cmds.restart(bot)
 
 
 @bot.command(name = 'reset_cooldowns',
@@ -235,6 +242,61 @@ async def shutdown_cmd(ctx):
 	print('Bot is shutting down...')
 	db_stuff.disconnect()
 	await bot.close()
+
+@bot.command(name = "add_admin",
+			 brief = "Add a user to the admin list",
+			 help = "Dev only: Add a user to the admin list", hidden=True,
+			 usage = "add_admin <user_id/mention>")
+@commands.check(is_dev)
+async def add_admin(ctx):
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
+
+	u_id = utils.get_id_from_msg(ctx.message)
+
+	try:
+		u_id = int(u_id)
+	except ValueError:
+		await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
+					   delete_after = bot.del_after)
+		return
+	if u_id in bot.admin_ids:
+		await ctx.send(f'User with ID {u_id} is already an admin.', delete_after = bot.del_after)
+		return
+	if u_id in bot.blacklist_ids['ids']:
+		await ctx.send(f'User with ID {u_id} is blacklisted. Please unblacklist them first.',
+					   delete_after = bot.del_after)
+		return
+
+	bot.admin_ids.append(u_id)
+	utils.add_to_config(config=config, key='admin_ids', value=u_id)
+
+	await ctx.send(f'User with ID {u_id} has been added to the admin list.', delete_after = bot.del_after)
+
+@bot.command(name = "remove_admin",
+			 brief = "Remove a user from the admin list",
+			 help = "Dev only: Remove a user from the admin list", hidden=True,
+			 usage = "remove_admin <user_id/mention>")
+@commands.check(is_dev)
+async def remove_admin(ctx):
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
+
+	u_id = utils.get_id_from_msg(ctx.message)
+
+	try:
+		u_id = int(u_id)
+	except ValueError:
+		await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
+					   delete_after = bot.del_after)
+		return
+	if u_id not in bot.admin_ids:
+		await ctx.send(f'User with ID {u_id} is not an admin.', delete_after = bot.del_after)
+		return
+	bot.admin_ids.remove(u_id)
+	utils.remove_from_config(config=config, key='admin_ids')
+			
+	await ctx.send(f'User with ID {u_id} has been removed from the admin list.', delete_after = bot.del_after)
 
 # Admin commands
 @bot.command(name = "hardlockdown",
@@ -392,6 +454,88 @@ async def unblacklist_id(ctx):
 
 	await ctx.send(f'User with ID {u_id} has been unblacklisted.', delete_after = bot.del_after)
 
+@bot.command(name = "nologc", aliases = ["nologchannel", "nolog_channel"],
+			 brief = "Add a channel to no-log list",
+			 help = "Admin only: Prevent logging messages in a specific channel", hidden=True,
+			 usage = "nolog <channel_id/mention>")
+@commands.check(is_admin)
+async def nolog_channel(ctx):
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
+
+	channel_id = utils.get_id_from_msg(ctx.message)
+
+	try:
+		channel_id = int(channel_id)
+	except ValueError:
+		await ctx.send('Invalid channel ID format. Please provide a valid integer ID.',
+					   delete_after = bot.del_after)
+		return
+
+	if channel_id in bot.no_log['channel_ids']:
+		await ctx.send(f'Channel with ID {channel_id} is already in the no-log list.', delete_after = bot.del_after)
+		return
+
+	bot.no_log['channel_ids'].append(channel_id)
+	utils.add_to_config(config=config, key='no_log', key2='channel_ids', value=channel_id)
+	await ctx.send(f'Channel with ID {channel_id} has been added to the no-log list.', delete_after = bot.del_after)
+
+@bot.command(name = "nologc_remove", aliases = ["nolog_channel_remove", "nolog_channel_rm"],
+			 brief = "Remove a channel from no-log list",
+			 help = "Admin only: Allow logging messages in a specific channel again", hidden=True,
+			 usage = "nolog_remove <channel_id/mention>")
+@commands.check(is_admin)
+async def nolog_channel_remove(ctx):
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
+
+	channel_id = utils.get_id_from_msg(ctx.message)
+
+	try:
+		channel_id = int(channel_id)
+	except ValueError:
+		await ctx.send('Invalid channel ID format. Please provide a valid integer ID.',
+					   delete_after = bot.del_after)
+		return
+
+	if channel_id not in bot.no_log['channel_ids']:
+		await ctx.send(f'Channel with ID {channel_id} is not in the no-log list.', delete_after = bot.del_after)
+		return
+
+	bot.no_log['channel_ids'].remove(channel_id)
+	await ctx.send(f'Channel with ID {channel_id} has been removed from the no-log list.', delete_after = bot.del_after)
+
+@bot.command(name = "nologu", aliases = ["nologuser", "nolog_user"],
+			 brief = "Add a user to no-log list",
+			 help = "Admin only: Prevent logging messages from a specific user", hidden=True,
+			 usage = "nologu <user_id/mention>")
+@commands.check(is_admin)
+async def nolog_user(ctx):
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
+
+	u_id = utils.get_id_from_msg(ctx.message)
+
+	try:
+		u_id = int(u_id)
+	except ValueError:
+		await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
+					   delete_after = bot.del_after)
+		return
+	if u_id in bot.no_log['user_ids']:
+		await ctx.send(f'User with ID {u_id} is already in the no-log list.', delete_after = bot.del_after)
+		return
+	bot.no_log['user_ids'].append(u_id)
+	utils.add_to_config(config=config, key='nolog', key2='user_ids', value=u_id)
+
+@bot.command(name = "echo",
+			 brief = "Make the bot say something",
+			 help = "Admin only: Makes the bot say the specified message", hidden=True,
+			 usage = "echo [channel id] <message>")
+@commands.check(is_admin)
+@commands.cooldown(1, 5, commands.BucketType.user)
+async def echo_cmd(ctx):
+	await echo.echo(ctx.message, bot.del_after, bot)
 
 # User commands
 @bot.command(name = "ping", aliases = ["latency"],
@@ -538,15 +682,6 @@ async def karma(ctx):
 		return
 	file_path, file_name = karma_pic
 	await ctx.message.channel.send(file=discord.File(file_path, filename=file_name))
-
-
-@bot.command(name = "echo",
-			 brief = "Make the bot say something",
-			 help = "Admin only: Makes the bot say the specified message", hidden=True,
-			 usage = "echo [channel id] <message>")
-@commands.check(is_admin)
-async def echo_cmd(ctx):
-	await echo.echo(ctx.message, bot.del_after, bot)
 
 
 # Message event for logging and processing

@@ -1,7 +1,9 @@
 from typing import Dict, List, Optional, Union, Any
+import datetime
 
 import discord
 
+import utils.utils
 from utils import db_stuff
 
 
@@ -15,26 +17,49 @@ def check_valid_syntax(message: dict) -> bool:
 	return all(key in message for key in required_keys)
 
 
-def get_valid_messages() -> List[dict]:
+def get_valid_messages(flag: str = None) -> List[dict]:
 	"""Download and validate messages from database."""
+	# flag can be 'w' for last week, 'd' for last day, 'h' for last hour, or None for all messages
 	messages = db_stuff.download_all()
 	if not messages:
 		print('No messages found or failed to connect to the database.')
 		return []
 
 	valid_messages = []
-	for message in messages:
-		if check_valid_syntax(message):
-			valid_messages.append(message)
-		else:
-			db_stuff.delete_message(message['_id'])
+	if not flag:
+		for message in messages:
+			if check_valid_syntax(message):
+				valid_messages.append(message)
+			else:
+				db_stuff.delete_message(message['_id'])
+	elif flag == 'w':
+		# only return messages that were sent in the last week (7 days)
+		week_ago = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=7)
+		for message in messages:
+			if check_valid_syntax(message) and (utils.utils.parse_utciso8601(message['timestamp']) >= week_ago):
+				valid_messages.append(message)
+
+	elif flag == 'd':
+		# only return messages that were sent in the last day (24 hours)
+		day_ago = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=1)
+		for message in messages:
+			if check_valid_syntax(message) and (utils.utils.parse_utciso8601(message['timestamp']) >= day_ago):
+				valid_messages.append(message)
+
+	elif flag == 'h':
+		# only return messages that were sent in the last hour (60 minutes)
+		hour_ago = datetime.datetime.now(datetime.UTC) - datetime.timedelta(hours=1)
+		for message in messages:
+			if check_valid_syntax(message) and (utils.utils.parse_utciso8601(message['timestamp']) >= hour_ago):
+				valid_messages.append(message)
+
 
 	print(f'Total valid messages: {len(valid_messages)}')
 	return valid_messages
 
 
-def analyze_word_stats(content_list: List[str]) -> Dict[str, Any]:
-	"""Analyze word statistics from a list of message content."""
+def analyse_word_stats(content_list: List[str]) -> Dict[str, Any]:
+	"""Analyse word statistics from a list of message content."""
 	if not content_list:
 		return {}
 
@@ -70,18 +95,19 @@ def get_channel_stats(messages: List[dict]) -> List[dict]:
 			for channel, count in channel_counts.items()]
 
 
-def analyse() -> Optional[Union[Dict[str, Any], str, Exception]]:
+def analyse(flag: str = None) -> Optional[Union[Dict[str, Any], str, Exception]]:
 	"""Analyze all messages in the database."""
 	try:
-		valid_messages = get_valid_messages()
+		valid_messages = get_valid_messages(flag)
 		if not valid_messages:
 			return 'No valid messages found to analyse.'
 
 		# Get message content list
+
 		content_list = [message['content'] for message in valid_messages]
 
 		# Analyze word statistics
-		word_stats = analyze_word_stats(content_list)
+		word_stats = analyse_word_stats(content_list)
 		if not word_stats:
 			return 'No valid content to analyze.'
 
@@ -113,10 +139,10 @@ def analyse() -> Optional[Union[Dict[str, Any], str, Exception]]:
 		return e
 
 
-async def analyse_single_user(member: discord.Member) -> Optional[Union[Dict[str, Any], str]]:
-	"""Analyze messages from a specific user."""
+async def analyse_single_user(member: discord.Member, flag: str = None) -> Optional[Union[Dict[str, Any], str]]:
+	"""Analyse messages from a specific user."""
 	try:
-		valid_messages = get_valid_messages()
+		valid_messages = get_valid_messages(flag)
 		if not valid_messages:
 			return None
 
@@ -132,7 +158,7 @@ async def analyse_single_user(member: discord.Member) -> Optional[Union[Dict[str
 		content_list = [msg['content'] for msg in messages_by_user]
 
 		# Analyze word statistics
-		word_stats = analyze_word_stats(content_list)
+		word_stats = analyse_word_stats(content_list)
 		if not word_stats:
 			return f'No analyzable content found for user {member.mention}.'
 
@@ -156,6 +182,12 @@ async def analyse_single_user(member: discord.Member) -> Optional[Union[Dict[str
 async def format_analysis(message: discord.Message) -> None:
 	"""Format and send analysis results."""
 	await message.delete()
+	flag = message.content.split()[-1].replace('-', '')
+	if flag not in ['w', 'd', 'h']:
+		flag = None
+	else:
+		message.content = message.content.replace(f'-{flag}', '')
+
 
 	new_msg = await message.channel.send('Analysing...')
 	if len(message.content.split()) > 1:
@@ -165,7 +197,7 @@ async def format_analysis(message: discord.Message) -> None:
 			if member is None:
 				await new_msg.edit(content = f'User with ID {member_id} not found.')
 				return
-			await analyse_single_user_cmd(message, member)
+			await analyse_single_user_cmd(message, member, flag)
 			await new_msg.delete()
 			return
 		except ValueError:
@@ -173,7 +205,7 @@ async def format_analysis(message: discord.Message) -> None:
 			return
 
 	try:
-		result = analyse()
+		result = analyse(flag)
 		await new_msg.delete()
 
 		if isinstance(result, dict):
@@ -208,9 +240,9 @@ async def format_analysis(message: discord.Message) -> None:
 
 
 
-async def analyse_single_user_cmd(message: discord.Message, member: discord.Member) -> None:
+async def analyse_single_user_cmd(message: discord.Message, member: discord.Member, flag) -> None:
 	"""Format and send analysis results for a single user."""
-	result = await analyse_single_user(member)
+	result = await analyse_single_user(member, flag)
 
 	if isinstance(result, dict):
 		top_5_active_channels = sorted(result['active_channels_lb'], key = lambda x: x['num_messages'],

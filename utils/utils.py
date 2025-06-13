@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import urllib.request
 from pathlib import Path
@@ -101,7 +102,75 @@ def parse_utciso8601(date_str: str) -> datetime.datetime | None:
 	Parses a UTC ISO 8601 date string into a datetime object.
 	"""
 	try:
-		return datetime.datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+		return datetime.datetime.fromisoformat(date_str)
 	except ValueError as e:
 		print(f'Error parsing date string "{date_str}": {e}')
 		return None
+
+def add_to_config(*, config: dict, key: str, key2: str = None, value: str | int) -> None:
+	"""
+	Adds a value to the config file under the specified key.
+	"""
+	if not key2:
+		if isinstance(config.get(key), list):
+			if value not in config[key]:
+				config[key].append(value)
+	else:
+		if isinstance(config.get(key), dict):
+			if key2 not in config[key]:
+				config[key][key2] = value
+			else:
+				print(f'Key "{key2}" already exists in "{key}". Not adding again.')
+				return
+		elif isinstance(config.get(key), list):
+			if value not in config[key]:
+				config[key].append(value)
+			else:
+				print(f'Value "{value}" already exists in "{key}". Not adding again.')
+				return
+
+
+	if isinstance(config.get(key), (int, str, dict)):
+		raise TypeError('Cannot add a value to a key that is not a list.')
+
+	with open('config.json', 'w') as f:
+		json.dump(config, f, indent=4)
+		print(f'Config updated with key "{key}".')
+
+def update_config(*, config: dict, key: str, key2 = None, value: str | int) -> None:
+	"""
+	Updates the config file with a new value for the specified key.
+	"""
+	if key2:
+		if isinstance(config.get(key), dict):
+			config[key][key2] = value
+		else:
+			print(f'Key "{key}" is not a dictionary. Cannot update "{key2}".')
+			return
+
+	else:
+		config[key] = value
+
+	with open('config.json', 'w') as f:
+		json.dump(config, f, indent=4)
+		print(f'Config updated with key "{key}".')
+
+def remove_from_config(*, config: dict, key: str, key2: str = None) -> None:
+	"""
+	Removes a key or a subkey from the config file.
+	"""
+	if key2:
+		if isinstance(config.get(key), dict) and key2 in config[key]:
+			del config[key][key2]
+			print(f'Removed key "{key2}" from "{key}".')
+		else:
+			print(f'Key "{key}" is not a dictionary or does not contain "{key2}".')
+	else:
+		if key in config:
+			del config[key]
+			print(f'Removed key "{key}".')
+		else:
+			print(f'Key "{key}" does not exist in the config.')
+
+	with open('config.json', 'w') as f:
+		json.dump(config, f, indent=4)
