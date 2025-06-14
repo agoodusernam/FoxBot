@@ -18,11 +18,11 @@ async def restart(client: 'discord.Client') -> None:
 
 
 async def upload_all_history(channel: discord.TextChannel, author: discord.Member) -> None:
-	print('Deleting old messages from channel:', channel.name)
+	print(f'Deleting old messages from channel: {channel.name}, ID: {channel.id}')
 	db_stuff.del_channel_from_db(channel)
-	print('Starting to download all messages from channel:', channel.name)
+	print(f'Starting to download all messages from channel: {channel.name}, ID: {channel.id}')
 	messages = [message async for message in channel.history(limit=None)]
-	print('Downloaded', len(messages), 'messages from channel:', channel.name)
+	print(f'Downloaded {len(messages)} messages from channel: {channel.name}, ID: {channel.id}')
 	bulk_data: list[dict[str, Any]] = []
 	for i, message in enumerate(messages):
 

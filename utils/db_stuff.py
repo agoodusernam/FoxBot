@@ -233,7 +233,7 @@ def del_channel_from_db(channel: discord.TextChannel) -> None:
 	collection = db['messages']
 
 	try:
-		result: DeleteResult = collection.delete_many({'channel': channel.id})
+		result: DeleteResult = collection.delete_many({'channel_id': channel.id})
 		print(f'Deleted {result.deleted_count} messages from channel {channel.id}')
 	except Exception as e:
 		print(f'Error deleting messages from channel {channel.id}: {e}')
