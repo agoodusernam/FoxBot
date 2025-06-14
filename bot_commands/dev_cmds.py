@@ -68,7 +68,6 @@ async def upload_whole_server(guild: discord.Guild, author: discord.Member, nolo
 		if channel.permissions_for(guild.me).read_message_history:
 			await dm.send(f'Uploading messages from channel: {channel.name}')
 			await upload_all_history(channel, author)
-			await dm.send(f'Finished uploading messages from channel: {channel.name}')
 			await dm.send('--------------------------')
 		else:
 			await dm.send(f'Skipping channel {channel.name} due to insufficient permissions')
