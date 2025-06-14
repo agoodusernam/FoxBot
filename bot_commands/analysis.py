@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union, Any
+from typing import Optional, Union, Any
 import datetime
 
 import discord
@@ -17,7 +17,7 @@ def check_valid_syntax(message: dict) -> bool:
 	return all(key in message for key in required_keys)
 
 
-def get_valid_messages(flag: str = None) -> List[dict]:
+def get_valid_messages(flag: str = None) -> list[dict]:
 	"""Download and validate messages from database."""
 	# flag can be 'w' for last week, 'd' for last day, 'h' for last hour, or None for all messages
 	messages = db_stuff.download_all()
@@ -58,7 +58,7 @@ def get_valid_messages(flag: str = None) -> List[dict]:
 	return valid_messages
 
 
-def analyse_word_stats(content_list: List[str]) -> Dict[str, Any]:
+def analyse_word_stats(content_list: list[str]) -> dict[str, Any]:
 	"""Analyse word statistics from a list of message content."""
 	if not content_list:
 		return {}
@@ -84,7 +84,7 @@ def analyse_word_stats(content_list: List[str]) -> Dict[str, Any]:
 	}
 
 
-def get_channel_stats(messages: List[dict]) -> List[dict]:
+def get_channel_stats(messages: list[dict]) -> list[dict]:
 	"""Get statistics about channel activity."""
 	channel_counts = {}
 	for message in messages:
@@ -95,7 +95,7 @@ def get_channel_stats(messages: List[dict]) -> List[dict]:
 			for channel, count in channel_counts.items()]
 
 
-def analyse(flag: str = None) -> Optional[Union[Dict[str, Any], str, Exception]]:
+def analyse(flag: str = None) -> Optional[Union[dict[str, Any], str, Exception]]:
 	"""Analyze all messages in the database."""
 	try:
 		valid_messages = get_valid_messages(flag)
@@ -139,7 +139,7 @@ def analyse(flag: str = None) -> Optional[Union[Dict[str, Any], str, Exception]]
 		return e
 
 
-async def analyse_single_user(member: discord.Member, flag: str = None) -> Optional[Union[Dict[str, Any], str]]:
+async def analyse_single_user(member: discord.Member, flag: str = None) -> Optional[Union[dict[str, Any], str]]:
 	"""Analyse messages from a specific user."""
 	try:
 		valid_messages = get_valid_messages(flag)
@@ -225,7 +225,7 @@ async def format_analysis(message: discord.Message) -> None:
 				msg += f"**{i}. {username}** {user['num_messages']} messages\n"
 
 			msg += '\nTop 5 most active channels:\n'
-			for i, channel in enumerate(top_5_active_channels, 1):
+			for i, channel in enumerate(top_5_active_channels, start=1):
 				msg += f"**{i}. {channel['channel']}** {channel['num_messages']} messages\n"
 
 			await message.channel.send(msg)
@@ -262,7 +262,7 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.Memb
 		await message.channel.send('An error occurred during analysis.')
 
 
-def get_voice_statistics() -> Optional[Dict[str, Any]]:
+def get_voice_statistics() -> dict[str, list[dict[str, Any]]] | None:
 	"""Retrieve voice statistics from MongoDB and calculate user and channel totals"""
 	sessions = db_stuff.download_voice_sessions()
 
@@ -389,7 +389,7 @@ async def format_voice_analysis(message: discord.Message) -> None:
 		await message.channel.send(f'Error during voice analysis: {e}')
 
 
-def get_user_voice_statistics(user_id: str) -> Optional[Dict[str, Any]]:
+def get_user_voice_statistics(user_id: str) -> Optional[dict[str, Any]]:
 	"""Retrieve voice statistics for a specific user"""
 	sessions = db_stuff.download_voice_sessions()
 

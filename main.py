@@ -61,6 +61,7 @@ def load_config():
 		print("Using default configuration")
 		return default_config
 
+
 # Load configuration
 config = load_config()
 
@@ -102,7 +103,6 @@ else:
 # Bot configuration
 @bot.event
 async def on_ready():
-
 	utils.check_env_variables()
 	utils.clean_up_APOD()
 	await bot.change_presence(activity = discord.CustomActivity(name = 'f!help'))
@@ -167,10 +167,10 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 # Apply custom help command
 bot.help_command = CustomHelpCommand()
 
+
 # Command checks
 def not_blacklisted(ctx):
 	return ctx.author.id not in bot.blacklist_ids['ids']
-
 
 
 def is_admin(ctx):
@@ -179,6 +179,7 @@ def is_admin(ctx):
 
 def is_dev(ctx):
 	return ctx.author.id in bot.dev_ids
+
 
 def default_check(ctx):
 	# Check if the user is not blacklisted
@@ -197,8 +198,8 @@ def default_check(ctx):
 async def on_command_error(ctx, error):
 	if isinstance(error, commands.CommandOnCooldown):
 		await ctx.send(
-			f'This command is on cooldown. Please try again in {error.retry_after:.1f} seconds.',
-			delete_after=bot.del_after
+				f'This command is on cooldown. Please try again in {error.retry_after:.1f} seconds.',
+				delete_after = bot.del_after
 		)
 		await ctx.message.delete()
 	elif isinstance(error, commands.CheckFailure):
@@ -208,10 +209,11 @@ async def on_command_error(ctx, error):
 	else:
 		print(f"Unhandled error: {error}")
 
+
 # Dev commands
 @bot.command(name = "restart",
 			 brief = "Restart the bot",
-			 help = "Dev only: Git pull and restart the bot instance", hidden=True)
+			 help = "Dev only: Git pull and restart the bot instance", hidden = True)
 @commands.check(is_dev)
 async def restart_cmd(ctx):
 	if not isinstance(ctx.message.channel, discord.DMChannel):
@@ -221,7 +223,7 @@ async def restart_cmd(ctx):
 
 @bot.command(name = 'reset_cooldowns',
 			 brief = 'Reset command cooldowns',
-			 help = 'Dev only: Reset all command cooldowns for the bot', hidden=True)
+			 help = 'Dev only: Reset all command cooldowns for the bot', hidden = True)
 @commands.check(is_dev)
 async def reset_cooldowns(ctx):
 	if not isinstance(ctx.message.channel, discord.DMChannel):
@@ -231,9 +233,10 @@ async def reset_cooldowns(ctx):
 			command.reset_cooldown(ctx)
 	await ctx.send('All command cooldowns have been reset.', delete_after = bot.del_after)
 
+
 @bot.command(name = "shutdown",
 			 brief = "Shutdown the bot",
-			 help = "Dev only: Shutdown the bot instance", hidden=True)
+			 help = "Dev only: Shutdown the bot instance", hidden = True)
 @commands.check(is_dev)
 async def shutdown_cmd(ctx):
 	if not isinstance(ctx.message.channel, discord.DMChannel):
@@ -243,9 +246,10 @@ async def shutdown_cmd(ctx):
 	db_stuff.disconnect()
 	await bot.close()
 
+
 @bot.command(name = "add_admin",
 			 brief = "Add a user to the admin list",
-			 help = "Dev only: Add a user to the admin list", hidden=True,
+			 help = "Dev only: Add a user to the admin list", hidden = True,
 			 usage = "add_admin <user_id/mention>")
 @commands.check(is_dev)
 async def add_admin(ctx):
@@ -269,13 +273,14 @@ async def add_admin(ctx):
 		return
 
 	bot.admin_ids.append(u_id)
-	utils.add_to_config(config=config, key='admin_ids', value=u_id)
+	utils.add_to_config(config = config, key = 'admin_ids', value = u_id)
 
 	await ctx.send(f'User with ID {u_id} has been added to the admin list.', delete_after = bot.del_after)
 
+
 @bot.command(name = "remove_admin",
 			 brief = "Remove a user from the admin list",
-			 help = "Dev only: Remove a user from the admin list", hidden=True,
+			 help = "Dev only: Remove a user from the admin list", hidden = True,
 			 usage = "remove_admin <user_id/mention>")
 @commands.check(is_dev)
 async def remove_admin(ctx):
@@ -294,14 +299,29 @@ async def remove_admin(ctx):
 		await ctx.send(f'User with ID {u_id} is not an admin.', delete_after = bot.del_after)
 		return
 	bot.admin_ids.remove(u_id)
-	utils.remove_from_config(config=config, key='admin_ids')
-			
+	utils.remove_from_config(config = config, key = 'admin_ids')
+
 	await ctx.send(f'User with ID {u_id} has been removed from the admin list.', delete_after = bot.del_after)
+
+@bot.command(name = "upload_all_history",
+			 brief = "Upload all messages from a server",
+			 help = "Dev only: Upload all messages from a specific guild to the database", hidden = True,
+			 usage = "upload_all_history")
+@commands.check(is_dev)
+async def upload_all_history(ctx):
+	if not isinstance(ctx.message.channel, discord.DMChannel):
+		await ctx.message.delete()
+
+	nolog_channels = [1299640499493273651, 1329366175796432898, 1329366741909770261, 1329366878623236126,
+					  1329367139018215444, 1329367314671472682, 1329367677940006952]
+
+	await dev_cmds.upload_whole_server(ctx.guild, ctx.author, nolog_channels)
+
 
 # Admin commands
 @bot.command(name = "hardlockdown",
 			 brief = "Lock down the entire server",
-			 help = "Admin only: Timeout all non-admin users for 28 days and add them to blacklist", hidden=True)
+			 help = "Admin only: Timeout all non-admin users for 28 days and add them to blacklist", hidden = True)
 @commands.check(is_admin)
 async def hard_lockdown(ctx):
 	if not isinstance(ctx.message.channel, discord.DMChannel):
@@ -323,13 +343,14 @@ async def hard_lockdown(ctx):
 				print(f'Error during hard lockdown for user {member.id}: {e}')
 				continue
 
-	await ctx.send('Hard lockdown initiated. All non-admin users have been timed out for 28 days and added to the blacklist.',
-				   delete_after = bot.del_after)
+	await ctx.send(
+		'Hard lockdown initiated. All non-admin users have been timed out for 28 days and added to the blacklist.',
+		delete_after = bot.del_after)
 
 
 @bot.command(name = "unhardlockdown",
 			 brief = "Unlock the server from hard lockdown",
-			 help = "Admin only: Remove timeouts and blacklist from all users", hidden=True)
+			 help = "Admin only: Remove timeouts and blacklist from all users", hidden = True)
 @commands.check(is_admin)
 async def unhard_lockdown(ctx):
 	if not isinstance(ctx.message.channel, discord.DMChannel):
@@ -358,25 +379,26 @@ async def unhard_lockdown(ctx):
 
 @bot.command(name = "rek",
 			 brief = "Absolutely rek a user",
-			 help = "Admin only: Timeout a user for 28 days and add them to blacklist", hidden=True,
+			 help = "Admin only: Timeout a user for 28 days and add them to blacklist", hidden = True,
 			 usage = "rek <user_id/mention>")
 @commands.check(is_admin)
-async def rek(ctx):
-	await admin_cmds.rek(bot.admin_ids, bot.del_after, ctx.message, bot.get_guild(ctx.guild.id))
+async def rek(ctx, user_id: str = None):
+	await admin_cmds.rek(bot.admin_ids, bot.del_after, ctx.message, ctx.guild)
 
 
 @bot.command(name = "analyse", aliases = ["analysis", "analyze", "stats", "statistics"],
 			 brief = "Analyze server message data",
-			 help = "Provides statistics about messages sent in the server", hidden=True,
+			 help = "Provides statistics about messages sent in the server", hidden = True,
 			 usage = "analyse [user_id/mention]")
 @commands.cooldown(1, 300, commands.BucketType.user)
 @commands.check(is_admin)
 async def analyse(ctx):
 	await analysis.format_analysis(ctx.message)
 
+
 @bot.command(name = "analyse_voice", aliases = ["voice_analysis", "voice_stats"],
 			 brief = "Analyze voice channel usage",
-			 help = "Provides statistics about voice channel usage in the server", hidden=True,
+			 help = "Provides statistics about voice channel usage in the server", hidden = True,
 			 usage = "analyse_voice [user_id/mention]")
 @commands.cooldown(1, 300, commands.BucketType.user)
 @commands.check(is_admin)
@@ -386,7 +408,7 @@ async def analyse_voice(ctx):
 
 @bot.command(name = "blacklist",
 			 brief = "Blacklist a user",
-			 help = "Admin only: Prevent a user from using bot commands", hidden=True,
+			 help = "Admin only: Prevent a user from using bot commands", hidden = True,
 			 usage = "blacklist <user_id/mention>")
 @commands.check(is_admin)
 async def blacklist_id(ctx):
@@ -425,7 +447,7 @@ async def blacklist_id(ctx):
 
 @bot.command(name = "unblacklist",
 			 brief = "Remove user from blacklist",
-			 help = "Admin only: Allow a blacklisted user to use bot commands again", hidden=True,
+			 help = "Admin only: Allow a blacklisted user to use bot commands again", hidden = True,
 			 usage = "unblacklist <user_id/mention>")
 @commands.check(is_admin)
 async def unblacklist_id(ctx):
@@ -454,9 +476,10 @@ async def unblacklist_id(ctx):
 
 	await ctx.send(f'User with ID {u_id} has been unblacklisted.', delete_after = bot.del_after)
 
+
 @bot.command(name = "nologc", aliases = ["nologchannel", "nolog_channel"],
 			 brief = "Add a channel to no-log list",
-			 help = "Admin only: Prevent logging messages in a specific channel", hidden=True,
+			 help = "Admin only: Prevent logging messages in a specific channel", hidden = True,
 			 usage = "nolog <channel_id/mention>")
 @commands.check(is_admin)
 async def nolog_channel(ctx):
@@ -477,12 +500,13 @@ async def nolog_channel(ctx):
 		return
 
 	bot.no_log['channel_ids'].append(channel_id)
-	utils.add_to_config(config=config, key='no_log', key2='channel_ids', value=channel_id)
+	utils.add_to_config(config = config, key = 'no_log', key2 = 'channel_ids', value = channel_id)
 	await ctx.send(f'Channel with ID {channel_id} has been added to the no-log list.', delete_after = bot.del_after)
+
 
 @bot.command(name = "nologc_remove", aliases = ["nolog_channel_remove", "nolog_channel_rm"],
 			 brief = "Remove a channel from no-log list",
-			 help = "Admin only: Allow logging messages in a specific channel again", hidden=True,
+			 help = "Admin only: Allow logging messages in a specific channel again", hidden = True,
 			 usage = "nolog_remove <channel_id/mention>")
 @commands.check(is_admin)
 async def nolog_channel_remove(ctx):
@@ -505,9 +529,10 @@ async def nolog_channel_remove(ctx):
 	bot.no_log['channel_ids'].remove(channel_id)
 	await ctx.send(f'Channel with ID {channel_id} has been removed from the no-log list.', delete_after = bot.del_after)
 
+
 @bot.command(name = "nologu", aliases = ["nologuser", "nolog_user"],
 			 brief = "Add a user to no-log list",
-			 help = "Admin only: Prevent logging messages from a specific user", hidden=True,
+			 help = "Admin only: Prevent logging messages from a specific user", hidden = True,
 			 usage = "nologu <user_id/mention>")
 @commands.check(is_admin)
 async def nolog_user(ctx):
@@ -526,16 +551,18 @@ async def nolog_user(ctx):
 		await ctx.send(f'User with ID {u_id} is already in the no-log list.', delete_after = bot.del_after)
 		return
 	bot.no_log['user_ids'].append(u_id)
-	utils.add_to_config(config=config, key='nolog', key2='user_ids', value=u_id)
+	utils.add_to_config(config = config, key = 'nolog', key2 = 'user_ids', value = u_id)
+
 
 @bot.command(name = "echo",
 			 brief = "Make the bot say something",
-			 help = "Admin only: Makes the bot say the specified message", hidden=True,
+			 help = "Admin only: Makes the bot say the specified message", hidden = True,
 			 usage = "echo [channel id] <message>")
 @commands.check(is_admin)
 @commands.cooldown(1, 5, commands.BucketType.user)
 async def echo_cmd(ctx):
 	await echo.echo(ctx.message, bot.del_after, bot)
+
 
 # User commands
 @bot.command(name = "ping", aliases = ["latency"],
@@ -544,7 +571,7 @@ async def echo_cmd(ctx):
 @commands.cooldown(1, 5, commands.BucketType.user)
 @commands.check(not_blacklisted)
 async def ping(ctx):
-	await ctx.send(f'{bot.latency * 1000:.2f}ms', delete_after = bot.del_after)
+	await ctx.send(f'{bot.latency * 1000:.1f}ms')
 
 
 @bot.command(name = "nasa", aliases = ["nasa_pic", "nasa_apod", "nasapic"],
@@ -553,7 +580,6 @@ async def ping(ctx):
 @commands.cooldown(1, 5, BucketType.user)
 @commands.check(not_blacklisted)
 async def nasa_pic(ctx):
-
 	if os.path.exists(f'nasa/nasa_pic_{bot.today}.jpg'):
 		await ctx.send(f'**{bot.nasa_data["title"]}**\n')
 		await ctx.send(file = discord.File(f'nasa/nasa_pic_{bot.today}.jpg', filename = f'nasa_pic_{bot.today}.jpg'))
@@ -630,6 +656,7 @@ async def advice(ctx):
 async def joke(ctx):
 	await get_from_api(ctx.message, api_stuff.get_joke)
 
+
 @bot.command(name = "wyr", aliases = ["would_you_rather", "wouldyourather"],
 			 brief = "Get a random 'Would You Rather' question",
 			 help = "Fetches and displays a random 'Would You Rather' question from an API")
@@ -637,7 +664,6 @@ async def joke(ctx):
 @commands.check(not_blacklisted)
 async def wyr(ctx):
 	await get_from_api(ctx.message, api_stuff.get_wyr)
-
 
 
 @bot.command(name = "dice", aliases = ["roll", "dice_roll"],
@@ -681,7 +707,7 @@ async def karma(ctx):
 		await ctx.send('No karma pictures found.')
 		return
 	file_path, file_name = karma_pic
-	await ctx.message.channel.send(file=discord.File(file_path, filename=file_name))
+	await ctx.message.channel.send(file = discord.File(file_path, filename = file_name))
 
 
 # Message event for logging and processing
@@ -724,7 +750,8 @@ async def on_message(message):
 			'HasAttachments':     has_attachment,
 			'timestamp':          message.created_at.isoformat(),
 			'id':                 str(message.id),
-			'channel':            message.channel.name
+			'channel':            message.channel.name,
+			'channel_id': str(message.channel.id)
 		}
 
 		if os.getenv('LOCAL_SAVE') == 'True':
@@ -795,6 +822,7 @@ async def on_raw_reaction_remove(payload):
 	except discord.HTTPException:
 		pass
 
+
 @bot.event
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
 	if member.bot:
@@ -804,32 +832,33 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	# Member joined channel
 	if before.channel is None and after.channel is not None:
 		voice_log.handle_join(member, after)
-		embed = discord.Embed(title=f'{member.global_name} joined #{after.channel.name}', color=discord.Color.green())
-		embed.set_author(name=member.name, icon_url=member.avatar.url)
+		embed = discord.Embed(title = f'{member.global_name} joined #{after.channel.name}',
+							  color = discord.Color.green())
+		embed.set_author(name = member.name, icon_url = member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
 		if logging_channel:
-			await logging_channel.send(embed=embed)
+			await logging_channel.send(embed = embed)
 
 
 	# Member left channel
 	elif before.channel is not None and after.channel is None:
 		voice_log.handle_leave(member, before)
-		embed = discord.Embed(title=f'{member.global_name} left #{before.channel.name}', color=discord.Color.red())
-		embed.set_author(name=member.name, icon_url=member.avatar.url)
+		embed = discord.Embed(title = f'{member.global_name} left #{before.channel.name}', color = discord.Color.red())
+		embed.set_author(name = member.name, icon_url = member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
 		if logging_channel:
-			await logging_channel.send(embed=embed)
+			await logging_channel.send(embed = embed)
 
 	# Member moved to another channel
 	elif before.channel != after.channel:
 		assert after.channel is not None
 		voice_log.handle_move(member, before, after)
-		embed = discord.Embed(title=f'{member.global_name} moved from #{before.channel.name} to'
-									f' #{after.channel.name}', color=discord.Color.blue())
-		embed.set_author(name=member.name, icon_url=member.avatar.url)
+		embed = discord.Embed(title = f'{member.global_name} moved from #{before.channel.name} to'
+									  f' #{after.channel.name}', color = discord.Color.blue())
+		embed.set_author(name = member.name, icon_url = member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
 		if logging_channel:
-			await logging_channel.send(embed=embed)
+			await logging_channel.send(embed = embed)
 
 
 # Helper for API commands
