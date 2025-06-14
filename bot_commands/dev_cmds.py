@@ -49,26 +49,30 @@ async def upload_all_history(channel: discord.TextChannel, author: discord.Membe
 			'channel_id':         str(message.channel.id)
 		}
 		bulk_data.append(json_data)
-		if i % 500 == 0:
-			db_stuff.bulk_send_messages(bulk_data)
-			bulk_data = []
-			print('Bulk uploaded 500 messages')
-			print(f'{len(messages) - i} messages remaining')
+
+	db_stuff.bulk_send_messages(bulk_data)
+	del bulk_data
 
 	dm = await author.create_dm()
 	await dm.send(f'Finished uploading all messages from channel: {channel.name}')
 
 async def upload_whole_server(guild: discord.Guild, author: discord.Member, nolog_channels: list[int]) -> None:
-	print('Starting to download all messages from server:', guild.name)
+	dm = await author.create_dm()
+	await dm.send(f'Starting to download all messages from server: {guild.name}')
+	await dm.send(' ')
 	for channel in guild.text_channels:
 		if channel.id in nolog_channels:
-			print(f'Skipping channel {channel.name} as it is in the nolog list')
+			await dm.send(f'Skipping channel {channel.name} as it is in the nolog list')
+			await dm.send(' ')
 			continue
 		if channel.permissions_for(guild.me).read_message_history:
-			print(f'Uploading messages from channel: {channel.name}')
+			await dm.send(f'Uploading messages from channel: {channel.name}')
 			await upload_all_history(channel, author)
+			await dm.send(f'Finished uploading messages from channel: {channel.name}')
+			await dm.send(' ')
 		else:
-			print(f'Skipping channel {channel.name} due to insufficient permissions')
+			await dm.send(f'Skipping channel {channel.name} due to insufficient permissions')
+			await dm.send(' ')
+
 	print('Finished uploading all messages from server:', guild.name)
-	dm = await author.create_dm()
 	await dm.send(f'Finished uploading all messages from server: {guild.name}')
