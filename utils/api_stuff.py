@@ -10,7 +10,7 @@ def get_nasa_apod() -> dict[str, str]:
 	api_key = os.getenv('NASA_API_KEY')
 
 	url = f'https://api.nasa.gov/planetary/apod?api_key={api_key}'
-	response = requests.get(url)
+	response = requests.get(url, timeout=5)
 
 	if response.status_code != 200:
 		raise Exception(f'Failed to fetch data from NASA API: {response.status_code}')
@@ -20,7 +20,7 @@ def get_nasa_apod() -> dict[str, str]:
 
 def get_dog_pic() -> str:
 	url = 'https://dog.ceo/api/breeds/image/random'
-	response = requests.get(url)
+	response = requests.get(url, timeout=5)
 
 	if response.status_code != 200:
 		raise Exception(f'Failed to fetch dog picture: {response.status_code}')
@@ -34,7 +34,7 @@ def get_dog_pic() -> str:
 
 def get_fox_pic() -> str:
 	url = 'https://randomfox.ca/floof/'
-	response = requests.get(url)
+	response = requests.get(url, timeout=5)
 
 	if response.status_code != 200:
 		raise Exception(f'Failed to fetch fox picture: {response.status_code}')
@@ -50,7 +50,7 @@ def get_cat_pic() -> str:
 	url = 'https://api.thecatapi.com/v1/images/search'
 
 	header = {'x-api-key': os.getenv('CAT_API_KEY'), 'Content-Type': 'application/json'}
-	response = requests.get(url, headers=header)
+	response = requests.get(url, headers=header, timeout=5)
 
 	if response.status_code != 200:
 		raise Exception(f'Failed to fetch cat picture: {response.status_code}')
@@ -64,7 +64,7 @@ def get_cat_pic() -> str:
 
 def get_insult() -> str:
 	url = 'https://evilinsult.com/generate_insult.php?lang=en&type=json'
-	response = requests.get(url)
+	response = requests.get(url, timeout=5)
 
 	if response.status_code != 200:
 		raise Exception(f'Failed to fetch insult: {response.status_code}')
@@ -78,7 +78,7 @@ def get_insult() -> str:
 
 def get_advice() -> str:
 	url = 'https://api.adviceslip.com/advice'
-	response = requests.get(url)
+	response = requests.get(url, timeout=5)
 
 	if response.status_code != 200:
 		raise Exception(f'Failed to fetch advice: {response.status_code}')
@@ -92,7 +92,7 @@ def get_advice() -> str:
 
 def get_joke() -> str:
 	url = 'https://v2.jokeapi.dev/joke/Any?blacklistFlags=racist,sexist'
-	response = requests.get(url)
+	response = requests.get(url, timeout=5)
 
 	if response.status_code != 200:
 		raise Exception(f'Failed to fetch joke: {response.status_code}')
@@ -113,7 +113,7 @@ def get_joke() -> str:
 
 def get_wyr() -> str:
 	url = 'https://api.truthordarebot.xyz/api/wyr'
-	response = requests.get(url)
+	response = requests.get(url, timeout=5)
 
 	if response.status_code != 200:
 		raise Exception(f'Failed to fetch Would You Rather question: {response.status_code}')
