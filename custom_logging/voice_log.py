@@ -9,16 +9,26 @@ from utils import db_stuff
 active_voice_sessions: dict[int, dict[str, Any]] = {}
 
 
-def handle_join(member: discord.Member, after: discord.VoiceState) -> None:
+def handle_join(member: discord.Member, after: discord.VoiceState | discord.VoiceChannel) -> None:
 	"""Track when a user joins a voice channel"""
-	print(f'{member.name} joined {after.channel.name}')
+	if isinstance(after, discord.VoiceState):
+		print(f'{member.name} joined {after.channel.name}')
 
-	# Record join time
-	active_voice_sessions[member.id] = {
-		'channel_id':   str(after.channel.id),
-		'channel_name': after.channel.name,
-		'joined_at':    datetime.datetime.now(datetime.timezone.utc)
-	}
+		# Record join time
+		active_voice_sessions[member.id] = {
+			'channel_id':   str(after.channel.id),
+			'channel_name': after.channel.name,
+			'joined_at':    datetime.datetime.now(datetime.timezone.utc)
+		}
+	else:
+		print(f'{member.name} joined {after.name}')
+
+		# Record join time
+		active_voice_sessions[member.id] = {
+			'channel_id':   str(after.id),
+			'channel_name': after.name,
+			'joined_at':    datetime.datetime.now(datetime.timezone.utc)
+		}
 
 
 def handle_leave(member: discord.Member) -> None:

@@ -229,7 +229,7 @@ class AdminCmds(commands.Cog):
 			return
 
 		ctx.bot.no_log['channel_ids'].append(channel_id)
-		utils.add_to_config(config = ctx.bot.config, key = 'no_log', key2 = 'channel_ids', value = channel_id)
+
 		await ctx.message.channel.send(f'Channel with ID {channel_id} has been added to the no-log list.', delete_after = ctx.bot.del_after)
 
 	@commands.command(name = "nologc_remove", aliases = ["nolog_channel_remove", "nolog_channel_rm"],
@@ -292,7 +292,7 @@ class AdminCmds(commands.Cog):
 			message = ctx.message
 			del_after = ctx.bot.del_after
 			client = ctx.bot
-			if not message.content:
+			if message.content is None:
 				await message.channel.send('Nothing to echo.', delete_after = del_after)
 				return
 

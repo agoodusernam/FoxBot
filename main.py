@@ -113,19 +113,16 @@ async def on_ready():
 	for u_id in bot.blacklist_ids['ids']:
 		await channel.set_permissions(get(bot.get_all_members(), id = u_id), send_messages = False)
 
-	# Set up reaction roles
-	channel = bot.get_channel(1337465612875595776)
-	messages = [message async for message in channel.history(limit = 1)]
-	if (messages == []) or (messages[0].content != reaction_roles.to_send_msg):
-		if not messages == []:
-			await messages[0].delete()
-		bot.role_message_id = await reaction_roles.send_reaction_role_msg(channel)
-	else:
-		bot.role_message_id = messages[0].id
-
 	for key, value in bot.logging_channels.items():
 		channel: discord.TextChannel = bot.get_channel(value)
 		bot.logging_channels[key] = channel
+
+	guild = bot.get_guild(1081760248433492140)
+	for vc_channel in guild.voice_channels:
+		members = [member for member in vc_channel.members]
+		if members:
+			for member in members:
+				voice_log.handle_join(member, vc_channel)
 
 
 # Custom help command formatting
@@ -316,7 +313,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 
 	# Member left channel
 	elif before.channel is not None and after.channel is None:
-		voice_log.handle_leave(member, before)
+		voice_log.handle_leave(member)
 		embed = discord.Embed(title = f'{member.global_name} left #{before.channel.name}', color = discord.Color.red())
 		embed.set_author(name = member.name, icon_url = member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)

@@ -93,6 +93,7 @@ class DevCommands(commands.Cog):
 	async def restart_cmd(self, ctx: discord.ext.commands.Context):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
+		voice_log.leave_all(ctx.bot)
 		await restart(ctx.bot)
 
 	@commands.command(name = "shutdown",
