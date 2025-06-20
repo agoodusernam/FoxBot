@@ -8,7 +8,6 @@ from discord.ext import commands
 from discord.utils import get
 from dotenv import load_dotenv
 
-from command_utils import reaction_roles
 from custom_logging import voice_log
 from utils import db_stuff, utils
 
