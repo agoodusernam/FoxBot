@@ -2,18 +2,15 @@ import os
 from typing import Any, Mapping
 
 import discord
-import pymongo
+from bson.objectid import ObjectId
+from dotenv import load_dotenv
+from gridfs import GridFS
 from pymongo.mongo_client import MongoClient
 from pymongo.results import DeleteResult
 from pymongo.server_api import ServerApi
-from gridfs import GridFS
-from bson.objectid import ObjectId
-
 # Purely for type hinting
 from pymongo.synchronous.collection import Collection
 from pymongo.synchronous.database import Database
-
-from dotenv import load_dotenv
 
 # Global client instance
 _mongo_client: MongoClient | None = None

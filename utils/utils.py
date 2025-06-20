@@ -3,6 +3,7 @@ import json
 import os
 import urllib.request
 from pathlib import Path
+from typing import Union
 
 import discord
 
@@ -13,6 +14,12 @@ def get_id_from_msg(message: discord.Message) -> str:
 	u_id = u_id.replace('<', '')
 	u_id = u_id.replace('>', '')
 	return u_id
+
+def get_id_from_str(u_id: str) -> int:
+	u_id = u_id.replace('@', '').strip()
+	u_id = u_id.replace('<', '')
+	u_id = u_id.replace('>', '')
+	return int(u_id)
 
 
 def formatted_time() -> str:
@@ -174,3 +181,27 @@ def remove_from_config(*, config: dict, key: str, key2: str = None) -> None:
 
 	with open('config.json', 'w') as f:
 		json.dump(config, f, indent=4)
+
+def format_perms_overwrite(overwrite: discord.PermissionOverwrite) -> dict[str, Union[bool, None]]:
+		perms: dict[str, Union[bool, None]] = {}
+		for permission in overwrite:
+			name = permission[0]
+			value = permission[1]
+			perms[name] = value
+
+		return perms
+
+
+def format_permissions(permissions: dict[discord.Role | discord.Member | discord.Object,
+discord.PermissionOverwrite]) -> dict[str, dict[str, Union[bool, None]]]:
+	formatted = {}
+
+	for key in permissions:
+		if isinstance(key, discord.Role):
+			formatted[f'R{key.id}'] = format_perms_overwrite(permissions[key])
+		elif isinstance(key, discord.Member):
+			formatted[f'M{key.id}'] = format_perms_overwrite(permissions[key])
+		else:
+			formatted[f'O{key.id}'] = format_perms_overwrite(permissions[key])
+
+	return formatted

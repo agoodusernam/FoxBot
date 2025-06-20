@@ -1,19 +1,16 @@
 import datetime
+import json
 import os
-from copy import deepcopy
 from pathlib import Path
 
-from dotenv import load_dotenv
 import discord
-import json
-from discord.utils import get
 from discord.ext import commands
-from discord.ext.commands import BucketType
+from discord.utils import get
+from dotenv import load_dotenv
 
+from command_utils import reaction_roles
 from custom_logging import voice_log
-from utils import db_stuff, utils, api_stuff
-from bot_commands import suggest, dev_cmds, admin_cmds, fun_cmds, analysis, echo
-import reaction_roles
+from utils import db_stuff, utils
 
 load_dotenv()
 
@@ -40,7 +37,8 @@ def load_config():
 		},
 		"logging_channels": {
 			"voice": 1329366741909770261
-		}
+		},
+		"maintenance_mode": False,
 	}
 
 	# Create config file with defaults if it doesn't exist
@@ -103,6 +101,7 @@ else:
 # Bot configuration
 @bot.event
 async def on_ready():
+	await load_extensions()
 	utils.check_env_variables()
 	utils.clean_up_APOD()
 	await bot.change_presence(activity = discord.CustomActivity(name = 'f!help'))
@@ -142,7 +141,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 	async def send_bot_help(self, mapping):
 		ctx = self.context
 		if ctx.author.id in bot.blacklist_ids['ids']:
-			await ctx.send('You are not allowed to use this command.', delete_after = bot.del_after)
+			await ctx.message.channel.send('You are not allowed to use this command.', delete_after = bot.del_after)
 			return
 
 		await super().send_bot_help(mapping)
@@ -167,547 +166,21 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 # Apply custom help command
 bot.help_command = CustomHelpCommand()
 
-
-# Command checks
-def not_blacklisted(ctx):
-	return ctx.author.id not in bot.blacklist_ids['ids']
-
-
-def is_admin(ctx):
-	return ctx.author.id in bot.admin_ids
-
-
-def is_dev(ctx):
-	return ctx.author.id in bot.dev_ids
-
-
-def default_check(ctx):
-	# Check if the user is not blacklisted
-	if ctx.author.id in bot.blacklist_ids['ids']:
-		return False
-
-	# Check if the command is not in a no-log channel or category
-	if (ctx.channel.id in bot.no_log['channel_ids']) or (
-			ctx.channel.category_id in bot.no_log['category_ids']):
-		return False
-
-	return True
-
-
 @bot.event
-async def on_command_error(ctx, error):
+async def on_command_error(ctx: discord.ext.commands.Context, error):
 	if isinstance(error, commands.CommandOnCooldown):
-		await ctx.send(
-				f'This command is on cooldown. Please try again in {error.retry_after:.1f} seconds.',
+		await ctx.message.channel.send(
+				f'This command is on cooldown. Please try again in {error.retry_after:.0f} seconds.',
 				delete_after = bot.del_after
 		)
 		await ctx.message.delete()
 	elif isinstance(error, commands.CheckFailure):
-		await ctx.send('You do not have permission to use this command.', delete_after = bot.del_after)
+		await ctx.message.channel.send('You do not have permission to use this command.', delete_after = bot.del_after)
 		await ctx.message.delete()
 
 	else:
 		print(f"Unhandled error: {error}")
 
-
-# Dev commands
-@bot.command(name = "restart",
-			 brief = "Restart the bot",
-			 help = "Dev only: Git pull and restart the bot instance", hidden = True)
-@commands.check(is_dev)
-async def restart_cmd(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-	await dev_cmds.restart(bot)
-
-
-@bot.command(name = 'reset_cooldowns',
-			 brief = 'Reset command cooldowns',
-			 help = 'Dev only: Reset all command cooldowns for the bot', hidden = True)
-@commands.check(is_dev)
-async def reset_cooldowns(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-	for command in bot.commands:
-		if command.is_on_cooldown(ctx):
-			command.reset_cooldown(ctx)
-	await ctx.send('All command cooldowns have been reset.', delete_after = bot.del_after)
-
-
-@bot.command(name = "shutdown",
-			 brief = "Shutdown the bot",
-			 help = "Dev only: Shutdown the bot instance", hidden = True)
-@commands.check(is_dev)
-async def shutdown_cmd(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-	await ctx.send('Shutting down the bot...', delete_after = bot.del_after)
-	print('Bot is shutting down...')
-	db_stuff.disconnect()
-	await bot.close()
-
-
-@bot.command(name = "add_admin",
-			 brief = "Add a user to the admin list",
-			 help = "Dev only: Add a user to the admin list", hidden = True,
-			 usage = "add_admin <user_id/mention>")
-@commands.check(is_dev)
-async def add_admin(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-
-	u_id = utils.get_id_from_msg(ctx.message)
-
-	try:
-		u_id = int(u_id)
-	except ValueError:
-		await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
-					   delete_after = bot.del_after)
-		return
-	if u_id in bot.admin_ids:
-		await ctx.send(f'User with ID {u_id} is already an admin.', delete_after = bot.del_after)
-		return
-	if u_id in bot.blacklist_ids['ids']:
-		await ctx.send(f'User with ID {u_id} is blacklisted. Please unblacklist them first.',
-					   delete_after = bot.del_after)
-		return
-
-	bot.admin_ids.append(u_id)
-	utils.add_to_config(config = config, key = 'admin_ids', value = u_id)
-
-	await ctx.send(f'User with ID {u_id} has been added to the admin list.', delete_after = bot.del_after)
-
-
-@bot.command(name = "remove_admin",
-			 brief = "Remove a user from the admin list",
-			 help = "Dev only: Remove a user from the admin list", hidden = True,
-			 usage = "remove_admin <user_id/mention>")
-@commands.check(is_dev)
-async def remove_admin(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-
-	u_id = utils.get_id_from_msg(ctx.message)
-
-	try:
-		u_id = int(u_id)
-	except ValueError:
-		await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
-					   delete_after = bot.del_after)
-		return
-	if u_id not in bot.admin_ids:
-		await ctx.send(f'User with ID {u_id} is not an admin.', delete_after = bot.del_after)
-		return
-	bot.admin_ids.remove(u_id)
-	utils.remove_from_config(config = config, key = 'admin_ids')
-
-	await ctx.send(f'User with ID {u_id} has been removed from the admin list.', delete_after = bot.del_after)
-
-@bot.command(name = "upload_all_history",
-			 brief = "Upload all messages from a server",
-			 help = "Dev only: Upload all messages from a specific guild to the database", hidden = True,
-			 usage = "upload_all_history")
-@commands.check(is_dev)
-async def upload_all_history(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-
-	nolog_channels = [1299640499493273651, 1329366175796432898, 1329366741909770261, 1329366878623236126,
-					  1329367139018215444, 1329367314671472682, 1329367677940006952]
-
-	await dev_cmds.upload_whole_server(ctx.guild, ctx.author, nolog_channels)
-
-
-# Admin commands
-@bot.command(name = "hardlockdown",
-			 brief = "Lock down the entire server",
-			 help = "Admin only: Timeout all non-admin users for 28 days and add them to blacklist", hidden = True)
-@commands.check(is_admin)
-async def hard_lockdown(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-	# await admin_cmds.hardlockdown(ctx.message)
-
-	for member in ctx.guild.members:
-		if member.id in bot.admin_ids:
-			continue
-
-		if member.id not in bot.blacklist_ids['ids']:
-			bot.blacklist_ids['ids'].append(member.id)
-
-	for member in ctx.guild.members:
-		if member.id not in bot.admin_ids:
-			try:
-				await member.timeout(datetime.timedelta(days = 28), reason = 'Hard lockdown initiated by admin')
-			except Exception as e:
-				print(f'Error during hard lockdown for user {member.id}: {e}')
-				continue
-
-	await ctx.send(
-		'Hard lockdown initiated. All non-admin users have been timed out for 28 days and added to the blacklist.',
-		delete_after = bot.del_after)
-
-
-@bot.command(name = "unhardlockdown",
-			 brief = "Unlock the server from hard lockdown",
-			 help = "Admin only: Remove timeouts and blacklist from all users", hidden = True)
-@commands.check(is_admin)
-async def unhard_lockdown(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-
-	for member in ctx.guild.members:
-		if member.id in bot.admin_ids:
-			continue
-
-		if member.id in bot.blacklist_ids['ids']:
-			bot.blacklist_ids['ids'].remove(member.id)
-
-		try:
-			await member.timeout(None, reason = 'Hard lockdown lifted by admin')
-		except Exception as e:
-			print(f'Error during unhardlockdown for user {member.id}: {e}')
-			continue
-
-	if os.path.isfile('blacklist_users.json'):
-		with open('blacklist_users.json', 'r') as f:
-			bot.blacklist_ids = json.load(f)
-
-	await ctx.send('Hard lockdown lifted. All users have been removed from timeout and blacklist.',
-				   delete_after = bot.del_after)
-
-
-@bot.command(name = "rek",
-			 brief = "Absolutely rek a user",
-			 help = "Admin only: Timeout a user for 28 days and add them to blacklist", hidden = True,
-			 usage = "rek <user_id/mention>")
-@commands.check(is_admin)
-async def rek(ctx, user_id: str = None):
-	await admin_cmds.rek(bot.admin_ids, bot.del_after, ctx.message, ctx.guild)
-
-
-@bot.command(name = "analyse", aliases = ["analysis", "analyze", "stats", "statistics"],
-			 brief = "Analyze server message data",
-			 help = "Provides statistics about messages sent in the server", hidden = True,
-			 usage = "analyse [user_id/mention]")
-@commands.cooldown(1, 300, commands.BucketType.user)
-@commands.check(is_admin)
-async def analyse(ctx):
-	await analysis.format_analysis(ctx.message)
-
-
-@bot.command(name = "analyse_voice", aliases = ["voice_analysis", "voice_stats"],
-			 brief = "Analyze voice channel usage",
-			 help = "Provides statistics about voice channel usage in the server", hidden = True,
-			 usage = "analyse_voice [user_id/mention]")
-@commands.cooldown(1, 300, commands.BucketType.user)
-@commands.check(is_admin)
-async def analyse_voice(ctx):
-	await analysis.format_voice_analysis(ctx.message)
-
-
-@bot.command(name = "blacklist",
-			 brief = "Blacklist a user",
-			 help = "Admin only: Prevent a user from using bot commands", hidden = True,
-			 usage = "blacklist <user_id/mention>")
-@commands.check(is_admin)
-async def blacklist_id(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-
-	u_id = utils.get_id_from_msg(ctx.message)
-
-	try:
-		u_id = int(u_id)
-	except ValueError:
-		await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
-					   delete_after = bot.del_after)
-		return
-
-	if u_id in bot.blacklist_ids:
-		await ctx.send(f'User with ID {u_id} is already blacklisted.', delete_after = bot.del_after)
-		return
-
-	if u_id in bot.admin_ids:
-		await ctx.send('You cannot blacklist an admin.', delete_after = bot.del_after)
-		return
-
-	bot.blacklist_ids['ids'].append(u_id)
-	if os.path.isfile(f'blacklist_users.json'):
-		os.remove(f'blacklist_users.json')
-
-	with open('blacklist_users.json', 'w') as f:
-		json.dump(bot.blacklist_ids, f, indent = 4)
-
-	channel = bot.get_channel(1379193761791213618)
-	await channel.set_permissions(get(bot.get_all_members(), id = u_id), send_messages = False)
-
-	await ctx.send(f'User <@{u_id}> has been blacklisted.', delete_after = bot.del_after)
-
-
-@bot.command(name = "unblacklist",
-			 brief = "Remove user from blacklist",
-			 help = "Admin only: Allow a blacklisted user to use bot commands again", hidden = True,
-			 usage = "unblacklist <user_id/mention>")
-@commands.check(is_admin)
-async def unblacklist_id(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-
-	u_id = utils.get_id_from_msg(ctx.message)
-
-	try:
-		u_id = int(u_id)
-	except ValueError:
-		await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
-					   delete_after = bot.del_after)
-		return
-
-	if u_id not in bot.blacklist_ids['ids']:
-		await ctx.send(f'User with ID {u_id} is not blacklisted.', delete_after = bot.del_after)
-		return
-
-	bot.blacklist_ids['ids'].remove(u_id)
-	if os.path.isfile(f'blacklist_users.json'):
-		os.remove(f'blacklist_users.json')
-
-	with open('blacklist_users.json', 'w') as f:
-		json.dump(bot.blacklist_ids, f, indent = 4)
-
-	await ctx.send(f'User with ID {u_id} has been unblacklisted.', delete_after = bot.del_after)
-
-
-@bot.command(name = "nologc", aliases = ["nologchannel", "nolog_channel"],
-			 brief = "Add a channel to no-log list",
-			 help = "Admin only: Prevent logging messages in a specific channel", hidden = True,
-			 usage = "nolog <channel_id/mention>")
-@commands.check(is_admin)
-async def nolog_channel(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-
-	channel_id = utils.get_id_from_msg(ctx.message)
-
-	try:
-		channel_id = int(channel_id)
-	except ValueError:
-		await ctx.send('Invalid channel ID format. Please provide a valid integer ID.',
-					   delete_after = bot.del_after)
-		return
-
-	if channel_id in bot.no_log['channel_ids']:
-		await ctx.send(f'Channel with ID {channel_id} is already in the no-log list.', delete_after = bot.del_after)
-		return
-
-	bot.no_log['channel_ids'].append(channel_id)
-	utils.add_to_config(config = config, key = 'no_log', key2 = 'channel_ids', value = channel_id)
-	await ctx.send(f'Channel with ID {channel_id} has been added to the no-log list.', delete_after = bot.del_after)
-
-
-@bot.command(name = "nologc_remove", aliases = ["nolog_channel_remove", "nolog_channel_rm"],
-			 brief = "Remove a channel from no-log list",
-			 help = "Admin only: Allow logging messages in a specific channel again", hidden = True,
-			 usage = "nolog_remove <channel_id/mention>")
-@commands.check(is_admin)
-async def nolog_channel_remove(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-
-	channel_id = utils.get_id_from_msg(ctx.message)
-
-	try:
-		channel_id = int(channel_id)
-	except ValueError:
-		await ctx.send('Invalid channel ID format. Please provide a valid integer ID.',
-					   delete_after = bot.del_after)
-		return
-
-	if channel_id not in bot.no_log['channel_ids']:
-		await ctx.send(f'Channel with ID {channel_id} is not in the no-log list.', delete_after = bot.del_after)
-		return
-
-	bot.no_log['channel_ids'].remove(channel_id)
-	await ctx.send(f'Channel with ID {channel_id} has been removed from the no-log list.', delete_after = bot.del_after)
-
-
-@bot.command(name = "nologu", aliases = ["nologuser", "nolog_user"],
-			 brief = "Add a user to no-log list",
-			 help = "Admin only: Prevent logging messages from a specific user", hidden = True,
-			 usage = "nologu <user_id/mention>")
-@commands.check(is_admin)
-async def nolog_user(ctx):
-	if not isinstance(ctx.message.channel, discord.DMChannel):
-		await ctx.message.delete()
-
-	u_id = utils.get_id_from_msg(ctx.message)
-
-	try:
-		u_id = int(u_id)
-	except ValueError:
-		await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
-					   delete_after = bot.del_after)
-		return
-	if u_id in bot.no_log['user_ids']:
-		await ctx.send(f'User with ID {u_id} is already in the no-log list.', delete_after = bot.del_after)
-		return
-	bot.no_log['user_ids'].append(u_id)
-	utils.add_to_config(config = config, key = 'nolog', key2 = 'user_ids', value = u_id)
-
-
-@bot.command(name = "echo",
-			 brief = "Make the bot say something",
-			 help = "Admin only: Makes the bot say the specified message", hidden = True,
-			 usage = "echo [channel id] <message>")
-@commands.check(is_admin)
-@commands.cooldown(1, 5, commands.BucketType.user)
-async def echo_cmd(ctx):
-	await echo.echo(ctx.message, bot.del_after, bot)
-
-
-# User commands
-@bot.command(name = "ping", aliases = ["latency"],
-			 brief = "Check the bot's latency",
-			 help = "Shows the bot's current latency in milliseconds")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def ping(ctx):
-	await ctx.send(f'{bot.latency * 1000:.1f}ms')
-
-
-@bot.command(name = "nasa", aliases = ["nasa_pic", "nasa_apod", "nasapic"],
-			 brief = "NASA's picture of the day",
-			 help = "Get NASA's Astronomy Picture of the Day with explanation")
-@commands.cooldown(1, 5, BucketType.user)
-@commands.check(not_blacklisted)
-async def nasa_pic(ctx):
-	if os.path.exists(f'nasa/nasa_pic_{bot.today}.jpg'):
-		await ctx.send(f'**{bot.nasa_data["title"]}**\n')
-		await ctx.send(file = discord.File(f'nasa/nasa_pic_{bot.today}.jpg', filename = f'nasa_pic_{bot.today}.jpg'))
-		await ctx.send(f'**Explanation:** {bot.nasa_data["explanation"]}')
-		return
-
-	try:
-		fetch_msg = await ctx.send('Fetching NASA picture of the day...')
-		nasa_data = api_stuff.get_nasa_apod()
-		bot.nasa_data = deepcopy(nasa_data)
-		url = nasa_data['url']
-
-		utils.download_from_url(f'nasa/nasa_pic_{bot.today}.jpg', url)
-
-		await ctx.send(f'**{nasa_data["title"]}**\n')
-		await ctx.send(file = discord.File(f'nasa/nasa_pic_{bot.today}.jpg', filename = f'nasa_pic_{bot.today}.jpg'))
-		await ctx.send(f'**Explanation:** {nasa_data["explanation"]}')
-		await fetch_msg.delete()
-
-	except Exception as e:
-		await ctx.send(f'Error fetching NASA picture: {e}')
-
-
-@bot.command(name = "dog", aliases = ["dogpic", "dog_pic"],
-			 brief = "Get a random dog picture",
-			 help = "Fetches and displays a random dog picture from an API")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def dogpic(ctx):
-	await get_from_api(ctx.message, api_stuff.get_dog_pic)
-
-
-@bot.command(name = "cat", aliases = ["catpic", "cat_pic"],
-			 brief = "Get a random cat picture",
-			 help = "Fetches and displays a random cat picture from an API")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def catpic(ctx):
-	await get_from_api(ctx.message, api_stuff.get_cat_pic)
-
-
-@bot.command(name = "fox", aliases = ["foxpic", "fox_pic"],
-			 brief = "Get a random fox picture",
-			 help = "Fetches and displays a random fox picture from an API")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def foxpic(ctx):
-	await get_from_api(ctx.message, api_stuff.get_fox_pic)
-
-
-@bot.command(name = "insult", aliases = ["insults"],
-			 brief = "Get a random insult",
-			 help = "Fetches and displays a random insult from an API")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def insult(ctx):
-	await get_from_api(ctx.message, api_stuff.get_insult)
-
-
-@bot.command(name = "advice", aliases = ["advise", "give_advice"],
-			 brief = "Get random advice",
-			 help = "Fetches and displays a random piece of advice from an API")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def advice(ctx):
-	await get_from_api(ctx.message, api_stuff.get_advice)
-
-
-@bot.command(name = "joke", aliases = ["jokes"],
-			 brief = "Get a random joke",
-			 help = "Fetches and displays a random joke from an API")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def joke(ctx):
-	await get_from_api(ctx.message, api_stuff.get_joke)
-
-
-@bot.command(name = "wyr", aliases = ["would_you_rather", "wouldyourather"],
-			 brief = "Get a random 'Would You Rather' question",
-			 help = "Fetches and displays a random 'Would You Rather' question from an API")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def wyr(ctx):
-	await get_from_api(ctx.message, api_stuff.get_wyr)
-
-
-@bot.command(name = "dice", aliases = ["roll", "dice_roll"],
-			 brief = "Roll a dice",
-			 help = "Roll a dice between two values",
-			 usage = "dice <min> <max>")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def dice(ctx):
-	await fun_cmds.dice_roll(bot.del_after, ctx.message)
-
-
-@bot.command(name = "flip", aliases = ["coin_flip", "coinflip"],
-			 brief = "Flip a coin",
-			 help = "Flip a coin and get either Heads or Tails")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def flip(ctx):
-	coin_flip = fun_cmds.flip_coin()
-	await ctx.send(f'You flipped a coin and got: **{coin_flip}**')
-
-
-@bot.command(name = "suggest", aliases = ["suggestion"],
-			 brief = "Submit a suggestion",
-			 help = "Submit a suggestion for the bot",
-			 usage = "suggest <suggestion>")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def suggest_cmd(ctx):
-	await suggest.send_suggestion(bot, ctx.message)
-
-
-@bot.command(name = "karma", aliases = ["karmapic", "karma_pic"],
-			 brief = "Get a random karma picture",
-			 help = "Shows a random karma picture from the local collection")
-@commands.cooldown(1, 5, commands.BucketType.user)
-@commands.check(not_blacklisted)
-async def karma(ctx):
-	karma_pic = fun_cmds.get_karma_pic()
-	if karma_pic is None:
-		await ctx.send('No karma pictures found.')
-		return
-	file_path, file_name = karma_pic
-	await ctx.message.channel.send(file = discord.File(file_path, filename = file_name))
 
 
 # Message event for logging and processing
@@ -721,7 +194,8 @@ async def on_message(message):
 		return
 
 	# Process commands first
-	await bot.process_commands(message)
+	if (not config['maintenance_mode']) or (message.author.id in bot.admin_ids) or (message.author.id in bot.dev_ids):
+		await bot.process_commands(message)
 
 	# Don't log command messages
 	if message.content.startswith(bot.command_prefix):
@@ -861,14 +335,12 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 			await logging_channel.send(embed = embed)
 
 
-# Helper for API commands
-async def get_from_api(message, api_func):
-	try:
-		data = api_func()
-		await message.channel.send(data)
-	except Exception as e:
-		await message.channel.send(f'Error fetching data: {e}')
+async def load_extensions():
+	for filename in os.listdir('./cogs'):
+		if filename.endswith('.py') and not filename.startswith('_'):
+			await bot.load_extension(f'cogs.{filename[:-3]}')
+			print(f'Loaded {filename[:-3]}')
 
 
 # Run the bot
-bot.run(os.getenv('TOKEN'))
+bot.run(token=os.getenv('TOKEN'), reconnect=True)

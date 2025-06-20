@@ -1,9 +1,8 @@
-from dotenv import load_dotenv
 import os
+import random
 
+import discord
 import requests
-
-load_dotenv()
 
 
 def get_nasa_apod() -> dict[str, str]:
@@ -18,7 +17,7 @@ def get_nasa_apod() -> dict[str, str]:
 	return response.json()
 
 
-def get_dog_pic() -> str:
+async def get_dog_pic(message: discord.Message) -> None:
 	url = 'https://dog.ceo/api/breeds/image/random'
 	response = requests.get(url, timeout=5)
 
@@ -29,10 +28,10 @@ def get_dog_pic() -> str:
 	if 'message' not in data:
 		raise ValueError('Unexpected response format from dog API')
 
-	return data['message']
+	await message.channel.send(data['message'])
 
 
-def get_fox_pic() -> str:
+async def get_fox_pic(message: discord.Message) -> None:
 	url = 'https://randomfox.ca/floof/'
 	response = requests.get(url, timeout=5)
 
@@ -43,10 +42,10 @@ def get_fox_pic() -> str:
 	if 'image' not in data:
 		raise ValueError('Unexpected response format from fox API')
 
-	return data['image']
+	await message.channel.send(data['image'])
 
 
-def get_cat_pic() -> str:
+async def get_cat_pic(message: discord.Message) -> None:
 	url = 'https://api.thecatapi.com/v1/images/search'
 
 	header = {'x-api-key': os.getenv('CAT_API_KEY'), 'Content-Type': 'application/json'}
@@ -59,10 +58,10 @@ def get_cat_pic() -> str:
 	if not data or 'url' not in data[0]:
 		raise ValueError('Unexpected response format from cat API')
 
-	return data[0]['url']
+	await message.channel.send(data[0]['url'])
 
 
-def get_insult() -> str:
+async def get_insult(message: discord.Message) -> None:
 	url = 'https://evilinsult.com/generate_insult.php?lang=en&type=json'
 	response = requests.get(url, timeout=5)
 
@@ -73,10 +72,10 @@ def get_insult() -> str:
 	if 'insult' not in data:
 		raise ValueError('Unexpected response format from insult API')
 
-	return data['insult']
+	await message.channel.send(data['insult'])
 
 
-def get_advice() -> str:
+async def get_advice(message: discord.Message) -> None:
 	url = 'https://api.adviceslip.com/advice'
 	response = requests.get(url, timeout=5)
 
@@ -87,10 +86,10 @@ def get_advice() -> str:
 	if 'slip' not in data or 'advice' not in data['slip']:
 		raise ValueError('Unexpected response format from advice API')
 
-	return data['slip']['advice']
+	await message.channel.send(data['slip']['advice'])
 
 
-def get_joke() -> str:
+async def get_joke(message: discord.Message) -> None:
 	url = 'https://v2.jokeapi.dev/joke/Any?blacklistFlags=racist,sexist'
 	response = requests.get(url, timeout=5)
 
@@ -101,17 +100,21 @@ def get_joke() -> str:
 	if 'joke' not in data and ('setup' not in data or 'delivery' not in data):
 		raise ValueError('Unexpected response format from joke API')
 
-	if 'joke' in data:
-		# Single joke format
-		return data['joke']
+
 
 	# Two-part joke format
 	if 'setup' in data and 'delivery' in data:
-		return f'{data['setup']}\n{data['delivery']}'
+		to_send = f'{data['setup']}\n{data['delivery']}'
+
+	elif 'joke' in data:
+		# Single joke format
+		to_send = data['joke']
 	else:
 		raise ValueError('Unexpected joke format from joke API')
 
-def get_wyr() -> str:
+	await message.channel.send(to_send)
+
+async def get_wyr(message: discord.Message) -> None:
 	url = 'https://api.truthordarebot.xyz/api/wyr'
 	response = requests.get(url, timeout=5)
 
@@ -122,4 +125,15 @@ def get_wyr() -> str:
 	if 'question' not in data:
 		raise ValueError('Unexpected response format from Would You Rather API')
 
-	return data['question']
+	await message.channel.send(data['question'])
+
+def get_karma_pic() -> tuple[str, str] | None:
+	karma_pics = [f for f in os.listdir('data/karma_pics') if os.path.isfile(os.path.join('data/karma_pics', f))]
+	if not karma_pics:
+		return None
+
+	# Choose a random file
+	chosen_pic = random.choice(karma_pics)
+	file_path = f'data/karma_pics/{chosen_pic}'
+
+	return file_path, chosen_pic

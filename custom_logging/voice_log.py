@@ -1,13 +1,15 @@
-import discord
 import datetime
-from typing import Dict
+from typing import Any
+
+import discord
+
 from utils import db_stuff
 
 # Store active voice sessions: user_id -> {channel_id, joined_at}
-active_voice_sessions: Dict[int, Dict[str, any]] = {}
+active_voice_sessions: dict[int, dict[str, Any]] = {}
 
 
-def handle_join(member: discord.Member, after: discord.VoiceState):
+def handle_join(member: discord.Member, after: discord.VoiceState) -> None:
 	"""Track when a user joins a voice channel"""
 	print(f'{member.name} joined {after.channel.name}')
 
@@ -19,9 +21,9 @@ def handle_join(member: discord.Member, after: discord.VoiceState):
 	}
 
 
-def handle_leave(member: discord.Member, before: discord.VoiceState):
+def handle_leave(member: discord.Member) -> None:
 	"""Track when a user leaves a voice channel and upload session data"""
-	print(f'{member.name} left {before.channel.name}')
+	print(f'{member.name} left {active_voice_sessions[member.id]["channel_name"]}')
 
 	# Get join data
 	if member.id not in active_voice_sessions:
@@ -47,26 +49,28 @@ def handle_leave(member: discord.Member, before: discord.VoiceState):
 		'duration_seconds': duration_seconds
 	}
 
-	send_voice_session(voice_session)
+	db_stuff.send_voice_session(voice_session)
 
 	# Clear session data
 	del active_voice_sessions[member.id]
 
 
-def handle_move(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
+def handle_move(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState) -> None:
 	"""Handle a user moving from one channel to another"""
 	print(f'{member.name} moved from {before.channel.name} to {after.channel.name}')
 
 	# First record the "leave" from the previous channel
-	handle_leave(member, before)
+	handle_leave(member)
 
 	# Then record the "join" to the new channel
 	handle_join(member, after)
 
-
-def send_voice_session(session_data: Dict[str, any]) -> None:
-	"""Send voice session data to MongoDB"""
-	try:
-		db_stuff.send_voice_session(session_data)
-	except Exception as e:
-		print(f"Error saving voice session data: {e}")
+def leave_all(bot: discord.Client) -> None:
+	"""Force leave all active voice sessions"""
+	for member_id in list(active_voice_sessions.keys()):
+		member = discord.utils.get(bot.get_all_members(), id=member_id)
+		if member:
+			handle_leave(member)
+		else:
+			print(f"Member with ID {member_id} not found, clearing session data")
+			del active_voice_sessions[member_id]
