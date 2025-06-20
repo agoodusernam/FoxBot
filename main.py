@@ -75,6 +75,7 @@ bot.dev_ids = config["dev_ids"]
 bot.no_log = config["no_log"]
 bot.logging_channels = config["logging_channels"]
 bot.send_blacklist = config["send_blacklist"]
+bot.config = config
 
 # Reaction roles
 bot.role_message_id = 0
@@ -104,6 +105,13 @@ async def on_ready():
 	utils.check_env_variables()
 	utils.clean_up_APOD()
 	await bot.change_presence(activity = discord.CustomActivity(name = 'f!help'))
+
+	print(f"Loaded {len(bot.cogs)} cogs:")
+	for cog in bot.cogs:
+		print(f" - {cog}")
+
+	print(f"Total commands: {len(bot.commands)}")
+
 	print(f'Logged in as {bot.user} (ID: {bot.user.id})')
 	print('------')
 
@@ -122,6 +130,8 @@ async def on_ready():
 		if members:
 			for member in members:
 				voice_log.handle_join(member, vc_channel)
+
+
 
 
 # Custom help command formatting
@@ -302,7 +312,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	# Member joined channel
 	if before.channel is None and after.channel is not None:
 		voice_log.handle_join(member, after)
-		embed = discord.Embed(title = f'{member.global_name} joined #{after.channel.name}',
+		embed = discord.Embed(title = f'{member.display_name} joined #{after.channel.name}',
 							  color = discord.Color.green())
 		embed.set_author(name = member.name, icon_url = member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
@@ -313,7 +323,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	# Member left channel
 	elif before.channel is not None and after.channel is None:
 		voice_log.handle_leave(member)
-		embed = discord.Embed(title = f'{member.global_name} left #{before.channel.name}', color = discord.Color.red())
+		embed = discord.Embed(title = f'{member.display_name} left #{before.channel.name}', color = discord.Color.red())
 		embed.set_author(name = member.name, icon_url = member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
 		if logging_channel:
@@ -323,7 +333,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	elif before.channel != after.channel:
 		assert after.channel is not None
 		voice_log.handle_move(member, before, after)
-		embed = discord.Embed(title = f'{member.global_name} moved from #{before.channel.name} to'
+		embed = discord.Embed(title = f'{member.display_name} moved from #{before.channel.name} to'
 									  f' #{after.channel.name}', color = discord.Color.blue())
 		embed.set_author(name = member.name, icon_url = member.avatar.url)
 		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
