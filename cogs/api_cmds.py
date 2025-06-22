@@ -6,10 +6,7 @@ from discord.ext import commands
 from discord.ext.commands import BucketType
 
 from utils import api_stuff, utils
-
-
-def not_blacklisted(ctx):
-	return ctx.author.id not in ctx.bot.blacklist_ids['ids']
+from command_utils.checks import not_blacklisted
 
 class ApiCommands(commands.Cog):
 	"""Commands related to various APIs like NASA, dog/cat pictures, jokes, etc."""
@@ -122,4 +119,3 @@ class ApiCommands(commands.Cog):
 
 async def setup(bot):
 	await bot.add_cog(ApiCommands(bot))
-	print('Api Commands Cog Loaded')

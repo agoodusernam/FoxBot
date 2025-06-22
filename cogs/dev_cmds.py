@@ -7,10 +7,8 @@ from discord.ext import commands
 
 from custom_logging import voice_log
 from utils import db_stuff, utils
+from command_utils.checks import is_dev
 
-
-def is_dev(ctx: discord.ext.commands.Context):
-	return ctx.author.id in ctx.bot.dev_ids
 
 async def restart(client: 'discord.Client') -> None:
 	await client.close()
@@ -200,4 +198,3 @@ class DevCommands(commands.Cog):
 
 async def setup(bot):
 	await bot.add_cog(DevCommands(bot))
-	print('DevCommands cog loaded successfully.')

@@ -9,6 +9,7 @@ from discord.utils import get
 
 import utils.utils as utils
 from command_utils import analysis
+from command_utils.checks import is_admin
 
 
 def save_perms(ctx: discord.ext.commands.Context) -> None:
@@ -24,10 +25,6 @@ def save_perms(ctx: discord.ext.commands.Context) -> None:
 		json.dump(previous_perms, file, indent = 4)
 
 
-def is_admin(ctx: commands.Context) -> bool:
-	return ctx.author.id in ctx.bot.admin_ids
-
-
 class AdminCmds(commands.Cog):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
@@ -38,28 +35,28 @@ class AdminCmds(commands.Cog):
 				 usage = "rek <user_id/mention>")
 	@commands.check(is_admin)
 	async def rek(self, ctx: discord.ext.commands.Context, u_id: str) -> None:
-		del_after, message, u_id, guild = ctx.bot.del_after, ctx.message, u_id, ctx.guild
+		del_after = ctx.bot.del_after
 
-		if not isinstance(message.channel, discord.DMChannel):
-			await message.delete()
+		if not isinstance(ctx.message.channel, discord.DMChannel):
+			await ctx.message.delete()
 
 		try:
 			if u_id is None:
 				raise ValueError
 			u_id = utils.get_id_from_str(u_id)
 		except ValueError:
-			await message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
+			await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
 									   delete_after=del_after)
 			return
 
-		member = guild.get_member(u_id)
+		member = ctx.guild.get_member(u_id)
 
 		if member is None:
-			await message.channel.send(f'User with ID {u_id} not found.', delete_after=del_after)
+			await ctx.send(f'User with ID {u_id} not found.', delete_after=del_after)
 			return
 
 		await member.timeout(datetime.timedelta(days=28), reason='get rekt nerd')
-		await message.channel.send(f'<@{u_id}> has been rekt.', delete_after=del_after)
+		await ctx.send(f'<@{u_id}> has been rekt.', delete_after=del_after)
 		return
 
 	@commands.command(name = "hardlockdown",
@@ -316,4 +313,3 @@ class AdminCmds(commands.Cog):
 
 async def setup(bot):
 	await bot.add_cog(AdminCmds(bot))
-	print('Admin Commands Cog Loaded')

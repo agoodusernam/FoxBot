@@ -132,8 +132,6 @@ async def on_ready():
 				voice_log.handle_join(member, vc_channel)
 
 
-
-
 # Custom help command formatting
 class CustomHelpCommand(commands.DefaultHelpCommand):
 	def __init__(self):
@@ -172,6 +170,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 # Apply custom help command
 bot.help_command = CustomHelpCommand()
 
+
 @bot.event
 async def on_command_error(ctx: discord.ext.commands.Context, error):
 	if isinstance(error, commands.CommandOnCooldown):
@@ -188,10 +187,9 @@ async def on_command_error(ctx: discord.ext.commands.Context, error):
 		print(f"Unhandled error: {error}")
 
 
-
 # Message event for logging and processing
 @bot.event
-async def on_message(message):
+async def on_message(message: discord.Message):
 	if message.author.bot:
 		return
 
@@ -231,14 +229,14 @@ async def on_message(message):
 			'timestamp':          message.created_at.isoformat(),
 			'id':                 str(message.id),
 			'channel':            message.channel.name,
-			'channel_id': str(message.channel.id)
+			'channel_id':         str(message.channel.id)
 		}
 
 		if os.getenv('LOCAL_SAVE') == 'True':
 			with utils.make_file(bot.today) as file:
 				file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
 
-		print(f'Message from {message.author.global_name} [#{message.channel}]: {message.content}')
+		print(f'Message from {message.author.display_name} [#{message.channel}]: {message.content}')
 		if has_attachment:
 			if os.environ.get('LOCAL_IMG_SAVE') == 'True':
 				await utils.save_attachments(message)

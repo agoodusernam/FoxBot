@@ -8,18 +8,9 @@ from typing import Union
 import discord
 
 
-def get_id_from_msg(message: discord.Message) -> str:
-	u_id: str | int = message.content.split()[-1]
-	u_id = u_id.replace('@', '').strip()
-	u_id = u_id.replace('<', '')
-	u_id = u_id.replace('>', '')
-	return u_id
 
 def get_id_from_str(u_id: str) -> int:
-	u_id = u_id.replace('@', '').strip()
-	u_id = u_id.replace('<', '')
-	u_id = u_id.replace('>', '')
-	return int(u_id)
+	return int(discord.utils.escape_mentions(u_id))
 
 
 def formatted_time() -> str:

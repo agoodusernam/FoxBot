@@ -5,10 +5,7 @@ import discord
 from discord.ext import commands
 
 from command_utils import suggest
-
-
-def not_blacklisted(ctx):
-	return ctx.author.id not in ctx.bot.blacklist_ids['ids']
+from command_utils.checks import not_blacklisted
 
 async def dice_roll(del_after: int, message: discord.Message) -> None:
 	nums: list[int | str] = message.content.replace('f!dice', '').replace('f!roll', '').split()
@@ -79,4 +76,3 @@ class FunCommands(commands.Cog):
 
 async def setup(bot) -> None:
 	await bot.add_cog(FunCommands(bot))
-	print('Fun Commands Cog Loaded')

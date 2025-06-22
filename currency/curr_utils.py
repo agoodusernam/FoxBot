@@ -6,7 +6,7 @@ from utils import db_stuff
 def create_new_profile(member: discord.Member):
 	new_data = {
 		'user_id':          str(member.id),
-		'money':         0,
+		'wallet':         0,
 		'bank':          0,
 		'income':        0,
 		'inventory':    {},
@@ -16,76 +16,41 @@ def create_new_profile(member: discord.Member):
 	return new_data
 
 def get_profile(member: discord.Member) -> dict:
-	return db_stuff.get_from_db(collection_name = 'currency', query={'user_id': str(member.id)})
+	profile_ = db_stuff.get_from_db(collection_name = 'currency', query={'user_id': str(member.id)})
+	if not profile_ or profile_ is None:
+		return create_new_profile(member)
+	return profile_
 
-def set_money(member: discord.Member, amount: int) -> None:
+def set_wallet(member: discord.Member, amount: int) -> None:
 	profile = get_profile(member)
-	if not profile:
-		profile = create_new_profile(member)
 
-	profile['money'] = amount
-	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'money': amount})
+	profile['wallet'] = amount
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'wallet': amount})
 
 def set_bank(member: discord.Member, amount: int) -> None:
 	profile = get_profile(member)
-	if not profile:
-		profile = create_new_profile(member)
 
 	profile['bank'] = amount
 	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'bank': amount})
 
 def set_income(member: discord.Member, amount: int) -> None:
 	profile = get_profile(member)
-	if not profile:
-		profile = create_new_profile(member)
 
 	profile['income'] = amount
 	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'income': amount})
 
-def add_money(member: discord.Member, amount: int) -> None:
+def update_inventory(member: discord.Member, item: str, amount: int) -> None:
 	profile = get_profile(member)
-	if not profile:
-		profile = create_new_profile(member)
 
-	profile['money'] += amount
-	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'money': profile['money']})
+	profile['inventory'][item] = amount
 
-def add_bank(member: discord.Member, amount: int) -> None:
-	profile = get_profile(member)
-	if not profile:
-		profile = create_new_profile(member)
-
-	profile['bank'] += amount
-	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'bank': profile['bank']})
-
-def add_income(member: discord.Member, amount: int) -> None:
-	profile = get_profile(member)
-	if not profile:
-		profile = create_new_profile(member)
-
-	profile['income'] += amount
-	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'income': profile['income']})
-
-def add_item(member: discord.Member, item: str, amount: int = 1) -> None:
-	profile = get_profile(member)
-	if not profile:
-		profile = create_new_profile(member)
-
-	if item not in profile['inventory']:
-		profile['inventory'][item] = 0
-
-	profile['inventory'][item] += amount
 	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'inventory': profile['inventory']})
 
-def remove_item(member: discord.Member, item: str, amount: int = 1) -> None:
-	profile = get_profile(member)
-	if not profile:
-		profile = create_new_profile(member)
-
-	if item in profile['inventory'] and profile['inventory'][item] >= amount:
-		profile['inventory'][item] -= amount
-		if profile['inventory'][item] <= 0:
-			del profile['inventory'][item]
-		db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'inventory': profile['inventory']})
-	else:
-		print(f"Item {item} not found or insufficient quantity in inventory for user {member.id}.")
+def get_top_balances(limit: int = 10) -> list[dict[str, int]]:
+	"""
+	Fetches the top balances from the currency collection.
+	:param limit: The number of top balances to fetch.
+	:return: A list of dictionaries containing user IDs and their wallet balances.
+	"""
+	top_balances = db_stuff.get_many_from_db(collection_name='currency', query={}, sort_by='wallet', direction = "d", limit=limit)
+	return [{'user_id': profile['user_id'], 'wallet': profile['wallet']} for profile in top_balances]

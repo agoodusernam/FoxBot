@@ -2,6 +2,7 @@ import os
 from typing import Any, Mapping
 
 import discord
+import pymongo
 from bson.objectid import ObjectId
 from dotenv import load_dotenv
 from gridfs import GridFS
@@ -326,6 +327,38 @@ def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[s
 		if results is None:
 			return False
 		return dict(results)
+	except Exception as e:
+		print(f'Error retrieving data from {collection_name} collection: {e}')
+		return None
+
+def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by, direction: str, limit: int = 0) -> list[dict[str, Any]] | None:
+	"""
+	Generic function to retrieve multiple documents from a specified MongoDB collection.
+
+	direction should be either "a" for ascending or "d" for descending.
+	"""
+	if direction not in ('a', 'd'):
+		print('Invalid sort direction. Use "a" for ascending or "d" for descending.')
+		return None
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		return None
+
+	db = client['discord']
+	collection: Collection[Mapping[str, Any]] = db[collection_name]
+	if direction.lower() == 'a':
+		direction = pymongo.ASCENDING
+	else:
+		direction = pymongo.DESCENDING
+
+	try:
+		if limit > 0:
+			results = collection.find(query).sort(sort_by, direction).limit(limit)
+		else:
+			results = collection.find(query).sort(sort_by, direction)
+
+		return [dict(result) for result in results]
 	except Exception as e:
 		print(f'Error retrieving data from {collection_name} collection: {e}')
 		return None
