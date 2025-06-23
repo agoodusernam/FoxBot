@@ -15,7 +15,7 @@ async def restart(client: 'discord.Client') -> None:
 	db_stuff.disconnect()
 
 	# run git pull to update the codebase, then restart the script
-	os.system('git pull https://github.com/agoodusernam/DiscordStatBot.git')
+	os.system('git pull https://github.com/agoodusernam/FoxBot.git')
 
 	os.execv(sys.executable, ['python'] + sys.argv)
 

@@ -4,7 +4,6 @@ from typing import Any, Mapping
 import discord
 import pymongo
 from bson.objectid import ObjectId
-from dotenv import load_dotenv
 from gridfs import GridFS
 from pymongo.mongo_client import MongoClient
 from pymongo.results import DeleteResult
@@ -16,7 +15,6 @@ from pymongo.synchronous.database import Database
 # Global client instance
 _mongo_client: MongoClient | None = None
 
-load_dotenv()
 
 
 def _connect():

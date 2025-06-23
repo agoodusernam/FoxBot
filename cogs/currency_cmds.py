@@ -101,13 +101,13 @@ class CurrencyCmds(commands.Cog):
 		curr_utils.set_wallet(recipient, recipient_profile['wallet'] + amount)
 		await ctx.send(f"Paid {recipient.mention} {amount} FoxCoins!")
 
-	@commands.command(name = "set_balance", aliases = ["set_bal"],
-					  brief = "Set a user's balance",
+	@commands.command(name = "set_wallet", aliases = ["set_bal"],
+					  brief = "Set a user's wallet",
 					  help = "Set a user's wallet balance",
-					  usage = "set_balance <user> <amount>")
+					  usage = "set_wallet<user> <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	@commands.check(is_admin)
-	async def set_balance_cmd(self, ctx: commands.Context, user: str, amount: int):
+	async def set_wallet_cmd(self, ctx: commands.Context, user: str, amount: int):
 		target_user = discord.utils.get(ctx.guild.members, name=utils.utils.get_id_from_str(user))
 		if target_user is None or target_user is False:
 			await ctx.send("Invalid user ID or mention!")
@@ -138,6 +138,41 @@ class CurrencyCmds(commands.Cog):
 
 		curr_utils.set_bank(target_user, amount)
 		await ctx.send(f"Set {target_user.display_name}'s bank balance to {amount} FoxCoins!")
+
+	@commands.command(name = "set_income",
+					  brief = "Set a user's income",
+					  help = "Set a user's income for working",
+					  usage = "set_income <user> <amount>")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.check(is_admin)
+	async def set_income_cmd(self, ctx: commands.Context, user: str, amount: int):
+		target_user = discord.utils.get(ctx.guild.members, name=utils.utils.get_id_from_str(user))
+		if target_user is None or target_user is False:
+			await ctx.send("Invalid user ID or mention!")
+			return
+
+		if amount < 0:
+			await ctx.send("You cannot set a negative income!")
+			return
+
+		curr_utils.set_income(target_user, amount)
+		await ctx.send(f"Set {target_user.display_name}'s income to {amount} FoxCoins per work session!")
+
+	@commands.command(name= "work",
+					  brief = "Work to earn money",
+					  help = "Work to earn some money. You can do this every day.")
+	@commands.cooldown(1, 24*60*60, commands.BucketType.user) # 24-hour cooldown
+	@commands.check(not_blacklisted)
+	async def work_cmd(self, ctx: commands.Context):
+		profile = curr_utils.get_profile(ctx.author)
+
+		earnings = profile['income']
+		if earnings <= 0:
+			await ctx.send(f"You have no job! Choose a job first using `{ctx.bot.command_prefix}job`.")
+			return
+		wallet = earnings + profile['wallet']
+		curr_utils.set_wallet(ctx.author, wallet)
+		await ctx.send(f"You worked hard and earned {earnings} FoxCoins!")
 
 
 async def setup(bot: commands.Bot) -> None:

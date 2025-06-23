@@ -40,7 +40,7 @@ def load_config():
 		"maintenance_mode": False,
 	}
 
-	# Create config file with defaults if it doesn't exist
+	# Create a config file with defaults if it doesn't exist
 	if not config_path.exists():
 		with open(config_path, "w", encoding = "utf-8") as _f:
 			json.dump(default_config, _f, indent = 4)
@@ -329,7 +329,8 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 
 	# Member moved to another channel
 	elif before.channel != after.channel:
-		assert after.channel is not None
+		if after.channel is None:
+			return
 		voice_log.handle_move(member, before, after)
 		embed = discord.Embed(title = f'{member.display_name} moved from #{before.channel.name} to'
 									  f' #{after.channel.name}', color = discord.Color.blue())
