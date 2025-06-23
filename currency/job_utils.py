@@ -11,6 +11,19 @@ class SchoolQualif(enum.Enum):
 	BATCHELOR = [2, 15_419, 4]
 	MASTER = [3, 20_000, 2]
 	PHD = [4, 18_030, 6]
+	DOCTORATE = PHD
+	POLYMATH = [5, 50_000, 10]  # Special fictional qualification, not required for any job but gives a salary boost
+
+class SecurityClearance(enum.Enum):
+	"""
+	Enum to represent different security clearance levels using the US security clearance system.
+	"""
+	NONE = 0
+	CONFIDENTIAL = 1
+	SECRET = 2
+	TOP_SECRET = 3
+	TS_SCI = 4
+	SPECIAL = 5
 
 
 @dataclass
@@ -27,7 +40,7 @@ class Job:
 	"""
 	name: str
 	tree: str
-	req_qualifications: list[SchoolQualif]
+	req_qualifications: list[SchoolQualif | SecurityClearance]
 	req_experience: int
 	salary: int
 	salary_variance: int
