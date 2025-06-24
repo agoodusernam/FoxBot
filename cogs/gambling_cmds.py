@@ -42,5 +42,6 @@ class GamblingCmds(commands.Cog):
 			await ctx.send(f"You lost {bet_amount} coins. Better luck next time! 😢")
 
 
-#async def setup(bot) -> None:
+async def setup(bot) -> None:
+	pass
 #	await bot.add_cog(GamblingCmds(bot))
