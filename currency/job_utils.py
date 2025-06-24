@@ -8,7 +8,7 @@ class SchoolQualif(enum.Enum):
 	"""
 	HIGH_SCHOOL = [0, 0, 0]
 	ASSOCIATE = [1, 3_885, 2]
-	BATCHELOR = [2, 15_419, 4]
+	BACHELOR = [2, 15_419, 4]
 	MASTER = [3, 20_000, 2]
 	PHD = [4, 18_030, 6]
 	DOCTORATE = PHD

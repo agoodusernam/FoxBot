@@ -186,7 +186,6 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 			return
 
 		ctx.bot.maintenance_mode = mode.lower() == 'on'
-		utils.update_config(config=ctx.bot.config, key='maintenance_mode', value=ctx.bot.maintenance_mode)
 
 		status = 'enabled' if ctx.bot.maintenance_mode else 'disabled'
 		await ctx.message.channel.send(f'Maintenance mode has been {status}.', delete_after=ctx.bot.del_after)
