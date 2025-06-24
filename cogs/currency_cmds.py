@@ -175,5 +175,5 @@ class CurrencyCmds(commands.Cog):
 		await ctx.send(f"You worked hard and earned {earnings} FoxCoins!")
 
 
-async def setup(bot: commands.Bot) -> None:
-	await bot.add_cog(CurrencyCmds(bot))
+#async def setup(bot: commands.Bot) -> None:
+#	await bot.add_cog(CurrencyCmds(bot))
