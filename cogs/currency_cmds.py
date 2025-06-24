@@ -5,7 +5,7 @@ import utils.utils
 from currency import curr_utils
 from command_utils.checks import is_admin, not_blacklisted
 
-class CurrencyCmds(commands.Cog):
+class CurrencyCmds(commands.Cog, name = "Currency"):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 

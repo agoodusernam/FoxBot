@@ -34,21 +34,21 @@ def get_valid_messages(flag: str = None) -> list[dict]:
 				db_stuff.delete_message(message['_id'])
 	elif flag == 'w':
 		# only return messages that were sent in the last week (7 days)
-		week_ago = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=7)
+		week_ago =  discord.utils.utcnow() - datetime.timedelta(days=7)
 		for message in messages:
 			if check_valid_syntax(message) and (utils.utils.parse_utciso8601(message['timestamp']) >= week_ago):
 				valid_messages.append(message)
 
 	elif flag == 'd':
 		# only return messages that were sent in the last day (24 hours)
-		day_ago = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=1)
+		day_ago = discord.utils.utcnow() - datetime.timedelta(days=1)
 		for message in messages:
 			if check_valid_syntax(message) and (utils.utils.parse_utciso8601(message['timestamp']) >= day_ago):
 				valid_messages.append(message)
 
 	elif flag == 'h':
 		# only return messages that were sent in the last hour (60 minutes)
-		hour_ago = datetime.datetime.now(datetime.UTC) - datetime.timedelta(hours=1)
+		hour_ago = discord.utils.utcnow() - datetime.timedelta(hours=1)
 		for message in messages:
 			if check_valid_syntax(message) and (utils.utils.parse_utciso8601(message['timestamp']) >= hour_ago):
 				valid_messages.append(message)

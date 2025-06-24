@@ -9,7 +9,7 @@ from currency import curr_utils
 import command_utils.gambling_utils as gambling_utils
 from currency import gambling_config
 
-class GamblingCmds(commands.Cog):
+class GamblingCmds(commands.Cog, name="Gambling"):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 

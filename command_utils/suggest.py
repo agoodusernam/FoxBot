@@ -25,7 +25,7 @@ async def send_suggestion(client: 'discord.Client', message: discord.Message) ->
 	try:
 		embed = discord.Embed(title='Suggestion', description=suggestion, color=discord.Color.blue())
 		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
-		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
+		embed.timestamp = discord.utils.utcnow()
 		msg = await channel.send(embed=embed)
 		await msg.add_reaction('👍')
 

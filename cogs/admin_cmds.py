@@ -25,7 +25,7 @@ def save_perms(ctx: discord.ext.commands.Context) -> None:
 		json.dump(previous_perms, file, indent = 4)
 
 
-class AdminCmds(commands.Cog):
+class AdminCmds(commands.Cog, name='Admin'):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 

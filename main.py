@@ -1,4 +1,3 @@
-import datetime
 import json
 import os
 from pathlib import Path
@@ -313,7 +312,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 		embed = discord.Embed(title = f'{member.display_name} joined #{after.channel.name}',
 							  color = discord.Color.green())
 		embed.set_author(name = member.name, icon_url = member.avatar.url)
-		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
+		embed.timestamp = discord.utils.utcnow()
 		if logging_channel:
 			await logging_channel.send(embed = embed)
 
@@ -323,7 +322,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 		voice_log.handle_leave(member)
 		embed = discord.Embed(title = f'{member.display_name} left #{before.channel.name}', color = discord.Color.red())
 		embed.set_author(name = member.name, icon_url = member.avatar.url)
-		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
+		embed.timestamp = discord.utils.utcnow()
 		if logging_channel:
 			await logging_channel.send(embed = embed)
 
@@ -335,7 +334,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 		embed = discord.Embed(title = f'{member.display_name} moved from #{before.channel.name} to'
 									  f' #{after.channel.name}', color = discord.Color.blue())
 		embed.set_author(name = member.name, icon_url = member.avatar.url)
-		embed.timestamp = datetime.datetime.now(datetime.timezone.utc)
+		embed.timestamp = discord.utils.utcnow()
 		if logging_channel:
 			await logging_channel.send(embed = embed)
 

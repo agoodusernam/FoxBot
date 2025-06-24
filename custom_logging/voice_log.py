@@ -1,4 +1,3 @@
-import datetime
 from typing import Any
 
 import discord
@@ -18,7 +17,7 @@ def handle_join(member: discord.Member, after: discord.VoiceState | discord.Voic
 		active_voice_sessions[member.id] = {
 			'channel_id':   str(after.channel.id),
 			'channel_name': after.channel.name,
-			'joined_at':    datetime.datetime.now(datetime.timezone.utc)
+			'joined_at':    discord.utils.utcnow()
 		}
 	else:
 		print(f'{member.name} joined {after.name}')
@@ -27,7 +26,7 @@ def handle_join(member: discord.Member, after: discord.VoiceState | discord.Voic
 		active_voice_sessions[member.id] = {
 			'channel_id':   str(after.id),
 			'channel_name': after.name,
-			'joined_at':    datetime.datetime.now(datetime.timezone.utc)
+			'joined_at':    discord.utils.utcnow()
 		}
 
 
@@ -41,7 +40,7 @@ def handle_leave(member: discord.Member) -> None:
 		return
 
 	join_data = active_voice_sessions[member.id]
-	leave_time = datetime.datetime.now(datetime.timezone.utc)
+	leave_time = discord.utils.utcnow()
 	join_time = join_data['joined_at']
 
 	# Calculate duration

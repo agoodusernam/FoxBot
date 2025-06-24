@@ -80,7 +80,7 @@ async def upload_whole_server(guild: discord.Guild, author: discord.Member, nolo
 	await dm.send(f'Finished uploading all messages from server: {guild.name}')
 
 
-class DevCommands(commands.Cog):
+class DevCommands(commands.Cog, name='Dev'):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 
@@ -190,11 +190,13 @@ class DevCommands(commands.Cog):
 										   delete_after=ctx.bot.del_after)
 			return
 
-		ctx.bot.maintenance_mode = (mode.lower() == 'on')
-		utils.add_to_config(config=ctx.bot.config, key='maintenance_mode', value=ctx.bot.maintenance_mode)
+		ctx.bot.maintenance_mode = mode.lower() == 'on'
+		utils.update_config(config=ctx.bot.config, key='maintenance_mode', value=ctx.bot.maintenance_mode)
 
 		status = 'enabled' if ctx.bot.maintenance_mode else 'disabled'
 		await ctx.message.channel.send(f'Maintenance mode has been {status}.', delete_after=ctx.bot.del_after)
+
+
 
 async def setup(bot):
 	await bot.add_cog(DevCommands(bot))

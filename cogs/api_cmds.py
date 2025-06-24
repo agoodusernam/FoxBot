@@ -8,7 +8,7 @@ from discord.ext.commands import BucketType
 from utils import api_stuff, utils
 from command_utils.checks import not_blacklisted
 
-class ApiCommands(commands.Cog):
+class ApiCommands(commands.Cog, name = "Images"):
 	"""Commands related to various APIs like NASA, dog/cat pictures, jokes, etc."""
 	def __init__(self, bot):
 		self.bot = bot

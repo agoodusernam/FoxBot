@@ -38,7 +38,7 @@ async def dice_roll(del_after: int, message: discord.Message) -> None:
 				'The number is too large to display in decimal format, so it has been converted to hex.')
 	return
 
-class FunCommands(commands.Cog):
+class FunCommands(commands.Cog, name='Fun'):
 	@commands.command(name = "dice", aliases = ["roll", "dice_roll"],
 				 brief = "Roll a dice",
 				 help = "Roll a dice between two values",
