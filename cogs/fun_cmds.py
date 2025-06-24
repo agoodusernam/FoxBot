@@ -38,13 +38,12 @@ async def dice_roll(del_after: int, message: discord.Message) -> None:
 				'The number is too large to display in decimal format, so it has been converted to hex.')
 	return
 
-class FunCommands(commands.Cog, name='Fun'):
+class FunCommands(commands.Cog, name='Fun', command_attrs=dict(add_checks=not_blacklisted)):
 	@commands.command(name = "dice", aliases = ["roll", "dice_roll"],
 				 brief = "Roll a dice",
 				 help = "Roll a dice between two values",
 				 usage = "dice <min> <max>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.check(not_blacklisted)
 	async def dice(self, ctx: discord.ext.commands.Context):
 		await dice_roll(ctx.bot.del_after, ctx.message)
 
@@ -52,7 +51,6 @@ class FunCommands(commands.Cog, name='Fun'):
 				 brief = "Flip a coin",
 				 help = "Flip a coin and get either Heads or Tails")
 	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.check(not_blacklisted)
 	async def flip(self, ctx: discord.ext.commands.Context):
 		await ctx.message.channel.send(f'You flipped a coin and got: **{random.choice(['Heads', 'Tails'])}**')
 
@@ -60,7 +58,6 @@ class FunCommands(commands.Cog, name='Fun'):
 				 brief = "Check the bot's latency",
 				 help = "Shows the bot's current latency in milliseconds")
 	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.check(not_blacklisted)
 	async def ping(self, ctx: discord.ext.commands.Context):
 		await ctx.message.channel.send(f'{ctx.bot.latency * 1000:.1f}ms')
 
@@ -69,7 +66,6 @@ class FunCommands(commands.Cog, name='Fun'):
 				 help = "Submit a suggestion for the bot",
 				 usage = "suggest <suggestion>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
-	@commands.check(not_blacklisted)
 	async def suggest_cmd(self, ctx: discord.ext.commands.Context):
 		await suggest.send_suggestion(ctx.bot, ctx.message)
 

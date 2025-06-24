@@ -6,8 +6,8 @@ from utils import db_stuff
 def create_new_profile(member: discord.Member):
 	new_data = {
 		'user_id':   str(member.id),
-		'wallet':    0,
-		'bank':      0,
+		'wallet':    5000,
+		'bank':      5000,
 		'income':    0,
 		'debt':      0,
 		'inventory': {},

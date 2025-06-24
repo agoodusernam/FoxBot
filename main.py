@@ -200,9 +200,11 @@ async def on_message(message: discord.Message):
 	if (not config['maintenance_mode']) or (message.author.id in bot.admin_ids) or (message.author.id in bot.dev_ids):
 		await bot.process_commands(message)
 
-	# Don't log command messages
-	if message.content.startswith(bot.command_prefix):
-		return
+		# Don't log command messages
+		if message.content.startswith(bot.command_prefix):
+			return
+	elif config['maintenance_mode']:
+		await message.channel.send('The bot is currently in maintenance mode. Please try again later.')
 
 	if ((message.channel.id == 1346720879651848202) and (message.author.id == 542798185857286144) and
 			(message.content.startswith('FUN FACT'))):

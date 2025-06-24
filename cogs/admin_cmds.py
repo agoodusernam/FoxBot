@@ -25,15 +25,15 @@ def save_perms(ctx: discord.ext.commands.Context) -> None:
 		json.dump(previous_perms, file, indent = 4)
 
 
-class AdminCmds(commands.Cog, name='Admin'):
+class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_check=is_admin)):
+	"""Admin commands for managing the server and users."""
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 
 	@commands.command(name = "rek",
 				 brief = "Absolutely rek a user",
-				 help = "Admin only: Timeout a user for 28 days and add them to blacklist", hidden = True,
+				 help = "Admin only: Timeout a user for 28 days and add them to blacklist", 
 				 usage = "rek <user_id/mention>")
-	@commands.check(is_admin)
 	async def rek(self, ctx: discord.ext.commands.Context, u_id: str) -> None:
 		del_after = ctx.bot.del_after
 
@@ -61,8 +61,7 @@ class AdminCmds(commands.Cog, name='Admin'):
 
 	@commands.command(name = "hardlockdown",
 				 brief = "Lock down the entire server",
-				 help = "Admin only: Timeout all non-admin users for 28 days and add them to blacklist", hidden = True)
-	@commands.check(is_admin)
+				 help = "Admin only: Timeout all non-admin users for 28 days and add them to blacklist")
 	async def hard_lockdown(self, ctx: discord.ext.commands.Context):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -89,8 +88,7 @@ class AdminCmds(commands.Cog, name='Admin'):
 
 	@commands.command(name = "unhardlockdown",
 				 brief = "Unlock the server from hard lockdown",
-				 help = "Admin only: Remove timeouts and blacklist from all users", hidden = True)
-	@commands.check(is_admin)
+				 help = "Admin only: Remove timeouts and blacklist from all users")
 	async def unhard_lockdown(self, ctx: discord.ext.commands.Context):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -117,27 +115,24 @@ class AdminCmds(commands.Cog, name='Admin'):
 
 	@commands.command(name = "analyse", aliases = ["analysis", "analyze", "stats", "statistics", "ana"],
 				 brief = "Analyze server message data",
-				 help = "Provides statistics about messages sent in the server", hidden = True,
+				 help = "Provides statistics about messages sent in the server", 
 				 usage = "analyse [user_id/mention]")
 	@commands.cooldown(1, 30, commands.BucketType.user)
-	@commands.check(is_admin)
 	async def analyse(self, ctx: discord.ext.commands.Context):
 		await analysis.format_analysis(ctx.message)
 
 	@commands.command(name = "analyse_voice", aliases = ["voice_analysis", "voice_stats", "voice_analyse", "anavc"],
 				 brief = "Analyze voice channel usage",
-				 help = "Provides statistics about voice channel usage in the server", hidden = True,
+				 help = "Provides statistics about voice channel usage in the server", 
 				 usage = "analyse_voice [user_id/mention]")
 	@commands.cooldown(1, 30, commands.BucketType.user)
-	@commands.check(is_admin)
 	async def analyse_voice(self, ctx: discord.ext.commands.Context):
 		await analysis.format_voice_analysis(ctx.message)
 
 	@commands.command(name = "blacklist",
 				 brief = "Blacklist a user",
-				 help = "Admin only: Prevent a user from using bot commands", hidden = True,
+				 help = "Admin only: Prevent a user from using bot commands", 
 				 usage = "blacklist <user_id/mention>")
-	@commands.check(is_admin)
 	async def blacklist_id(self, ctx: discord.ext.commands.Context, u_id: str):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -173,9 +168,8 @@ class AdminCmds(commands.Cog, name='Admin'):
 
 	@commands.command(name = "unblacklist",
 				 brief = "Remove user from blacklist",
-				 help = "Admin only: Allow a blacklisted user to use bot commands again", hidden = True,
+				 help = "Admin only: Allow a blacklisted user to use bot commands again", 
 				 usage = "unblacklist <user_id/mention>")
-	@commands.check(is_admin)
 	async def unblacklist_id(self, ctx: discord.ext.commands.Context, u_id: str):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -204,9 +198,8 @@ class AdminCmds(commands.Cog, name='Admin'):
 
 	@commands.command(name = "nologc", aliases = ["nologchannel", "nolog_channel"],
 				 brief = "Add a channel to no-log list",
-				 help = "Admin only: Prevent logging messages in a specific channel", hidden = True,
+				 help = "Admin only: Prevent logging messages in a specific channel", 
 				 usage = "nolog <channel_id/mention>")
-	@commands.check(is_admin)
 	async def nolog_channel(self, ctx: discord.ext.commands.Context, channel_id: str = None):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -231,9 +224,8 @@ class AdminCmds(commands.Cog, name='Admin'):
 
 	@commands.command(name = "nologc_remove", aliases = ["nolog_channel_remove", "nolog_channel_rm"],
 				 brief = "Remove a channel from no-log list",
-				 help = "Admin only: Allow logging messages in a specific channel again", hidden = True,
+				 help = "Admin only: Allow logging messages in a specific channel again", 
 				 usage = "nolog_remove <channel_id/mention>")
-	@commands.check(is_admin)
 	async def nolog_channel_remove(self, ctx: discord.ext.commands.Context, channel_id: str):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -258,9 +250,8 @@ class AdminCmds(commands.Cog, name='Admin'):
 
 	@commands.command(name = "nologu", aliases = ["nologuser", "nolog_user"],
 				 brief = "Add a user to no-log list",
-				 help = "Admin only: Prevent logging messages from a specific user", hidden = True,
+				 help = "Admin only: Prevent logging messages from a specific user", 
 				 usage = "nologu <user_id/mention>")
-	@commands.check(is_admin)
 	async def nolog_user(self, ctx: discord.ext.commands.Context, u_id: str):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -281,9 +272,8 @@ class AdminCmds(commands.Cog, name='Admin'):
 
 	@commands.command(name = "echo",
 				 brief = "Make the bot say something",
-				 help = "Admin only: Makes the bot say the specified message", hidden = True,
+				 help = "Admin only: Makes the bot say the specified message", 
 				 usage = "echo [channel id] <message>")
-	@commands.check(is_admin)
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def echo_cmd(self, ctx: discord.ext.commands.Context):
 			message = ctx.message

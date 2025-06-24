@@ -80,14 +80,14 @@ async def upload_whole_server(guild: discord.Guild, author: discord.Member, nolo
 	await dm.send(f'Finished uploading all messages from server: {guild.name}')
 
 
-class DevCommands(commands.Cog, name='Dev'):
+class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_check=is_dev)):
+	"""Developer commands for bot maintenance and management."""
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 
 	@commands.command(name = "restart",
 					  brief = "Restart the bot",
-					  help = "Dev only: Git pull and restart the bot instance", hidden = True)
-	@commands.check(is_dev)
+					  help = "Dev only: Git pull and restart the bot instance")
 	async def restart_cmd(self, ctx: discord.ext.commands.Context):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -96,8 +96,7 @@ class DevCommands(commands.Cog, name='Dev'):
 
 	@commands.command(name = "shutdown",
 					  brief = "Shutdown the bot",
-					  help = "Dev only: Shutdown the bot instance", hidden = True)
-	@commands.check(is_dev)
+					  help = "Dev only: Shutdown the bot instance")
 	async def shutdown(self, ctx: discord.ext.commands.Context):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -109,9 +108,8 @@ class DevCommands(commands.Cog, name='Dev'):
 
 	@commands.command(name = "add_admin",
 					  brief = "Add a user to the admin list",
-					  help = "Dev only: Add a user to the admin list", hidden = True,
+					  help = "Dev only: Add a user to the admin list",
 					  usage = "add_admin <user_id/mention>")
-	@commands.check(is_dev)
 	async def add_admin(self, ctx: discord.ext.commands.Context, u_id: str):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -139,9 +137,8 @@ class DevCommands(commands.Cog, name='Dev'):
 
 	@commands.command(name = "remove_admin",
 					  brief = "Remove a user from the admin list",
-					  help = "Dev only: Remove a user from the admin list", hidden = True,
+					  help = "Dev only: Remove a user from the admin list",
 					  usage = "remove_admin <user_id/mention>")
-	@commands.check(is_dev)
 	async def remove_admin(self, ctx: discord.ext.commands.Context, u_id: str):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -164,9 +161,8 @@ class DevCommands(commands.Cog, name='Dev'):
 
 	@commands.command(name = "upload_all_history",
 					  brief = "Upload all messages from a server",
-					  help = "Dev only: Upload all messages from a specific guild to the database", hidden = True,
+					  help = "Dev only: Upload all messages from a specific guild to the database",
 					  usage = "upload_all_history")
-	@commands.check(is_dev)
 	async def upload_all_history(self, ctx: discord.ext.commands.Context):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -178,9 +174,8 @@ class DevCommands(commands.Cog, name='Dev'):
 
 	@commands.command(name = "maintenance_mode",
 					  brief = "Toggle maintenance mode",
-					  help = "Dev only: Toggle maintenance mode for the bot", hidden = True,
+					  help = "Dev only: Toggle maintenance mode for the bot",
 					  usage = "maintenance_mode <on/off>")
-	@commands.check(is_dev)
 	async def maintenance_mode(self, ctx: discord.ext.commands.Context, mode: str):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
