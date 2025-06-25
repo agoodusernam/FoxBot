@@ -322,11 +322,15 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	# Member left channel
 	elif before.channel is not None and after.channel is None:
 		voice_log.handle_leave(member)
-		embed = discord.Embed(title=f'{member.display_name} left #{before.channel.name}', color=discord.Color.red())
-		embed.set_author(name=member.name, icon_url=member.avatar.url)
-		embed.timestamp = discord.utils.utcnow()
 		if logging_channel:
+			embed = discord.Embed(title=f'{member.display_name} left #{before.channel.name}', color=discord.Color.red())
+			embed.set_author(name=member.name, icon_url=member.avatar.url)
+			embed.timestamp = discord.utils.utcnow()
 			await logging_channel.send(embed=embed)
+
+		if before.channel.name.startswith('private_'):
+			if before.channel and len(before.channel.members) == 0:
+				await before.channel.delete(reason='Private VC empty after member left')
 
 	# Member moved to another channel
 	elif before.channel != after.channel:
