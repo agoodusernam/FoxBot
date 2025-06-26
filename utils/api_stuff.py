@@ -1,10 +1,12 @@
 import os
 import random
+import cachetools
 
 import discord
 import requests
 
 
+@cachetools.cached(cache=cachetools.TTLCache(maxsize=8, ttl=3_600))  # Cache for 1 hour
 def get_nasa_apod() -> dict[str, str]:
 	api_key = os.getenv('NASA_API_KEY')
 
@@ -100,8 +102,6 @@ async def get_joke(message: discord.Message) -> None:
 	if 'joke' not in data and ('setup' not in data or 'delivery' not in data):
 		raise ValueError('Unexpected response format from joke API')
 
-
-
 	# Two-part joke format
 	if 'setup' in data and 'delivery' in data:
 		to_send = f'{data['setup']}\n{data['delivery']}'
@@ -113,6 +113,7 @@ async def get_joke(message: discord.Message) -> None:
 		raise ValueError('Unexpected joke format from joke API')
 
 	await message.channel.send(to_send)
+
 
 async def get_wyr(message: discord.Message) -> None:
 	url = 'https://api.truthordarebot.xyz/api/wyr'
@@ -126,6 +127,7 @@ async def get_wyr(message: discord.Message) -> None:
 		raise ValueError('Unexpected response format from Would You Rather API')
 
 	await message.channel.send(data['question'])
+
 
 def get_karma_pic() -> tuple[str, str] | None:
 	karma_pics = [f for f in os.listdir('data/karma_pics') if os.path.isfile(os.path.join('data/karma_pics', f))]

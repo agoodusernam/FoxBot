@@ -8,7 +8,6 @@ from typing import Union
 import discord
 
 
-
 def get_id_from_str(u_id: str) -> int:
 	return int(discord.utils.escape_mentions(u_id))
 
@@ -22,7 +21,7 @@ def make_file(name: str = 'messages'):
 		os.makedirs('../data')
 	if not os.path.exists('../data/attachments'):
 		os.makedirs('../data/attachments')
-	return open(f'data/{name}.json', 'a+', encoding = 'utf-8')
+	return open(f'data/{name}.json', 'a+', encoding='utf-8')
 
 
 def make_empty_file(path: str | Path):
@@ -56,7 +55,7 @@ def clean_up_APOD():
 	apod_dir = Path('nasa/')
 	if not apod_dir.exists():
 		print('APOD directory does not exist, creating it.')
-		apod_dir.mkdir(parents = True, exist_ok = True)
+		apod_dir.mkdir(parents=True, exist_ok=True)
 
 	for file in apod_dir.iterdir():
 		if file.is_file() and file.suffix.lower() in ['.jpg', '.jpeg', '.png']:
@@ -105,6 +104,7 @@ def parse_utciso8601(date_str: str) -> datetime.datetime | None:
 		print(f'Error parsing date string "{date_str}": {e}')
 		return None
 
+
 def add_to_config(*, config: dict, key: str, key2: str = None, value: str | int) -> None:
 	"""
 	Adds a value to the config file under the specified key.
@@ -127,7 +127,6 @@ def add_to_config(*, config: dict, key: str, key2: str = None, value: str | int)
 				print(f'Value "{value}" already exists in "{key}". Not adding again.')
 				return
 
-
 	if isinstance(config.get(key), (int, str, dict)):
 		raise TypeError('Cannot add a value to a key that is not a list.')
 
@@ -135,12 +134,13 @@ def add_to_config(*, config: dict, key: str, key2: str = None, value: str | int)
 		json.dump(config, f, indent=4)
 		print(f'Config updated with key "{key}".')
 
-def update_config(*, config: dict, key: str, key2 = None, value: str | int) -> None:
+
+def update_config(*, config: dict, key: str, key2=None, value: str | int) -> None:
 	"""
 	Updates the config file with a new value for the specified key.
 	"""
 	if key2:
-		if isinstance(config.get(key), dict):
+		if isinstance(config[key], dict):
 			config[key][key2] = value
 		else:
 			print(f'Key "{key}" is not a dictionary. Cannot update "{key2}".')
@@ -152,6 +152,7 @@ def update_config(*, config: dict, key: str, key2 = None, value: str | int) -> N
 	with open('config.json', 'w') as f:
 		json.dump(config, f, indent=4)
 		print(f'Config updated with key "{key}".')
+
 
 def remove_from_config(*, config: dict, key: str, key2: str = None) -> None:
 	"""
@@ -173,14 +174,15 @@ def remove_from_config(*, config: dict, key: str, key2: str = None) -> None:
 	with open('config.json', 'w') as f:
 		json.dump(config, f, indent=4)
 
-def format_perms_overwrite(overwrite: discord.PermissionOverwrite) -> dict[str, Union[bool, None]]:
-		perms: dict[str, Union[bool, None]] = {}
-		for permission in overwrite:
-			name = permission[0]
-			value = permission[1]
-			perms[name] = value
 
-		return perms
+def format_perms_overwrite(overwrite: discord.PermissionOverwrite) -> dict[str, Union[bool, None]]:
+	perms: dict[str, Union[bool, None]] = {}
+	for permission in overwrite:
+		name = permission[0]
+		value = permission[1]
+		perms[name] = value
+
+	return perms
 
 
 def format_permissions(permissions: dict[discord.Role | discord.Member | discord.Object,

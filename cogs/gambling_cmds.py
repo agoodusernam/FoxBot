@@ -9,14 +9,15 @@ import command_utils.gambling_utils as gambling_utils
 from currency import gambling_config
 from command_utils.checks import not_blacklisted
 
+
 class GamblingCmds(commands.Cog, name="Gambling", command_attrs=dict(add_check=not_blacklisted)):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 
 	@commands.command(name="slot", aliases=["slots"],
-					  brief="Play a slot machine game",
-					  help="Try your luck with the slot machine! You can win or lose coins.",
-					  usage="slot <bet_amount>")
+	                  brief="Play a slot machine game",
+	                  help="Try your luck with the slot machine! You can win or lose coins.",
+	                  usage="slot <bet_amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def slot_cmd(self, ctx: commands.Context, bet_amount: int):
 		if bet_amount <= 0:

@@ -14,6 +14,7 @@ class SchoolQualif(enum.Enum):
 	DOCTORATE = PHD
 	POLYMATH = [5, 50_000, 10]  # Special fictional qualification, not required for any job but gives a salary boost
 
+
 class SecurityClearance(enum.Enum):
 	"""
 	Enum to represent different security clearance levels using the US security clearance system.
@@ -45,6 +46,7 @@ class Job:
 	salary: int
 	salary_variance: int
 	experience_multiplier: float | int = 1
+
 
 @dataclass
 class JobTree:

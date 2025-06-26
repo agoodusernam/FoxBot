@@ -12,13 +12,13 @@ def check_valid_syntax(message: dict) -> bool:
 	required_keys = {
 		'author', 'author_id', 'author_global_name',
 		'content', 'reply_to', 'HasAttachments',
-		'timestamp', 'channel'
+		'timestamp', 'channel', 'channel_id',
 	}
 	return all(key in message for key in required_keys)
 
 
 def get_valid_messages(flag: str = None) -> list[dict]:
-	"""Download and validate messages from database."""
+	"""Download and validate messages from the database."""
 	# flag can be 'w' for last week, 'd' for last day, 'h' for last hour, or None for all messages
 	messages = db_stuff.download_all()
 	if not messages:
@@ -34,7 +34,7 @@ def get_valid_messages(flag: str = None) -> list[dict]:
 				db_stuff.delete_message(message['_id'])
 	elif flag == 'w':
 		# only return messages that were sent in the last week (7 days)
-		week_ago =  discord.utils.utcnow() - datetime.timedelta(days=7)
+		week_ago = discord.utils.utcnow() - datetime.timedelta(days=7)
 		for message in messages:
 			if check_valid_syntax(message) and (utils.utils.parse_utciso8601(message['timestamp']) >= week_ago):
 				valid_messages.append(message)
@@ -52,7 +52,6 @@ def get_valid_messages(flag: str = None) -> list[dict]:
 		for message in messages:
 			if check_valid_syntax(message) and (utils.utils.parse_utciso8601(message['timestamp']) >= hour_ago):
 				valid_messages.append(message)
-
 
 	print(f'Total valid messages: {len(valid_messages)}')
 	return valid_messages
@@ -72,7 +71,7 @@ def analyse_word_stats(content_list: list[str]) -> dict[str, Any]:
 	if not word_count:
 		return {}
 
-	most_common_word = max(word_count, key = word_count.get)
+	most_common_word = max(word_count, key=word_count.get)
 	unique_words = set(word_count.keys())
 	average_length = sum(len(word) for word in unique_words) / len(unique_words) if unique_words else 0
 
@@ -92,11 +91,11 @@ def get_channel_stats(messages: list[dict]) -> list[dict]:
 		channel_counts[channel] = channel_counts.get(channel, 0) + 1
 
 	return [{'channel': channel, 'num_messages': count}
-			for channel, count in channel_counts.items()]
+	        for channel, count in channel_counts.items()]
 
 
-def analyse(flag: str = None) -> Optional[Union[dict[str, Any], str, Exception]]:
-	"""Analyze all messages in the database."""
+def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
+	"""Analyse all messages in the database."""
 	try:
 		valid_messages = get_valid_messages(flag)
 		if not valid_messages:
@@ -106,7 +105,7 @@ def analyse(flag: str = None) -> Optional[Union[dict[str, Any], str, Exception]]
 
 		content_list = [message['content'] for message in valid_messages]
 
-		# Analyze word statistics
+		# Analyse word statistics
 		word_stats = analyse_word_stats(content_list)
 		if not word_stats:
 			return 'No valid content to analyze.'
@@ -118,7 +117,7 @@ def analyse(flag: str = None) -> Optional[Union[dict[str, Any], str, Exception]]
 			user_message_count[user_id] = user_message_count.get(user_id, 0) + 1
 
 		active_users = [{'user': user, 'num_messages': count}
-						for user, count in user_message_count.items()]
+		                for user, count in user_message_count.items()]
 
 		# Get channel stats
 		active_channels = get_channel_stats(valid_messages)
@@ -139,7 +138,7 @@ def analyse(flag: str = None) -> Optional[Union[dict[str, Any], str, Exception]]
 		return e
 
 
-async def analyse_single_user(member: discord.Member, flag: str = None) -> Optional[Union[dict[str, Any], str]]:
+async def analyse_single_user(member: discord.Member, flag: str = None) -> dict[str, Any] | str | None:
 	"""Analyse messages from a specific user."""
 	try:
 		valid_messages = get_valid_messages(flag)
@@ -150,14 +149,14 @@ async def analyse_single_user(member: discord.Member, flag: str = None) -> Optio
 		global_name = member.global_name
 		author_name = member.name
 		messages_by_user = [msg for msg in valid_messages
-							if msg['author_global_name'] == global_name or msg['author'] == author_name]
+		                    if msg['author_global_name'] == global_name or msg['author'] == author_name]
 
 		if not messages_by_user:
 			return f'No messages found for user {member.mention}.'
 
 		content_list = [msg['content'] for msg in messages_by_user]
 
-		# Analyze word statistics
+		# Analyse word statistics
 		word_stats = analyse_word_stats(content_list)
 		if not word_stats:
 			return f'No analyzable content found for user {member.mention}.'
@@ -188,20 +187,19 @@ async def format_analysis(message: discord.Message) -> None:
 	else:
 		message.content = message.content.replace(f'-{flag}', '')
 
-
 	new_msg = await message.channel.send('Analysing...')
 	if len(message.content.split()) > 1:
 		try:
-			member_id = int(message.content.split()[1].replace('@', '').replace('<', '').replace('>', '').strip())
+			member_id = int(utils.utils.get_id_from_str(message.content.split()[1]))
 			member = message.guild.get_member(member_id)
 			if member is None:
-				await new_msg.edit(content = f'User with ID {member_id} not found.')
+				await new_msg.edit(content=f'User with ID {member_id} not found.')
 				return
 			await analyse_single_user_cmd(message, member, flag)
 			await new_msg.delete()
 			return
 		except ValueError:
-			await new_msg.edit(content = 'Invalid user ID format. Please provide a valid integer ID.')
+			await new_msg.edit(content='Invalid user ID format. Please provide a valid integer ID.')
 			return
 
 	try:
@@ -209,18 +207,18 @@ async def format_analysis(message: discord.Message) -> None:
 		await new_msg.delete()
 
 		if isinstance(result, dict):
-			top_5_active_users = sorted(result['active_users_lb'], key = lambda x: x['num_messages'],
-										reverse = True)[:5]
-			top_5_active_channels = sorted(result['active_channels_lb'], key = lambda x: x['num_messages'],
-										   reverse = True)[:5]
+			top_5_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'],
+			                            reverse=True)[:5]
+			top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'],
+			                               reverse=True)[:5]
 
 			msg = (f"{result['total_messages']} total messages analysed\n"
-				   f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
-				   f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
-				   f"Total users: {result['total_users']}\n"
-				   f"Top 5 most active users:\n")
+			       f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
+			       f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
+			       f"Total users: {result['total_users']}\n"
+			       f"Top 5 most active users:\n")
 
-			for i, user in enumerate(top_5_active_users, start = 1):
+			for i, user in enumerate(top_5_active_users, start=1):
 				username = user['user'] or 'Unknown User'
 				msg += f"**{i}. {username}** {user['num_messages']} messages\n"
 
@@ -239,18 +237,17 @@ async def format_analysis(message: discord.Message) -> None:
 		await message.channel.send(f'Error during analysis: {e}')
 
 
-
-async def analyse_single_user_cmd(message: discord.Message, member: discord.Member, flag) -> None:
+async def analyse_single_user_cmd(message: discord.Message, member: discord.Member, flag: str) -> None:
 	"""Format and send analysis results for a single user."""
 	result = await analyse_single_user(member, flag)
 
 	if isinstance(result, dict):
-		top_5_active_channels = sorted(result['active_channels_lb'], key = lambda x: x['num_messages'],
-									   reverse = True)[:5]
+		top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'],
+		                               reverse=True)[:5]
 		msg = (f"{result['total_messages']} messages found for **{member.name}**\n"
-			   f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
-			   f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
-			   f"Top 5 most active channels:\n")
+		       f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
+		       f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
+		       f"Top 5 most active channels:\n")
 
 		for i, channel in enumerate(top_5_active_channels, 1):
 			msg += f"**{i}. {channel['channel']}** {channel['num_messages']} messages\n"
@@ -303,15 +300,15 @@ def get_voice_statistics() -> dict[str, list[dict[str, Any]]] | None:
 	top_users = sorted(
 			[{'id': user_id, 'name': data['name'], 'total_seconds': data['total_seconds']}
 			 for user_id, data in user_stats.items()],
-			key = lambda x: x['total_seconds'],
-			reverse = True
+			key=lambda x: x['total_seconds'],
+			reverse=True
 	)
 
 	top_channels = sorted(
 			[{'id': channel_id, 'name': data['name'], 'total_seconds': data['total_seconds']}
 			 for channel_id, data in channel_stats.items()],
-			key = lambda x: x['total_seconds'],
-			reverse = True
+			key=lambda x: x['total_seconds'],
+			reverse=True
 	)
 
 	return {
@@ -368,17 +365,17 @@ async def format_voice_analysis(message: discord.Message) -> None:
 
 	if len(message.content.split()) > 1:
 		try:
-			member_id = int(message.content.split()[1].replace('@', '').replace('<', '').replace('>', '').strip())
+			member_id = int(utils.utils.get_id_from_str(message.content.split()[1]))
 			member = message.guild.get_member(member_id)
 			if member is None:
-				await new_msg.edit(content = f'User with ID {member_id} not found.')
+				await new_msg.edit(content=f'User with ID {member_id} not found.')
 				return
 
 			await add_voice_analysis_for_user(message, member)
 			await new_msg.delete()
 			return
 		except ValueError:
-			await new_msg.edit(content = 'Invalid user ID format. Please provide a valid integer ID.')
+			await new_msg.edit(content='Invalid user ID format. Please provide a valid integer ID.')
 			return
 
 	# No user specified, show general voice stats
@@ -389,7 +386,7 @@ async def format_voice_analysis(message: discord.Message) -> None:
 		await message.channel.send(f'Error during voice analysis: {e}')
 
 
-def get_user_voice_statistics(user_id: str) -> Optional[dict[str, Any]]:
+def get_user_voice_statistics(user_id: str) -> dict[str, Any] | None:
 	"""Retrieve voice statistics for a specific user"""
 	sessions = db_stuff.download_voice_sessions()
 
@@ -424,8 +421,8 @@ def get_user_voice_statistics(user_id: str) -> Optional[dict[str, Any]]:
 	top_channels = sorted(
 			[{'id': channel_id, 'name': data['name'], 'total_seconds': data['total_seconds']}
 			 for channel_id, data in channel_stats.items()],
-			key = lambda x: x['total_seconds'],
-			reverse = True
+			key=lambda x: x['total_seconds'],
+			reverse=True
 	)
 
 	return {

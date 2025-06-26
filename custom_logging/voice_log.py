@@ -74,6 +74,7 @@ def handle_move(member: discord.Member, before: discord.VoiceState, after: disco
 	# Then record the "join" to the new channel
 	handle_join(member, after)
 
+
 def leave_all(bot: discord.Client) -> None:
 	"""Force leave all active voice sessions"""
 	for member_id in list(active_voice_sessions.keys()):

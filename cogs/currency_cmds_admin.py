@@ -6,6 +6,7 @@ from currency import curr_utils
 from currency.curr_config import currency_name
 from utils import utils
 
+
 class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin", command_attrs=dict(add_check=is_admin, hidden=True)):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
@@ -28,7 +29,6 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin", command_attrs=dict(
 		curr_utils.set_wallet(target_user, amount)
 		await ctx.send(f"Set {target_user.display_name}'s wallet balance to {amount} {currency_name}!")
 
-
 	@commands.command(name="set_bank",
 	                  brief="Set a user's bank balance",
 	                  help="Set a user's bank balance",
@@ -46,7 +46,6 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin", command_attrs=dict(
 
 		curr_utils.set_bank(target_user, amount)
 		await ctx.send(f"Set {target_user.display_name}'s bank balance to {amount} {currency_name}!")
-
 
 	@commands.command(name="set_debt",
 	                  brief="Set a user's debt",
@@ -66,7 +65,6 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin", command_attrs=dict(
 		curr_utils.set_debt(target_user, amount)
 		await ctx.send(f"Set {target_user.display_name}'s debt to {amount} {currency_name}!")
 
-
 	@commands.command(name="set_income",
 	                  brief="Set a user's income",
 	                  help="Set a user's income for working",
@@ -85,6 +83,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin", command_attrs=dict(
 		curr_utils.set_income(target_user, amount)
 		await ctx.send(f"Set {target_user.display_name}'s income to {amount} {currency_name} per work session!")
 
+
 async def setup(bot: commands.Bot):
 	pass
-	# await bot.add_cog(CurrencyCmdsAdmin(bot))
+# await bot.add_cog(CurrencyCmdsAdmin(bot))
