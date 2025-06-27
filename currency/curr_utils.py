@@ -1,7 +1,7 @@
 import discord
 
 from utils import db_stuff
-from curr_config import get_default_profile
+from currency.curr_config import get_default_profile
 
 
 def create_new_profile(member: discord.Member):
@@ -43,6 +43,12 @@ def set_debt(member: discord.Member, amount: int) -> None:
 
 	profile['debt'] = amount
 	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'debt': amount})
+
+def set_credit_score(member: discord.Member, score: int) -> None:
+	profile = get_profile(member)
+
+	profile['credit_score'] = score
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'credit_score': score})
 
 
 def update_inventory(member: discord.Member, item: str, amount: int) -> None:

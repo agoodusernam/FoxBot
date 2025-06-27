@@ -3,17 +3,47 @@ from discord.ext import commands
 
 import utils.utils
 from currency import curr_utils
+from currency import shop_items
 from currency.curr_config import currency_name, loan_interest_rate, income_tax
 from command_utils.checks import not_blacklisted
 
 
-class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=not_blacklisted)):
+# Create pagination view
+class ShopView(discord.ui.View):
+	def __init__(self, embeds):
+		super().__init__(timeout = 60)  # 60 second timeout
+		self.embeds = embeds
+		self.current_page = 0
+
+	@discord.ui.button(label = "Previous", style = discord.ButtonStyle.gray)
+	async def previous_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+		if self.current_page > 0:
+			self.current_page -= 1
+			await interaction.response.edit_message(embed = self.embeds[self.current_page])
+		else:
+			await interaction.response.defer()
+
+	@discord.ui.button(label = "Next", style = discord.ButtonStyle.gray)
+	async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+		if self.current_page < len(self.embeds) - 1:
+			self.current_page += 1
+			await interaction.response.edit_message(embed = self.embeds[self.current_page])
+		else:
+			await interaction.response.defer()
+
+	async def on_timeout(self):
+		# Disable all buttons when the view times out
+		for item in self.children:
+			item.disabled = True
+		# View will be automatically removed from the message
+
+class CurrencyCmds(commands.Cog, name = "Currency", command_attrs = dict(add_check = not_blacklisted)):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 
-	@commands.command(name="balance", aliases=["bal"],
-					  brief="Check your balance",
-					  help="Check your current money and bank balance")
+	@commands.command(name = "balance", aliases = ["bal"],
+					  brief = "Check your balance",
+					  help = "Check your current money and bank balance")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def balance_cmd(self, ctx: commands.Context):
 		profile = curr_utils.get_profile(ctx.author)
@@ -21,10 +51,10 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		bank = profile['bank']
 		await ctx.send(f"**Balance:**\nWallet: {wallet}\nBank: {bank}\nTotal: {wallet + bank}")
 
-	@commands.command(name="baltop", aliases=["balance_top", "bal_top"],
-					  brief="Check the top balances",
-					  help="Check the top users with the highest balances",
-					  usage="baltop")
+	@commands.command(name = "baltop", aliases = ["balance_top", "bal_top"],
+					  brief = "Check the top balances",
+					  help = "Check the top users with the highest balances",
+					  usage = "baltop")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def baltop_cmd(self, ctx: commands.Context):
 		top_users = curr_utils.get_top_balances()
@@ -34,13 +64,13 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 
 		top_list = "\n"
 		for user, balance in top_users:
-			top_list += f"{discord.utils.get(ctx.bot.get_all_members(), id=user).display_name}: {balance} {currency_name}\n"
+			top_list += f"{discord.utils.get(ctx.bot.get_all_members(), id = user).display_name}: {balance} {currency_name}\n"
 		await ctx.send(f"**Top Wallet Balances:**\n{top_list}")
 
-	@commands.command(name="deposit", aliases=["dep"],
-					  brief="Deposit money into your bank",
-					  help="Deposit some of your money from your wallet into your bank",
-					  usage="deposit <amount>")
+	@commands.command(name = "deposit", aliases = ["dep"],
+					  brief = "Deposit money into your bank",
+					  help = "Deposit some of your money from your wallet into your bank",
+					  usage = "deposit <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def deposit_cmd(self, ctx: commands.Context, amount: int):
 		if amount <= 0:
@@ -54,10 +84,10 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		curr_utils.set_bank(ctx.author, profile['bank'] + amount)
 		await ctx.send(f"Deposited {amount} {currency_name} into your bank!")
 
-	@commands.command(name="withdraw", aliases=["with"],
-					  brief="Withdraw money from your bank",
-					  help="Withdraw some of your money from your bank into your wallet",
-					  usage="withdraw <amount>")
+	@commands.command(name = "withdraw", aliases = ["with"],
+					  brief = "Withdraw money from your bank",
+					  help = "Withdraw some of your money from your bank into your wallet",
+					  usage = "withdraw <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def withdraw_cmd(self, ctx: commands.Context, amount: int):
 		if amount <= 0:
@@ -71,13 +101,13 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		curr_utils.set_bank(ctx.author, profile['bank'] - amount)
 		await ctx.send(f"Withdrew {amount} {currency_name} from your bank!")
 
-	@commands.command(name="pay", aliases=["give"],
-					  brief="Pay another user",
-					  help="Pay another user some of your money",
-					  usage="pay <user> <amount>")
+	@commands.command(name = "pay", aliases = ["give"],
+					  brief = "Pay another user",
+					  help = "Pay another user some of your money",
+					  usage = "pay <user> <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def pay_cmd(self, ctx: commands.Context, user: str, amount: int):
-		recipient = discord.utils.get(ctx.guild.members, name=utils.utils.get_id_from_str(user))
+		recipient = discord.utils.get(ctx.guild.members, name = utils.utils.get_id_from_str(user))
 		if recipient is None or recipient is False:
 			await ctx.send("Invalid user ID or mention!")
 			return
@@ -98,9 +128,9 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		curr_utils.set_wallet(recipient, recipient_profile['wallet'] + amount)
 		await ctx.send(f"Paid {recipient.mention} {amount} {currency_name}!")
 
-	@commands.command(name="work",
-					  brief="Work to earn money",
-					  help="Work to earn some money. You can do this every day.")
+	@commands.command(name = "work",
+					  brief = "Work to earn money",
+					  help = "Work to earn some money. You can do this every day.")
 	@commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)  # 24-hour cooldown
 	async def work_cmd(self, ctx: commands.Context):
 		profile = curr_utils.get_profile(ctx.author)
@@ -115,9 +145,9 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		curr_utils.set_debt(ctx.author, debt)
 		await ctx.send(f"You worked hard and earned {earnings} {currency_name}!")
 
-	@commands.command(name="debt",
-					  brief="Check your debt",
-					  help="Check how much debt you have")
+	@commands.command(name = "debt",
+					  brief = "Check your debt",
+					  help = "Check how much debt you have")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def debt_cmd(self, ctx: commands.Context):
 		profile = curr_utils.get_profile(ctx.author)
@@ -127,10 +157,10 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		else:
 			await ctx.send(f"You currently owe {debt} {currency_name} in loans.")
 
-	@commands.command(name="pay_debt", aliases=["payloan", "pay_load", "repay", "paydebt"],
-					  brief="Pay off your debt",
-					  help="Pay off some of your debt from loans",
-					  usage="pay_debt <amount>")
+	@commands.command(name = "pay_debt", aliases = ["payloan", "pay_load", "repay", "paydebt"],
+					  brief = "Pay off your debt",
+					  help = "Pay off some of your debt from loans",
+					  usage = "pay_debt <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def pay_debt_cmd(self, ctx: commands.Context, amount: int):
 		if amount <= 0:
@@ -143,14 +173,26 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		if profile['wallet'] < amount:
 			await ctx.send("You do not have enough money in your wallet to pay off that much debt!")
 			return
+		intrest = int(profile['debt'] * loan_interest_rate)
+		if amount >= intrest:
+			new_credit_score = min(profile['credit_score'] + 1, 800)
+			if new_credit_score > profile['credit_score']:
+				curr_utils.set_credit_score(ctx.author, new_credit_score)
+
+		elif amount < intrest * 0.75:
+			new_credit_score = max(profile['credit_score'] - 1, 100)
+			if new_credit_score < profile['credit_score']:
+				curr_utils.set_credit_score(ctx.author, new_credit_score)
+
 		curr_utils.set_wallet(ctx.author, int(profile['wallet'] - amount))
 		curr_utils.set_debt(ctx.author, int(profile['debt'] - amount))
+
 		await ctx.send(f"Paid off {amount} {currency_name} of your debt!")
 
-	@commands.command(name="get_loan", aliases=["loan"],
-					  brief="Get a loan",
-					  help="Get a loan to increase your wallet balance",
-					  usage="get_loan <amount>")
+	@commands.command(name = "get_loan", aliases = ["loan"],
+					  brief = "Get a loan",
+					  help = "Get a loan to increase your wallet balance",
+					  usage = "get_loan <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def get_loan_cmd(self, ctx: commands.Context, amount: int):
 		if amount <= 0:
@@ -170,7 +212,104 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		curr_utils.set_debt(ctx.author, amount)
 		await ctx.send(f"You have taken a loan of {amount} {currency_name}. Remember to pay it back with interest!")
 
+	@commands.command(name = "credit_score", aliases = ["credit"],
+					  brief = "Check your credit score",
+					  help = "Check your current credit score",
+					  usage = "credit_score")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	async def credit_score_cmd(self, ctx: commands.Context):
+		profile = curr_utils.get_profile(ctx.author)
+		credit_score = profile['credit_score']
+		await ctx.send(f"Your current credit score is {credit_score}. "
+					   f"Improve it by paying off loans and maintaining a good balance.")
+
+	@commands.command(name = "shop", aliases = ["store"],
+					  brief = "View the shop",
+					  help = "View the items available for purchase in the shop",
+					  usage = "shop")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	async def shop_cmd(self, ctx: commands.Context):
+		embed = discord.Embed(title="Shop", description="Items available for purchase", color=discord.Color.green())
+		embed.set_thumbnail(url=ctx.guild.icon.url)
+		categories = shop_items.categories
+		# bm_categories = shop_items.bm_categories
+
+		# Create list to store category embeds
+		embeds = []
+
+		# Add regular categories
+		for category in categories:
+			category_embed = discord.Embed(
+					title = f"Shop - {category.name}",
+					description = category.description,
+					color = discord.Color.green()
+			)
+
+			# Safely set thumbnail
+			if hasattr(ctx.guild, 'icon') and ctx.guild.icon:
+				category_embed.set_thumbnail(url = ctx.guild.icon.url)
+
+			# Add items for this category
+			for item in category.items:
+				item_desc = f"{item.description}\nPrice: {item.price} {currency_name}"
+				if item.stock != -1:
+					item_desc += f"\nStock: {item.stock}"
+				category_embed.add_field(name = item.name, value = item_desc, inline = False)
+
+			# Add page number to footer
+			total_pages = len(categories)
+			category_embed.set_footer(text = f"Page {len(embeds) + 1}/{total_pages}")
+			embeds.append(category_embed)
+
+
+		# Send the first page with navigation
+		if embeds:
+			view = ShopView(embeds)
+			await ctx.send(embed = embeds[0], view = view)
+		else:
+			await ctx.send("No items available in the shop.")
+
+
+	@commands.command(name = "blackmarket", aliases = ["bm"],
+					  brief = "View the black market",
+					  help = "View the items available for purchase in the black market",
+					  usage = "blackmarket")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	async def blackmarket_cmd(self, ctx: commands.Context):
+		embed = discord.Embed(title="Black Market", description="Items available for purchase", color=discord.Color.dark_red())
+		embed.set_thumbnail(url=ctx.guild.icon.url)
+		categories = shop_items.bm_categories
+
+		# Create list to store category embeds
+		embeds = []
+
+		for category in categories:
+			category_embed = discord.Embed(
+					title = f"Black Market - {category.name}",
+					description = category.description,
+					color = discord.Color.dark_red()
+			)
+
+			if hasattr(ctx.guild, 'icon') and ctx.guild.icon:
+				category_embed.set_thumbnail(url = ctx.guild.icon.url)
+
+			for item in category.items:
+				item_desc = f"{item.description}\nPrice: {item.price} {currency_name}"
+				if item.stock != -1:
+					item_desc += f"\nStock: {item.stock}"
+				category_embed.add_field(name = item.name, value = item_desc, inline = False)
+
+			total_pages = len(categories)
+			category_embed.set_footer(text = f"Page {len(embeds) + 1}/{total_pages}")
+			embeds.append(category_embed)
+
+		if embeds:
+			view = ShopView(embeds)
+			await ctx.send(embed = embeds[0], view = view)
+		else:
+			await ctx.send("No items available in the black market.")
+
 
 async def setup(bot: commands.Bot) -> None:
 	pass
-#	await bot.add_cog(CurrencyCmds(bot))
+	# await bot.add_cog(CurrencyCmds(bot))

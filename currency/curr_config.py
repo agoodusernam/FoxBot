@@ -112,6 +112,13 @@ class ShopCategory:
 	description: str
 	items: list[ShopItem]
 
+	def item_names(self) -> list[str]:
+		"""
+		Returns a list of item names in this category.
+		:return: A list of item names.
+		"""
+		return [item.name for item in self.items]
+
 
 @dataclasses.dataclass
 class BlackMarketCategory:

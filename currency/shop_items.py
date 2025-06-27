@@ -1,5 +1,5 @@
-import perks
-from curr_config import ShopItem, ShopCategory, HouseItem, BlackMarketItem, DrugItem, BlackMarketCategory
+from currency import perks
+from currency.curr_config import ShopItem, ShopCategory, HouseItem, BlackMarketItem, DrugItem, BlackMarketCategory
 
 CIVILIAN_GUN_RESALE_MULT = 0.7
 MILITARY_GUN_RESALE_MULT = 0.9
@@ -241,9 +241,9 @@ weed = DrugItem(
 		uses=5,
 )
 
-meth = DrugItem(
-		name="Meth",
-		description="A small bag of meth.",
+methamphetamine = DrugItem(
+		name="Methamphetamine",
+		description="A small bag of Methamphetamine.",
 		price=300,
 		stock=-1,
 		perk=None,
@@ -432,7 +432,7 @@ l115a3_awm = BlackMarketItem(
 drugs = BlackMarketCategory(
 		name="Drugs",
 		description="Various drugs that may or may kill you.",
-		items=[white_powder, cocaine, lsd, weed, meth, fentanyl]
+		items=[white_powder, cocaine, lsd, weed, methamphetamine, fentanyl]
 )
 
 weapons = BlackMarketCategory(
@@ -441,3 +441,6 @@ weapons = BlackMarketCategory(
 		items=[ominous_knife, sig_p320_m1, glock_17_gen5, m1911_a1, the_colt, mr556, sig_mcx_spear, hk417, sig_mx7,
 			   ak_47, m39_emr, barrett_m82, l115a3_awm]
 )
+
+categories = [var for var in globals().values() if isinstance(var, ShopCategory)]
+bm_categories = [var for var in globals().values() if isinstance(var, BlackMarketCategory)]

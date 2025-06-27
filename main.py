@@ -63,7 +63,6 @@ config = load_config()
 
 # Create bot with intents
 intents = discord.Intents.all()
-intents.presences = False
 bot = commands.Bot(command_prefix=config["command_prefix"], intents=intents)
 
 # Initialize bot configuration from loaded config
