@@ -309,7 +309,54 @@ class CurrencyCmds(commands.Cog, name = "Currency", command_attrs = dict(add_che
 		else:
 			await ctx.send("No items available in the black market.")
 
+	@commands.command(name = "buy", aliases = ["purchase"],
+					  brief = "Buy an item from the shop",
+					  help = "Buy an item from the shop or black market",
+					  usage = "buy <item_name> [quantity]")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	async def buy_cmd(self, ctx: commands.Context, *, args: str):
+		# Split the arguments into item name and quantity
+		args = args.strip().split()
+		if len(args) < 1:
+			await ctx.send("You must specify an item to buy")
+			return
+
+		#
+		try:
+			quantity = int(args[-1])
+
+			if quantity <= 0:
+				await ctx.send("You must buy a positive quantity of the item!")
+				return
+		except ValueError:
+			quantity = 1
+
+		item_name = " ".join(args[:-1]).lower()
+		all_items = shop_items.all_items
+		item = next((i for i in all_items if i.name.lower() == item_name), None)
+		if item is None:
+			await ctx.send(f"No item found with name '{item_name}'")
+			return
+		stock = curr_utils.get_stock(item)
+		if stock < quantity:
+			await ctx.send(f"Not enough stock for {item.name}. Available: {stock}, Requested: {quantity}")
+			return
+		total_price = item.price * quantity
+		profile = curr_utils.get_profile(ctx.author)
+		if profile['wallet'] < total_price:
+			await ctx.send(f"You do not have enough money in your wallet! You need {total_price} {currency_name}.")
+			return
+
+		# Deduct the price from the user's wallet
+		curr_utils.set_wallet(ctx.author, profile['wallet'] - total_price)
+		# Update the stock in the database
+		curr_utils.set_stock(item, stock - quantity)
+		# Add the item to the user's inventory
+		curr_utils.add_to_inventory(ctx.author, item.name, quantity)
+		await ctx.send(f"Successfully bought {quantity}x {item.name} for {total_price} {currency_name}!")
+
+
 
 async def setup(bot: commands.Bot) -> None:
 	pass
-	# await bot.add_cog(CurrencyCmds(bot))
+	await bot.add_cog(CurrencyCmds(bot))

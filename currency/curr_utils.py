@@ -2,6 +2,8 @@ import discord
 
 from utils import db_stuff
 from currency.curr_config import get_default_profile
+from currency.curr_config import ShopItem
+from utils.db_stuff import get_from_db
 
 
 def create_new_profile(member: discord.Member):
@@ -15,6 +17,27 @@ def get_profile(member: discord.Member) -> dict[str, int | str | dict[str, int]]
 	if not profile_ or profile_ is None:
 		return create_new_profile(member)
 	return profile_
+
+def get_stock(item: ShopItem) -> int:
+	"""
+	Fetches the stock of a specific item from the currency collection.
+	:param item: The name of the item to check stock for.
+	:return: The stock amount of the item, or 0 if not found.
+	"""
+	item_from_db = get_from_db(collection_name='shop_items', query={'item_name': item})
+	if item_from_db is None:
+		db_stuff.send_to_db(collection_name='shop_items', data={"item_name": item.name, "stock": item.stock})
+		return item.stock
+	return item_from_db['stock']
+
+def set_stock(item: ShopItem, amount: int) -> None:
+	"""
+	Sets the stock of a specific item in the currency collection.
+	:param item: The ShopItem whose stock is to be set.
+	:param amount: The new stock amount to set for the item.
+	"""
+	db_stuff.edit_db_entry('shop_items', {'item_name': item.name}, {'stock': amount})
+	return
 
 
 def set_wallet(member: discord.Member, amount: int) -> None:
@@ -50,6 +73,22 @@ def set_credit_score(member: discord.Member, score: int) -> None:
 	profile['credit_score'] = score
 	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'credit_score': score})
 
+
+def add_to_inventory(member: discord.Member, item: str, amount: int) -> None:
+	"""
+	Adds a specified amount of an item to the member's inventory.
+	:param member: The Discord member whose inventory is being updated.
+	:param item: The name of the item to add.
+	:param amount: The amount of the item to add.
+	"""
+	profile = get_profile(member)
+
+	if item in profile['inventory']:
+		profile['inventory'][item] += amount
+	else:
+		profile['inventory'][item] = amount
+
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'inventory': profile['inventory']})
 
 def update_inventory(member: discord.Member, item: str, amount: int) -> None:
 	profile = get_profile(member)
