@@ -7,14 +7,15 @@ from currency.curr_config import currency_name
 from utils import utils
 
 
-class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin", command_attrs=dict(add_check=is_admin, hidden=True)):
+class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
+						command_attrs=dict(add_check=is_admin, hidden=True)):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 
 	@commands.command(name="set_wallet", aliases=["set_bal"],
-	                  brief="Set a user's wallet",
-	                  help="Set a user's wallet balance",
-	                  usage="set_wallet<user> <amount>")
+					  brief="Set a user's wallet",
+					  help="Set a user's wallet balance",
+					  usage="set_wallet<user> <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def set_wallet_cmd(self, ctx: commands.Context, user: str, amount: int):
 		target_user = discord.utils.get(ctx.guild.members, name=utils.get_id_from_str(user))
@@ -30,9 +31,9 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin", command_attrs=dict(
 		await ctx.send(f"Set {target_user.display_name}'s wallet balance to {amount} {currency_name}!")
 
 	@commands.command(name="set_bank",
-	                  brief="Set a user's bank balance",
-	                  help="Set a user's bank balance",
-	                  usage="set_bank <user> <amount>")
+					  brief="Set a user's bank balance",
+					  help="Set a user's bank balance",
+					  usage="set_bank <user> <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def set_bank_cmd(self, ctx: commands.Context, user: str, amount: int):
 		target_user = discord.utils.get(ctx.guild.members, name=utils.get_id_from_str(user))
@@ -48,9 +49,9 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin", command_attrs=dict(
 		await ctx.send(f"Set {target_user.display_name}'s bank balance to {amount} {currency_name}!")
 
 	@commands.command(name="set_debt",
-	                  brief="Set a user's debt",
-	                  help="Set a user's debt for loans",
-	                  usage="set_debt <user> <amount>")
+					  brief="Set a user's debt",
+					  help="Set a user's debt for loans",
+					  usage="set_debt <user> <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def set_debt_cmd(self, ctx: commands.Context, user: str, amount: int):
 		target_user = discord.utils.get(ctx.guild.members, name=utils.get_id_from_str(user))
@@ -66,9 +67,9 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin", command_attrs=dict(
 		await ctx.send(f"Set {target_user.display_name}'s debt to {amount} {currency_name}!")
 
 	@commands.command(name="set_income",
-	                  brief="Set a user's income",
-	                  help="Set a user's income for working",
-	                  usage="set_income <user> <amount>")
+					  brief="Set a user's income",
+					  help="Set a user's income for working",
+					  usage="set_income <user> <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def set_income_cmd(self, ctx: commands.Context, user: str, amount: int):
 		target_user = discord.utils.get(ctx.guild.members, name=utils.get_id_from_str(user))

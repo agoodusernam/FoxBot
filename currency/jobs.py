@@ -970,7 +970,3 @@ local_law_enforcement_tree = JobTree(
 			local_LE_chief
 		]
 )
-
-# Collect all job trees defined in this module
-job_trees = [obj for obj in globals().values() if isinstance(obj, JobTree)]
-print(len(job_trees))

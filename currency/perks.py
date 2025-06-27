@@ -15,8 +15,8 @@ async def create_private_vc(ctx: Context, member: discord.Member) -> None:
 	category = discord.utils.get(guild.categories, id=1081760248878071888)
 
 	private_vc = await guild.create_voice_channel(vc_name, category=category, position=len(category.channels),
-	                                              overwrites={guild.default_role: discord.PermissionOverwrite(
-			                                              view_channel=False)})
+												  overwrites={guild.default_role: discord.PermissionOverwrite(
+														  view_channel=False)})
 
 	overwrite: discord.PermissionOverwrite = discord.PermissionOverwrite(
 			connect=True,
@@ -31,6 +31,7 @@ async def create_private_vc(ctx: Context, member: discord.Member) -> None:
 
 	return None
 
+
 async def give_rich_role(ctx: Context, member: discord.Member) -> None:
 	"""
 	Gives the 'Rich' role to the member.
@@ -44,6 +45,7 @@ async def give_rich_role(ctx: Context, member: discord.Member) -> None:
 	await member.add_roles(rich_role)
 	return None
 
+
 async def send_announcement(ctx: Context, member: discord.Member) -> None:
 	"""
 	Allows the bot to send an announcement message in the server.
@@ -51,5 +53,5 @@ async def send_announcement(ctx: Context, member: discord.Member) -> None:
 	:param member: The member who sends the announcement.
 	:return:
 	"""
-	#TODO: Figure out how to get a message from the user to send as an announcement
+	# TODO: Figure out how to get a message from the user to send as an announcement
 	raise NotImplementedError

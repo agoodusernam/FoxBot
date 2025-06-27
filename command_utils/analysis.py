@@ -91,7 +91,7 @@ def get_channel_stats(messages: list[dict]) -> list[dict]:
 		channel_counts[channel] = channel_counts.get(channel, 0) + 1
 
 	return [{'channel': channel, 'num_messages': count}
-	        for channel, count in channel_counts.items()]
+			for channel, count in channel_counts.items()]
 
 
 def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
@@ -117,7 +117,7 @@ def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
 			user_message_count[user_id] = user_message_count.get(user_id, 0) + 1
 
 		active_users = [{'user': user, 'num_messages': count}
-		                for user, count in user_message_count.items()]
+						for user, count in user_message_count.items()]
 
 		# Get channel stats
 		active_channels = get_channel_stats(valid_messages)
@@ -149,7 +149,7 @@ async def analyse_single_user(member: discord.Member, flag: str = None) -> dict[
 		global_name = member.global_name
 		author_name = member.name
 		messages_by_user = [msg for msg in valid_messages
-		                    if msg['author_global_name'] == global_name or msg['author'] == author_name]
+							if msg['author_global_name'] == global_name or msg['author'] == author_name]
 
 		if not messages_by_user:
 			return f'No messages found for user {member.mention}.'
@@ -208,15 +208,15 @@ async def format_analysis(message: discord.Message) -> None:
 
 		if isinstance(result, dict):
 			top_5_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'],
-			                            reverse=True)[:5]
+										reverse=True)[:5]
 			top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'],
-			                               reverse=True)[:5]
+										   reverse=True)[:5]
 
 			msg = (f"{result['total_messages']} total messages analysed\n"
-			       f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
-			       f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
-			       f"Total users: {result['total_users']}\n"
-			       f"Top 5 most active users:\n")
+				   f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
+				   f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
+				   f"Total users: {result['total_users']}\n"
+				   f"Top 5 most active users:\n")
 
 			for i, user in enumerate(top_5_active_users, start=1):
 				username = user['user'] or 'Unknown User'
@@ -243,11 +243,11 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.Memb
 
 	if isinstance(result, dict):
 		top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'],
-		                               reverse=True)[:5]
+									   reverse=True)[:5]
 		msg = (f"{result['total_messages']} messages found for **{member.name}**\n"
-		       f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
-		       f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
-		       f"Top 5 most active channels:\n")
+			   f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
+			   f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
+			   f"Top 5 most active channels:\n")
 
 		for i, channel in enumerate(top_5_active_channels, 1):
 			msg += f"**{i}. {channel['channel']}** {channel['num_messages']} messages\n"

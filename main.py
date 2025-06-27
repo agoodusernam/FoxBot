@@ -25,7 +25,7 @@ def load_config():
 		"dev_ids":          [542798185857286144],
 		"no_log":           {
 			"user_ids":     [1329366814517628969, 1329366963805491251, 1329367238146396211,
-			                 1329367408330145805, 235148962103951360, 1299640624848306177],
+							 1329367408330145805, 235148962103951360, 1299640624848306177],
 			"channel_ids":  [],
 			"category_ids": [1329366612821938207]
 		},
@@ -312,7 +312,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	if before.channel is None and after.channel is not None:
 		voice_log.handle_join(member, after)
 		embed = discord.Embed(title=f'{member.display_name} joined #{after.channel.name}',
-		                      color=discord.Color.green())
+							  color=discord.Color.green())
 		embed.set_author(name=member.name, icon_url=member.avatar.url)
 		embed.timestamp = discord.utils.utcnow()
 		if logging_channel:
@@ -323,7 +323,8 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	elif before.channel is not None and after.channel is None:
 		voice_log.handle_leave(member)
 		if logging_channel:
-			embed = discord.Embed(title=f'{member.display_name} left #{before.channel.name}', color=discord.Color.red())
+			embed = discord.Embed(title=f'{member.display_name} left #{before.channel.name}',
+								  color=discord.Color.red())
 			embed.set_author(name=member.name, icon_url=member.avatar.url)
 			embed.timestamp = discord.utils.utcnow()
 			await logging_channel.send(embed=embed)
@@ -338,7 +339,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 			return
 		voice_log.handle_move(member, before, after)
 		embed = discord.Embed(title=f'{member.display_name} moved from #{before.channel.name} to'
-		                            f' #{after.channel.name}', color=discord.Color.blue())
+									f' #{after.channel.name}', color=discord.Color.blue())
 		embed.set_author(name=member.name, icon_url=member.avatar.url)
 		embed.timestamp = discord.utils.utcnow()
 		if logging_channel:

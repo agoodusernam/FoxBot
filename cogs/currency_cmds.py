@@ -12,8 +12,8 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		self.bot = bot
 
 	@commands.command(name="balance", aliases=["bal"],
-	                  brief="Check your balance",
-	                  help="Check your current money and bank balance")
+					  brief="Check your balance",
+					  help="Check your current money and bank balance")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def balance_cmd(self, ctx: commands.Context):
 		profile = curr_utils.get_profile(ctx.author)
@@ -22,9 +22,9 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		await ctx.send(f"**Balance:**\nWallet: {wallet}\nBank: {bank}\nTotal: {wallet + bank}")
 
 	@commands.command(name="baltop", aliases=["balance_top", "bal_top"],
-	                  brief="Check the top balances",
-	                  help="Check the top users with the highest balances",
-	                  usage="baltop")
+					  brief="Check the top balances",
+					  help="Check the top users with the highest balances",
+					  usage="baltop")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def baltop_cmd(self, ctx: commands.Context):
 		top_users = curr_utils.get_top_balances()
@@ -38,9 +38,9 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		await ctx.send(f"**Top Wallet Balances:**\n{top_list}")
 
 	@commands.command(name="deposit", aliases=["dep"],
-	                  brief="Deposit money into your bank",
-	                  help="Deposit some of your money from your wallet into your bank",
-	                  usage="deposit <amount>")
+					  brief="Deposit money into your bank",
+					  help="Deposit some of your money from your wallet into your bank",
+					  usage="deposit <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def deposit_cmd(self, ctx: commands.Context, amount: int):
 		if amount <= 0:
@@ -55,9 +55,9 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		await ctx.send(f"Deposited {amount} {currency_name} into your bank!")
 
 	@commands.command(name="withdraw", aliases=["with"],
-	                  brief="Withdraw money from your bank",
-	                  help="Withdraw some of your money from your bank into your wallet",
-	                  usage="withdraw <amount>")
+					  brief="Withdraw money from your bank",
+					  help="Withdraw some of your money from your bank into your wallet",
+					  usage="withdraw <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def withdraw_cmd(self, ctx: commands.Context, amount: int):
 		if amount <= 0:
@@ -72,9 +72,9 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		await ctx.send(f"Withdrew {amount} {currency_name} from your bank!")
 
 	@commands.command(name="pay", aliases=["give"],
-	                  brief="Pay another user",
-	                  help="Pay another user some of your money",
-	                  usage="pay <user> <amount>")
+					  brief="Pay another user",
+					  help="Pay another user some of your money",
+					  usage="pay <user> <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def pay_cmd(self, ctx: commands.Context, user: str, amount: int):
 		recipient = discord.utils.get(ctx.guild.members, name=utils.utils.get_id_from_str(user))
@@ -99,8 +99,8 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		await ctx.send(f"Paid {recipient.mention} {amount} {currency_name}!")
 
 	@commands.command(name="work",
-	                  brief="Work to earn money",
-	                  help="Work to earn some money. You can do this every day.")
+					  brief="Work to earn money",
+					  help="Work to earn some money. You can do this every day.")
 	@commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)  # 24-hour cooldown
 	async def work_cmd(self, ctx: commands.Context):
 		profile = curr_utils.get_profile(ctx.author)
@@ -116,8 +116,8 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		await ctx.send(f"You worked hard and earned {earnings} {currency_name}!")
 
 	@commands.command(name="debt",
-	                  brief="Check your debt",
-	                  help="Check how much debt you have")
+					  brief="Check your debt",
+					  help="Check how much debt you have")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def debt_cmd(self, ctx: commands.Context):
 		profile = curr_utils.get_profile(ctx.author)
@@ -128,9 +128,9 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 			await ctx.send(f"You currently owe {debt} {currency_name} in loans.")
 
 	@commands.command(name="pay_debt", aliases=["payloan", "pay_load", "repay", "paydebt"],
-	                  brief="Pay off your debt",
-	                  help="Pay off some of your debt from loans",
-	                  usage="pay_debt <amount>")
+					  brief="Pay off your debt",
+					  help="Pay off some of your debt from loans",
+					  usage="pay_debt <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def pay_debt_cmd(self, ctx: commands.Context, amount: int):
 		if amount <= 0:
@@ -148,9 +148,9 @@ class CurrencyCmds(commands.Cog, name="Currency", command_attrs=dict(add_check=n
 		await ctx.send(f"Paid off {amount} {currency_name} of your debt!")
 
 	@commands.command(name="get_loan", aliases=["loan"],
-	                  brief="Get a loan",
-	                  help="Get a loan to increase your wallet balance",
-	                  usage="get_loan <amount>")
+					  brief="Get a loan",
+					  help="Get a loan to increase your wallet balance",
+					  usage="get_loan <amount>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def get_loan_cmd(self, ctx: commands.Context, amount: int):
 		if amount <= 0:

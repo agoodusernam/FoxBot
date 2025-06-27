@@ -263,8 +263,8 @@ def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[s
 
 
 def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by, direction: str, limit: int = 0) -> list[
-	                                                                                                                 dict[
-		                                                                                                                 str, Any]] | None:
+																													 dict[
+																														 str, Any]] | None:
 	"""
 	Generic function to retrieve multiple documents from a specified MongoDB collection.
 

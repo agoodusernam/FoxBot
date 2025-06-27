@@ -60,8 +60,8 @@ def get_top_balances(limit: int = 10) -> list[dict[str, int]]:
 	:return: A list of dictionaries containing user IDs and their wallet balances.
 	"""
 	top_balances = db_stuff.get_many_from_db(collection_name='currency', query={}, sort_by='wallet',
-	                                         direction="d",
-	                                         limit=limit)
+											 direction="d",
+											 limit=limit)
 	return [{'user_id': profile['user_id'], 'wallet': profile['wallet']} for profile in top_balances]
 
 

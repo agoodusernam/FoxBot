@@ -32,9 +32,9 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 		self.bot = bot
 
 	@commands.command(name="rek",
-	                  brief="Absolutely rek a user",
-	                  help="Admin only: Timeout a user for 28 days and add them to blacklist",
-	                  usage="rek <user_id/mention>")
+					  brief="Absolutely rek a user",
+					  help="Admin only: Timeout a user for 28 days and add them to blacklist",
+					  usage="rek <user_id/mention>")
 	async def rek(self, ctx: discord.ext.commands.Context, u_id: str) -> None:
 		del_after = ctx.bot.del_after
 
@@ -47,7 +47,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 			u_id = utils.get_id_from_str(u_id)
 		except ValueError:
 			await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
-			               delete_after=del_after)
+						   delete_after=del_after)
 			return
 
 		member = ctx.guild.get_member(u_id)
@@ -61,8 +61,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 		return
 
 	@commands.command(name="hardlockdown",
-	                  brief="Lock down the entire server",
-	                  help="Admin only: Timeout all non-admin users for 28 days and add them to blacklist")
+					  brief="Lock down the entire server",
+					  help="Admin only: Timeout all non-admin users for 28 days and add them to blacklist")
 	async def hard_lockdown(self, ctx: discord.ext.commands.Context):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -88,8 +88,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 				delete_after=ctx.bot.del_after)
 
 	@commands.command(name="unhardlockdown",
-	                  brief="Unlock the server from hard lockdown",
-	                  help="Admin only: Remove timeouts and blacklist from all users")
+					  brief="Unlock the server from hard lockdown",
+					  help="Admin only: Remove timeouts and blacklist from all users")
 	async def unhard_lockdown(self, ctx: discord.ext.commands.Context):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -112,28 +112,28 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 				ctx.bot.blacklist_ids = json.load(f)
 
 		await ctx.message.channel.send('Hard lockdown lifted. All users have been removed from timeout and blacklist.',
-		                               delete_after=ctx.bot.del_after)
+									   delete_after=ctx.bot.del_after)
 
 	@commands.command(name="analyse", aliases=["analysis", "analyze", "stats", "statistics", "ana"],
-	                  brief="Analyze server message data",
-	                  help="Provides statistics about messages sent in the server",
-	                  usage="analyse [user_id/mention]")
+					  brief="Analyze server message data",
+					  help="Provides statistics about messages sent in the server",
+					  usage="analyse [user_id/mention]")
 	@commands.cooldown(1, 30, commands.BucketType.user)
 	async def analyse(self, ctx: discord.ext.commands.Context):
 		await analysis.format_analysis(ctx.message)
 
 	@commands.command(name="analyse_voice", aliases=["voice_analysis", "voice_stats", "voice_analyse", "anavc"],
-	                  brief="Analyze voice channel usage",
-	                  help="Provides statistics about voice channel usage in the server",
-	                  usage="analyse_voice [user_id/mention]")
+					  brief="Analyze voice channel usage",
+					  help="Provides statistics about voice channel usage in the server",
+					  usage="analyse_voice [user_id/mention]")
 	@commands.cooldown(1, 30, commands.BucketType.user)
 	async def analyse_voice(self, ctx: discord.ext.commands.Context):
 		await analysis.format_voice_analysis(ctx.message)
 
 	@commands.command(name="blacklist",
-	                  brief="Blacklist a user",
-	                  help="Admin only: Prevent a user from using bot commands",
-	                  usage="blacklist <user_id/mention>")
+					  brief="Blacklist a user",
+					  help="Admin only: Prevent a user from using bot commands",
+					  usage="blacklist <user_id/mention>")
 	async def blacklist_id(self, ctx: discord.ext.commands.Context, u_id: str):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -144,12 +144,12 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 			u_id = utils.get_id_from_str(u_id)
 		except ValueError:
 			await ctx.message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-			                               delete_after=ctx.bot.del_after)
+										   delete_after=ctx.bot.del_after)
 			return
 
 		if u_id in ctx.bot.blacklist_ids:
 			await ctx.message.channel.send(f'User with ID {u_id} is already blacklisted.',
-			                               delete_after=ctx.bot.del_after)
+										   delete_after=ctx.bot.del_after)
 			return
 
 		if u_id in ctx.bot.admin_ids:
@@ -169,9 +169,9 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 		await ctx.message.channel.send(f'User <@{u_id}> has been blacklisted.', delete_after=ctx.bot.del_after)
 
 	@commands.command(name="unblacklist",
-	                  brief="Remove user from blacklist",
-	                  help="Admin only: Allow a blacklisted user to use bot commands again",
-	                  usage="unblacklist <user_id/mention>")
+					  brief="Remove user from blacklist",
+					  help="Admin only: Allow a blacklisted user to use bot commands again",
+					  usage="unblacklist <user_id/mention>")
 	async def unblacklist_id(self, ctx: discord.ext.commands.Context, u_id: str):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -182,7 +182,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 			u_id = utils.get_id_from_str(u_id)
 		except ValueError:
 			await ctx.message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-			                               delete_after=ctx.bot.del_after)
+										   delete_after=ctx.bot.del_after)
 			return
 
 		if u_id not in ctx.bot.blacklist_ids['ids']:
@@ -199,9 +199,9 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 		await ctx.message.channel.send(f'User with ID {u_id} has been unblacklisted.', delete_after=ctx.bot.del_after)
 
 	@commands.command(name="nologc", aliases=["nologchannel", "nolog_channel"],
-	                  brief="Add a channel to no-log list",
-	                  help="Admin only: Prevent logging messages in a specific channel",
-	                  usage="nolog <channel_id/mention>")
+					  brief="Add a channel to no-log list",
+					  help="Admin only: Prevent logging messages in a specific channel",
+					  usage="nolog <channel_id/mention>")
 	async def nolog_channel(self, ctx: discord.ext.commands.Context, channel_id: str = None):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -213,23 +213,23 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 
 		except ValueError:
 			await ctx.message.channel.send('Invalid channel ID format. Please provide a valid integer ID.',
-			                               delete_after=ctx.bot.del_after)
+										   delete_after=ctx.bot.del_after)
 			return
 
 		if channel_id in ctx.bot.no_log['channel_ids']:
 			await ctx.message.channel.send(f'Channel with ID {channel_id} is already in the no-log list.',
-			                               delete_after=ctx.bot.del_after)
+										   delete_after=ctx.bot.del_after)
 			return
 
 		ctx.bot.no_log['channel_ids'].append(channel_id)
 
 		await ctx.message.channel.send(f'Channel with ID {channel_id} has been added to the no-log list.',
-		                               delete_after=ctx.bot.del_after)
+									   delete_after=ctx.bot.del_after)
 
 	@commands.command(name="nologc_remove", aliases=["nolog_channel_remove", "nolog_channel_rm"],
-	                  brief="Remove a channel from no-log list",
-	                  help="Admin only: Allow logging messages in a specific channel again",
-	                  usage="nolog_remove <channel_id/mention>")
+					  brief="Remove a channel from no-log list",
+					  help="Admin only: Allow logging messages in a specific channel again",
+					  usage="nolog_remove <channel_id/mention>")
 	async def nolog_channel_remove(self, ctx: discord.ext.commands.Context, channel_id: str):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -241,22 +241,22 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 
 		except ValueError:
 			await ctx.message.channel.send('Invalid channel ID format. Please provide a valid integer ID.',
-			                               delete_after=ctx.bot.del_after)
+										   delete_after=ctx.bot.del_after)
 			return
 
 		if channel_id not in ctx.bot.no_log['channel_ids']:
 			await ctx.message.channel.send(f'Channel with ID {channel_id} is not in the no-log list.',
-			                               delete_after=ctx.bot.del_after)
+										   delete_after=ctx.bot.del_after)
 			return
 
 		ctx.bot.no_log['channel_ids'].remove(channel_id)
 		await ctx.message.channel.send(f'Channel with ID {channel_id} has been removed from the no-log list.',
-		                               delete_after=ctx.bot.del_after)
+									   delete_after=ctx.bot.del_after)
 
 	@commands.command(name="nologu", aliases=["nologuser", "nolog_user"],
-	                  brief="Add a user to no-log list",
-	                  help="Admin only: Prevent logging messages from a specific user",
-	                  usage="nologu <user_id/mention>")
+					  brief="Add a user to no-log list",
+					  help="Admin only: Prevent logging messages from a specific user",
+					  usage="nologu <user_id/mention>")
 	async def nolog_user(self, ctx: discord.ext.commands.Context, u_id: str):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
@@ -267,19 +267,19 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 			u_id = utils.get_id_from_str(u_id)
 		except ValueError:
 			await ctx.message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-			                               delete_after=ctx.bot.del_after)
+										   delete_after=ctx.bot.del_after)
 			return
 		if u_id in ctx.bot.no_log['user_ids']:
 			await ctx.message.channel.send(f'User with ID {u_id} is already in the no-log list.',
-			                               delete_after=ctx.bot.del_after)
+										   delete_after=ctx.bot.del_after)
 			return
 		ctx.bot.no_log['user_ids'].append(u_id)
 		utils.add_to_config(config=ctx.bot.config, key='nolog', key2='user_ids', value=u_id)
 
 	@commands.command(name="echo",
-	                  brief="Make the bot say something",
-	                  help="Admin only: Makes the bot say the specified message",
-	                  usage="echo [channel id] <message>")
+					  brief="Make the bot say something",
+					  help="Admin only: Makes the bot say the specified message",
+					  usage="echo [channel id] <message>")
 	@commands.cooldown(1, 5, commands.BucketType.user)
 	async def echo_cmd(self, ctx: discord.ext.commands.Context):
 		message = ctx.message
