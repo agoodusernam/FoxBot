@@ -54,7 +54,9 @@ def load_config():
 		return _config
 	except Exception as e:
 		print(f"Error loading config: {e}")
-		print("Using default configuration")
+		print("Writing default configuration")
+		with open(config_path, "w", encoding="utf-8") as _f:
+			json.dump(default_config, _f, indent=4)
 		return default_config
 
 
