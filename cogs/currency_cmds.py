@@ -338,9 +338,10 @@ class CurrencyCmds(commands.Cog, name = "Currency", command_attrs = dict(add_che
 			await ctx.send(f"No item found with name '{item_name}'")
 			return
 		stock = curr_utils.get_stock(item)
-		if stock < quantity:
-			await ctx.send(f"Not enough stock for {item.name}. Available: {stock}, Requested: {quantity}")
-			return
+		if stock != -1:
+			if stock < quantity:
+				await ctx.send(f"Not enough stock for {item.name}. Available: {stock}, Requested: {quantity}")
+				return
 		total_price = item.price * quantity
 		profile = curr_utils.get_profile(ctx.author)
 		if profile['wallet'] < total_price:
@@ -350,7 +351,9 @@ class CurrencyCmds(commands.Cog, name = "Currency", command_attrs = dict(add_che
 		# Deduct the price from the user's wallet
 		curr_utils.set_wallet(ctx.author, profile['wallet'] - total_price)
 		# Update the stock in the database
-		curr_utils.set_stock(item, stock - quantity)
+		if stock != -1:
+			# If the item has a stock limit, reduce the stock
+			curr_utils.set_stock(item, stock - quantity)
 		# Add the item to the user's inventory
 		curr_utils.add_to_inventory(ctx.author, item.name, quantity)
 		await ctx.send(f"Successfully bought {quantity}x {item.name} for {total_price} {currency_name}!")
