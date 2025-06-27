@@ -321,19 +321,25 @@ class CurrencyCmds(commands.Cog, name = "Currency", command_attrs = dict(add_che
 			await ctx.send("You must specify an item to buy")
 			return
 
-		#
 		try:
 			quantity = int(args[-1])
 
 			if quantity <= 0:
 				await ctx.send("You must buy a positive quantity of the item!")
 				return
+			q_given = True
 		except ValueError:
 			quantity = 1
+			q_given = False
 
-		item_name = " ".join(args[:-1]).lower()
+		if q_given:
+			item_name = " ".join(args[:-1]).lower()
+		else:
+			item_name = " ".join(args).lower()
+		print(item_name)
 		all_items = shop_items.all_items
 		item = next((i for i in all_items if i.name.lower() == item_name), None)
+		print(item)
 		if item is None:
 			await ctx.send(f"No item found with name '{item_name}'")
 			return
@@ -358,8 +364,23 @@ class CurrencyCmds(commands.Cog, name = "Currency", command_attrs = dict(add_che
 		curr_utils.add_to_inventory(ctx.author, item.name, quantity)
 		await ctx.send(f"Successfully bought {quantity}x {item.name} for {total_price} {currency_name}!")
 
+	@commands.command(name = "inventory", aliases = ["inv"],
+					  brief = "Check your inventory",
+					  help = "Check the items you own in your inventory",
+					  usage = "inventory")
+	@commands.cooldown(1, 5, commands.BucketType.user)
+	async def inventory_cmd(self, ctx: commands.Context):
+		profile = curr_utils.get_profile(ctx.author)
+		inventory = profile['inventory']
+		if not inventory:
+			await ctx.send("Your inventory is empty.")
+			return
+
+		inv_list = "\n".join(f"{item}: {quantity}" for item, quantity in inventory.items())
+		await ctx.send(f"**Your Inventory:**\n{inv_list}")
+
 
 
 async def setup(bot: commands.Bot) -> None:
 	pass
-	await bot.add_cog(CurrencyCmds(bot))
+	#await bot.add_cog(CurrencyCmds(bot))
