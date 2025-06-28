@@ -41,22 +41,22 @@ def load_config():
 
 	# Create a config file with defaults if it doesn't exist
 	if not config_path.exists():
-		with open(config_path, "w", encoding="utf-8") as _f:
-			json.dump(default_config, _f, indent=4)
+		with open(config_path, "w", encoding = "utf-8") as _f:
+			json.dump(default_config, _f, indent = 4)
 		print("Created default config.json file")
 		return default_config
 
 	# Load existing config
 	try:
-		with open(config_path, "r", encoding="utf-8") as _f:
+		with open(config_path, "r", encoding = "utf-8") as _f:
 			_config = json.load(_f)
 		print("Configuration loaded successfully")
 		return _config
 	except Exception as e:
 		print(f"Error loading config: {e}")
 		print("Writing default configuration")
-		with open(config_path, "w", encoding="utf-8") as _f:
-			json.dump(default_config, _f, indent=4)
+		with open(config_path, "w", encoding = "utf-8") as _f:
+			json.dump(default_config, _f, indent = 4)
 		return default_config
 
 
@@ -65,7 +65,7 @@ config = load_config()
 
 # Create bot with intents
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix=config["command_prefix"], intents=intents)
+bot = commands.Bot(command_prefix = config["command_prefix"], intents = intents)
 
 # Initialize bot configuration from loaded config
 bot.today = utils.formatted_time()
@@ -79,20 +79,24 @@ bot.config = config
 
 # Reaction roles
 bot.role_message_id = 1380639010564603976
-bot.emoji_to_role = {
+emoji_to_role: dict[discord.PartialEmoji, int] = {
 	discord.PartialEmoji.from_str('<:jjs:1380607586231128155>'):         1314274909815439420,
-	discord.PartialEmoji(name='❕'):                                      1321214081977421916,
+	discord.PartialEmoji(name = '❕'):                                    1321214081977421916,
 	discord.PartialEmoji.from_str('<:grass_block:1380607192717328505>'): 1380623674918310079,
 	discord.PartialEmoji.from_str('<:Vrchat:1380607441691214048>'):      1380623882574368939,
 	discord.PartialEmoji.from_str('<:rust:1380606572127850639>'):        1130284770757197896,
-	discord.PartialEmoji(name='❔'):                                      1352341336459841688,
-	discord.PartialEmoji(name='🎬'):                                      1380624012090150913,
+	discord.PartialEmoji(name = '❔'):                                    1352341336459841688,
+	discord.PartialEmoji(name = '🎬'):                                    1380624012090150913,
+	discord.PartialEmoji(name = '🎨'):                                    1295024229799952394,
 }
+
+bot.emoji_to_role = emoji_to_role
+
 
 # Load blacklist
 if not os.path.isfile('blacklist_users.json'):
 	with open('blacklist_users.json', 'w') as blacklist_file:
-		json.dump(bot.blacklist_ids, blacklist_file, indent=4)
+		json.dump(bot.blacklist_ids, blacklist_file, indent = 4)
 else:
 	with open('blacklist_users.json', 'r') as blacklist_file:
 		bot.blacklist_ids = json.load(blacklist_file)
@@ -104,7 +108,7 @@ async def on_ready():
 	await load_extensions()
 	utils.check_env_variables()
 	utils.clean_up_APOD()
-	await bot.change_presence(activity=discord.CustomActivity(name='f!help'))
+	await bot.change_presence(activity = discord.CustomActivity(name = 'f!help'))
 
 	print(f"Loaded {len(bot.cogs)} cogs:")
 	for cog in bot.cogs:
@@ -118,7 +122,7 @@ async def on_ready():
 	# Apply blacklist to channel
 	channel = bot.get_channel(1379193761791213618)
 	for u_id in bot.blacklist_ids['ids']:
-		await channel.set_permissions(get(bot.get_all_members(), id=u_id), send_messages=False)
+		await channel.set_permissions(get(bot.get_all_members(), id = u_id), send_messages = False)
 
 	for key, value in bot.logging_channels.items():
 		channel: discord.TextChannel = bot.get_channel(value)
@@ -131,21 +135,37 @@ async def on_ready():
 			for member in members:
 				voice_log.handle_join(member, vc_channel)
 
+	react_role_msg = await bot.get_channel(1337465612875595776).fetch_message(bot.role_message_id)
+	if react_role_msg is None:
+		print(f"Role message with ID {bot.role_message_id} not found. Reaction roles will not work.")
+	else:
+		# Add reaction roles to the message
+		for emoji, role_id in bot.emoji_to_role.items():
+			role = guild.get_role(role_id)
+			if role is not None:
+				try:
+					await react_role_msg.add_reaction(emoji)
+				except Exception as e:
+					print(f"Failed to add reaction {emoji} for role {role.name}: {e}")
+
+			else:
+				print(f"Role with ID {role_id} not found. Skipping emoji {emoji}.")
+
 
 # Custom help command formatting
 class CustomHelpCommand(commands.DefaultHelpCommand):
 	def __init__(self):
 		super().__init__(
-				no_category="Commands",
-				width=100,
-				sort_commands=True,
-				dm_help=False
+				no_category = "Commands",
+				width = 100,
+				sort_commands = True,
+				dm_help = False
 		)
 
 	async def send_bot_help(self, mapping):
 		ctx = self.context
 		if ctx.author.id in bot.blacklist_ids['ids']:
-			await ctx.message.channel.send('You are not allowed to use this command.', delete_after=bot.del_after)
+			await ctx.message.channel.send('You are not allowed to use this command.', delete_after = bot.del_after)
 			return
 
 		await super().send_bot_help(mapping)
@@ -176,11 +196,11 @@ async def on_command_error(ctx: discord.ext.commands.Context, error):
 	if isinstance(error, commands.CommandOnCooldown):
 		await ctx.message.channel.send(
 				f'This command is on cooldown. Please try again in {error.retry_after:.0f} seconds.',
-				delete_after=bot.del_after
+				delete_after = bot.del_after
 		)
 		await ctx.message.delete()
 	elif isinstance(error, commands.CheckFailure):
-		await ctx.message.channel.send('You do not have permission to use this command.', delete_after=bot.del_after)
+		await ctx.message.channel.send('You do not have permission to use this command.', delete_after = bot.del_after)
 		await ctx.message.delete()
 
 	else:
@@ -209,7 +229,7 @@ async def on_message(message: discord.Message):
 
 	if ((message.channel.id == 1346720879651848202) and (message.author.id == 542798185857286144) and
 			(message.content.startswith('FUN FACT'))):
-		await message.channel.send('<@&1352341336459841688>', delete_after=0.5)
+		await message.channel.send('<@&1352341336459841688>', delete_after = 0.5)
 
 	# Log regular messages
 	if (message.author != bot.user) and (
@@ -236,7 +256,7 @@ async def on_message(message: discord.Message):
 
 		if os.getenv('LOCAL_SAVE') == 'True':
 			with utils.make_file(bot.today) as file:
-				file.write(json.dumps(json_data, ensure_ascii=False) + '\n')
+				file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
 
 		print(f'Message from {message.author.display_name} [#{message.channel}]: {message.content}')
 		if has_attachment:
@@ -312,39 +332,39 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 	# Member joined channel
 	if before.channel is None and after.channel is not None:
 		voice_log.handle_join(member, after)
-		embed = discord.Embed(title=f'{member.display_name} joined #{after.channel.name}',
-							  color=discord.Color.green())
-		embed.set_author(name=member.name, icon_url=member.avatar.url)
+		embed = discord.Embed(title = f'{member.display_name} joined #{after.channel.name}',
+							  color = discord.Color.green())
+		embed.set_author(name = member.name, icon_url = member.avatar.url)
 		embed.timestamp = discord.utils.utcnow()
 		if logging_channel:
-			await logging_channel.send(embed=embed)
+			await logging_channel.send(embed = embed)
 
 
 	# Member left channel
 	elif before.channel is not None and after.channel is None:
 		voice_log.handle_leave(member)
 		if logging_channel:
-			embed = discord.Embed(title=f'{member.display_name} left #{before.channel.name}',
-								  color=discord.Color.red())
-			embed.set_author(name=member.name, icon_url=member.avatar.url)
+			embed = discord.Embed(title = f'{member.display_name} left #{before.channel.name}',
+								  color = discord.Color.red())
+			embed.set_author(name = member.name, icon_url = member.avatar.url)
 			embed.timestamp = discord.utils.utcnow()
-			await logging_channel.send(embed=embed)
+			await logging_channel.send(embed = embed)
 
 		if before.channel.name.startswith('private_'):
 			if before.channel and len(before.channel.members) == 0:
-				await before.channel.delete(reason='Private VC empty after member left')
+				await before.channel.delete(reason = 'Private VC empty after member left')
 
 	# Member moved to another channel
 	elif before.channel != after.channel:
 		if after.channel is None:
 			return
 		voice_log.handle_move(member, before, after)
-		embed = discord.Embed(title=f'{member.display_name} moved from #{before.channel.name} to'
-									f' #{after.channel.name}', color=discord.Color.blue())
-		embed.set_author(name=member.name, icon_url=member.avatar.url)
+		embed = discord.Embed(title = f'{member.display_name} moved from #{before.channel.name} to'
+									  f' #{after.channel.name}', color = discord.Color.blue())
+		embed.set_author(name = member.name, icon_url = member.avatar.url)
 		embed.timestamp = discord.utils.utcnow()
 		if logging_channel:
-			await logging_channel.send(embed=embed)
+			await logging_channel.send(embed = embed)
 
 
 async def load_extensions():
@@ -355,4 +375,4 @@ async def load_extensions():
 
 
 # Run the bot
-bot.run(token=os.getenv('TOKEN'), reconnect=True)
+bot.run(token = os.getenv('TOKEN'), reconnect = True)

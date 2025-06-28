@@ -306,6 +306,45 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True, add_
 		# Delete the original message
 		await message.delete()
 
+	@commands.command(name="edit_message",
+					  brief="Edit a message the bot has sent",
+					  help="Admin only: Edit a specific message sent by the bot",
+					  usage="edit_message <message_id> <new_content>")
+	async def edit_message_cmd(self, ctx: discord.ext.commands.Context, *, args: str):
+		if not isinstance(ctx.message.channel, discord.DMChannel):
+			await ctx.message.delete()
+
+		split_args = args.split(' ', 1)
+		try:
+			message_id = int(split_args[0])
+		except ValueError:
+			await ctx.send('Invalid message ID format. Please provide a valid integer ID.',
+						   delete_after=ctx.bot.del_after)
+			return
+		new_content = split_args[1]
+
+		message: discord.Message = await ctx.fetch_message(message_id)
+		if message.author.id != ctx.bot.user.id:
+			await ctx.send('You can only edit messages sent by the bot.',
+						   delete_after=ctx.bot.del_after)
+			return
+		try:
+			await message.edit(content=new_content)
+			await ctx.send(f'Message with ID {message_id} has been edited.',
+										   delete_after=ctx.bot.del_after)
+		except discord.NotFound:
+			await ctx.send(f'Message with ID {message_id} not found.',
+						   delete_after=ctx.bot.del_after)
+		except discord.Forbidden:
+			await ctx.send(f'Cannot edit message with ID {message_id}. Permission denied.',
+						   delete_after=ctx.bot.del_after)
+		except discord.HTTPException as e:
+			await ctx.send(f'Failed to edit message with ID {message_id}. Error: {e}',
+						   delete_after=ctx.bot.del_after)
+
+
+
+
 
 async def setup(bot):
 	await bot.add_cog(AdminCmds(bot))
