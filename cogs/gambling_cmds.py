@@ -10,7 +10,7 @@ from currency import gambling_config
 from command_utils.checks import not_blacklisted
 
 
-class GamblingCmds(commands.Cog, name="Gambling", command_attrs=dict(add_check=not_blacklisted)):
+class GamblingCmds(commands.Cog, name="Gambling"):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 

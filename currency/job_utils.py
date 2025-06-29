@@ -15,6 +15,17 @@ class SchoolQualif(enum.Enum):
 	POLYMATH = [5, 50_000, 10]  # Special fictional qualification, not required for any job but gives a salary boost
 
 
+def str_to_school_qualif(s: str) -> SchoolQualif:
+	"""
+	Converts a string to a SchoolQualif enum member.
+	:param s: The string representation of the qualification.
+	:return: The corresponding SchoolQualif enum member.
+	"""
+	try:
+		return SchoolQualif[s.upper().replace(' ', '_')]
+	except KeyError:
+		raise ValueError(f"Invalid school qualification: {s}")
+
 class SecurityClearance(enum.Enum):
 	"""
 	Enum to represent different security clearance levels using the US security clearance system.
@@ -25,6 +36,18 @@ class SecurityClearance(enum.Enum):
 	TOP_SECRET = 3
 	TS_SCI = 4
 	SPECIAL = 5
+
+
+def str_to_security_clearance(s: str) -> SecurityClearance:
+	"""
+	Converts a string to a SecurityClearance enum member.
+	:param s: The string representation of the security clearance.
+	:return: The corresponding SecurityClearance enum member.
+	"""
+	try:
+		return SecurityClearance[s.upper().replace(" ", "_")]
+	except KeyError:
+		raise ValueError(f"Invalid security clearance: {s}")
 
 
 @dataclass

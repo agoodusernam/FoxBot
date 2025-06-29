@@ -1,5 +1,6 @@
 from currency import perks
-from currency.curr_config import ShopItem, ShopCategory, HouseItem, BlackMarketItem, DrugItem, BlackMarketCategory
+from currency.curr_config import ShopItem, ShopCategory, HouseItem, BlackMarketItem, DrugItem, BlackMarketCategory, \
+	GunItem
 
 CIVILIAN_GUN_RESALE_MULT = 0.7
 MILITARY_GUN_RESALE_MULT = 0.9
@@ -237,7 +238,8 @@ weed = DrugItem(
 		scam_risk=0,
 		trace_back=False,
 		income_multiplier=0.6,
-		work_catch_risk=0.1,
+		work_catch_risk=0.05,
+		od_chance=0,
 		uses=5,
 )
 
@@ -285,31 +287,33 @@ ominous_knife = BlackMarketItem(
 		trace_back=False
 )
 
-sig_p320_m1 = BlackMarketItem(
+sig_p320_m1 = GunItem(
 		name="SIG P320 M1",
 		description="A SIG P320 M1 with the serial number scraped off.",
 		price=1_000,
 		stock=-1,
 		perk=None,
 		resale_mult=0.8,
-		cops_risk=0.1,
+		cops_risk=0.05,
 		scam_risk=0.05,
-		trace_back=0.5
+		trace_back=0.5,
+		suppressed=False
 )
 
-glock_17_gen5 = BlackMarketItem(
+glock_17_gen5 = GunItem(
 		name="Glock 17 Gen5",
 		description="A Glock 17 Gen5 with the serial number scratched off.",
 		price=500,
 		stock=-1,
 		perk=None,
 		resale_mult=0.85,
-		cops_risk=0.12,
+		cops_risk=0.05,
 		scam_risk=0.07,
-		trace_back=0.5
+		trace_back=0.5,
+		suppressed=False
 )
 
-m1911_a1 = BlackMarketItem(
+m1911_a1 = GunItem(
 		name="M1911 A1",
 		description="Dean Winchester's M1911 A1.",
 		price=50_000,
@@ -318,10 +322,11 @@ m1911_a1 = BlackMarketItem(
 		resale_mult=0,
 		cops_risk=0,
 		scam_risk=0,
-		trace_back=False
+		trace_back=False,
+		suppressed=False
 )
 
-the_colt = BlackMarketItem(
+the_colt = GunItem(
 		name="The Colt",
 		description="The Colt made by Samuel Colt. It can kill all but 5 beings in existence.",
 		price=1_000_000,
@@ -330,34 +335,37 @@ the_colt = BlackMarketItem(
 		resale_mult=0,
 		cops_risk=0,
 		scam_risk=0,
-		trace_back=False
+		trace_back=False,
+		suppressed=False
 )
 
-mr556 = BlackMarketItem(
+mr556 = GunItem(
 		name="MR556A1",
-		description="A HK MR556A1 semi-automatic rifle with acid burns where the serial number used to be.",
+		description="A HK MR556A1 semi-automatic rifle.",
 		price=3_500,
 		stock=-1,
 		perk=None,
 		resale_mult=CIVILIAN_GUN_RESALE_MULT,
-		cops_risk=0.15,
+		cops_risk=0.1,
 		scam_risk=0.1,
-		trace_back=False
+		trace_back=0.15,
+		suppressed=False
 )
 
-sig_mcx_spear = BlackMarketItem(
+sig_mcx_spear = GunItem(
 		name="SIG MCX Spear",
 		description="A SIG MCX Spear semi-automatic rifle with a suppressor.",
 		price=4_000,
 		stock=-1,
 		perk=None,
 		resale_mult=CIVILIAN_GUN_RESALE_MULT,
-		cops_risk=0.2,
+		cops_risk=0.1,
 		scam_risk=0.15,
-		trace_back=False
+		trace_back=0.15,
+		suppressed=True
 )
 
-hk417 = BlackMarketItem(
+hk417 = GunItem(
 		name="HK417",
 		description="A HK417 fully automatic rifle.",
 		price=10_000,
@@ -366,22 +374,24 @@ hk417 = BlackMarketItem(
 		resale_mult=MILITARY_GUN_RESALE_MULT,
 		cops_risk=0.2,
 		scam_risk=0.05,
-		trace_back=True
+		trace_back=0.2,
+		suppressed=False
 )
 
-sig_mx7 = BlackMarketItem(
+sig_mx7 = GunItem(
 		name="SIG MX7",
 		description="A SIG MX7 fully automatic rifle with a suppressor.",
 		price=12_000,
 		stock=-1,
 		perk=None,
 		resale_mult=MILITARY_GUN_RESALE_MULT,
-		cops_risk=0.25,
+		cops_risk=0.2,
 		scam_risk=0.05,
-		trace_back=True
+		trace_back=0.2,
+		suppressed=True
 )
 
-ak_47 = BlackMarketItem(
+ak_47 = GunItem(
 		name="AK-47",
 		description="The working man's fully automatic rifle.",
 		price=2_000,
@@ -390,43 +400,47 @@ ak_47 = BlackMarketItem(
 		resale_mult=0.4,
 		cops_risk=0.05,
 		scam_risk=0.1,
-		trace_back=True
+		trace_back=False,
+		suppressed=False
 )
 
-m39_emr = BlackMarketItem(
+m39_emr = GunItem(
 		name="M39 EMR",
 		description="A M39 Enhanced Marksman Rifle.",
 		price=3_450,
 		stock=-1,
 		perk=None,
 		resale_mult=MILITARY_GUN_RESALE_MULT,
-		cops_risk=0.25,
+		cops_risk=0.2,
 		scam_risk=0.1,
-		trace_back=True
+		trace_back=0.3,
+		suppressed=False
 )
 
-barrett_m82 = BlackMarketItem(
+barrett_m82 = GunItem(
 		name="Barrett M82",
 		description="A Barrett M82 anti-materiel rifle.",
 		price=20_000,
 		stock=-1,
 		perk=None,
 		resale_mult=MILITARY_GUN_RESALE_MULT,
-		cops_risk=0.3,
+		cops_risk=0.2,
 		scam_risk=0.15,
-		trace_back=True
+		trace_back=0.5,
+		suppressed=False
 )
 
-l115a3_awm = BlackMarketItem(
+l115a3_awm = GunItem(
 		name="L115A3 AWM",
-		description="A L115A3 Arctic Warfare Magnum sniper rifle, used in the longest range confirmed kill in history.",
+		description="A suppressed L115A3 Arctic Warfare Magnum sniper rifle, used in the longest range confirmed kill in history.",
 		price=15_000,
 		stock=-1,
 		perk=None,
 		resale_mult=MILITARY_GUN_RESALE_MULT,
-		cops_risk=0.25,
+		cops_risk=0.2,
 		scam_risk=0.1,
-		trace_back=True
+		trace_back=0.2,
+		suppressed=True
 )
 
 drugs = BlackMarketCategory(
@@ -446,3 +460,4 @@ categories = [var for var in globals().values() if isinstance(var, ShopCategory)
 bm_categories = [var for var in globals().values() if isinstance(var, BlackMarketCategory)]
 
 all_items = [var for var in globals().values() if isinstance(var, ShopItem)]
+all_guns = [var.name for var in globals().values() if isinstance(var, GunItem)]

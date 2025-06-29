@@ -5,10 +5,9 @@ import discord.ext.commands
 
 loan_interest_rate: float = 0.09 / 12  # Monthly interest rate
 currency_name: str = "FoxCoins"
-retirement_age: int = 65  # Age at which a member can retire
+retirement_age: int = 65 * 12  # Age at which a member can retire
 income_tax: float = 0.15  # Tax rate on income
 sales_tax: float = 0.08375  # Sales tax rate on purchases
-resale_multiplier: float = 0.8  # Multiplier for resale value of items
 
 
 @dataclasses.dataclass
@@ -69,6 +68,29 @@ class BlackMarketItem(ShopItem):
 	scam_risk: float = 0.1
 	trace_back: bool | float = True
 
+
+@dataclasses.dataclass
+class GunItem(BlackMarketItem):
+	"""
+	Represents a gun item in the black market.
+	Gun items may have additional properties or effects compared to regular black market items.
+	Attributes:
+		name (str): The name of the gun item.
+		description (str): A brief description of the gun item.
+		price (int): The price of the gun item in currency.
+		stock (int): The number of gun items available in stock.
+		perk (list[Callable[[discord.ext.commands.Context, discord.Member], Awaitable[None]]] | None): A list of
+			async functions that will be called when the gun item is purchased. They should take a discord.Context and a
+			discord.Member as parameters and return None.
+		resale_mult (float): Multiplier for resale value of gun items.
+		cops_risk (float): How likely it is to get caught when buying/selling this gun item.
+		scam_risk (float): How likely it is to be scammed when buying/selling this gun item.
+		trace_back (bool | float): Whether the gun item can be traced back to the buyer or seller. This can also be a
+			float representing the chance of being traced back.
+		suppressed (bool): Whether the gun is suppressed or not, affects cops_risk and trace_back. cops risk goes up
+		by 10% and trace back chance goes down by 10% if suppressed.
+	"""
+	suppressed: bool = False
 
 @dataclasses.dataclass
 class DrugItem(BlackMarketItem):
@@ -134,20 +156,25 @@ class BlackMarketCategory:
 	items: list[BlackMarketItem]
 
 
-def get_default_profile(member_id: int | str) -> dict[str, int | str | dict[str, int]]:
+def get_default_profile(member_id: int | str) -> dict[str, int | float | str | dict[str, int]]:
 	"""
 	Generates a default currency profile for a new member.
 	:param member_id: The ID of the member for whom to create the profile.
 	:return: A dictionary containing the default profile data.
 	"""
 	default = {
-		'user_id':      str(member_id),
-		'wallet':       1_000,
-		'bank':         0,
-		'income':       0,
-		'debt':         0,
-		'credit_score': 400,  # Starting credit score
-		'age':          18,  # Starting age
-		'inventory':    {},
+		'user_id':          str(member_id),
+		'wallet':           1_000,
+		'bank':             0,
+		'work_income':      0,
+		'other_income':     0,
+		'next_income_mult': 1.0,
+		'work_experience':  0,  # Experience in current job, will increase income
+		'fire_risk':        0.0,  # Risk of being fired from work, will be increased by certain items or perks
+		'debt':             0,
+		'credit_score':     400,  # Starting credit score
+		'age':              18 * 12,  # Starting age (in months)
+		'inventory':        {},
+		'illegal_items':    {},
 	}
 	return default

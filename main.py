@@ -75,6 +75,7 @@ bot.dev_ids = config["dev_ids"]
 bot.no_log = config["no_log"]
 bot.logging_channels = config["logging_channels"]
 bot.send_blacklist = config["send_blacklist"]
+bot.maintenance_mode = config["maintenance_mode"]
 bot.config = config
 
 # Reaction roles
@@ -115,6 +116,8 @@ async def on_ready():
 		print(f" - {cog}")
 
 	print(f"Total commands: {len(bot.commands)}")
+	if bot.maintenance_mode:
+		print("Bot is in maintenance mode. Only admins can use commands.")
 
 	print(f'Logged in as {bot.user} (ID: {bot.user.id})')
 	print('------')
@@ -218,13 +221,13 @@ async def on_message(message: discord.Message):
 		return
 
 	# Process commands first
-	if (not config['maintenance_mode']) or (message.author.id in bot.admin_ids) or (message.author.id in bot.dev_ids):
+	if (not bot.maintenance_mode) or (message.author.id in bot.admin_ids) or (message.author.id in bot.dev_ids):
 		await bot.process_commands(message)
 
 		# Don't log command messages
 		if message.content.startswith(bot.command_prefix):
 			return
-	elif config['maintenance_mode']:
+	elif bot.maintenance_mode:
 		await message.channel.send('The bot is currently in maintenance mode. Please try again later.')
 
 	if ((message.channel.id == 1346720879651848202) and (message.author.id == 542798185857286144) and
@@ -375,4 +378,13 @@ async def load_extensions():
 
 
 # Run the bot
+@bot.check
+async def not_blacklisted(ctx: discord.ext.commands.Context):
+	"""
+	Check if the user is blacklisted from using commands.
+	"""
+	if ctx.author.id in bot.blacklist_ids['ids']:
+		await ctx.send('You are not allowed to use this command.', delete_after=bot.del_after)
+		return False
+	return True
 bot.run(token = os.getenv('TOKEN'), reconnect = True)

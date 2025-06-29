@@ -3,7 +3,6 @@ from typing import Any, Mapping
 
 import discord
 import pymongo
-from bson.objectid import ObjectId
 from gridfs import GridFS
 from pymongo.mongo_client import MongoClient
 from pymongo.results import DeleteResult
@@ -240,7 +239,29 @@ def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_data: M
 		print(f'Error updating entry in {collection_name} collection: {e}')
 
 
-def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[str, Any] | bool:
+def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> None:
+	"""
+	Generic function to delete an entry from a specified MongoDB collection.
+	"""
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		return
+	
+	db = client['discord']
+	collection: Collection[Mapping[str, Any]] = db[collection_name]
+	
+	try:
+		result: DeleteResult = collection.delete_one(query)
+		if result.deleted_count > 0:
+			print(f'Entry deleted successfully from {collection_name} collection')
+		else:
+			print(f'No entry matched the query in {collection_name} collection')
+	except Exception as e:
+		print(f'Error deleting entry from {collection_name} collection: {e}')
+
+
+def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[str, Any]:
 	"""
 	Generic function to retrieve data from a specified MongoDB collection.
 	"""
@@ -255,7 +276,7 @@ def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[s
 	try:
 		results = collection.find_one(query)
 		if results is None:
-			return False
+			return None
 		return dict(results)
 	except Exception as e:
 		print(f'Error retrieving data from {collection_name} collection: {e}')

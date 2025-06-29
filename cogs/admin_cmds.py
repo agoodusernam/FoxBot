@@ -35,29 +35,18 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Absolutely rek a user",
 					  help = "Admin only: Timeout a user for 28 days and add them to blacklist",
 					  usage = "rek <user_id/mention>")
-	async def rek(self, ctx: discord.ext.commands.Context, u_id: str) -> None:
+	async def rek(self, ctx: discord.ext.commands.Context, member: discord.Member) -> None:
 		del_after = ctx.bot.del_after
 
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
 
-		try:
-			if u_id is None:
-				raise ValueError
-			u_id = utils.get_id_from_str(u_id)
-		except ValueError:
-			await ctx.send('Invalid user ID format. Please provide a valid integer ID.',
-						   delete_after = del_after)
-			return
-
-		member = ctx.guild.get_member(u_id)
-
 		if member is None:
-			await ctx.send(f'User with ID {u_id} not found.', delete_after = del_after)
+			await ctx.send(f'User not found.', delete_after=del_after)
 			return
 
 		await member.timeout(datetime.timedelta(days = 28), reason = 'get rekt nerd')
-		await ctx.send(f'<@{u_id}> has been rekt.', delete_after = del_after)
+		await ctx.send(f'{member.display_name} has been rekt.', delete_after=del_after)
 		return
 
 	@commands.command(name = "hardlockdown",

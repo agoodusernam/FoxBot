@@ -1,8 +1,8 @@
 import discord
 
+from currency import shop_items
 from utils import db_stuff
-from currency.curr_config import get_default_profile
-from currency.curr_config import ShopItem
+from currency.curr_config import get_default_profile, ShopItem
 from utils.db_stuff import get_from_db
 
 
@@ -12,11 +12,30 @@ def create_new_profile(member: discord.Member):
 	return new_data
 
 
-def get_profile(member: discord.Member) -> dict[str, int | str | dict[str, int]]:
+def get_profile(member: discord.Member) -> dict[str, int | float | str | dict[str, int]]:
 	profile_ = db_stuff.get_from_db(collection_name='currency', query={'user_id': str(member.id)})
 	if not profile_ or profile_ is None:
 		return create_new_profile(member)
 	return profile_
+
+
+def delete_profile(member: discord.Member) -> None:
+	"""
+	Deletes the currency profile of a specific member.
+	:param member: The Discord member whose profile is to be deleted.
+	"""
+	db_stuff.del_db_entry(collection_name='currency', query={'user_id': str(member.id)})
+	return
+
+
+def user_has_gun(profile: dict[str, int | float | str | dict[str, int]]) -> bool:
+	"""
+	Checks if a member has a gun in their inventory.
+	:param profile: The profile of the member to check.
+	:return: True if the member has a gun, False otherwise.
+	"""
+	return any(map(lambda v: v in shop_items.all_guns, list(profile['illegal_items'].keys())))
+
 
 def get_stock(item: ShopItem) -> int:
 	"""
@@ -24,8 +43,8 @@ def get_stock(item: ShopItem) -> int:
 	:param item: The name of the item to check stock for.
 	:return: The stock amount of the item, or 0 if not found.
 	"""
-	item_from_db = get_from_db(collection_name='shop_items', query={'item_name': item})
-	if item_from_db is None:
+	item_from_db = get_from_db(collection_name='shop_items', query={'item_name': item.name})
+	if item_from_db is None or item_from_db is False:
 		db_stuff.send_to_db(collection_name='shop_items', data={"item_name": item.name, "stock": item.stock})
 		return item.stock
 	return item_from_db['stock']
@@ -56,10 +75,30 @@ def set_bank(member: discord.Member, amount: int) -> None:
 
 def set_income(member: discord.Member, amount: int) -> None:
 	profile = get_profile(member)
+	
+	profile['work_income'] = amount
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'work_income': amount})
 
-	profile['income'] = amount
-	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'income': amount})
 
+def set_other_income(member: discord.Member, amount: int) -> None:
+	profile = get_profile(member)
+	
+	profile['other_income'] = amount
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'other_income': amount})
+
+
+def set_next_income_multiplier(member: discord.Member, multiplier: float) -> None:
+	profile = get_profile(member)
+	
+	profile['next_income_mult'] = multiplier
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'next_income_mult': multiplier})
+
+
+def set_fire_risk(member: discord.Member, risk: float) -> None:
+	profile = get_profile(member)
+	
+	profile['fire_risk'] = risk
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'fire_risk': risk})
 
 def set_debt(member: discord.Member, amount: int) -> None:
 	profile = get_profile(member)
@@ -74,12 +113,36 @@ def set_credit_score(member: discord.Member, score: int) -> None:
 	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'credit_score': score})
 
 
-def add_to_inventory(member: discord.Member, item: str, amount: int) -> None:
+def inc_age(member: discord.Member) -> None:
+	"""
+	Increments the age of the member in their currency profile.
+	:param member: The Discord member whose age is to be incremented.
+	"""
+	profile = get_profile(member)
+	
+	profile['age'] += 1
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'age': profile['age']})
+
+
+def set_experience(member: discord.Member, amount: int) -> None:
+	"""
+	Sets the work experience of the member in their currency profile.
+	:param member: The Discord member whose work experience is to be set.
+	:param amount: The amount of work experience to set.
+	"""
+	profile = get_profile(member)
+	
+	profile['work_experience'] = amount
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'work_experience': amount})
+
+
+def add_to_inventory(member: discord.Member, item: str, amount: int, illegal: bool = False) -> None:
 	"""
 	Adds a specified amount of an item to the member's inventory.
 	:param member: The Discord member whose inventory is being updated.
 	:param item: The name of the item to add.
 	:param amount: The amount of the item to add.
+	:param illegal: Whether the item is illegal (default is False).
 	"""
 	profile = get_profile(member)
 
@@ -87,15 +150,93 @@ def add_to_inventory(member: discord.Member, item: str, amount: int) -> None:
 		profile['inventory'][item] += amount
 	else:
 		profile['inventory'][item] = amount
+	
+	if illegal:
+		if 'illegal_items' not in profile:
+			profile['illegal_items'] = {}
+		if item in profile['illegal_items']:
+			profile['illegal_items'][item] += amount
+		else:
+			profile['illegal_items'][item] = amount
+		
+		db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'illegal_items': profile['illegal_items']})
+	else:
+		# Update the database with the new inventory
+		db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'inventory': profile['inventory']})
 
-	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'inventory': profile['inventory']})
 
-def update_inventory(member: discord.Member, item: str, amount: int) -> None:
+def set_inventory(member: discord.Member, item: str, amount: int) -> None:
 	profile = get_profile(member)
 
 	profile['inventory'][item] = amount
 
 	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'inventory': profile['inventory']})
+
+
+def set_illegal_items(member: discord.Member, item: str, amount: int) -> None:
+	"""
+	Sets the amount of an illegal item in the member's inventory.
+	:param member: The Discord member whose illegal items are being updated.
+	:param item: The name of the illegal item to set.
+	:param amount: The amount of the illegal item to set.
+	"""
+	profile = get_profile(member)
+	
+	profile['illegal_items'][item] = amount
+	
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'illegal_items': profile['illegal_items']})
+
+
+def remove_from_inventory(member: discord.Member, item: str) -> None:
+	"""
+	Removes an item from the member's inventory.
+	:param member: The Discord member whose inventory is being updated.
+	:param item: The name of the item to remove.
+	"""
+	profile = get_profile(member)
+	
+	if item in profile['inventory']:
+		del profile['inventory'][item]
+	
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'inventory': profile['inventory']})
+
+
+def remove_illegal_item(member: discord.Member, item: str) -> None:
+	"""
+	Removes an illegal item from the member's inventory.
+	:param member: The Discord member whose illegal items are being updated.
+	:param item: The name of the illegal item to remove.
+	"""
+	profile = get_profile(member)
+	
+	if item in profile['illegal_items']:
+		del profile['illegal_items'][item]
+	
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'illegal_items': profile['illegal_items']})
+
+
+def clear_inventory(member: discord.Member) -> None:
+	"""
+	Clears the entire inventory of the member.
+	:param member: The Discord member whose inventory is being cleared.
+	"""
+	profile = get_profile(member)
+	
+	profile['inventory'] = {}
+	
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'inventory': profile['inventory']})
+
+
+def clear_illegal_items(member: discord.Member) -> None:
+	"""
+	Clears all illegal items from the member's inventory.
+	:param member: The Discord member whose illegal items are being cleared.
+	"""
+	profile = get_profile(member)
+	
+	profile['illegal_items'] = {}
+	
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'illegal_items': profile['illegal_items']})
 
 
 def get_top_balances(limit: int = 10) -> list[dict[str, int]]:
@@ -119,4 +260,13 @@ def calculate_max_loan(profile: dict[str, int | str | dict[str, int]]) -> int:
 	if profile['debt'] > 0:
 		return 0
 	credit_factor = 0.5 + (profile["credit_score"] / 800)
-	return min(int(profile['income'] * 12 * credit_factor) + 10_000, 1_000_000)
+	return min(int(profile['work_income'] * 12 * credit_factor) + 10_000, 1_000_000)
+
+
+def get_shop_item(item_name: str) -> ShopItem | None:
+	"""
+	Retrieves a shop item by its name from the database.
+	:param item_name: The name of the shop item to retrieve.
+	:return: The ShopItem object if found, otherwise None.
+	"""
+	return next((i for i in shop_items.all_items if i.name.lower() == item_name), None)

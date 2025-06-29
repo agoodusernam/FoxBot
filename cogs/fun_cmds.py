@@ -41,7 +41,7 @@ async def dice_roll(del_after: int, message: discord.Message) -> None:
 	return
 
 
-class FunCommands(commands.Cog, name='Fun', command_attrs=dict(add_checks=not_blacklisted)):
+class FunCommands(commands.Cog, name='Fun'):
 	@commands.command(name="dice", aliases=["roll", "dice_roll"],
 					  brief="Roll a dice",
 					  help="Roll a dice between two values",

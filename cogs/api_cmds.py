@@ -6,10 +6,9 @@ from discord.ext import commands
 from discord.ext.commands import BucketType
 
 from utils import api_stuff, utils
-from command_utils.checks import not_blacklisted
 
 
-class ApiCommands(commands.Cog, name="Images and APIs", command_attrs=dict(add_check=not_blacklisted)):
+class ApiCommands(commands.Cog, name="Images and APIs"):
 	"""These commands fetch images and data from various APIs."""
 
 	def __init__(self, bot):
