@@ -4,9 +4,7 @@ import random
 import discord
 from discord.ext import commands
 
-from command_utils.checks import not_blacklisted
 from currency import curr_utils, curr_config
-from utils import db_stuff
 
 profile_type = dict[str, int | float | str | dict[str, int]]
 
@@ -49,6 +47,7 @@ async def got_shot(ctx: commands.Context, profile: profile_type, target: discord
 	await ctx.send(f"You were caught trying to rob {target.display_name} and got shot!")
 	# Deduct a random amount from the user's wallet
 	amount = random.randint(2000, 20000)
+	payable = 0
 	added_to_debt = False
 	if profile['wallet'] >= amount:
 		profile['wallet'] -= amount
@@ -68,9 +67,11 @@ async def got_shot(ctx: commands.Context, profile: profile_type, target: discord
 		added_to_debt = True
 	
 	await ctx.send(f"You had to pay {amount} {curr_config.currency_name} in medical bills.")
-	if added_to_debt:
+	if added_to_debt and payable > 0:
 		await ctx.send(
-				f"{amount - payable} {curr_config.currency_name} was added to your debt, remember to pay it back!")
+				f"As you couldn't pay it all of at once, {amount - payable} {curr_config.currency_name} was added to " +
+				f"your debt, remember to pay it back!"
+		)
 	return
 
 
@@ -86,7 +87,7 @@ class CrimeCog(commands.Cog, name="Crime"):
 	                  brief="Rob someone",
 	                  help="Attempt to steal from someone's wallet.",
 	                  usage="rob <target>")
-	@commands.cooldown(1, 60 * 60, commands.BucketType.user)
+	@commands.cooldown(1, 60 * 60, commands.BucketType.user)  # type: ignore
 	async def rob_cmd(self, ctx: commands.Context, target: discord.Member) -> None:
 		if target.id == ctx.author.id:
 			await ctx.send('You cannot rob yourself!')

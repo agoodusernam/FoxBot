@@ -22,8 +22,9 @@ def _connect():
 		return _mongo_client
 
 	uri = os.getenv('MONGO_URI')
-
-	client = MongoClient(uri, server_api=ServerApi('1'), serverSelectionTimeoutMS=5000)
+	
+	client = MongoClient(uri, server_api=ServerApi('1'), serverSelectionTimeoutMS=5000, tls=True,
+	                     tlsCertificateKeyFile="mongo_cert.pem")
 	try:
 		client.admin.command('ping')
 		_mongo_client = client  # Store the connection
@@ -259,6 +260,26 @@ def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> None:
 			print(f'No entry matched the query in {collection_name} collection')
 	except Exception as e:
 		print(f'Error deleting entry from {collection_name} collection: {e}')
+
+
+def del_many_db_entries(collection_name: str, query: Mapping[str, Any]) -> int | None:
+	"""
+	Generic function to delete multiple entries from a specified MongoDB collection.
+	"""
+	client = _connect()
+	if not client:
+		print('Failed to connect to MongoDB')
+		return None
+	
+	db = client['discord']
+	collection: Collection[Mapping[str, Any]] = db[collection_name]
+	
+	try:
+		result: DeleteResult = collection.delete_many(query)
+		print(f'Deleted {result.deleted_count} entries from {collection_name} collection')
+		return result.deleted_count
+	except Exception as e:
+		print(f'Error deleting entries from {collection_name} collection: {e}')
 
 
 def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[str, Any]:

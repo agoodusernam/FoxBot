@@ -5,7 +5,6 @@ import discord
 from discord.ext import commands
 
 from command_utils import suggest
-from command_utils.checks import not_blacklisted
 
 
 async def dice_roll(del_after: int, message: discord.Message) -> None:
@@ -46,29 +45,29 @@ class FunCommands(commands.Cog, name='Fun'):
 					  brief="Roll a dice",
 					  help="Roll a dice between two values",
 					  usage="dice <min> <max>")
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def dice(self, ctx: discord.ext.commands.Context):
 		await dice_roll(ctx.bot.del_after, ctx.message)
 
 	@commands.command(name="flip", aliases=["coin_flip", "coinflip"],
 					  brief="Flip a coin",
 					  help="Flip a coin and get either Heads or Tails")
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def flip(self, ctx: discord.ext.commands.Context):
 		await ctx.message.channel.send(f'You flipped a coin and got: **{random.choice(['Heads', 'Tails'])}**')
 
 	@commands.command(name="ping", aliases=["latency"],
 					  brief="Check the bot's latency",
 					  help="Shows the bot's current latency in milliseconds")
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def ping(self, ctx: discord.ext.commands.Context):
-		await ctx.message.channel.send(f'{ctx.bot.latency * 1000:.1f}ms')
+		await ctx.message.channel.send(f'{ctx.bot.latency * 1000:.1f}ms')  # type: ignore
 
 	@commands.command(name="suggest", aliases=["suggestion"],
 					  brief="Submit a suggestion",
 					  help="Submit a suggestion for the bot",
 					  usage="suggest <suggestion>")
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def suggest_cmd(self, ctx: discord.ext.commands.Context):
 		await suggest.send_suggestion(ctx.bot, ctx.message)
 

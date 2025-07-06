@@ -5,9 +5,9 @@ from typing import Any
 import discord
 from discord.ext import commands
 
+from command_utils.checks import is_dev
 from custom_logging import voice_log
 from utils import db_stuff, utils
-from command_utils.checks import is_dev
 
 
 async def restart(client: 'discord.Client') -> None:
@@ -104,8 +104,8 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 			await ctx.message.delete()
 		await ctx.message.channel.send('Shutting down the bot...', delete_after=ctx.bot.del_after)
 		print('Bot is shutting down...')
-		db_stuff.disconnect()
 		voice_log.leave_all(ctx.bot)
+		db_stuff.disconnect()
 		await ctx.bot.close()
 
 	@commands.command(name="add_admin",

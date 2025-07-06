@@ -1,8 +1,8 @@
 import discord
 
 from currency import shop_items
-from utils import db_stuff
 from currency.curr_config import get_default_profile, ShopItem
+from utils import db_stuff
 from utils.db_stuff import get_from_db
 
 
@@ -18,6 +18,40 @@ def get_profile(member: discord.Member) -> dict[str, int | float | str | dict[st
 		return create_new_profile(member)
 	return profile_
 
+
+def get_lottery_tickets(member: discord.Member) -> int:
+	"""
+	Retrieves the number of lottery tickets a member has.
+	:param member: The Discord member whose lottery tickets are being checked.
+	:return: The number of lottery tickets the member has.
+	"""
+	lottery_profile = db_stuff.get_from_db(collection_name='lottery', query={'user_id': str(member.id)})
+	if lottery_profile is None:
+		return 0
+	return lottery_profile['lottery_tickets']
+
+
+def set_lottery_tickets(member: discord.Member, amount: int) -> None:
+	"""
+	Sets the number of lottery tickets a member has.
+	:param member: The Discord member whose lottery tickets are being set.
+	:param amount: The number of lottery tickets to set.
+	"""
+	db_stuff.del_db_entry(collection_name='lottery', query={'user_id': str(member.id)})
+	new_data = {
+		'user_id':         str(member.id),
+		'lottery_tickets': amount
+	}
+	db_stuff.send_to_db(collection_name='lottery', data=new_data)
+
+
+def delete_all_lottery_tickets() -> int:
+	"""
+	Deletes all lottery tickets from the database.
+	:return: The number of deleted lottery tickets.
+	"""
+	return db_stuff.del_many_db_entries(collection_name='lottery', query={})
+	
 
 def delete_profile(member: discord.Member) -> None:
 	"""
@@ -112,6 +146,16 @@ def set_credit_score(member: discord.Member, score: int) -> None:
 	profile['credit_score'] = score
 	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'credit_score': score})
 
+
+def add_lottery_tickets(member: discord.Member, amount: int) -> None:
+	"""
+	Adds a specified amount of lottery tickets to the member's profile.
+	:param member: The Discord member whose lottery tickets are being updated.
+	:param amount: The number of lottery tickets to add.
+	"""
+	profile = get_profile(member)
+	db_stuff.edit_db_entry('currency', {'user_id': str(member.id)},
+	                       {'lottery_tickets': profile['lottery_tickets'] + amount})
 
 def inc_age(member: discord.Member) -> None:
 	"""

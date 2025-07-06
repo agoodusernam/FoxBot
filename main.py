@@ -1,3 +1,4 @@
+import atexit
 import json
 import os
 from pathlib import Path
@@ -12,6 +13,11 @@ from utils import db_stuff, utils
 
 load_dotenv()
 
+
+@atexit.register
+def on_exit():
+	db_stuff.disconnect()
+	
 
 def load_config():
 	"""Load configuration from config.json file or create default if not exists"""
@@ -377,7 +383,6 @@ async def load_extensions():
 			print(f'Loaded {filename[:-3]}')
 
 
-# Run the bot
 @bot.check
 async def not_blacklisted(ctx: discord.ext.commands.Context):
 	"""
@@ -387,4 +392,7 @@ async def not_blacklisted(ctx: discord.ext.commands.Context):
 		await ctx.send('You are not allowed to use this command.', delete_after=bot.del_after)
 		return False
 	return True
+
+
+# Run the bot
 bot.run(token = os.getenv('TOKEN'), reconnect = True)

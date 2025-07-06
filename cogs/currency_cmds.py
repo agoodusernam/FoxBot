@@ -1,4 +1,3 @@
-import asyncio
 import random
 
 import discord
@@ -6,11 +5,9 @@ from discord.ext import commands
 
 import currency.curr_utils
 import utils.utils
-from currency import curr_utils, curr_config
-from currency import shop_items
+from currency import curr_utils, curr_config, shop_items
 from currency.curr_config import currency_name, loan_interest_rate, income_tax, DrugItem, BlackMarketItem, GunItem, \
 	ShopItem
-from command_utils.checks import not_blacklisted
 from currency.curr_utils import get_shop_item
 
 
@@ -239,7 +236,7 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 	                  brief='Check your credit score',
 	                  help='Check your current credit score',
 	                  usage='credit_score')
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def credit_score_cmd(self, ctx: commands.Context):
 		profile = curr_utils.get_profile(ctx.author)
 		credit_score = profile['credit_score']
@@ -250,7 +247,7 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 	                  brief='View the shop',
 	                  help='View the items available for purchase in the shop',
 	                  usage='shop')
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def shop_cmd(self, ctx: commands.Context):
 		embed = discord.Embed(title='Shop', description='Items available for purchase', color=discord.Color.green())
 		embed.set_thumbnail(url=ctx.guild.icon.url)
@@ -296,7 +293,7 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 	                  brief='View the black market',
 	                  help='View the items available for purchase in the black market',
 	                  usage='blackmarket')
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def blackmarket_cmd(self, ctx: commands.Context):
 		embed = discord.Embed(title='Black Market', description='Items available for purchase',
 		                      color=discord.Color.dark_red())
@@ -336,7 +333,7 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 	                  brief='Buy an item from the shop',
 	                  help='Buy an item from the shop or black market',
 	                  usage='buy <item_name> [quantity]')
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def buy_cmd(self, ctx: commands.Context, *, args: str):
 		# Split the arguments into item name and quantity
 		args = args.strip().split()
@@ -410,7 +407,7 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 	                  brief='Check your inventory',
 	                  help='Check the items you own in your inventory',
 	                  usage='inventory')
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def inventory_cmd(self, ctx: commands.Context):
 		profile = curr_utils.get_profile(ctx.author)
 		inventory = profile['inventory']
@@ -430,7 +427,7 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 	                  brief='Use an item from your inventory',
 	                  help='Use an item from your inventory to gain its benefits',
 	                  usage='use <item_name>')
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def use_cmd(self, ctx: commands.Context, *, item_name: str):
 		profile = curr_utils.get_profile(ctx.author)
 		inventory = profile['inventory']

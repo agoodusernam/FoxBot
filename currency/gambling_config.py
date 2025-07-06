@@ -1,5 +1,8 @@
 # On average, the return is just a smidge over 75%, compliant with Nevada law.
-slots_probabilities = [0.005, 0.025, 0.016, 0.02666666666666667, 0.04, 0.08, 0.16, 0.6473333333333333]
-slots_payouts = [20, 10, 5, 3, 2, 1, 0.5, 0]
-slots_min_bet = 1
-slots_max_bet = 10_000
+slots_probabilities: list[float] = [0.005, 0.015, 0.02, 0.03333333333333333, 0.05, 0.1, 0.21, 0.5666666666666667]
+slots_payouts: list[int] = [20, 10, 5, 3, 2, 1, 0.5, 0]
+slots_min_bet: int = 1
+slots_max_bet: int = 10_000
+lottery_ticket_price: int = 5
+lottery_payouts: list[int] = [1_000_000, 50_000, 10_000, 1_000, 500, 100, 50, 20, 10, 5, 0]
+lottery_probabilities: list[float] = [0.0001, 0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.5]

@@ -107,7 +107,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Analyze server message data",
 					  help = "Provides statistics about messages sent in the server",
 					  usage = "analyse [user_id/mention]")
-	@commands.cooldown(1, 30, commands.BucketType.user)
+	@commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
 	async def analyse(self, ctx: discord.ext.commands.Context):
 		await analysis.format_analysis(ctx.message)
 
@@ -115,7 +115,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Analyze voice channel usage",
 					  help = "Provides statistics about voice channel usage in the server",
 					  usage = "analyse_voice [user_id/mention]")
-	@commands.cooldown(1, 30, commands.BucketType.user)
+	@commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
 	async def analyse_voice(self, ctx: discord.ext.commands.Context):
 		await analysis.format_voice_analysis(ctx.message)
 
@@ -269,7 +269,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Make the bot say something",
 					  help = "Admin only: Makes the bot say the specified message",
 					  usage = "echo [channel id] <message>")
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def echo_cmd(self, ctx: discord.ext.commands.Context):
 		message = ctx.message
 		del_after = ctx.bot.del_after

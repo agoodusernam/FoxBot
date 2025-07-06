@@ -1,13 +1,7 @@
-import secrets
-
-import discord
 from discord.ext import commands
 
-import utils
-from currency import curr_utils
 import command_utils.gambling_utils as gambling_utils
-from currency import gambling_config
-from command_utils.checks import not_blacklisted
+from currency import curr_utils, gambling_config, curr_config
 
 
 class GamblingCmds(commands.Cog, name="Gambling"):
@@ -16,15 +10,15 @@ class GamblingCmds(commands.Cog, name="Gambling"):
 
 	@commands.command(name="slot", aliases=["slots"],
 					  brief="Play a slot machine game",
-					  help="Try your luck with the slot machine! You can win or lose coins.",
+					  help=f"Try your luck with the slot machine! You can win or lose {curr_config.currency_name}.",
 					  usage="slot <bet_amount>")
-	@commands.cooldown(1, 5, commands.BucketType.user)
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def slot_cmd(self, ctx: commands.Context, bet_amount: int):
 		if bet_amount <= 0:
 			await ctx.send("You must bet a positive amount!")
 			return
 		if bet_amount < gambling_config.slots_min_bet:
-			await ctx.send(f"The minimum bet is {gambling_config.slots_min_bet} coins!")
+			await ctx.send(f"The minimum bet is {gambling_config.slots_min_bet} {curr_config.currency_name}!")
 			return
 		profile = curr_utils.get_profile(ctx.author)
 		if profile['wallet'] < bet_amount:
@@ -36,10 +30,29 @@ class GamblingCmds(commands.Cog, name="Gambling"):
 		payout *= bet_amount
 		if payout > 0:
 			curr_utils.set_wallet(ctx.author, profile['wallet'] + payout)
-			await ctx.send(f"You won {payout} coins! 🎉")
+			await ctx.send(f"You won {payout} {curr_config.currency_name}! 🎉")
 
 		else:
-			await ctx.send(f"You lost {bet_amount} coins. Better luck next time! 😢")
+			await ctx.send(f"You lost {bet_amount} {curr_config.currency_name}. Better luck next time! 😢")
+	
+	@commands.command(name="lottery", aliases=["lotto"],
+	                  brief="Play the lottery",
+	                  help=f"Buy a lottery ticket for a chance to win a jackpot! 1 ticket costs 5 {curr_config.currency_name}.",
+	                  usage="lottery <tickets>")
+	@commands.cooldown(1, 60, commands.BucketType.user)  # type: ignore
+	async def lottery_cmd(self, ctx: commands.Context, tickets: int = 1):
+		if tickets <= 0:
+			await ctx.send("You must buy at least one ticket!")
+			return
+		cost = tickets * gambling_config.lottery_ticket_price
+		profile = curr_utils.get_profile(ctx.author)
+		if profile['wallet'] < cost:
+			await ctx.send("You do not have enough money in your wallet!")
+			return
+		curr_utils.set_wallet(ctx.author, profile['wallet'] - cost)
+		curr_utils.set_lottery_tickets(ctx.author, tickets + curr_utils.get_lottery_tickets(ctx.author))
+		
+		
 
 
 async def setup(bot) -> None:
