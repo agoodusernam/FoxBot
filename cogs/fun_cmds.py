@@ -1,4 +1,5 @@
 import math
+import os
 import random
 
 import discord
@@ -70,6 +71,33 @@ class FunCommands(commands.Cog, name='Fun'):
 	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def suggest_cmd(self, ctx: discord.ext.commands.Context):
 		await suggest.send_suggestion(ctx.bot, ctx.message)
+	
+	@commands.command(name="code",
+	                  brief="Get the bot's source code",
+	                  help="Get the link to the bot's source code on GitHub")
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+	async def code(self, ctx: discord.ext.commands.Context):
+		await ctx.message.channel.send(
+				'You can find the source code for this bot on GitHub: '
+				'https://github.com/agoodusernam/FoxBot'
+		)
+	
+	@commands.command(name="lines_of_code", aliases=["lines", "loc"],
+	                  brief="Get the number of lines of code in the bot",
+	                  help="Get the number of lines of code in the bot's source code")
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+	async def lines_of_code(self, ctx: discord.ext.commands.Context):
+		# function that returns the number of lines of code in a given directory recursively, excluding .venv
+		# get the directory of the main.py file
+		directory = os.path.dirname(os.path.abspath(__file__))
+		total_lines = 0
+		for root, _, files in os.walk(directory):
+			for file in files:
+				if file.endswith('.py'):
+					with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
+						total_lines += sum(1 for _ in f)
+		
+		await ctx.send(f'There are {total_lines} lines of code in the bot')
 
 
 async def setup(bot) -> None:

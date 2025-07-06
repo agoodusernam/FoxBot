@@ -10,6 +10,7 @@ from custom_logging import voice_log
 from utils import db_stuff, utils
 
 
+# added the "a" to the start of the file so it loads first
 async def restart(client: 'discord.Client') -> None:
 	await client.close()
 	db_stuff.disconnect()
