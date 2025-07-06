@@ -495,4 +495,4 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 
 async def setup(bot: commands.Bot) -> None:
 	pass
-	await bot.add_cog(CurrencyCmds(bot))
+# await bot.add_cog(CurrencyCmds(bot))

@@ -257,3 +257,4 @@ fabric.properties
 /blacklist_users.json
 /.idea/codeStyles/codeStyleConfig.xml
 /config.json
+/mongo_cert.pem
