@@ -107,7 +107,6 @@ class CrimeCog(commands.Cog, name="Crime"):
 		
 		if not curr_utils.user_has_gun(profile) and not curr_utils.user_has_gun(target_profile):
 			# Neither user has a gun
-			print("Neither user has a gun")
 			winner = random.choice(["user", "target"])
 			if winner == "user":
 				await rob_success_n(ctx, profile, target, target_profile)
@@ -130,7 +129,6 @@ class CrimeCog(commands.Cog, name="Crime"):
 		elif curr_utils.user_has_gun(profile) and not curr_utils.user_has_gun(target_profile):
 			# User has a gun, target has no gun
 			# 75% chance of success
-			print("User has a gun, target has no gun")
 			if random.random() < 0.75:
 				await rob_success_n(ctx, profile, target, target_profile)
 				return None
@@ -141,7 +139,6 @@ class CrimeCog(commands.Cog, name="Crime"):
 		else:
 			# User has a gun, target has a gun
 			# 50% chance of success
-			print("Both users have guns")
 			if random.random() < 0.5:
 				
 				await rob_success_n(ctx, profile, target, target_profile)

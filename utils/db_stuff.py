@@ -310,7 +310,7 @@ def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by, di
 
 	direction should be either "a" for ascending or "d" for descending.
 	"""
-	if direction not in ('a', 'd'):
+	if direction not in ['a', 'd']:
 		print('Invalid sort direction. Use "a" for ascending or "d" for descending.')
 		return None
 	client = _connect()

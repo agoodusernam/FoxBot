@@ -72,14 +72,13 @@ class FunCommands(commands.Cog, name='Fun'):
 	async def suggest_cmd(self, ctx: discord.ext.commands.Context):
 		await suggest.send_suggestion(ctx.bot, ctx.message)
 	
-	@commands.command(name="code",
+	@commands.command(name="code", aliases=["source", "github"],
 	                  brief="Get the bot's source code",
 	                  help="Get the link to the bot's source code on GitHub")
 	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def code(self, ctx: discord.ext.commands.Context):
 		await ctx.message.channel.send(
-				'You can find the source code for this bot on GitHub: '
-				'https://github.com/agoodusernam/FoxBot'
+				'You can find the source code for this bot on GitHub: https://github.com/agoodusernam/FoxBot'
 		)
 	
 	@commands.command(name="lines_of_code", aliases=["lines", "loc"],

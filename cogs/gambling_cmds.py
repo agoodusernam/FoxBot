@@ -43,17 +43,17 @@ class GamblingCmds(commands.Cog, name="Gambling"):
 	async def lottery_cmd(self, ctx: commands.Context, tickets: int = 1):
 		if tickets <= 0:
 			await ctx.send("You must buy at least one ticket!")
-			return
+			return None
 		cost = tickets * gambling_config.lottery_ticket_price
 		profile = curr_utils.get_profile(ctx.author)
 		if profile['wallet'] < cost:
 			await ctx.send("You do not have enough money in your wallet!")
-			return
+			return None
 		curr_utils.set_wallet(ctx.author, profile['wallet'] - cost)
 		curr_utils.set_lottery_tickets(ctx.author, tickets + curr_utils.get_lottery_tickets(ctx.author))
-		
-		
-
+		await ctx.send(f"You bought {tickets} lottery ticket(s) for {cost} {curr_config.currency_name}.")
+		await ctx.send("Winners are drawn every monday! Good luck!")
+		return None
 
 async def setup(bot) -> None:
 	pass
