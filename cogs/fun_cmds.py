@@ -93,8 +93,8 @@ class FunCommands(commands.Cog, name='Fun'):
 		
 		for root, dirs, files in os.walk("/root/pyVenv/"):
 			# Skip .venv directory
-			if '.venv' in dirs:
-				dirs.remove('.venv')
+			if 'discBot' in dirs:
+				dirs.remove('discBot')
 			
 			# Count lines in .py files
 			for file in files:
