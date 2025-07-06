@@ -89,16 +89,26 @@ class FunCommands(commands.Cog, name='Fun'):
 	async def lines_of_code(self, ctx: discord.ext.commands.Context):
 		# function that returns the number of lines of code in a given directory recursively, excluding .venv
 		# get the directory of the main.py file
-		directory = os.path.abspath("/root/pyVenv/")
 		total_lines = 0
-		for root, dir_name, files in os.walk(directory):
-			# skip the .venv directory
-			if '.venv' in dir_name or 'venv' in root:
-				continue
+		
+		for root, dirs, files in os.walk("/root/pyVenv/"):
+			# Skip .venv directory
+			if '.venv' in dirs:
+				dirs.remove('.venv')
+			
+			# Count lines in .py files
 			for file in files:
-				if file.endswith('.py'):
-					with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
-						total_lines += sum(1 for _ in f)
+				if not file.endswith('.py'):
+					continue
+				file_path = os.path.join(root, file)
+				try:
+					with open(file_path, 'r', encoding='utf-8') as f:
+						line_count = sum(1 for _ in f)
+					total_lines += line_count
+					print(f"{file_path}: {line_count} lines")
+				except Exception as e:
+					print(f"Error reading {file_path}: {e}")
+
 		
 		await ctx.send(f'There are {total_lines} lines of code in the bot')
 
