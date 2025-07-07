@@ -7,8 +7,9 @@ import currency.curr_utils
 import utils.utils
 from currency import curr_utils, curr_config, shop_items
 from currency.curr_config import currency_name, loan_interest_rate, income_tax, DrugItem, BlackMarketItem, GunItem, \
-	ShopItem
+	ShopItem, HouseItem
 from currency.curr_utils import get_shop_item
+from currency.jobs import job_trees, Job, JobTree
 
 
 # Create pagination view
@@ -18,7 +19,7 @@ class ShopView(discord.ui.View):
 		self.embeds = embeds
 		self.current_page = 0
 	
-	@discord.ui.button(label='Previous', style=discord.ButtonStyle.gray)
+	@discord.ui.button(label='Previous', style=discord.ButtonStyle.gray) # type: ignore
 	async def previous_button(self, interaction: discord.Interaction, button: discord.ui.Button):
 		if self.current_page > 0:
 			self.current_page -= 1
@@ -26,7 +27,7 @@ class ShopView(discord.ui.View):
 		else:
 			await interaction.response().defer()
 	
-	@discord.ui.button(label='Next', style=discord.ButtonStyle.gray)
+	@discord.ui.button(label='Next', style=discord.ButtonStyle.gray) # type: ignore
 	async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
 		if self.current_page < len(self.embeds) - 1:
 			self.current_page += 1
@@ -165,6 +166,20 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 		curr_utils.set_fire_risk(ctx.author, profile['fire_risk'] * 0.5)
 		await ctx.send(f'You worked hard and earned {earnings} {currency_name}!')
 	
+	@commands.command(name='quit',
+	                  brief='Quit your current job',
+	                  help='Quit your current job so you can get a new one',
+	                  usage='quit')
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+	async def quit_cmd(self, ctx: commands.Context):
+		profile = curr_utils.get_profile(ctx.author)
+		if profile['income'] <= 0:
+			await ctx.send('You have no job to quit! Choose a job first using `job`.')
+			return
+		curr_utils.set_income(ctx.author, 0)
+		curr_utils.set_fire_risk(ctx.author, 0.0)
+		curr_utils.inc_age(ctx.author)
+	
 	@commands.command(name='debt',
 	                  brief='Check your debt',
 	                  help='Check how much debt you have')
@@ -240,7 +255,7 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 	async def credit_score_cmd(self, ctx: commands.Context):
 		profile = curr_utils.get_profile(ctx.author)
 		credit_score = profile['credit_score']
-		await ctx.send(f'Your current credit score is {credit_score}. '
+		await ctx.send(f'Your current credit score is {credit_score}. ' +
 		               f'Improve it by paying off loans and maintaining a good balance.')
 	
 	@commands.command(name='shop', aliases=['store'],
@@ -489,7 +504,96 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 		
 		elif isinstance(item, GunItem):
 			await ctx.send(f'You cannot use guns directly.')
-			await ctx.send(f'Use them in a command that requires a gun, like `shoot` or `rob`.')
+			await ctx.send(f'Use them in a command that requires a gun, like `hunt` or `rob`.')
+	
+	@commands.command(name='sell',
+	                  brief='Sell an item from your inventory',
+	                  help='Sell an item from your inventory for money',
+	                  usage='sell <item_name> [quantity]')
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+	async def sell_cmd(self, ctx: commands.Context, *, args: str):
+		# Split the arguments into item name and quantity
+		args = args.strip().split()
+		if len(args) < 1:
+			await ctx.send('You must specify an item to sell')
+			return
+		try:
+			quantity = int(args[-1])
+			if quantity <= 0:
+				await ctx.send('You must sell a positive quantity of the item!')
+				return
+			q_given = True
+		except ValueError:
+			quantity = 1
+			q_given = False
+		if q_given:
+			item_name = ' '.join(args[:-1]).lower()
+		else:
+			item_name = ' '.join(args).lower()
+			
+		profile = curr_utils.get_profile(ctx.author)
+		inventory = profile['inventory']
+		illegal_items = profile['illegal_items']
+		if item_name not in inventory.keys() and item_name not in illegal_items.keys():
+			await ctx.send(f'You do not own any {item_name}!')
+			return
+		
+		illegal = False
+		if item_name in illegal_items:
+			inventory = illegal_items
+			illegal = True
+		item_quantity = inventory[item_name]
+		if item_quantity <= 0:
+			await ctx.send(f'You do not own any {item_name}!')
+			return
+		
+		if item_quantity < quantity:
+			await ctx.send(f'You do not own enough {item_name} to sell! You have {item_quantity}, but requested {quantity}.')
+			return
+		
+		item: ShopItem | None = get_shop_item(item_name)
+		if item is None:
+			await ctx.send(f"No item found with name '{item_name}'")
+			return
+		
+		# Calculate the total price
+		if isinstance(item, BlackMarketItem):
+			total_price = int(item.price * item.resale_mult * quantity)
+		elif isinstance(item, HouseItem):
+			total_price = int(item.price * 0.9 * quantity)
+		else:
+			total_price = int(item.price * 0.5 * quantity)
+			
+		# Add the price to the user's wallet
+		curr_utils.set_wallet(ctx.author, profile['wallet'] + total_price)
+		# Update the inventory
+		if illegal:
+			inventory[item_name] -= quantity
+			if inventory[item_name] <= 0:
+				curr_utils.remove_illegal_item(ctx.author, item_name)
+			else:
+				curr_utils.set_illegal_items(ctx.author, item_name, inventory[item_name])
+		else:
+			inventory[item_name] -= quantity
+			if inventory[item_name] <= 0:
+				curr_utils.remove_from_inventory(ctx.author, item_name)
+			else:
+				curr_utils.set_inventory(ctx.author, item_name, inventory[item_name])
+				
+		await ctx.send(f'Sold {quantity}x {item.name} for {total_price} {currency_name}!')
+	
+	@commands.command(name='jobs',
+	                  brief='View available jobs',
+	                  help='View the jobs you can take to earn money',
+	                  usage='jobs')
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+	async def jobs_cmd(self, ctx: commands.Context):
+		profile = curr_utils.get_profile(ctx.author)
+		jobs = [job for job in job_trees]
+		
+		
+		
+		
 
 
 

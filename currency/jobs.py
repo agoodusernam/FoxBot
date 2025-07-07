@@ -263,7 +263,7 @@ apprentice_engineer = Job(
 junior_engineer = Job(
 		name="Junior Engineer",
 		tree="Engineering",
-		req_qualifications=[SchoolQualif.ASSOCIATE],
+		req_qualifications=[SchoolQualif.BACHELOR],
 		req_experience=1,
 		salary=50_000,
 		salary_variance=5
@@ -331,7 +331,7 @@ engineering_tree = JobTree(
 private = Job(
 		name="Private",
 		tree="Enlisted_Army",
-		req_qualifications=[SchoolQualif.HIGH_SCHOOL, SecurityClearance.CONFIDENTIAL],
+		req_qualifications=[SchoolQualif.HIGH_SCHOOL],
 		req_experience=0,
 		salary=30_000,
 		salary_variance=5
@@ -340,7 +340,7 @@ private = Job(
 private_first_class = Job(
 		name="Private First Class",
 		tree="Enlisted_Army",
-		req_qualifications=[SchoolQualif.HIGH_SCHOOL, SecurityClearance.CONFIDENTIAL],
+		req_qualifications=[SchoolQualif.HIGH_SCHOOL],
 		req_experience=1,
 		salary=32_000,
 		salary_variance=5
@@ -423,7 +423,7 @@ command_sergeant_major = Job(
 		tree="Enlisted_Army",
 		req_qualifications=[SchoolQualif.HIGH_SCHOOL, SecurityClearance.SPECIAL],
 		req_experience=12,
-		salary=75_000,
+		salary=90_000,
 		salary_variance=20
 )
 
@@ -432,7 +432,7 @@ seargeant_major_of_the_army = Job(
 		tree="Enlisted_Army",
 		req_qualifications=[SchoolQualif.HIGH_SCHOOL, SecurityClearance.SPECIAL],
 		req_experience=15,
-		salary=90_000,
+		salary=100_000,
 		salary_variance=25
 )
 
@@ -454,7 +454,7 @@ enlisted_army_tree = JobTree(
 warrant_officer_1 = Job(
 		name="Warrant Officer 1",
 		tree="Commissioned_Officer_Army",
-		req_qualifications=[SchoolQualif.BACHELOR, SecurityClearance.CONFIDENTIAL],
+		req_qualifications=[SchoolQualif.ASSOCIATE, SecurityClearance.CONFIDENTIAL],
 		req_experience=0,
 		salary=30_000,
 		salary_variance=5
@@ -463,7 +463,7 @@ warrant_officer_1 = Job(
 warrant_officer_2 = Job(
 		name="Warrant Officer 2",
 		tree="Commissioned_Officer_Army",
-		req_qualifications=[SchoolQualif.BACHELOR, SecurityClearance.CONFIDENTIAL],
+		req_qualifications=[SchoolQualif.ASSOCIATE, SecurityClearance.CONFIDENTIAL],
 		req_experience=2,
 		salary=32_500,
 		salary_variance=5
@@ -895,7 +895,7 @@ detective = Job(
 local_LE_corpral = Job(
 		name="Corporal",
 		tree="Local_Law_Enforcement",
-		req_qualifications=[SchoolQualif.BACHELOR, SecurityClearance.SECRET],
+		req_qualifications=[SchoolQualif.BACHELOR, SecurityClearance.CONFIDENTIAL],
 		req_experience=7,
 		salary=55_000,
 		salary_variance=10
@@ -970,3 +970,5 @@ local_law_enforcement_tree = JobTree(
 			local_LE_chief
 		]
 )
+
+job_trees = [tree for tree in globals().values() if isinstance(tree, JobTree)]

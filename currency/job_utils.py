@@ -84,3 +84,15 @@ class JobTree:
 	"""
 	name: str
 	jobs: list[Job | list[Job]]
+	
+	def __iter__(self) -> iter:
+		"""
+		Iterates over the jobs in the job tree.
+		Returns:
+			Iterator over the jobs in the job tree.
+		"""
+		for job in self.jobs:
+			if isinstance(job, list):
+				yield from job
+			else:
+				yield job
