@@ -1,4 +1,4 @@
-from job_utils import Job, SchoolQualif, JobTree, SecurityClearance
+from currency.job_utils import Job, SchoolQualif, JobTree, SecurityClearance
 
 # Retail Jobs
 cashier = Job(
