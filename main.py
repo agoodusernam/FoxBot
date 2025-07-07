@@ -376,6 +376,12 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 			await logging_channel.send(embed = embed)
 
 
+@bot.event
+async def on_guild_update(before: discord.Guild, after: discord.Guild):
+	if (await before.vanity_invite()).url != (await after.vanity_invite()).url:
+		await after.edit(vanity_code='foxeshaven')
+
+
 async def load_extensions():
 	for filename in os.listdir('./cogs'):
 		if filename.endswith('.py') and not filename.startswith('_'):

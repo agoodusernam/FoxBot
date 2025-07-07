@@ -1,4 +1,3 @@
-import discord
 from discord.ext import commands
 
 class AuctionCog(commands.Cog):
@@ -18,3 +17,8 @@ class AuctionCog(commands.Cog):
 		"""Places a bid on the current auction item."""
 		# TODO: See start_auction()
 		await ctx.send(f'Your bid of {amount} has been placed.')
+
+
+async def setup(bot: commands.Bot) -> None:
+	pass
+# await bot.add_cog(AuctionCog(bot))
