@@ -9,7 +9,11 @@ import discord
 
 
 def get_id_from_str(u_id: str) -> int:
-	return int(discord.utils.escape_mentions(u_id))
+	u_id = u_id.replace("<", "")
+	u_id = u_id.replace(">", "")
+	u_id = u_id.replace("@", "")
+	u_id = u_id.replace("#", "")
+	return int(u_id)
 
 
 def formatted_time() -> str:

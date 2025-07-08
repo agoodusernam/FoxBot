@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, Union, Any
+from typing import Any
 
 import discord
 
@@ -190,7 +190,7 @@ async def format_analysis(message: discord.Message) -> None:
 	new_msg = await message.channel.send('Analysing...')
 	if len(message.content.split()) > 1:
 		try:
-			member_id = int(utils.utils.get_id_from_str(message.content.split()[1]))
+			member_id = utils.utils.get_id_from_str(message.content.split()[1])
 			member = message.guild.get_member(member_id)
 			if member is None:
 				await new_msg.edit(content=f'User with ID {member_id} not found.')
@@ -365,7 +365,7 @@ async def format_voice_analysis(message: discord.Message) -> None:
 
 	if len(message.content.split()) > 1:
 		try:
-			member_id = int(utils.utils.get_id_from_str(message.content.split()[1]))
+			member_id = utils.utils.get_id_from_str(message.content.split()[1])
 			member = message.guild.get_member(member_id)
 			if member is None:
 				await new_msg.edit(content=f'User with ID {member_id} not found.')
@@ -375,7 +375,8 @@ async def format_voice_analysis(message: discord.Message) -> None:
 			await new_msg.delete()
 			return
 		except ValueError:
-			await new_msg.edit(content='Invalid user ID format. Please provide a valid integer ID.')
+			await new_msg.edit(
+				content=f'Invalid user ID format. Please provide a valid integer ID. Provided: {message.content.split()[1]}')
 			return
 
 	# No user specified, show general voice stats

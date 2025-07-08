@@ -60,17 +60,8 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 		for member in ctx.guild.members:
 			if member.id in ctx.bot.admin_ids:
 				continue
-
-			if member.id not in ctx.bot.blacklist_ids['ids']:
-				ctx.bot.blacklist_ids['ids'].append(member.id)
-
-		for member in ctx.guild.members:
-			if member.id not in ctx.bot.admin_ids:
-				try:
-					await member.timeout(datetime.timedelta(days = 28), reason = 'Hard lockdown initiated by admin')
-				except Exception as e:
-					print(f'Error during hard lockdown for user {member.id}: {e}')
-					continue
+			
+			await member.timeout(datetime.timedelta(days=28), reason='Hard lockdown initiated by admin')
 
 		await ctx.message.channel.send(
 				'Hard lockdown initiated. All non-admin users have been timed out for 28 days and added to the blacklist.',
