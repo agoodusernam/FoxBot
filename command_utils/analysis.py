@@ -174,8 +174,8 @@ async def analyse_single_user(member: discord.User, flag: str = None) -> dict[st
 			'most_common_word_count': word_stats['most_common_word_count'],
 			'total_unique_words':     word_stats['total_unique_words'],
 			'average_length':         word_stats['average_length'],
-			'active_channels_lb':     active_channels,
-			'most_recent_message': f"{most_recent_message:%Y-%m-%d %H:%M:%S}" if most_recent_message else 'N/A',
+			'active_channels_lb':  active_channels,  # %Y-%m-%d %H:%M:%S
+			'most_recent_message': f"{most_recent_message:%H:%M:%S} on the {most_recent_message:%d.%m.%Y}" if most_recent_message else 'N/A',
 		}
 
 	except Exception as e:
