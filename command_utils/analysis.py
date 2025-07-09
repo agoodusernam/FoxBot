@@ -164,6 +164,9 @@ async def analyse_single_user(member: discord.User, flag: str = None) -> dict[st
 
 		# Get channel stats for this user
 		active_channels = get_channel_stats(messages_by_user)
+		most_recent_message = max(
+				utils.utils.parse_utciso8601(msg['timestamp']) for msg in messages_by_user
+		) if messages_by_user else None
 
 		return {
 			'total_messages':         len(messages_by_user),
@@ -172,6 +175,7 @@ async def analyse_single_user(member: discord.User, flag: str = None) -> dict[st
 			'total_unique_words':     word_stats['total_unique_words'],
 			'average_length':         word_stats['average_length'],
 			'active_channels_lb':     active_channels,
+			'most_recent_message': f"{most_recent_message:%Y-%m-%d %H:%M:%S}" if most_recent_message else 'N/A',
 		}
 
 	except Exception as e:
@@ -252,6 +256,7 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.User
 		msg = (f"{result['total_messages']} messages found for **{member.name}**\n"
 			   f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
 			   f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
+			   f"Most recent message sent at: {result['most_recent_message']}\n"
 			   f"Top 5 most active channels:\n")
 
 		for i, channel in enumerate(top_5_active_channels, 1):
