@@ -37,9 +37,11 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  usage = "rek <user_id/mention>")
 	async def rek(self, ctx: discord.ext.commands.Context, member: discord.Member) -> None:
 		del_after = ctx.bot.del_after
-
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 
 		if member is None:
 			await ctx.send(f'User not found.', delete_after=del_after)
@@ -53,8 +55,10 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Lock down the entire server",
 					  help = "Admin only: Timeout all non-admin users for 28 days and add them to blacklist")
 	async def hard_lockdown(self, ctx: discord.ext.commands.Context):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 		# await admin_cmds.hardlockdown(ctx.message)
 
 		for member in ctx.guild.members:
@@ -71,8 +75,10 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Unlock the server from hard lockdown",
 					  help = "Admin only: Remove timeouts and blacklist from all users")
 	async def unhard_lockdown(self, ctx: discord.ext.commands.Context):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 		guild: discord.Guild = ctx.guild
 		for member in guild.members:
 			if member.id in ctx.bot.admin_ids:
@@ -115,8 +121,10 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  help = "Admin only: Prevent a user from using bot commands",
 					  usage = "blacklist <user_id/mention>")
 	async def blacklist_id(self, ctx: discord.ext.commands.Context, u_id: str):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 
 		try:
 			if u_id is None:
@@ -153,8 +161,10 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  help = "Admin only: Allow a blacklisted user to use bot commands again",
 					  usage = "unblacklist <user_id/mention>")
 	async def unblacklist_id(self, ctx: discord.ext.commands.Context, u_id: str):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 
 		try:
 			if u_id is None:
@@ -183,8 +193,10 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  help = "Admin only: Prevent logging messages in a specific channel",
 					  usage = "nolog <channel_id/mention>")
 	async def nolog_channel(self, ctx: discord.ext.commands.Context, channel_id: str = None):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 
 		try:
 			if channel_id is None:
@@ -211,8 +223,10 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  help = "Admin only: Allow logging messages in a specific channel again",
 					  usage = "nolog_remove <channel_id/mention>")
 	async def nolog_channel_remove(self, ctx: discord.ext.commands.Context, channel_id: str):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 
 		try:
 			if channel_id is None:
@@ -238,8 +252,10 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  help = "Admin only: Prevent logging messages from a specific user",
 					  usage = "nologu <user_id/mention>")
 	async def nolog_user(self, ctx: discord.ext.commands.Context, u_id: str):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 
 		try:
 			if u_id is None:
@@ -291,8 +307,10 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  help = "Admin only: Edit a specific message sent by the bot",
 					  usage = "edit_message <channel_id> <message_id> <new_content>")
 	async def edit_message_cmd(self, ctx: discord.ext.commands.Context, *, args: str):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 
 		split_args = args.split(' ', 2)
 		try:

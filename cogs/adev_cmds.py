@@ -95,16 +95,20 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 					  brief="Restart the bot",
 					  help="Dev only: restart the bot instance")
 	async def restart_cmd(self, ctx: discord.ext.commands.Context):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 		await shutdown(ctx.bot, update=False, restart=True)
 
 	@commands.command(name="shutdown",
 					  brief="Shutdown the bot",
 					  help="Dev only: Shutdown the bot instance")
 	async def shutdown(self, ctx: discord.ext.commands.Context):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 		await shutdown(ctx.bot, update=False, restart=False)
 		
 	@commands.command(name="update",
@@ -112,8 +116,10 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 					  help="Dev only: Update the bot code from the repository",
 					  usage="update")
 	async def update(self, ctx: discord.ext.commands.Context):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 		await shutdown(ctx.bot, update=True, restart=True)
 
 	@commands.command(name="add_admin",
@@ -121,8 +127,10 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 					  help="Dev only: Add a user to the admin list",
 					  usage="add_admin <user_id/mention>")
 	async def add_admin(self, ctx: discord.ext.commands.Context, u_id: str):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 
 		try:
 			if u_id is None:
@@ -152,8 +160,10 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 					  help="Dev only: Remove a user from the admin list",
 					  usage="remove_admin <user_id/mention>")
 	async def remove_admin(self, ctx: discord.ext.commands.Context, u_id: str):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 
 		try:
 			if u_id is None:
@@ -177,8 +187,10 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 					  help="Dev only: Upload all messages from a specific guild to the database",
 					  usage="upload_all_history")
 	async def upload_all_history(self, ctx: discord.ext.commands.Context):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 
 		nolog_channels = [1299640499493273651, 1329366175796432898, 1329366741909770261, 1329366878623236126,
 						  1329367139018215444, 1329367314671472682, 1329367677940006952]
@@ -190,8 +202,10 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 					  help="Dev only: Toggle maintenance mode for the bot",
 					  usage="maintenance_mode <on/off>")
 	async def maintenance_mode(self, ctx: discord.ext.commands.Context, mode: str):
-		if not isinstance(ctx.message.channel, discord.DMChannel):
+		try:
 			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
 
 		if mode.lower() not in ['on', 'off']:
 			await ctx.message.channel.send('Please specify "on" or "off" for maintenance mode.',

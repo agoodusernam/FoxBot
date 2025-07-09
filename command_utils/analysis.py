@@ -180,7 +180,10 @@ async def analyse_single_user(member: discord.Member, flag: str = None) -> dict[
 
 async def format_analysis(message: discord.Message) -> None:
 	"""Format and send analysis results."""
-	await message.delete()
+	try:
+		await message.delete()
+	except discord.Forbidden:
+		pass
 	flag = message.content.split()[-1].replace('-', '')
 	if flag not in ['w', 'd', 'h']:
 		flag = None
