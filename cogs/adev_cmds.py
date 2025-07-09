@@ -11,14 +11,17 @@ from utils import db_stuff, utils
 
 
 # added the "a" to the start of the file so it loads first
-async def restart(client: 'discord.Client') -> None:
-	await client.close()
+async def shutdown(bot: 'discord.Client', update=False, restart=False) -> None:
+	voice_log.leave_all(bot)
+	await bot.close()
 	db_stuff.disconnect()
 
 	# run git pull to update the codebase, then restart the script
-	os.system('git pull https://github.com/agoodusernam/FoxBot.git')
-
-	os.execv(sys.executable, ['python'] + sys.argv)
+	if update:
+		os.system('git pull https://github.com/agoodusernam/FoxBot.git')
+	
+	if restart:
+		os.execv(sys.executable, ['python'] + sys.argv)
 
 
 async def upload_all_history(channel: discord.TextChannel, author: discord.Member) -> None:
@@ -90,12 +93,11 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 
 	@commands.command(name="restart",
 					  brief="Restart the bot",
-					  help="Dev only: Git pull and restart the bot instance")
+					  help="Dev only: restart the bot instance")
 	async def restart_cmd(self, ctx: discord.ext.commands.Context):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
-		voice_log.leave_all(ctx.bot)
-		await restart(ctx.bot)
+		await shutdown(ctx.bot, update=False, restart=True)
 
 	@commands.command(name="shutdown",
 					  brief="Shutdown the bot",
@@ -103,11 +105,16 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 	async def shutdown(self, ctx: discord.ext.commands.Context):
 		if not isinstance(ctx.message.channel, discord.DMChannel):
 			await ctx.message.delete()
-		await ctx.message.channel.send('Shutting down the bot...', delete_after=ctx.bot.del_after)
-		print('Bot is shutting down...')
-		voice_log.leave_all(ctx.bot)
-		db_stuff.disconnect()
-		await ctx.bot.close()
+		await shutdown(ctx.bot, update=False, restart=False)
+		
+	@commands.command(name="update",
+	                  brief="Update the bot code",
+					  help="Dev only: Update the bot code from the repository",
+					  usage="update")
+	async def update(self, ctx: discord.ext.commands.Context):
+		if not isinstance(ctx.message.channel, discord.DMChannel):
+			await ctx.message.delete()
+		await shutdown(ctx.bot, update=True, restart=True)
 
 	@commands.command(name="add_admin",
 					  brief="Add a user to the admin list",

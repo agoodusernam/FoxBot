@@ -1,4 +1,5 @@
 import enum
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 
@@ -13,18 +14,45 @@ class SchoolQualif(enum.Enum):
 	PHD = [4, 18_030, 6]
 	DOCTORATE = PHD
 	POLYMATH = [5, 50_000, 10]  # Special fictional qualification, not required for any job but gives a salary boost
+	
+	def __getitem__(self, item):
+		return self.value[item]
+	
+	def __gt__(self, other: 'SchoolQualif') -> bool:
+		"""
+		Compares two SchoolQualif enum members based on their index.
+		:param other: The other SchoolQualif member to compare with.
+		:return: True if this member is greater than the other, False otherwise.
+		"""
+		return self.value[0] > other.value[0]
+	
+	def __lt__(self, other: 'SchoolQualif') -> bool:
+		"""
+		Compares two SchoolQualif enum members based on their index.
+		:param other: The other SchoolQualif member to compare with.
+		:return: True if this member is less than the other, False otherwise.
+		"""
+		return self.value[0] < other.value[0]
+	
+	@classmethod
+	def from_string(cls, s: str) -> 'SchoolQualif':
+		"""
+		Converts a string to a SchoolQualif enum member.
+		:param s: The string representation of the qualification.
+		:return: The corresponding SchoolQualif enum member.
+		"""
+		try:
+			return cls[s.upper().replace(" ", "_")]
+		except KeyError:
+			raise ValueError(f"Invalid school qualification: {s}")
+		
+	def to_string(self) -> str:
+		"""
+		Converts a SchoolQualif enum member to its string representation.
+		:return: The string representation of the qualification.
+		"""
+		return self.name.replace('_', ' ').title()
 
-
-def str_to_school_qualif(s: str) -> SchoolQualif:
-	"""
-	Converts a string to a SchoolQualif enum member.
-	:param s: The string representation of the qualification.
-	:return: The corresponding SchoolQualif enum member.
-	"""
-	try:
-		return SchoolQualif[s.upper().replace(' ', '_')]
-	except KeyError:
-		raise ValueError(f"Invalid school qualification: {s}")
 
 class SecurityClearance(enum.Enum):
 	"""
@@ -36,18 +64,32 @@ class SecurityClearance(enum.Enum):
 	TOP_SECRET = 3
 	TS_SCI = 4
 	SPECIAL = 5
-
-
-def str_to_security_clearance(s: str) -> SecurityClearance:
-	"""
-	Converts a string to a SecurityClearance enum member.
-	:param s: The string representation of the security clearance.
-	:return: The corresponding SecurityClearance enum member.
-	"""
-	try:
-		return SecurityClearance[s.upper().replace(" ", "_")]
-	except KeyError:
-		raise ValueError(f"Invalid security clearance: {s}")
+	
+	def __gt__(self, other: 'SecurityClearance') -> bool:
+		"""
+		Compares two SecurityClearance enum members based on their index.
+		:param other: The other SecurityClearance member to compare with.
+		:return: True if this member is greater than the other, False otherwise.
+		"""
+		return self.value > other.value
+	
+	def __lt__(self, other: 'SecurityClearance') -> bool:
+		"""
+		Compares two SecurityClearance enum members based on their index.
+		:param other: The other SecurityClearance member to compare with.
+		:return: True if this member is less than the other, False otherwise.
+		"""
+		return self.value < other.value
+	
+	@classmethod
+	def from_string(cls, s: str) -> 'SecurityClearance':
+		try:
+			return cls[s.upper().replace(" ", "_")]
+		except KeyError:
+			raise ValueError(f"Invalid security clearance: {s}")
+	
+	def to_string(self) -> str:
+		return self.name.replace('_', ' ').title()
 
 
 @dataclass
@@ -57,18 +99,31 @@ class Job:
 	Attributes:
 		name (str): The name of the job.
 		tree (str): The Job tree to which the job belongs.
-		req_qualifications (list[str]): List of qualifications required for the job.
+		req_qualifications (tuple[str]): List of qualifications required for the job.
 		req_experience (int): Years of experience required for the job.
 		salary (int): Salary offered per year.
 		salary_variance (int): Variance in salary in per cent
 	"""
 	name: str
 	tree: str
-	req_qualifications: list[SchoolQualif | SecurityClearance]
+	req_qualifications: tuple[SchoolQualif, SecurityClearance]
 	req_experience: int
 	salary: int
 	salary_variance: int
 	experience_multiplier: float | int = 1
+	
+	def __post_init__(self):
+		"""
+		Post-initialization to ensure that req_qualifications is a tuple of SchoolQualif and SecurityClearance.
+		"""
+		if not isinstance(self.req_qualifications, tuple):
+			raise TypeError("req_qualifications must be a tuple of (SchoolQualif, SecurityClearance)")
+		if len(self.req_qualifications) != 2:
+			raise ValueError("req_qualifications must contain exactly two elements: (SchoolQualif, SecurityClearance)")
+		
+		self.school_requirement = self.req_qualifications[0]
+		self.security_clearance = self.req_qualifications[1]
+	
 
 
 @dataclass
@@ -85,14 +140,6 @@ class JobTree:
 	name: str
 	jobs: list[Job | list[Job]]
 	
-	def __iter__(self) -> iter:
-		"""
-		Iterates over the jobs in the job tree.
-		Returns:
-			Iterator over the jobs in the job tree.
-		"""
+	def __iter__(self) -> Iterator[Job | list[Job]]:
 		for job in self.jobs:
-			if isinstance(job, list):
-				yield from job
-			else:
-				yield job
+			yield job

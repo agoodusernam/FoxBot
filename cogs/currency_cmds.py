@@ -9,6 +9,7 @@ from currency import curr_utils, curr_config, shop_items
 from currency.curr_config import currency_name, loan_interest_rate, income_tax, DrugItem, BlackMarketItem, GunItem, \
 	ShopItem, HouseItem
 from currency.curr_utils import get_shop_item
+from currency.job_utils import SchoolQualif, SecurityClearance
 from currency.jobs import job_trees, Job, JobTree
 
 
@@ -589,14 +590,52 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def jobs_cmd(self, ctx: commands.Context):
 		profile = curr_utils.get_profile(ctx.author)
-		jobs = [job for job in job_trees]
+		school_qualif = SchoolQualif.from_string(profile['qualifications'][0])
+		clearance = SecurityClearance.from_string(profile['qualifications'][1])
 		
+		embed = discord.Embed(title="Available Jobs", color=discord.Color.blue())
+		embed.set_thumbnail(url=ctx.guild.icon.url if hasattr(ctx.guild, 'icon') and ctx.guild.icon else None)
 		
+		for tree in job_trees:
+			# Make a copy of the jobs list to safely reverse it
+			jobs_reversed = list(tree.jobs)
+			jobs_reversed.reverse()
+			
+			# Process jobs from most advanced to most basic
+			for job_or_job_list in jobs_reversed:
+				# Handle both individual jobs and lists of jobs
+				if isinstance(job_or_job_list, list):
+					job_list = job_or_job_list
+				else:
+					job_list = [job_or_job_list]
+				
+				# Check if user qualifies for any job at this level
+				qualified_jobs = []
+				for job in job_list:
+					if (profile['work_experience'] >= job.req_experience and
+							school_qualif >= job.school_requirement and
+							clearance >= job.security_clearance):
+						qualified_jobs.append(job)
+				
+				# If we found qualified jobs at this level, add them and break
+				if qualified_jobs:
+					for job in qualified_jobs:
+						embed.add_field(
+								name=f"{job.name} ({tree.name})",
+								value=f"Salary: {job.salary} {currency_name}\n"
+								      f"Required Exp: {job.req_experience} years\n"
+								      f"Education: {job.school_requirement.to_string()}\n"
+								      f"Clearance: {job.security_clearance.to_string()}",
+								inline=False
+						)
+					# Break after finding the highest level with qualified jobs
+					break
 		
+		if len(embed.fields) == 0:
+			embed.description = "No jobs available for your qualifications yet."
 		
-
-
-
+		await ctx.send(embed=embed)
+		
 async def setup(bot: commands.Bot) -> None:
 	pass
 # await bot.add_cog(CurrencyCmds(bot))

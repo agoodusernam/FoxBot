@@ -3,6 +3,8 @@ from collections.abc import Callable, Awaitable
 
 import discord.ext.commands
 
+from currency.job_utils import SchoolQualif, SecurityClearance
+
 loan_interest_rate: float = 0.09 / 12  # Monthly interest rate
 currency_name: str = "FoxCoins"
 retirement_age: int = 65 * 12  # Age at which a member can retire
@@ -170,6 +172,7 @@ def get_default_profile(member_id: int | str) -> dict[str, int | float | str | d
 		'other_income':     0,
 		'next_income_mult': 1.0,
 		'work_experience':  0,  # Experience in current job, will increase income
+		'qualifications':   [SchoolQualif.HIGH_SCHOOL.to_string(), SecurityClearance.NONE.to_string()],
 		'fire_risk':        0.0,  # Risk of being fired from work, will be increased by certain items or perks
 		'debt':             0,
 		'credit_score':     400,  # Starting credit score

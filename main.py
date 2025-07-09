@@ -400,6 +400,30 @@ async def not_blacklisted(ctx: discord.ext.commands.Context):
 		return False
 	return True
 
-
 # Run the bot
 bot.run(token = os.getenv('TOKEN'), reconnect = True)
+
+"""
+# Regular Expression to extract URL from the string
+import re
+
+regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
+
+# Compile the Regular Expression
+p = re.compile(regex, re.IGNORECASE)
+
+# Find the match between string and the regular expression
+while True:
+	s = input("Enter a string to find URLs: ")
+	m = p.finditer(s)
+	found = False
+	if m:
+		for match in m:
+			found = True
+			break
+	
+	if found:
+		print("URLs found in the string.")
+	else:
+		print("No URLs found in the string.")
+"""
