@@ -2,6 +2,7 @@ import datetime
 from typing import Any
 
 import discord
+from discord.ext.commands import Context
 
 import utils.utils
 from utils import db_stuff
@@ -138,7 +139,7 @@ def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
 		return e
 
 
-async def analyse_single_user(member: discord.Member, flag: str = None) -> dict[str, Any] | str | None:
+async def analyse_single_user(member: discord.User, flag: str = None) -> dict[str, Any] | str | None:
 	"""Analyse messages from a specific user."""
 	try:
 		valid_messages = get_valid_messages(flag)
@@ -152,14 +153,14 @@ async def analyse_single_user(member: discord.Member, flag: str = None) -> dict[
 							if msg['author_global_name'] == global_name or msg['author'] == author_name]
 
 		if not messages_by_user:
-			return f'No messages found for user {member.mention}.'
+			return f'No messages found for user {member.display_name}.'
 
 		content_list = [msg['content'] for msg in messages_by_user]
 
 		# Analyse word statistics
 		word_stats = analyse_word_stats(content_list)
 		if not word_stats:
-			return f'No analyzable content found for user {member.mention}.'
+			return f'No analyzable content found for user {member.display_name}.'
 
 		# Get channel stats for this user
 		active_channels = get_channel_stats(messages_by_user)
@@ -178,8 +179,9 @@ async def analyse_single_user(member: discord.Member, flag: str = None) -> dict[
 		return None
 
 
-async def format_analysis(message: discord.Message) -> None:
+async def format_analysis(ctx: Context) -> None:
 	"""Format and send analysis results."""
+	message = ctx.message
 	try:
 		await message.delete()
 	except discord.Forbidden:
@@ -194,7 +196,7 @@ async def format_analysis(message: discord.Message) -> None:
 	if len(message.content.split()) > 1:
 		try:
 			member_id = utils.utils.get_id_from_str(message.content.split()[1])
-			member = message.guild.get_member(member_id)
+			member = await ctx.bot.fetch_user(member_id)
 			if member is None:
 				await new_msg.edit(content=f'User with ID {member_id} not found.')
 				return
@@ -240,7 +242,7 @@ async def format_analysis(message: discord.Message) -> None:
 		await message.channel.send(f'Error during analysis: {e}')
 
 
-async def analyse_single_user_cmd(message: discord.Message, member: discord.Member, flag: str) -> None:
+async def analyse_single_user_cmd(message: discord.Message, member: discord.User, flag: str) -> None:
 	"""Format and send analysis results for a single user."""
 	result = await analyse_single_user(member, flag)
 
@@ -360,16 +362,20 @@ async def voice_analysis(message: discord.Message) -> None:
 	await message.channel.send(result)
 
 
-async def format_voice_analysis(message: discord.Message) -> None:
+async def format_voice_analysis(ctx: Context) -> None:
 	"""Format and send voice analysis results."""
-	await message.delete()
+	message = ctx.message
+	try:
+		await message.delete()
+	except discord.Forbidden:
+		pass
 
 	new_msg = await message.channel.send('Analysing voice statistics...')
 
 	if len(message.content.split()) > 1:
 		try:
 			member_id = utils.utils.get_id_from_str(message.content.split()[1])
-			member = message.guild.get_member(member_id)
+			member = await ctx.bot.fetch_user(member_id)
 			if member is None:
 				await new_msg.edit(content=f'User with ID {member_id} not found.')
 				return
@@ -437,12 +443,12 @@ def get_user_voice_statistics(user_id: str) -> dict[str, Any] | None:
 	}
 
 
-async def add_voice_analysis_for_user(message: discord.Message, member: discord.Member) -> None:
+async def add_voice_analysis_for_user(message: discord.Message, member: discord.User) -> None:
 	"""Generate voice activity statistics for a specific user"""
 	stats = get_user_voice_statistics(str(member.id))
 
 	if not stats:
-		await message.channel.send(f"No voice activity data available for {member.mention}.")
+		await message.channel.send(f"No voice activity data available for {member.display_name}.")
 		return
 
 	formatted_total_time = format_duration(stats['total_seconds'])

@@ -106,7 +106,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  usage = "analyse [user_id/mention]")
 	@commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
 	async def analyse(self, ctx: discord.ext.commands.Context):
-		await analysis.format_analysis(ctx.message)
+		await analysis.format_analysis(ctx)
 
 	@commands.command(name = "analyse_voice", aliases = ["voice_analysis", "voice_stats", "voice_analyse", "anavc"],
 					  brief = "Analyze voice channel usage",
@@ -114,7 +114,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  usage = "analyse_voice [user_id/mention]")
 	@commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
 	async def analyse_voice(self, ctx: discord.ext.commands.Context):
-		await analysis.format_voice_analysis(ctx.message)
+		await analysis.format_voice_analysis(ctx)
 
 	@commands.command(name = "blacklist",
 					  brief = "Blacklist a user",
