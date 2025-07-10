@@ -265,12 +265,12 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 			pass
 
 		economy_cogs = [
-			'currency_cmds',
-			'currency_cmds_admin',
-			'crime',
-			'ctf',
-			'auction',
-			'gambling_cmds',
+			'Currency',
+			'Currency Admin',
+			'Crime',
+			'CTF',
+			'Auction',
+			'Gambling',
 		]
 
 		for cog in economy_cogs:

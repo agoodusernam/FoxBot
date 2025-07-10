@@ -1,6 +1,6 @@
 from discord.ext import commands
 
-class AuctionCog(commands.Cog):
+class AuctionCog(commands.Cog, name="Auction"):
 	"""Cog for auction-related commands."""
 
 	def __init__(self, bot: commands.Bot):
