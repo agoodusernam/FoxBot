@@ -360,6 +360,37 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 		except discord.HTTPException as e:
 			await ctx.send(f'Failed to edit message with ID {message_id}. Error: {e}',
 						   delete_after = ctx.bot.del_after)
+	
+	@commands.command(name = "last_log",
+					  brief = "Send the last modlog message",
+					  help = "Admin only: Send the last modlog message",
+					  usage = "last_log")
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+	async def send_last_log(self, ctx: discord.ext.commands.Context):
+		try:
+			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
+
+		mod_log_channel = ctx.bot.get_channel(1329367677940006952)  # Channel where the carlbot logs are sent
+		pub_logs_channel = ctx.bot.get_channel(1345300442376310885) # Public logs channel (#guillotine)
+		
+		if mod_log_channel is None or pub_logs_channel is None:
+			await ctx.send('Mod log channel or public logs channel not found.', delete_after=ctx.bot.del_after)
+			return
+		
+		last_mod_log_message = [msg async for msg in mod_log_channel.history(limit=1)][0]
+		embed = last_mod_log_message.embeds[0]
+
+		
+		print("title:", embed.title)
+		print("description:", embed.description)
+		for i, field in enumerate(embed.fields):
+			print(f"Field {i}: {field.name} - {field.value}")
+			
+		print(embed.footer.text if embed.footer else "No footer")
+			
+		
 
 
 async def setup(bot):
