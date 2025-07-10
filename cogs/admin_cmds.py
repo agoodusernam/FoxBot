@@ -49,7 +49,7 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
 	
 	reason = description[0].replace('**Reason:** ', '')
 	description.pop(0)
-	new_description = f'{offender}\n**Reason**: {reason}'
+	new_description = f'**Offender**: {offender}\n**Reason**: {reason}'
 	if not anonymous:
 		moderator = description[0].replace('**Responsible moderator:** ', '')
 		moderator_user = await commands.UserConverter().convert(ctx, moderator)
