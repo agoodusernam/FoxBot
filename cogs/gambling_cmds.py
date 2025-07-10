@@ -56,4 +56,5 @@ class GamblingCmds(commands.Cog, name="Gambling"):
 		return None
 
 async def setup(bot) -> None:
-	await bot.add_cog(GamblingCmds(bot))
+	pass
+	#await bot.add_cog(GamblingCmds(bot))

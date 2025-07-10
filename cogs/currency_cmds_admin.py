@@ -114,4 +114,5 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
 
 
 async def setup(bot: commands.Bot):
-	await bot.add_cog(CurrencyCmdsAdmin(bot))
+	pass
+	#await bot.add_cog(CurrencyCmdsAdmin(bot))

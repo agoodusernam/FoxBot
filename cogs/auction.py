@@ -31,4 +31,5 @@ class AuctionCog(commands.Cog, name="Auction"):
 
 
 async def setup(bot: commands.Bot) -> None:
-	await bot.add_cog(AuctionCog(bot))
+	pass
+	# await bot.add_cog(AuctionCog(bot))
