@@ -390,13 +390,13 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 		description.pop(0)
 		duration = None
 		if description[0].startswith('**Duration**'):
-			duration = description[0].split('**Duration**: ')[1]
+			duration = description[0].split('**Duration**: ')[0]
 			description.pop(0)
 			
-		reason = description[0].split('**Reason**: ')[1]
+		reason = description[0].split('**Reason**: ')[0]
 		description.pop(0)
 		
-		moderator = description[0].split('**Responsible moderator**: ')[1]
+		moderator = description[0].split('**Responsible moderator**: ')[0]
 		
 		to_send_embed = discord.Embed(
 			title=f'{offence} | {moderator}',
