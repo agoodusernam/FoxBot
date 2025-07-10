@@ -165,35 +165,94 @@ async def on_ready():
 class CustomHelpCommand(commands.DefaultHelpCommand):
 	def __init__(self):
 		super().__init__(
-				no_category = "Commands",
-				width = 100,
-				sort_commands = True,
-				dm_help = False
+			no_category = "Miscellaneous",
+			width = 100,
+			sort_commands = True,
+			dm_help = False
 		)
-
+		
 	async def send_bot_help(self, mapping):
 		ctx = self.context
 		if ctx.author.id in bot.blacklist_ids['ids']:
 			await ctx.message.channel.send('You are not allowed to use this command.', delete_after = bot.del_after)
 			return
+		
+		# list of embeds for each cog
+		embeds = []
+		
+		main_embed = discord.Embed(
+			title="Bot Help",
+			description=f"Use `{ctx.prefix}help [command/category]` for more info",
+			color=discord.Color.blue()
+		)
+		main_embed.set_footer(text=f"Type {ctx.prefix}help <command/category> for detailed info")
+		
+		# Add categories to main embed
+		for cog, cmds in mapping.items():
+			filtered = await self.filter_commands(cmds, sort=True)
+			if filtered:
+				cog_name = getattr(cog, "qualified_name", "Miscellaneous")
+				cmd_list = ", ".join(f"`{c.name}`" for c in filtered)
+				main_embed.add_field(name=cog_name, value=cmd_list, inline=False)
+		
+		embeds.append(main_embed)
+		
+		# TODO: Make it automatically detect admin commands
+		
+		# If there's only one page, no need for pagination
+		if len(embeds) == 1:
+			await ctx.send(embed=embeds[0])
+			return
+		
+		# Use buttons for pagination
+		pagination_view = HelpPaginationView(embeds, ctx.author)
+		await ctx.send(embed=embeds[0], view=pagination_view)
 
-		await super().send_bot_help(mapping)
 
-		# Send admin commands separately to admin users
-		if ctx.author.id in bot.admin_ids:
-			admin_help_text = (
-				"**Admin Commands:**\n"
-				f"`{ctx.prefix}rek <user_id/mention>` - Absolutely rek a user\n"
-				f"`{ctx.prefix}analyse [user_id/mention]` - Analyse the server's messages\n"
-				f"`{ctx.prefix}analyse_voice [user_id/mention]` - Analyse the server's voice channel usage\n"
-				f"`{ctx.prefix}blacklist <user_id/mention>` - Blacklist a user from using commands\n"
-				f"`{ctx.prefix}unblacklist <user_id/mention>` - Remove a user from the blacklist\n"
-				f"`{ctx.prefix}echo [channel id] <message>` - Make the bot say something\n"
-				f"`{ctx.prefix}hardlockdown` - Lock down the entire server\n"
-				f"`{ctx.prefix}unhardlockdown` - Unlock the server from hard lockdown\n"
-			)
-			dm = await ctx.author.create_dm()
-			await dm.send(admin_help_text)
+class HelpPaginationView(discord.ui.View):
+	def __init__(self, embeds, author):
+		super().__init__(timeout=60)
+		self.embeds = embeds
+		self.author = author
+		self.current_page = 0
+		self.total_pages = len(embeds)
+		
+		# Update button states initially
+		self.update_buttons()
+	
+	def update_buttons(self):
+		# Disable previous button on first page
+		self.prev_button.disabled = (self.current_page == 0)
+		# Disable next button on last page
+		self.next_button.disabled = (self.current_page == self.total_pages - 1)
+		# Update the page counter
+		self.page_button.label = f"Page {self.current_page + 1}/{self.total_pages}"
+	
+	async def interaction_check(self, interaction):
+		# Only allow the original command author to use the buttons
+		if interaction.user != self.author:
+			await interaction.response().send_message("You cannot use these buttons.", ephemeral=True)
+			return False
+		return True
+	
+	@discord.ui.button(label="Previous", style=discord.ButtonStyle.primary, emoji="⬅️", custom_id="prev")
+	async def prev_button(self, interaction, button):
+		if self.current_page > 0:
+			self.current_page -= 1
+			self.update_buttons()
+			await interaction.response().edit_message(embed=self.embeds[self.current_page], view=self)
+	
+	@discord.ui.button(label="Page 1/2", style=discord.ButtonStyle.secondary, disabled=True, custom_id="page")
+	async def page_button(self, interaction, button):
+		# This button is just a label and doesn't do anything when clicked
+		pass
+	
+	@discord.ui.button(label="Next", style=discord.ButtonStyle.primary, emoji="➡️", custom_id="next")
+	async def next_button(self, interaction, button):
+		if self.current_page < self.total_pages - 1:
+			self.current_page += 1
+			self.update_buttons()
+			await interaction.response().edit_message(embed=self.embeds[self.current_page], view=self)
 
 
 # Apply custom help command
@@ -219,6 +278,7 @@ async def on_command_error(ctx: discord.ext.commands.Context, error):
 # Message event for logging and processing
 @bot.event
 async def on_message(message: discord.Message):
+	bot.today = utils.formatted_today()
 	if message.author.bot:
 		return
 
@@ -264,7 +324,7 @@ async def on_message(message: discord.Message):
 		}
 
 		if os.getenv('LOCAL_SAVE') == 'True':
-			with utils.make_file(bot.today) as file:
+			with utils.make_file() as file:
 				file.write(json.dumps(json_data, ensure_ascii = False) + '\n')
 
 		print(f'Message from {message.author.display_name} [#{message.channel}]: {message.content}')
@@ -276,7 +336,6 @@ async def on_message(message: discord.Message):
 					await db_stuff.send_attachment(message, attachment)
 
 		db_stuff.send_message(json_data)
-		bot.today = utils.formatted_time()
 
 
 # Reaction role events
@@ -380,7 +439,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 async def on_guild_update(before: discord.Guild, after: discord.Guild):
 	if after.vanity_url_code != 'foxeshaven':
 		await bot.get_channel(1329366175796432898).send("<@235644709714788352> <@542798185857286144> Guild invite " +
-		                                                "has been updated!")
+														"has been updated!")
 
 
 async def load_extensions():

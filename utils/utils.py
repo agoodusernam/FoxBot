@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import urllib.request
+from io import TextIOWrapper
 from pathlib import Path
 from typing import Union
 
@@ -19,13 +20,16 @@ def get_id_from_str(u_id: str) -> int:
 def formatted_time() -> str:
 	return datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y_%H-%M-%S')
 
+def formatted_today() -> str:
+	return datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y')
 
-def make_file(name: str = 'messages'):
+
+def make_file() -> 'TextIOWrapper':
 	if not os.path.exists('../data'):
 		os.makedirs('../data')
 	if not os.path.exists('../data/attachments'):
 		os.makedirs('../data/attachments')
-	return open(f'data/{name}.json', 'a+', encoding='utf-8')
+	return open(f'data/{formatted_today()}.json', 'a+', encoding='utf-8')
 
 
 def make_empty_file(path: str | Path):

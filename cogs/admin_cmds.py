@@ -6,6 +6,7 @@ from typing import Union
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import has_role
 from discord.utils import get
 
 import utils.utils as utils
@@ -67,7 +68,7 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
 	await pub_logs_channel.send(embed=to_send_embed)
 
 
-class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True, add_check = is_admin)):
+class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True)):
 	"""Admin commands for managing the server and users."""
 
 	def __init__(self, bot: commands.Bot):
@@ -77,6 +78,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Absolutely rek a user",
 					  help = "Admin only: Timeout a user for 28 days and add them to blacklist",
 					  usage = "rek <user_id/mention>")
+	@commands.check(is_admin)
 	async def rek(self, ctx: discord.ext.commands.Context, member: discord.Member) -> None:
 		del_after = ctx.bot.del_after
 		
@@ -96,6 +98,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 	@commands.command(name = "hardlockdown",
 					  brief = "Lock down the entire server",
 					  help = "Admin only: Timeout all non-admin users for 28 days and add them to blacklist")
+	@commands.check(is_admin)
 	async def hard_lockdown(self, ctx: discord.ext.commands.Context):
 		try:
 			await ctx.message.delete()
@@ -116,6 +119,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 	@commands.command(name = "unhardlockdown",
 					  brief = "Unlock the server from hard lockdown",
 					  help = "Admin only: Remove timeouts and blacklist from all users")
+	@commands.check(is_admin)
 	async def unhard_lockdown(self, ctx: discord.ext.commands.Context):
 		try:
 			await ctx.message.delete()
@@ -146,6 +150,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Analyze server message data",
 					  help = "Provides statistics about messages sent in the server",
 					  usage = "analyse [user_id/mention]")
+	@commands.check(is_admin)
 	@commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
 	async def analyse(self, ctx: discord.ext.commands.Context):
 		await analysis.format_analysis(ctx)
@@ -154,6 +159,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 	                  brief = "Analyze server message data with graphs",
 					  help = "Provides statistics about messages sent in the server with graphical representation",
 					  usage = "analyse_graph [user_id/mention]")
+	@commands.check(is_admin)
 	@commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
 	async def analyse_graph(self, ctx: discord.ext.commands.Context):
 		await analysis.format_analysis(ctx, graph = True)
@@ -162,6 +168,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Analyze voice channel usage",
 					  help = "Provides statistics about voice channel usage in the server",
 					  usage = "analyse_voice [user_id/mention]")
+	@commands.check(is_admin)
 	@commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
 	async def analyse_voice(self, ctx: discord.ext.commands.Context):
 		await analysis.format_voice_analysis(ctx)
@@ -170,6 +177,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Blacklist a user",
 					  help = "Admin only: Prevent a user from using bot commands",
 					  usage = "blacklist <user_id/mention>")
+	@commands.check(is_admin)
 	async def blacklist_id(self, ctx: discord.ext.commands.Context, u_id: str):
 		try:
 			await ctx.message.delete()
@@ -210,6 +218,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Remove user from blacklist",
 					  help = "Admin only: Allow a blacklisted user to use bot commands again",
 					  usage = "unblacklist <user_id/mention>")
+	@commands.check(is_admin)
 	async def unblacklist_id(self, ctx: discord.ext.commands.Context, u_id: str):
 		try:
 			await ctx.message.delete()
@@ -242,6 +251,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Add a channel to no-log list",
 					  help = "Admin only: Prevent logging messages in a specific channel",
 					  usage = "nolog <channel_id/mention>")
+	@commands.check(is_admin)
 	async def nolog_channel(self, ctx: discord.ext.commands.Context, channel_id: str = None):
 		try:
 			await ctx.message.delete()
@@ -272,6 +282,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Remove a channel from no-log list",
 					  help = "Admin only: Allow logging messages in a specific channel again",
 					  usage = "nolog_remove <channel_id/mention>")
+	@commands.check(is_admin)
 	async def nolog_channel_remove(self, ctx: discord.ext.commands.Context, channel_id: str):
 		try:
 			await ctx.message.delete()
@@ -301,6 +312,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Add a user to no-log list",
 					  help = "Admin only: Prevent logging messages from a specific user",
 					  usage = "nologu <user_id/mention>")
+	@commands.check(is_admin)
 	async def nolog_user(self, ctx: discord.ext.commands.Context, u_id: str):
 		try:
 			await ctx.message.delete()
@@ -326,6 +338,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Make the bot say something",
 					  help = "Admin only: Makes the bot say the specified message",
 					  usage = "echo [channel id] <message>")
+	@commands.check(is_admin)
 	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def echo_cmd(self, ctx: discord.ext.commands.Context):
 		message = ctx.message
@@ -356,6 +369,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  brief = "Edit a message the bot has sent",
 					  help = "Admin only: Edit a specific message sent by the bot",
 					  usage = "edit_message <channel_id> <message_id> <new_content>")
+	@commands.check(is_admin)
 	async def edit_message_cmd(self, ctx: discord.ext.commands.Context, *, args: str):
 		try:
 			await ctx.message.delete()
@@ -403,11 +417,12 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 			await ctx.send(f'Failed to edit message with ID {message_id}. Error: {e}',
 						   delete_after = ctx.bot.del_after)
 	
-	@commands.command(name = "last_log", aliases = ["lastlog", "lastmodlog", "last_modlog"],
+	@commands.command(name = "last_log", aliases = ["lastlog", "lastmodlog", "last_modlog", "modlog", "log"],
 					  brief = "Send the last modlog message",
 					  help = "Admin only: Send the last modlog message",
 					  usage = "last_log")
 	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+	@commands.has_role("1097024744982859816")
 	async def send_last_log(self, ctx: discord.ext.commands.Context):
 		try:
 			await ctx.message.delete()
@@ -416,12 +431,14 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 	
 		await last_log(ctx)
 		
-	@commands.command(name = "last_log_anonymous", aliases = ["last_log_a", "lastlog_a", "lastmodlog_a",
-	                                                          "last_modlog_a", "lastloga"],
+	@commands.command(name = "last_log_anonymous", aliases = ["last_log_a", "lastlog_anonymous", "lastlog_a",
+	                                                          "last_modlog_anonymous", "last_modlog_a",
+	                                                          "modlog_anonymous", "modlog_a", "log_anonymous", "log_a"],
 					  brief = "Send the last modlog message anonymously",
 					  help = "Admin only: Send the last modlog message without mentioning the moderator",
 					  usage = "last_log_anonymous")
 	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+	@commands.has_role(1097024744982859816)
 	async def send_last_log_anonymous(self, ctx: discord.ext.commands.Context):
 		try:
 			await ctx.message.delete()
