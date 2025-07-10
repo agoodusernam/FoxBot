@@ -238,13 +238,22 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 				top_15_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:15]
 				usernames = [user['user'] or 'Unknown User' for user in top_15_active_users]
 				message_counts = [user['num_messages'] for user in top_15_active_users]
-
-				plt.figure(figsize=(10, 6))
-				plt.barh(usernames, message_counts, color='skyblue')
-				plt.xlabel('Number of Messages')
-				plt.title('Top 15 Active Users')
+				
+				# Reverse so members with most messages are at the top
+				usernames = usernames[::-1]
+				message_counts = message_counts[::-1]
+				
+				plt.figure(figsize=(10, 6), facecolor='#1f1f1f')  # Dark background
+				ax = plt.gca()
+				ax.set_facecolor('#2d2d2d')  # Slightly lighter background for plot area
+				plt.barh(usernames, message_counts, color='#8a2be2')  # Purple bars
+				plt.xlabel('Number of Messages', color='white')
+				plt.title('Top 15 Active Users', color='white')
+				plt.tick_params(axis='both', colors='white')  # White text for tick labels
+				for spine in ax.spines.values():
+					spine.set_color('#555555')  # Lighter border
 				plt.tight_layout()
-
+				
 				graph_file = 'top_active_users.png'
 				plt.savefig(graph_file)
 				plt.close()
