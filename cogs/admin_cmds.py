@@ -36,7 +36,9 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
 	last_mod_log_message = [msg async for msg in mod_log_channel.history(limit=1)][0]
 	embed = last_mod_log_message.embeds[0]
 	
-	offence = embed.title.split(sep='|')[0]
+	offence = embed.title.split(sep='|')[0].title()
+	if offence.strip() == 'Warn':
+		offence = 'Warning'
 	description = embed.description.split(sep='\n')
 	offender = re.sub(r'^.*?<', '<', description[0])  # Extract offender mention
 	description.pop(0)
@@ -414,7 +416,8 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 	
 		await last_log(ctx)
 		
-	@commands.command(name = "last_log_anonymous", aliases = ["last_log_a", "lastlog_a", "lastmodlog_a", "last_modlog_a"],
+	@commands.command(name = "last_log_anonymous", aliases = ["last_log_a", "lastlog_a", "lastmodlog_a",
+	                                                          "last_modlog_a", "lastloga"],
 					  brief = "Send the last modlog message anonymously",
 					  help = "Admin only: Send the last modlog message without mentioning the moderator",
 					  usage = "last_log_anonymous")
