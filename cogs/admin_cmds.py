@@ -64,7 +64,7 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
 	if duration:
 		to_send_embed.add_field(name='Duration', value=duration, inline=False)
 	
-	await mod_log_channel.send(embed=to_send_embed)
+	await pub_logs_channel.send(embed=to_send_embed)
 
 
 class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True, add_check = is_admin)):
