@@ -19,44 +19,47 @@ def check_valid_syntax(message: dict) -> bool:
 	return all(key in message for key in required_keys)
 
 
-def get_valid_messages(flag: str = None) -> list[dict]:
+def get_valid_messages(flag: str = None) -> tuple[list[dict], int]:
 	"""Download and validate messages from the database."""
 	# flag can be 'w' for last week, 'd' for last day, 'h' for last hour, or None for all messages
+	excluded_ids: list[str] = ["1107579143140413580"]
 	messages = db_stuff.download_all()
+	total_messages = len(messages)
 	if not messages:
 		print('No messages found or failed to connect to the database.')
-		return []
+		return [], 0
 
+	# Filter out excluded users
+	all_messages = [msg for msg in messages if msg['author_id'] not in excluded_ids]
+	
+	# First get all valid messages and delete invalid ones
 	valid_messages = []
-	if not flag:
-		for message in messages:
-			if check_valid_syntax(message):
-				valid_messages.append(message)
-			else:
-				db_stuff.delete_message(message['_id'])
-	elif flag == 'w':
-		# only return messages that were sent in the last week (7 days)
-		week_ago = discord.utils.utcnow() - datetime.timedelta(days=7)
-		for message in messages:
-			if check_valid_syntax(message) and (utils.utils.parse_utciso8601(message['timestamp']) >= week_ago):
-				valid_messages.append(message)
-
-	elif flag == 'd':
-		# only return messages that were sent in the last day (24 hours)
-		day_ago = discord.utils.utcnow() - datetime.timedelta(days=1)
-		for message in messages:
-			if check_valid_syntax(message) and (utils.utils.parse_utciso8601(message['timestamp']) >= day_ago):
-				valid_messages.append(message)
-
-	elif flag == 'h':
-		# only return messages that were sent in the last hour (60 minutes)
-		hour_ago = discord.utils.utcnow() - datetime.timedelta(hours=1)
-		for message in messages:
-			if check_valid_syntax(message) and (utils.utils.parse_utciso8601(message['timestamp']) >= hour_ago):
-				valid_messages.append(message)
+	for message in all_messages:
+		if check_valid_syntax(message):
+			valid_messages.append(message)
+		else:
+			db_stuff.delete_message(message['_id'])
+	
+	# Then apply time filter if specified
+	if flag:
+		time_ago = None
+		if flag == 'w':
+			# Filter to last week
+			time_ago = discord.utils.utcnow() - datetime.timedelta(days=7)
+		elif flag == 'd':
+			# Filter to last day
+			time_ago = discord.utils.utcnow() - datetime.timedelta(days=1)
+		elif flag == 'h':
+			# Filter to last hour
+			time_ago = discord.utils.utcnow() - datetime.timedelta(hours=1)
+		
+		if time_ago:
+			valid_messages = [msg for msg in valid_messages
+							 if utils.utils.parse_utciso8601(msg['timestamp']) >= time_ago]
 
 	print(f'Total valid messages: {len(valid_messages)}')
-	return valid_messages
+	print(f'Total messages in database: {total_messages}')
+	return valid_messages, total_messages
 
 
 def analyse_word_stats(content_list: list[str]) -> dict[str, Any]:
@@ -99,7 +102,7 @@ def get_channel_stats(messages: list[dict]) -> list[dict]:
 def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
 	"""Analyse all messages in the database."""
 	try:
-		valid_messages = get_valid_messages(flag)
+		valid_messages, total_messages = get_valid_messages(flag)
 		if not valid_messages:
 			return 'No valid messages found to analyse.'
 
@@ -125,7 +128,7 @@ def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
 		active_channels = get_channel_stats(valid_messages)
 
 		return {
-			'total_messages':         len(valid_messages),
+			'total_messages':         total_messages,
 			'most_common_word':       word_stats['most_common_word'],
 			'most_common_word_count': word_stats['most_common_word_count'],
 			'total_unique_words':     word_stats['total_unique_words'],
@@ -143,7 +146,7 @@ def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
 def analyse_single_user(member: discord.User, flag: str = None) -> dict[str, Any] | str | None:
 	"""Analyse messages from a specific user."""
 	try:
-		valid_messages = get_valid_messages(flag)
+		valid_messages, total_messages = get_valid_messages(flag)
 		if not valid_messages:
 			return None
 
@@ -168,7 +171,7 @@ def analyse_single_user(member: discord.User, flag: str = None) -> dict[str, Any
 		) if messages_by_user else None
 
 		return {
-			'total_messages':         len(messages_by_user),
+			'total_messages':         total_messages,
 			'most_common_word':       word_stats['most_common_word'],
 			'most_common_word_count': word_stats['most_common_word_count'],
 			'total_unique_words':     word_stats['total_unique_words'],
