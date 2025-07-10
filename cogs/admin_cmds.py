@@ -25,6 +25,45 @@ def save_perms(ctx: discord.ext.commands.Context) -> None:
 	with open('hardlockdown.txt', 'w') as file:
 		json.dump(previous_perms, file, indent = 4)
 
+async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
+	mod_log_channel = ctx.bot.get_channel(1329367677940006952)  # Channel where the carlbot logs are sent
+	pub_logs_channel = ctx.bot.get_channel(1345300442376310885)  # Public logs channel (#guillotine)
+	
+	if mod_log_channel is None or pub_logs_channel is None:
+		await ctx.send('Mod log channel or public logs channel not found.', delete_after=ctx.bot.del_after)
+		return
+	
+	last_mod_log_message = [msg async for msg in mod_log_channel.history(limit=1)][0]
+	embed = last_mod_log_message.embeds[0]
+	
+	offence = embed.title.split(sep='|')[0]
+	description = embed.description.split(sep='\n')
+	offender = re.sub(r'^.*?<', '<', description[0])  # Extract offender mention
+	description.pop(0)
+	duration = None
+	if description[0].startswith('**Duration**'):
+		duration = description[0].replace('**Duration**', '')
+		description.pop(0)
+	
+	reason = description[0].replace('**Reason**: ', '')
+	description.pop(0)
+	new_description = f'{offender}\n**Reason**: {reason}'
+	if not anonymous:
+		moderator = description[0].replace('**Responsible moderator**: ', '')
+		moderator_user = await commands.UserConverter().convert(ctx, moderator)
+		new_description += f'\n**Responsible moderator**: {moderator_user.mention}'
+
+	to_send_embed = discord.Embed(
+			title=f'{offence}',
+			description=new_description,
+			color=discord.Color.red(),
+			timestamp=discord.utils.utcnow()
+	)
+	if duration:
+		to_send_embed.add_field(name='Duration', value=duration, inline=False)
+	
+	await mod_log_channel.send(embed=to_send_embed)
+
 
 class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True, add_check = is_admin)):
 	"""Admin commands for managing the server and users."""
@@ -362,7 +401,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 			await ctx.send(f'Failed to edit message with ID {message_id}. Error: {e}',
 						   delete_after = ctx.bot.del_after)
 	
-	@commands.command(name = "last_log",
+	@commands.command(name = "last_log", aliases = ["lastlog", "lastmodlog", "last_modlog"],
 					  brief = "Send the last modlog message",
 					  help = "Admin only: Send the last modlog message",
 					  usage = "last_log")
@@ -372,41 +411,22 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 			await ctx.message.delete()
 		except discord.Forbidden:
 			pass
+	
+		await last_log(ctx)
+		
+	@commands.command(name = "last_log_anonymous", aliases = ["last_log_a", "lastlog_a", "lastmodlog_a", "last_modlog_a"],
+					  brief = "Send the last modlog message anonymously",
+					  help = "Admin only: Send the last modlog message without mentioning the moderator",
+					  usage = "last_log_anonymous")
+	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+	async def send_last_log_anonymous(self, ctx: discord.ext.commands.Context):
+		try:
+			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
+	
+		await last_log(ctx, anonymous=True)
 
-		mod_log_channel = ctx.bot.get_channel(1329367677940006952)  # Channel where the carlbot logs are sent
-		pub_logs_channel = ctx.bot.get_channel(1345300442376310885) # Public logs channel (#guillotine)
-		
-		if mod_log_channel is None or pub_logs_channel is None:
-			await ctx.send('Mod log channel or public logs channel not found.', delete_after=ctx.bot.del_after)
-			return
-		
-		last_mod_log_message = [msg async for msg in mod_log_channel.history(limit=1)][0]
-		embed = last_mod_log_message.embeds[0]
-
-		
-		offence = embed.title.split(sep='|')[0]
-		description = embed.description.split(sep='\n')
-		offender = re.sub(r'^.*?<', '<', description[0]) # Extract offender mention
-		description.pop(0)
-		duration = None
-		if description[0].startswith('**Duration**'):
-			duration = description[0].split('**Duration**: ')[0]
-			description.pop(0)
-			
-		reason = description[0].split('**Reason**: ')[0]
-		description.pop(0)
-		
-		moderator = description[0].split('**Responsible moderator**: ')[0]
-		
-		to_send_embed = discord.Embed(
-			title=f'{offence} | {moderator}',
-			description=f'{offender}\n**Reason**: {reason}',
-			color=discord.Color.red()
-		)
-		if duration:
-			to_send_embed.add_field(name='Duration', value=duration, inline=False)
-			
-		await mod_log_channel.send(embed=to_send_embed)
 
 
 async def setup(bot):
