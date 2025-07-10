@@ -41,15 +41,15 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
 	offender = re.sub(r'^.*?<', '<', description[0])  # Extract offender mention
 	description.pop(0)
 	duration = None
-	if description[0].startswith('**Duration**'):
-		duration = description[0].replace('**Duration**', '')
+	if description[0].startswith('**Duration'):
+		duration = description[0].replace('**Duration:**', '')
 		description.pop(0)
 	
-	reason = description[0].replace('**Reason**: ', '')
+	reason = description[0].replace('**Reason:** ', '')
 	description.pop(0)
 	new_description = f'{offender}\n**Reason**: {reason}'
 	if not anonymous:
-		moderator = description[0].replace('**Responsible moderator**: ', '')
+		moderator = description[0].replace('**Responsible moderator:** ', '')
 		moderator_user = await commands.UserConverter().convert(ctx, moderator)
 		new_description += f'\n**Responsible moderator**: {moderator_user.mention}'
 
