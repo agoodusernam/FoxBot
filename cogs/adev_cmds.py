@@ -216,6 +216,70 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 
 		status = 'enabled' if ctx.bot.maintenance_mode else 'disabled'
 		await ctx.message.channel.send(f'Maintenance mode has been {status}.', delete_after=ctx.bot.del_after)
+	
+	@commands.command(name="unload_cog",
+					  brief="Unload a cog",
+					  help="Dev only: Unload a specific cog from the bot",
+					  usage="unload_cog <cog_name>")
+	async def unload_cog(self, ctx: discord.ext.commands.Context, cog_name: str):
+		try:
+			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
+
+		if cog_name not in ctx.bot.cogs:
+			await ctx.message.channel.send(f'Cog "{cog_name}" is not loaded.', delete_after=ctx.bot.del_after)
+			return
+
+		await ctx.bot.unload_extension(f'cogs.{cog_name}')
+		await ctx.message.channel.send(f'Cog "{cog_name}" has been unloaded.', delete_after=ctx.bot.del_after)
+		
+	@commands.command(name="load_cog",
+					  brief="Load a cog",
+					  help="Dev only: Load a specific cog into the bot",
+					  usage="load_cog <cog_name>")
+	async def load_cog(self, ctx: discord.ext.commands.Context, cog_name: str):
+		try:
+			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
+
+		if cog_name in ctx.bot.cogs:
+			await ctx.message.channel.send(f'Cog "{cog_name}" is already loaded.', delete_after=ctx.bot.del_after)
+			return
+
+		try:
+			await ctx.bot.load_extension(f'cogs.{cog_name}')
+			await ctx.message.channel.send(f'Cog "{cog_name}" has been loaded.', delete_after=ctx.bot.del_after)
+		except commands.ExtensionError as e:
+			await ctx.message.channel.send(f'Failed to load cog "{cog_name}": {e}', delete_after=ctx.bot.del_after)
+	
+	@commands.command(name="unload_economy",
+					  brief="Unload the economy cogs",
+					  help="Dev only: Unload the economy cogs from the bot",
+					  usage="unload_economy")
+	async def unload_economy(self, ctx: discord.ext.commands.Context):
+		try:
+			await ctx.message.delete()
+		except discord.Forbidden:
+			pass
+
+		economy_cogs = [
+			'currency_cmds',
+			'currency_cmds_admin',
+			'crime',
+			'ctf',
+			'auction',
+			'gambling_cmds',
+		]
+
+		for cog in economy_cogs:
+			if cog in ctx.bot.cogs:
+				await ctx.bot.unload_extension(f'cogs.{cog}')
+				await ctx.message.channel.send(f'Cog "{cog}" has been unloaded.', delete_after=ctx.bot.del_after)
+			else:
+				await ctx.message.channel.send(f'Cog "{cog}" is not loaded.', delete_after=ctx.bot.del_after)
+
 
 
 async def setup(bot):

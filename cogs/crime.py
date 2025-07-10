@@ -149,5 +149,4 @@ class CrimeCog(commands.Cog, name="Crime"):
 
 
 async def setup(bot: commands.Bot):
-	pass
-	# await bot.add_cog(CrimeCog(bot))
+	await bot.add_cog(CrimeCog(bot))
