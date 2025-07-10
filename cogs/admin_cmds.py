@@ -6,7 +6,6 @@ from typing import Union
 
 import discord
 from discord.ext import commands
-from discord.ext.commands import has_role
 from discord.utils import get
 
 import utils.utils as utils
@@ -35,6 +34,9 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
 		return
 	
 	last_mod_log_message = [msg async for msg in mod_log_channel.history(limit=1)][0]
+	if last_mod_log_message.content == "Posted":
+		await ctx.send('This log has already been sent to the public logs channel.', delete_after=ctx.bot.del_after)
+		return
 	embed = last_mod_log_message.embeds[0]
 	
 	offence = embed.title.split(sep='|')[0].title()
@@ -66,6 +68,7 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
 		to_send_embed.add_field(name='Duration', value=duration, inline=False)
 	
 	await pub_logs_channel.send(embed=to_send_embed)
+	await mod_log_channel.send('Posted')
 
 
 class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True)):
@@ -422,7 +425,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  help = "Admin only: Send the last modlog message",
 					  usage = "last_log")
 	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-	@commands.has_role("1097024744982859816")
+	@commands.has_role(1097024744982859816)
 	async def send_last_log(self, ctx: discord.ext.commands.Context):
 		try:
 			await ctx.message.delete()
