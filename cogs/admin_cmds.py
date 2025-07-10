@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import re
 from typing import Union
 
 import discord
@@ -383,14 +384,29 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 		embed = last_mod_log_message.embeds[0]
 
 		
-		print("title:", embed.title)
-		print("description:", embed.description)
-		for i, field in enumerate(embed.fields):
-			print(f"Field {i}: {field.name} - {field.value}")
+		offence = embed.title.split(sep='|')[0]
+		description = embed.description.split(sep='\n')
+		offender = re.sub(r'^.*?<', '<', description[0]) # Extract offender mention
+		description.pop(0)
+		duration = None
+		if description[0].startswith('**Duration**'):
+			duration = description[0].split('**Duration**: ')[1]
+			description.pop(0)
 			
-		print(embed.footer.text if embed.footer else "No footer")
-			
+		reason = description[0].split('**Reason**: ')[1]
+		description.pop(0)
 		
+		moderator = description[0].split('**Responsible moderator**: ')[1]
+		
+		to_send_embed = discord.Embed(
+			title=f'{offence} | {moderator}',
+			description=f'{offender}\n**Reason**: {reason}',
+			color=discord.Color.red()
+		)
+		if duration:
+			to_send_embed.add_field(name='Duration', value=duration, inline=False)
+			
+		await mod_log_channel.send(embed=to_send_embed)
 
 
 async def setup(bot):
