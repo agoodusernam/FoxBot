@@ -140,7 +140,7 @@ def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
 		return e
 
 
-async def analyse_single_user(member: discord.User, flag: str = None) -> dict[str, Any] | str | None:
+def analyse_single_user(member: discord.User, flag: str = None) -> dict[str, Any] | str | None:
 	"""Analyse messages from a specific user."""
 	try:
 		valid_messages = get_valid_messages(flag)
@@ -148,10 +148,8 @@ async def analyse_single_user(member: discord.User, flag: str = None) -> dict[st
 			return None
 
 		# Filter messages by this user
-		global_name = member.global_name
-		author_name = member.name
 		messages_by_user = [msg for msg in valid_messages
-							if msg['author_global_name'] == global_name or msg['author'] == author_name]
+							if msg['author_id'] == str(member.id)]
 
 		if not messages_by_user:
 			return f'No messages found for user {member.display_name}.'
@@ -271,7 +269,7 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 
 async def analyse_single_user_cmd(message: discord.Message, member: discord.User, flag: str) -> None:
 	"""Format and send analysis results for a single user."""
-	result = await analyse_single_user(member, flag)
+	result = analyse_single_user(member, flag)
 
 	if isinstance(result, dict):
 		top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'],
