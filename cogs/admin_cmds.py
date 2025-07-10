@@ -107,6 +107,14 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 	@commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
 	async def analyse(self, ctx: discord.ext.commands.Context):
 		await analysis.format_analysis(ctx)
+	
+	@commands.command(name = "analyse_graph", aliases = ["graph_analysis", "graph_stats", "graph_analyse", "anag"],
+	                  brief = "Analyze server message data with graphs",
+					  help = "Provides statistics about messages sent in the server with graphical representation",
+					  usage = "analyse_graph [user_id/mention]")
+	@commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
+	async def analyse_graph(self, ctx: discord.ext.commands.Context):
+		await analysis.format_analysis(ctx, graph = True)
 
 	@commands.command(name = "analyse_voice", aliases = ["voice_analysis", "voice_stats", "voice_analyse", "anavc"],
 					  brief = "Analyze voice channel usage",

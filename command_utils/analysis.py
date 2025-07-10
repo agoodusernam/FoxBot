@@ -1,5 +1,6 @@
 import datetime
 from typing import Any
+import matplotlib.pyplot as plt
 
 import discord
 from discord.ext.commands import Context
@@ -183,7 +184,7 @@ async def analyse_single_user(member: discord.User, flag: str = None) -> dict[st
 		return None
 
 
-async def format_analysis(ctx: Context) -> None:
+async def format_analysis(ctx: Context, graph=False) -> None:
 	"""Format and send analysis results."""
 	message = ctx.message
 	try:
@@ -213,13 +214,10 @@ async def format_analysis(ctx: Context) -> None:
 
 	try:
 		result = analyse(flag)
-		await new_msg.delete()
 
 		if isinstance(result, dict):
-			top_5_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'],
-										reverse=True)[:5]
-			top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'],
-										   reverse=True)[:5]
+			top_5_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:5]
+			top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'], reverse=True)[:5]
 
 			msg = (f"{result['total_messages']} total messages analysed\n"
 				   f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
@@ -235,7 +233,23 @@ async def format_analysis(ctx: Context) -> None:
 			for i, channel in enumerate(top_5_active_channels, start=1):
 				msg += f"**{i}. {channel['channel']}** {channel['num_messages']} messages\n"
 
-			await message.channel.send(msg)
+			await new_msg.edit(content=msg)
+			if graph:
+				top_15_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:15]
+				usernames = [user['user'] or 'Unknown User' for user in top_15_active_users]
+				message_counts = [user['num_messages'] for user in top_15_active_users]
+
+				plt.figure(figsize=(10, 6))
+				plt.barh(usernames, message_counts, color='skyblue')
+				plt.xlabel('Number of Messages')
+				plt.title('Top 15 Active Users')
+				plt.tight_layout()
+
+				graph_file = 'top_active_users.png'
+				plt.savefig(graph_file)
+				plt.close()
+
+				await message.channel.send(file=discord.File(graph_file))
 		elif isinstance(result, Exception):
 			await message.channel.send(f'Error during analysis: {result}')
 		elif isinstance(result, str):

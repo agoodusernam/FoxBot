@@ -13,8 +13,8 @@ from utils import db_stuff, utils
 # added the "a" to the start of the file so it loads first
 async def shutdown(bot: 'discord.Client', update=False, restart=False) -> None:
 	voice_log.leave_all(bot)
-	await bot.close()
 	db_stuff.disconnect()
+	await bot.close()
 
 	# run git pull to update the codebase, then restart the script
 	if update:
