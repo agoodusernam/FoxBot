@@ -57,7 +57,7 @@ def get_valid_messages(flag: str = None) -> tuple[list[dict], int]:
 		
 		if time_ago:
 			valid_messages = [msg for msg in valid_messages
-			                  if utils.utils.parse_utciso8601(msg['timestamp']) >= time_ago]
+							  if utils.utils.parse_utciso8601(msg['timestamp']) >= time_ago]
 	
 	print(f'Total valid messages: {len(valid_messages)}')
 	print(f'Total messages in database: {total_messages}')
@@ -92,7 +92,7 @@ def get_channel_stats(messages: list[dict]) -> list[dict]:
 		return []
 	channel_counts = collections.Counter(msg['channel'] for msg in messages)
 	return [{'channel': channel, 'num_messages': count}
-	        for channel, count in channel_counts.items()]
+			for channel, count in channel_counts.items()]
 
 
 def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
@@ -117,7 +117,7 @@ def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
 		)
 		
 		active_users = [{'user': user, 'num_messages': count}
-		                for user, count in user_message_count.items()]
+						for user, count in user_message_count.items()]
 		
 		# Get channel stats
 		active_channels = get_channel_stats(valid_messages)
@@ -147,7 +147,7 @@ def analyse_single_user(member: discord.User, flag: str = None) -> dict[str, Any
 		
 		# Filter messages by this user
 		messages_by_user = [msg for msg in valid_messages
-		                    if msg['author_id'] == str(member.id)]
+							if msg['author_id'] == str(member.id)]
 		
 		if not messages_by_user:
 			return f'No messages found for user {member.display_name}.'
@@ -214,17 +214,16 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 		if isinstance(result, dict):
 			active_users_lb = copy.deepcopy(result['active_users_lb'])
 			top_5_active_users = sorted(active_users_lb, key=lambda x: x['num_messages'],
-			                            reverse=True)[:5]
-			top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'], reverse=True)[
-			                        :5]
+										reverse=True)[:5]
+			top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'], reverse=True)[:5]
 			for user in top_5_active_users:
 				user['user'] = ctx.bot.get_user(int(user['user'])).display_name
 			
-			msg = (f"{result['total_messages']} total messages analysed\n"
-			       f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
-			       f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
-			       f"Total users: {result['total_users']}\n"
-			       f"Top 5 most active users:\n")
+			msg = (f"{result['total_messages']} total messages analysed\n" +
+				   f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n" +
+				   f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} " +
+				   f"characters)\nTotal users: {result['total_users']}\n" +
+				   f"Top 5 most active users:\n")
 			
 			for i, user in enumerate(top_5_active_users, start=1):
 				username = user['user'] or 'Unknown User'
@@ -239,9 +238,24 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 				return
 			
 			top_15_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:15]
-			usernames = [ctx.bot.get_user(int(user['user'].strip())).display_name if isinstance(ctx.bot.get_user(int(
-					user['user'])), discord.User) else f'{user["user"]}' for user in top_15_active_users]
-			message_counts = [user['num_messages'] for user in top_15_active_users]
+			usernames = []
+			message_counts = []
+			guild = ctx.bot.get_guild(1081760248433492140)
+			for user in top_15_active_users:
+				display = user['user']
+				user_id = int(user['user'].strip())
+				discord_member = guild.get_member(user_id)
+				if isinstance(discord_member, discord.Member):
+					display = discord_member.display_name
+				if discord_member is None:
+					discord_member = ctx.bot.get_user(user_id)
+				
+				if isinstance(discord_member, discord.User):
+					display = discord_member.global_name or discord_member.name or display
+				
+				usernames.append(display)
+				
+				message_counts.append(user['num_messages'])
 			
 			# Reverse so members with most messages are at the top
 			usernames = usernames[::-1]
@@ -279,12 +293,12 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.User
 	
 	if isinstance(result, dict):
 		top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'],
-		                               reverse=True)[:5]
+									   reverse=True)[:5]
 		msg = (f"{result['total_messages']} messages found for **{member.name}**\n"
-		       f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
-		       f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
-		       f"Most recent message sent at: {result['most_recent_message']}\n"
-		       f"Top 5 most active channels:\n")
+			   f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
+			   f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
+			   f"Most recent message sent at: {result['most_recent_message']}\n"
+			   f"Top 5 most active channels:\n")
 		
 		for i, channel in enumerate(top_5_active_channels, 1):
 			msg += f"**{i}. {channel['channel']}** {channel['num_messages']} messages\n"
