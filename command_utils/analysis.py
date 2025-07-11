@@ -235,33 +235,34 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 				msg += f"**{i}. {channel['channel']}** {channel['num_messages']} messages\n"
 			
 			await new_msg.edit(content=msg)
-			if graph:
-				top_15_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[
-				                      :15]
-				usernames = [ctx.bot.get_user(int(user['user'])).display_name if isinstance(ctx.bot.get_user(int(user['user'])),
-				             discord.User) else 'Unknown User' for user in top_15_active_users]
-				message_counts = [user['num_messages'] for user in top_15_active_users]
-				
-				# Reverse so members with most messages are at the top
-				usernames = usernames[::-1]
-				message_counts = message_counts[::-1]
-				
-				plt.figure(figsize=(10, 6), facecolor='#1f1f1f')  # Dark background
-				ax = plt.gca()
-				ax.set_facecolor('#2d2d2d')  # Slightly lighter background for plot area
-				plt.barh(usernames, message_counts, color='#8a2be2')  # Purple bars
-				plt.xlabel('Number of Messages', color='white')
-				plt.title('Top 15 Active Users', color='white')
-				plt.tick_params(axis='both', colors='white')  # White text for tick labels
-				for spine in ax.spines.values():
-					spine.set_color('#555555')  # Lighter border
-				plt.tight_layout()
-				
-				graph_file = 'top_active_users.png'
-				plt.savefig(graph_file)
-				plt.close()
-				
-				await message.channel.send(file=discord.File(graph_file))
+			if not graph:
+				return
+			
+			top_15_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:15]
+			usernames = [ctx.bot.get_user(int(user['user'])).display_name if isinstance(ctx.bot.get_user(int(user['user'])),
+			             discord.User) else f'{user["user"]}' for user in top_15_active_users]
+			message_counts = [user['num_messages'] for user in top_15_active_users]
+			
+			# Reverse so members with most messages are at the top
+			usernames = usernames[::-1]
+			message_counts = message_counts[::-1]
+			
+			plt.figure(figsize=(10, 6), facecolor='#1f1f1f')  # Dark background
+			ax = plt.gca()
+			ax.set_facecolor('#2d2d2d')  # Slightly lighter background for plot area
+			plt.barh(usernames, message_counts, color='#8a2be2')  # Purple bars
+			plt.xlabel('Number of Messages', color='white')
+			plt.title('Top 15 Active Users', color='white')
+			plt.tick_params(axis='both', colors='white')  # White text for tick labels
+			for spine in ax.spines.values():
+				spine.set_color('#555555')  # Lighter border
+			plt.tight_layout()
+			
+			graph_file = 'top_active_users.png'
+			plt.savefig(graph_file)
+			plt.close()
+			
+			await message.channel.send(file=discord.File(graph_file))
 		elif isinstance(result, Exception):
 			await message.channel.send(f'Error during analysis: {result}')
 		elif isinstance(result, str):
@@ -269,7 +270,7 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 		else:
 			await message.channel.send('No valid messages found for analysis.')
 	except Exception as e:
-		await message.channel.send(f'Error during analysis: {e}')
+		await ctx.send(f'Error during analysis: {e}')
 
 
 async def analyse_single_user_cmd(message: discord.Message, member: discord.User, flag: str) -> None:
