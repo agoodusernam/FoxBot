@@ -253,13 +253,11 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 				display = user['user']
 				user_id = int(user['user'].strip())
 				discord_member = guild.get_member(user_id)
-				if isinstance(discord_member, discord.Member):
-					display = discord_member.display_name
 				if discord_member is None:
-					discord_member = ctx.bot.get_user(user_id)
+					discord_member = await ctx.bot.fetch_user(user_id)
 				
-				if isinstance(discord_member, discord.User):
-					display = discord_member.global_name or discord_member.name or display
+				if discord_member is not None:
+					display = discord_member.display_name
 				
 				usernames.append(''.join(e for e in display if e.isalnum()))
 				
