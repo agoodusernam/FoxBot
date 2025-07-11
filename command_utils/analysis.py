@@ -319,7 +319,7 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.User
 		                         reverse=True)[:5]
 		num_channels = 5
 		if flag == 'all':
-			num_channels = result['active_channels_lb']
+			num_channels = len(result['active_channels_lb'])
 			active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'],
 			                         reverse=True)
 		
