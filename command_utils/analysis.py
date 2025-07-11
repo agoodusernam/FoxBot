@@ -1,4 +1,5 @@
 import collections
+import copy
 import datetime
 from typing import Any
 import matplotlib.pyplot as plt
@@ -211,7 +212,8 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 		result = analyse(flag)
 
 		if isinstance(result, dict):
-			top_5_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:5]
+			top_5_active_users = sorted(copy.deepcopy(result['active_users_lb']), key=lambda x: x['num_messages'],
+			                            reverse=True)[:5]
 			top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'], reverse=True)[:5]
 			for user in top_5_active_users:
 				user['user'] = ctx.bot.get_user(int(user['user'])).display_name
@@ -233,7 +235,9 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 			await new_msg.edit(content=msg)
 			if graph:
 				top_15_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:15]
-				usernames = [ctx.bot.get_user(int(user['user'])).display_name for user in top_15_active_users]
+				usernames = ['Unknown User'] * 15
+				for i, user in enumerate(top_15_active_users):
+					usernames[i] = ctx.bot.get_user(int(user['user'])).display_name
 				message_counts = [user['num_messages'] for user in top_15_active_users]
 				
 				# Reverse so members with most messages are at the top
