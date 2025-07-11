@@ -212,12 +212,21 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 		result = analyse(flag)
 		
 		if isinstance(result, dict):
+			guild = ctx.bot.get_guild(1081760248433492140)
 			active_users_lb = copy.deepcopy(result['active_users_lb'])
 			top_5_active_users = sorted(active_users_lb, key=lambda x: x['num_messages'],
 										reverse=True)[:5]
 			top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'], reverse=True)[:5]
 			for user in top_5_active_users:
-				user['user'] = ctx.bot.get_user(int(user['user'])).display_name
+				
+				member = guild.get_member(int(user['user'].strip()))
+				to_set = user['user']
+				if isinstance(member, discord.Member):
+					to_set = member.display_name
+				if member is None:
+					to_set = (await ctx.bot.fetch_user(int(user['user'].strip()))).display_name
+				
+				user['user'] = to_set
 			
 			msg = (f"{result['total_messages']} total messages analysed\n" +
 				   f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n" +
@@ -240,7 +249,6 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 			top_15_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:15]
 			usernames = []
 			message_counts = []
-			guild = ctx.bot.get_guild(1081760248433492140)
 			for user in top_15_active_users:
 				display = user['user']
 				user_id = int(user['user'].strip())
@@ -253,7 +261,7 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 				if isinstance(discord_member, discord.User):
 					display = discord_member.global_name or discord_member.name or display
 				
-				usernames.append(display)
+				usernames.append(''.join(e for e in display if e.isalnum()))
 				
 				message_counts.append(user['num_messages'])
 			
