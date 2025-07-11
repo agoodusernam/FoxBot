@@ -146,7 +146,7 @@ def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
 def analyse_single_user(member: discord.User, flag: str = None) -> dict[str, Any] | str | None:
 	"""Analyse messages from a specific user."""
 	try:
-		valid_messages, total_messages = get_valid_messages(flag)
+		valid_messages, _ = get_valid_messages(flag)
 		if not valid_messages:
 			return None
 
@@ -171,7 +171,7 @@ def analyse_single_user(member: discord.User, flag: str = None) -> dict[str, Any
 		) if messages_by_user else None
 
 		return {
-			'total_messages':         total_messages,
+			'total_messages':         len(messages_by_user),
 			'most_common_word':       word_stats['most_common_word'],
 			'most_common_word_count': word_stats['most_common_word_count'],
 			'total_unique_words':     word_stats['total_unique_words'],
