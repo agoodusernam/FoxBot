@@ -1,3 +1,4 @@
+import collections
 import datetime
 from typing import Any
 import matplotlib.pyplot as plt
@@ -67,22 +68,18 @@ def analyse_word_stats(content_list: list[str]) -> dict[str, Any]:
 	if not content_list:
 		return {}
 
-	word_count = {}
-	for msg in content_list:
-		for word in msg.split():
-			word = word.lower()
-			word_count[word] = word_count.get(word, 0) + 1
-
-	if not word_count:
+	all_words = [word.lower() for msg in content_list for word in msg.split()]
+	if not all_words:
 		return {}
 
-	most_common_word = max(word_count, key=word_count.get)
-	unique_words = set(word_count.keys())
+	word_count = collections.Counter(all_words)
+	most_common_word, most_common_word_count = word_count.most_common(1)[0]
+	unique_words = set(all_words)
 	average_length = sum(len(word) for word in unique_words) / len(unique_words) if unique_words else 0
 
 	return {
 		'most_common_word':       most_common_word,
-		'most_common_word_count': word_count[most_common_word],
+		'most_common_word_count': most_common_word_count,
 		'total_unique_words':     len(unique_words),
 		'average_length':         average_length
 	}
@@ -90,11 +87,9 @@ def analyse_word_stats(content_list: list[str]) -> dict[str, Any]:
 
 def get_channel_stats(messages: list[dict]) -> list[dict]:
 	"""Get statistics about channel activity."""
-	channel_counts = {}
-	for message in messages:
-		channel = message['channel']
-		channel_counts[channel] = channel_counts.get(channel, 0) + 1
-
+	if not messages:
+		return []
+	channel_counts = collections.Counter(msg['channel'] for msg in messages)
 	return [{'channel': channel, 'num_messages': count}
 			for channel, count in channel_counts.items()]
 
@@ -116,10 +111,9 @@ def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
 			return 'No valid content to analyze.'
 
 		# Get user message counts
-		user_message_count = {}
-		for message in valid_messages:
-			user_id = message['author_global_name'] or message['author']
-			user_message_count[user_id] = user_message_count.get(user_id, 0) + 1
+		user_message_count = collections.Counter(
+				msg['author_id'] for msg in valid_messages
+		)
 
 		active_users = [{'user': user, 'num_messages': count}
 						for user, count in user_message_count.items()]
@@ -219,6 +213,8 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 		if isinstance(result, dict):
 			top_5_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:5]
 			top_5_active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'], reverse=True)[:5]
+			for user in top_5_active_users:
+				user['user'] = ctx.bot.get_user(int(user['user'])).display_name
 
 			msg = (f"{result['total_messages']} total messages analysed\n"
 				   f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n"
@@ -237,7 +233,7 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 			await new_msg.edit(content=msg)
 			if graph:
 				top_15_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:15]
-				usernames = [user['user'] or 'Unknown User' for user in top_15_active_users]
+				usernames = [ctx.bot.get_user(int(user['user'])).display_name for user in top_15_active_users]
 				message_counts = [user['num_messages'] for user in top_15_active_users]
 				
 				# Reverse so members with most messages are at the top
