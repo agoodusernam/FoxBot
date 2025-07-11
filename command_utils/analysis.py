@@ -239,8 +239,8 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 				return
 			
 			top_15_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:15]
-			usernames = [ctx.bot.get_user(int(user['user'])).display_name if isinstance(ctx.bot.get_user(int(user['user'])),
-			             discord.User) else f'{user["user"]}' for user in top_15_active_users]
+			usernames = [ctx.bot.get_user(int(user['user'].strip())).display_name if isinstance(ctx.bot.get_user(int(
+					user['user'])), discord.User) else f'{user["user"]}' for user in top_15_active_users]
 			message_counts = [user['num_messages'] for user in top_15_active_users]
 			
 			# Reverse so members with most messages are at the top
