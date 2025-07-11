@@ -236,7 +236,7 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 			await new_msg.edit(content=msg)
 			if graph:
 				top_15_active_users = sorted(result['active_users_lb'], key=lambda x: x['num_messages'], reverse=True)[:15]
-				usernames: list[str] = [] * 15
+				usernames: list[str] = [] * len(top_15_active_users)
 				for i, user in enumerate(top_15_active_users):
 					try:
 						usernames[i] = ctx.bot.get_user(int(user['user'])).display_name
