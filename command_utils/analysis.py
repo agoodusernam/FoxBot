@@ -92,7 +92,7 @@ def get_channel_stats(messages: list[dict]) -> list[dict]:
 		return []
 	channel_counts = collections.Counter(msg['channel'] for msg in messages)
 	return [{'channel': channel, 'num_messages': count}
-	        for channel, count in channel_counts.items()]
+	        for channel, count in channel_counts.items() if count > 0]
 
 
 def analyse(flag: str = None) -> dict[str, Any] | str | Exception:
@@ -175,16 +175,21 @@ def analyse_single_user(member: discord.User, flag: str = None) -> dict[str, Any
 		
 		active_user_lb = sorted(active_users, key=lambda x: x['num_messages'],
 		                        reverse=True)
+		active_user_lb_position = 0
+		for i, user in enumerate(active_user_lb, 1):
+			if user['user'] == str(member.id):
+				active_user_lb_position = i
+				break
 		
 		return {
-			'total_messages':         len(messages_by_user),
-			'most_common_word':       word_stats['most_common_word'],
-			'most_common_word_count': word_stats['most_common_word_count'],
-			'total_unique_words':     word_stats['total_unique_words'],
-			'average_length':         word_stats['average_length'],
+			'total_messages':           len(messages_by_user),
+			'most_common_word':         word_stats['most_common_word'],
+			'most_common_word_count':   word_stats['most_common_word_count'],
+			'total_unique_words':       word_stats['total_unique_words'],
+			'average_length':           word_stats['average_length'],
 			'active_channels_lb':       active_channels,
-			'active_users_lb_position': next((i for i, user in enumerate(active_user_lb))),
-			'most_recent_message':    f"{most_recent_message:%H:%M:%S} on the {most_recent_message:%d.%m.%Y}" if most_recent_message else 'N/A',
+			'active_users_lb_position': active_user_lb_position,
+			'most_recent_message':      f"{most_recent_message:%H:%M:%S} on the {most_recent_message:%d.%m.%Y}" if most_recent_message else 'N/A',
 		}
 	
 	except Exception as e:
@@ -317,18 +322,19 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.User
 			num_channels = result['active_channels_lb']
 			active_channels = sorted(result['active_channels_lb'], key=lambda x: x['num_messages'],
 			                         reverse=True)
-
+		
 		msg = (f"{result['total_messages']} messages found for **{member.name}**\n"
 		       f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n" +
 		       f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} " +
 		       f"characters)\n" +
-		       f"Leaderboard position: {result['active_users_lb_position'] + 1}\n" +
+		       f"Leaderboard position: {result['active_users_lb_position']}\n" +
 		       f"Most recent message sent at: {result['most_recent_message']}\n" +
 		       f"Top {num_channels} most active channels:\n")
 		
 		for i, channel in enumerate(active_channels, 1):
 			msg += f"**{i}. {channel['channel']}** {channel['num_messages']} messages\n"
 		
+		print(msg)
 		await message.channel.send(msg)
 	elif isinstance(result, str):
 		await message.channel.send(result)
