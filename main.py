@@ -276,7 +276,7 @@ class HelpPaginationView(discord.ui.View):
 		# Update the page counter
 		self.page_button.label = f"Page {self.current_page + 1}/{self.total_pages}"
 	
-	async def interaction_check(self, interaction):
+	async def interaction_check(self, interaction: discord.Interaction):
 		# Only allow the original command author to use the buttons
 		if interaction.user != self.author:
 			await interaction.response().send_message("You cannot use these buttons.", ephemeral=True)
@@ -284,23 +284,23 @@ class HelpPaginationView(discord.ui.View):
 		return True
 	
 	@discord.ui.button(label="Previous", style=discord.ButtonStyle.primary, emoji="⬅️", custom_id="prev")
-	async def prev_button(self, interaction, button):
+	async def prev_button(self, interaction: discord.Interaction, button):
 		if self.current_page > 0:
 			self.current_page -= 1
 			self.update_buttons()
-			await interaction.response().edit_message(embed=self.embeds[self.current_page], view=self)
+			await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
 	
 	@discord.ui.button(label="Page 1/2", style=discord.ButtonStyle.secondary, disabled=True, custom_id="page")
-	async def page_button(self, interaction, button):
+	async def page_button(self, interaction: discord.Interaction, button):
 		# This button is just a label and doesn't do anything when clicked
 		pass
 	
 	@discord.ui.button(label="Next", style=discord.ButtonStyle.primary, emoji="➡️", custom_id="next")
-	async def next_button(self, interaction, button):
+	async def next_button(self, interaction: discord.Interaction, button):
 		if self.current_page < self.total_pages - 1:
 			self.current_page += 1
 			self.update_buttons()
-			await interaction.response().edit_message(embed=self.embeds[self.current_page], view=self)
+			await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
 
 
 # Apply custom help command
