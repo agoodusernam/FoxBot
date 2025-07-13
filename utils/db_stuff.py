@@ -103,7 +103,7 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
 		}
 
 		# Store file in GridFS
-		file_id = fs.put(
+		fs.put(
 				attachment_bytes,
 				filename=attachment.filename,
 				metadata=metadata

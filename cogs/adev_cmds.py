@@ -7,7 +7,7 @@ from discord.ext import commands
 
 from command_utils.checks import is_dev
 from custom_logging import voice_log
-from utils import db_stuff, utils
+from utils import db_stuff
 
 
 # added the "a" to the start of the file so it loads first
@@ -122,66 +122,6 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 			pass
 		await shutdown(ctx.bot, update=True, restart=True)
 
-	@commands.command(name="add_admin",
-					  brief="Add a user to the admin list",
-					  help="Dev only: Add a user to the admin list",
-					  usage="add_admin <user_id/mention>")
-	async def add_admin(self, ctx: discord.ext.commands.Context, u_id: str):
-		try:
-			await ctx.message.delete()
-		except discord.Forbidden:
-			pass
-
-		try:
-			if u_id is None:
-				raise ValueError
-			u_id = utils.get_id_from_str(u_id)
-		except ValueError:
-			await ctx.message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-										   delete_after=ctx.bot.del_after)
-			return
-		if u_id in ctx.bot.admin_ids:
-			await ctx.message.channel.send(f'User with ID {u_id} is already an admin.',
-										   delete_after=ctx.bot.del_after)
-			return
-		if u_id in ctx.bot.blacklist_ids['ids']:
-			await ctx.message.channel.send(f'User with ID {u_id} is blacklisted. Please unblacklist them first.',
-										   delete_after=ctx.bot.del_after)
-			return
-
-		ctx.bot.admin_ids.append(u_id)
-		utils.add_to_config(config=ctx.bot.config, key='admin_ids', value=u_id)
-
-		await ctx.message.channel.send(f'User with ID {u_id} has been added to the admin list.',
-									   delete_after=ctx.bot.del_after)
-
-	@commands.command(name="remove_admin",
-					  brief="Remove a user from the admin list",
-					  help="Dev only: Remove a user from the admin list",
-					  usage="remove_admin <user_id/mention>")
-	async def remove_admin(self, ctx: discord.ext.commands.Context, u_id: str):
-		try:
-			await ctx.message.delete()
-		except discord.Forbidden:
-			pass
-
-		try:
-			if u_id is None:
-				raise ValueError
-			u_id = utils.get_id_from_str(u_id)
-		except ValueError:
-			await ctx.message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-										   delete_after=ctx.bot.del_after)
-			return
-		if u_id not in ctx.bot.admin_ids:
-			await ctx.message.channel.send(f'User with ID {u_id} is not an admin.', delete_after=ctx.bot.del_after)
-			return
-		ctx.bot.admin_ids.remove(u_id)
-		utils.remove_from_config(config=ctx.bot.config, key='admin_ids')
-
-		await ctx.message.channel.send(f'User with ID {u_id} has been removed from the admin list.',
-									   delete_after=ctx.bot.del_after)
-
 	@commands.command(name="upload_all_history",
 					  brief="Upload all messages from a server",
 					  help="Dev only: Upload all messages from a specific guild to the database",
@@ -216,109 +156,6 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
 
 		status = 'enabled' if ctx.bot.maintenance_mode else 'disabled'
 		await ctx.message.channel.send(f'Maintenance mode has been {status}.', delete_after=ctx.bot.del_after)
-	
-	@commands.command(name="unload_cog",
-					  brief="Unload a cog",
-					  help="Dev only: Unload a specific cog from the bot",
-					  usage="unload_cog <cog_name>")
-	async def unload_cog(self, ctx: discord.ext.commands.Context, cog_name: str):
-		try:
-			await ctx.message.delete()
-		except discord.Forbidden:
-			pass
-	
-		# Check if the input matches a loaded cog (case-insensitive)
-		cog_found = False
-		for loaded_cog in ctx.bot.cogs:
-			if loaded_cog.lower() == cog_name.lower():
-				cog_name = loaded_cog  # Use the correct case
-				cog_found = True
-				break
-		
-		if not cog_found:
-			await ctx.message.channel.send(f'Cog "{cog_name}" is not loaded. Available cogs: {", ".join(ctx.bot.cogs)}',
-										   delete_after=ctx.bot.del_after)
-			return
-	
-		# Find the module name for the cog
-		for ext in ctx.bot.extensions:
-			if ext.startswith('cogs.') and ext.split('.')[-1].lower() == cog_name.lower():
-				module_name = ext
-				break
-		else:
-			module_name = f'cogs.{cog_name}'  # Default fallback
-		
-		try:
-			await ctx.bot.unload_extension(module_name)
-			await ctx.message.channel.send(f'Cog "{cog_name}" has been unloaded.', delete_after=ctx.bot.del_after)
-		except Exception as e:
-			await ctx.message.channel.send(f'Error unloading cog "{cog_name}": {str(e)}', delete_after=ctx.bot.del_after)
-		
-	@commands.command(name="load_cog",
-					  brief="Load a cog",
-					  help="Dev only: Load a specific cog into the bot",
-					  usage="load_cog <cog_name>")
-	async def load_cog(self, ctx: discord.ext.commands.Context, cog_name: str):
-		try:
-			await ctx.message.delete()
-		except discord.Forbidden:
-			pass
-	
-		# Check if the cog is already loaded (case-insensitive)
-		for loaded_cog in ctx.bot.cogs:
-			if loaded_cog.lower() == cog_name.lower():
-				await ctx.message.channel.send(f'Cog "{loaded_cog}" is already loaded.', delete_after=ctx.bot.del_after)
-				return
-	
-		# Try to find the module name
-		module_name = f'cogs.{cog_name}'
-		
-		try:
-			await ctx.bot.load_extension(module_name)
-			await ctx.message.channel.send(f'Cog "{cog_name}" has been loaded.', delete_after=ctx.bot.del_after)
-		except commands.ExtensionError as e:
-			await ctx.message.channel.send(f'Failed to load cog "{cog_name}": {str(e)}', delete_after=ctx.bot.del_after)
-	
-	@commands.command(name="unload_economy",
-	                  brief="Unload the economy cogs",
-	                  help="Dev only: Unload the economy cogs from the bot",
-	                  usage="unload_economy")
-	async def unload_economy(self, ctx: discord.ext.commands.Context):
-		try:
-			await ctx.message.delete()
-		except discord.Forbidden:
-			pass
-		
-		economy_cogs = {
-			'Currency':       'currency',
-			'Currency Admin': 'currency_admin',
-			'Crime':          'crime',
-			'CTF':            'ctf',
-			'Auction':        'auction',
-			'Gambling':       'gambling',
-		}
-		
-		for cog_name, module_suffix in economy_cogs.items():
-			# Check if the cog is loaded
-			cog_found = False
-			for loaded_cog in ctx.bot.cogs:
-				if loaded_cog.lower() == cog_name.lower():
-					cog_found = True
-					break
-			
-			if not cog_found:
-				await ctx.message.channel.send(f'Cog "{cog_name}" is not loaded.', delete_after=ctx.bot.del_after)
-				continue
-			
-			# Try to unload the extension
-			module_name = f'cogs.{module_suffix}'
-			try:
-				await ctx.bot.unload_extension(module_name)
-				await ctx.message.channel.send(f'Cog "{cog_name}" has been unloaded.', delete_after=ctx.bot.del_after)
-			except Exception as e:
-				await ctx.message.channel.send(f'Error unloading cog "{cog_name}": {str(e)}',
-				                               delete_after=ctx.bot.del_after)
-
 
 
 async def setup(bot):

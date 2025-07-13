@@ -1,6 +1,5 @@
-import datetime
-
 import discord
+import discord.ext.commands as commands
 
 HELP_MSG = '''Please post your suggestions for the <@1377636535968600135> in here using `f!suggest <suggestion>`.
 If you have any additional comments, please use the thread.
@@ -12,25 +11,27 @@ If you have any additional comments, please use the thread.
 '''
 
 
-async def send_suggestion(client: 'discord.Client', message: discord.Message) -> None:
-	await message.delete()
-	suggestion = message.content.replace('f!suggest', '').strip()
-
-	channel: discord.TextChannel = client.get_channel(1379193761791213618)
-	last_msges = [a_message async for a_message in channel.history(limit=10)]
-	for b_message in last_msges:
-		if HELP_MSG == b_message.content:
-			await b_message.delete()
+async def send_suggestion(ctx: commands.Context, suggestion: str) -> None:
+	try:
+		await ctx.message.delete()
+	except discord.Forbidden:
+		pass
+	
+	channel: discord.TextChannel = ctx.bot.get_channel(1379193761791213618)
+	last_msgs = [a_message async for a_message in channel.history(limit=3)]
+	for _message in last_msgs:
+		if _message.content.startswith(HELP_MSG[:20]):
+			await _message.delete()
 
 	try:
 		embed = discord.Embed(title='Suggestion', description=suggestion, color=discord.Color.blue())
-		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
+		embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
 		embed.timestamp = discord.utils.utcnow()
 		msg = await channel.send(embed=embed)
 		await msg.add_reaction('👍')
 
 		await msg.create_thread(
-				name=f'suggestion-{message.author.display_name}',
+				name=f'suggestion-{ctx.author.display_name}',
 		)
 
 		await channel.send(HELP_MSG)

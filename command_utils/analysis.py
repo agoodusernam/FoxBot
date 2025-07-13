@@ -11,6 +11,8 @@ import utils.utils
 from utils import db_stuff
 
 
+# I really hate this whole file, but it works and I don't want to rewrite it right now. 11/07/25
+# lets hope I never have to touch it again.
 def check_valid_syntax(message: dict) -> bool:
 	"""Validate message contains all required keys."""
 	required_keys = {
@@ -247,7 +249,7 @@ async def format_analysis(ctx: Context, graph=False) -> None:
 				user['user'] = to_set
 			
 			msg = (f"{result['total_messages']} total messages analysed\n" +
-			       f"Most common word: {result['most_common_word']} said {result['most_common_word_count']} times\n" +
+			       f"Most common word: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n" +
 			       f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} " +
 			       f"characters)\nTotal users: {result['total_users']}\n" +
 			       f"Top 5 most active users:\n")
@@ -334,7 +336,6 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.User
 		for i, channel in enumerate(active_channels, 1):
 			msg += f"**{i}. {channel['channel']}** {channel['num_messages']} messages\n"
 		
-		print(msg)
 		await message.channel.send(msg)
 	elif isinstance(result, str):
 		await message.channel.send(result)
@@ -534,7 +535,7 @@ async def add_voice_analysis_for_user(message: discord.Message, member: discord.
 	result = f"**Voice Activity for {stats['user_name']}**\n\n"
 	result += f"**Total time in voice channels:** {formatted_total_time}\n\n"
 	
-	result += "**Top 5 Most Used Voice Channels**\n"
+	result += f"**Top {len(stats['channels'])} Most Used Voice Channels**\n"
 	for i, channel in enumerate(stats['channels'], 1):
 		formatted_time = format_duration(channel['total_seconds'])
 		result += f"{i}. {channel['name']}: {formatted_time}\n"

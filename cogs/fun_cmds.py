@@ -69,8 +69,8 @@ class FunCommands(commands.Cog, name='Fun'):
 					  help="Submit a suggestion for the bot",
 					  usage="suggest <suggestion>")
 	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-	async def suggest_cmd(self, ctx: discord.ext.commands.Context):
-		await suggest.send_suggestion(ctx.bot, ctx.message)
+	async def suggest_cmd(self, ctx: discord.ext.commands.Context, *, args: str):
+		await suggest.send_suggestion(ctx, args)
 	
 	@commands.command(name="code", aliases=["source", "github"],
 	                  brief="Get the bot's source code",
@@ -87,7 +87,6 @@ class FunCommands(commands.Cog, name='Fun'):
 	@commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
 	async def lines_of_code(self, ctx: discord.ext.commands.Context):
 		# function that returns the number of lines of code in a given directory recursively, excluding .venv
-		# get the directory of the main.py file
 		total_lines = 0
 		
 		for root, dirs, files in os.walk("/root/pyVenv/"):
