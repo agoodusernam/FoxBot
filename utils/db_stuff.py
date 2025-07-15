@@ -1,6 +1,7 @@
 import os
 from typing import Any, Mapping
 
+import cachetools.func
 import discord
 import pymongo
 from gridfs import GridFS
@@ -15,12 +16,16 @@ from pymongo.synchronous.database import Database
 _mongo_client: MongoClient | None = None
 
 
-def _connect():
+def _connect() -> MongoClient | None:
+	"""
+	Establishes a connection to the MongoDB database using the URI from environment variables.
+	:return: MongoClient instance if successful, None otherwise.
+	"""
 	global _mongo_client
 	# Return the existing connection if available
 	if _mongo_client is not None:
 		return _mongo_client
-
+	
 	uri = os.getenv('MONGO_URI')
 	
 	client = MongoClient(uri, server_api=ServerApi('1'), serverSelectionTimeoutMS=5000, tls=True,
@@ -31,13 +36,17 @@ def _connect():
 		return client
 	except ConnectionError:
 		print('Failed to connect to MongoDB')
-		return False
+		return None
 	except Exception as e:
 		print(e)
-		return False
+		return None
 
 
 def disconnect():
+	"""
+	Closes the MongoDB connection if it exists.
+	:return: None
+	"""
 	global _mongo_client
 	if _mongo_client is not None:
 		try:
@@ -50,14 +59,19 @@ def disconnect():
 
 
 def send_message(message: Mapping[str, Any]) -> None:
+	"""
+	Saves a single message to MongoDB.
+	:param message: A dictionary representing the message to be saved.
+	:return: None
+	"""
 	client = _connect()
 	if not client:
 		print('Failed to connect to MongoDB')
 		return
-
+	
 	db = client['discord']
 	collection: Collection[Mapping[str, Any]] = db['messages']
-
+	
 	try:
 		collection.insert_one(message)
 		print('Message saved successfully')
@@ -66,14 +80,19 @@ def send_message(message: Mapping[str, Any]) -> None:
 
 
 def bulk_send_messages(messages: list[Mapping[str, Any]]) -> None:
+	"""
+	Saves multiple messages to MongoDB in bulk.
+	:param messages: A list of dictionaries, each representing a message.
+	:return: None
+	"""
 	client = _connect()
 	if not client:
 		print('Failed to connect to MongoDB')
 		return
-
+	
 	db: Database[Mapping[str, Any]] = client['discord']
 	collection: Collection[Mapping[str, Any]] = db['messages']
-
+	
 	try:
 		collection.insert_many(messages)
 		print(f'{len(messages)} messages saved successfully')
@@ -82,18 +101,24 @@ def bulk_send_messages(messages: list[Mapping[str, Any]]) -> None:
 
 
 async def send_attachment(message: discord.Message, attachment: discord.Attachment) -> None:
+	"""
+	Saves an attachment to MongoDB using GridFS.
+	:param message: discord.Message object containing the message metadata.
+	:param attachment: discord.Attachment object containing the attachment data.
+	:return: None
+	"""
 	client = _connect()
 	if not client:
 		print('Failed to connect to MongoDB')
 		return None
-
+	
 	db = client['discord']
 	fs = GridFS(db, 'attachments')  # Create GridFS instance
-
+	
 	try:
 		# Download the attachment data
 		attachment_bytes = await attachment.read()
-
+		
 		# Store metadata
 		metadata = {
 			'message_id':         str(message.id),
@@ -101,7 +126,7 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
 			'content_type':       attachment.content_type,
 			'timestamp':          message.created_at.isoformat()
 		}
-
+		
 		# Store file in GridFS
 		fs.put(
 				attachment_bytes,
@@ -115,29 +140,39 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
 		return None
 
 
+@cachetools.func.ttl_cache(maxsize=5, ttl=600)
 def download_all() -> list[dict[str, str]] | None:
+	"""
+	Retrieves all messages from the MongoDB database.
+	:return: A list of dictionaries containing message data, or None if an error occurs.
+	"""
 	client = _connect()
 	if not client:
 		raise ConnectionError('Failed to connect to MongoDB')
-
+	
 	db = client['discord']
 	collection = db['messages']
-
+	
 	try:
 		messages = collection.find({})
 		return list(messages)
-
+	
 	except Exception as e:
 		print(f'Error retrieving messages: {e}')
 		return None
 
 
 def delete_message(ObjId: str) -> None:
+	"""
+	Deletes a message from the MongoDB database by its ObjectId.
+	:param ObjId: The ObjectId of the message to delete.
+	:return: None
+	"""
 	client = _connect()
 	if not client:
 		print('Failed to connect to MongoDB')
 		return
-
+	
 	db = client['discord']
 	collection = db['messages']
 	try:
@@ -151,14 +186,19 @@ def delete_message(ObjId: str) -> None:
 
 
 def del_channel_from_db(channel: discord.TextChannel) -> None:
+	"""
+	Deletes all messages from a specific channel in the MongoDB database.
+	:param channel: A discord.TextChannel object representing the channel to delete messages from.
+	:return: None
+	"""
 	client = _connect()
 	if not client:
 		print('Failed to connect to MongoDB')
 		return
-
+	
 	db = client['discord']
 	collection = db['messages']
-
+	
 	try:
 		result: DeleteResult = collection.delete_many({'channel_id': channel.id})
 		print(f'Deleted {result.deleted_count} messages from channel {channel.id}')
@@ -167,14 +207,19 @@ def del_channel_from_db(channel: discord.TextChannel) -> None:
 
 
 def send_voice_session(session_data: Mapping[str, Any]) -> None:
+	"""
+	Saves a voice session to the MongoDB database.
+	:param session_data: A dictionary containing the voice session data.
+	:return: None
+	"""
 	client = _connect()
 	if not client:
 		print('Failed to connect to MongoDB')
 		return
-
+	
 	db = client['discord']
 	collection: Collection[Mapping[str, Any]] = db['voice_sessions']
-
+	
 	try:
 		collection.insert_one(session_data)
 		print(f'Voice session for {session_data["user_name"]} saved successfully')
@@ -187,10 +232,10 @@ def download_voice_sessions() -> list[Mapping[str, Any]] | None:
 	if not client:
 		print('Failed to connect to MongoDB')
 		return None
-
+	
 	db = client['discord']
 	collection: Collection[Mapping[str, Any]] = db['voice_sessions']
-
+	
 	try:
 		sessions = collection.find({})
 		return list(sessions)
@@ -207,10 +252,10 @@ def send_to_db(collection_name: str, data: Mapping[str, Any]) -> None:
 	if not client:
 		print('Failed to connect to MongoDB')
 		return
-
+	
 	db = client['discord']
 	collection: Collection[Mapping[str, Any]] = db[collection_name]
-
+	
 	try:
 		collection.insert_one(data)
 		print(f'Data sent successfully to {collection_name} collection')
@@ -226,10 +271,10 @@ def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_data: M
 	if not client:
 		print('Failed to connect to MongoDB')
 		return
-
+	
 	db = client['discord']
 	collection: Collection[Mapping[str, Any]] = db[collection_name]
-
+	
 	try:
 		result = collection.update_one(query, {'$set': update_data})
 		if result.modified_count > 0:
@@ -290,10 +335,10 @@ def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[s
 	if not client:
 		print('Failed to connect to MongoDB')
 		return None
-
+	
 	db = client['discord']
 	collection: Collection[Mapping[str, Any]] = db[collection_name]
-
+	
 	try:
 		results = collection.find_one(query)
 		if results is None:
@@ -304,7 +349,9 @@ def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[s
 		return None
 
 
-def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by, direction: str, limit: int = 0) -> list[dict[str, Any]] | None:
+def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by, direction: str, limit: int = 0) -> list[
+	                                                                                                                 dict[
+		                                                                                                                 str, Any]] | None:
 	"""
 	Generic function to retrieve multiple documents from a specified MongoDB collection.
 
@@ -317,20 +364,20 @@ def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by, di
 	if not client:
 		print('Failed to connect to MongoDB')
 		return None
-
+	
 	db = client['discord']
 	collection: Collection[Mapping[str, Any]] = db[collection_name]
 	if direction.lower() == 'a':
 		direction = pymongo.ASCENDING
 	else:
 		direction = pymongo.DESCENDING
-
+	
 	try:
 		if limit > 0:
 			results = collection.find(query).sort(sort_by, direction).limit(limit)
 		else:
 			results = collection.find(query).sort(sort_by, direction)
-
+		
 		return [dict(result) for result in results]
 	except Exception as e:
 		print(f'Error retrieving data from {collection_name} collection: {e}')

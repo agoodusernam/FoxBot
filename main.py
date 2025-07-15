@@ -110,11 +110,10 @@ else:
 
 # Bot configuration
 @bot.event
-async def on_ready():
+async def on_ready() -> None:
 	await load_extensions()
 	utils.check_env_variables()
 	utils.clean_up_APOD()
-	await bot.change_presence(activity=discord.CustomActivity(name='f!help'))
 	
 	print(f"Loaded {len(bot.cogs)} cogs:")
 	for cog in bot.cogs:
@@ -158,6 +157,8 @@ async def on_ready():
 			
 			else:
 				print(f"Role with ID {role_id} not found. Skipping emoji {emoji}.")
+	
+	await bot.change_presence(activity=discord.CustomActivity(name='f!help'))
 
 
 # Custom help command formatting
@@ -258,17 +259,17 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 
 
 class HelpPaginationView(discord.ui.View):
-	def __init__(self, embeds, author):
+	def __init__(self, embeds: list[discord.Embed], author: discord.User | discord.Member) -> None:
 		super().__init__(timeout=60)
-		self.embeds = embeds
-		self.author = author
-		self.current_page = 0
-		self.total_pages = len(embeds)
+		self.embeds: list[discord.Embed] = embeds
+		self.author: discord.User | discord.Member = author
+		self.current_page: int = 0
+		self.total_pages: int = len(embeds)
 		
 		# Update button states initially
 		self.update_buttons()
 	
-	def update_buttons(self):
+	def update_buttons(self) -> None:
 		# Disable previous button on first page
 		self.prev_button.disabled = (self.current_page == 0)
 		# Disable next button on last page
@@ -276,31 +277,33 @@ class HelpPaginationView(discord.ui.View):
 		# Update the page counter
 		self.page_button.label = f"Page {self.current_page + 1}/{self.total_pages}"
 	
-	async def interaction_check(self, interaction: discord.Interaction):
+	async def interaction_check(self, interaction: discord.Interaction) -> bool:
 		# Only allow the original command author to use the buttons
 		if interaction.user != self.author:
 			await interaction.response().send_message("You cannot use these buttons.", ephemeral=True)
 			return False
 		return True
 	
-	@discord.ui.button(label="Previous", style=discord.ButtonStyle.primary, emoji="⬅️", custom_id="prev")
-	async def prev_button(self, interaction: discord.Interaction, button):
+	@discord.ui.button(label="Previous", style=discord.ButtonStyle.primary, emoji="⬅️",
+	                   custom_id="prev")  # type: ignore
+	async def prev_button(self, interaction: discord.Interaction, button) -> None:
 		if self.current_page > 0:
 			self.current_page -= 1
 			self.update_buttons()
-			await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
+			await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)  # type: ignore
 	
-	@discord.ui.button(label="Page 1/2", style=discord.ButtonStyle.secondary, disabled=True, custom_id="page")
-	async def page_button(self, interaction: discord.Interaction, button):
+	@discord.ui.button(label="Page 1/2", style=discord.ButtonStyle.secondary, disabled=True,
+	                   custom_id="page")  # type: ignore
+	async def page_button(self, interaction: discord.Interaction, button) -> None:
 		# This button is just a label and doesn't do anything when clicked
 		pass
 	
-	@discord.ui.button(label="Next", style=discord.ButtonStyle.primary, emoji="➡️", custom_id="next")
-	async def next_button(self, interaction: discord.Interaction, button):
+	@discord.ui.button(label="Next", style=discord.ButtonStyle.primary, emoji="➡️", custom_id="next")  # type: ignore
+	async def next_button(self, interaction: discord.Interaction, button) -> None:
 		if self.current_page < self.total_pages - 1:
 			self.current_page += 1
 			self.update_buttons()
-			await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)
+			await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)  # type: ignore
 
 
 # Apply custom help command
@@ -308,7 +311,7 @@ bot.help_command = CustomHelpCommand()
 
 
 @bot.event
-async def on_command_error(ctx: discord.ext.commands.Context, error):
+async def on_command_error(ctx: discord.ext.commands.Context, error: discord.ext.commands.CommandError):
 	if isinstance(error, commands.CommandOnCooldown):
 		await ctx.message.channel.send(
 				f'This command is on cooldown. Please try again in {error.retry_after:.0f} seconds.',
@@ -491,7 +494,7 @@ async def on_guild_update(before: discord.Guild, after: discord.Guild):
 														"has been updated!")
 
 
-async def load_extensions():
+async def load_extensions() -> None:
 	for filename in os.listdir('./cogs'):
 		if filename.endswith('.py') and not filename.startswith('_'):
 			await bot.load_extension(f'cogs.{filename[:-3]}')
