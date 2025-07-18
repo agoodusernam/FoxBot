@@ -227,7 +227,7 @@ def send_voice_session(session_data: Mapping[str, Any]) -> None:
 		print(f'Error saving voice session: {e}')
 
 
-def download_voice_sessions() -> list[Mapping[str, Any]] | None:
+def download_voice_sessions() -> list[Mapping[str, str]] | None:
 	client = _connect()
 	if not client:
 		print('Failed to connect to MongoDB')

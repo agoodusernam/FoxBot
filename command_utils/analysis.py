@@ -42,7 +42,7 @@ def check_valid_syntax(message: dict[str, Any]) -> bool:
     return all(key in message for key in required_keys)
 
 
-def get_valid_messages(time_filter: str = None) -> tuple[list[dict[str, Any]], int]:
+def get_valid_messages(time_filter: str = None) -> tuple[list[dict[str, str]], int]:
     """
     Download and validate messages from the database.
 
@@ -93,7 +93,7 @@ def get_valid_messages(time_filter: str = None) -> tuple[list[dict[str, Any]], i
         return [], 0
 
 
-def analyse_word_stats(content_list: list[str]) -> dict[str, Any]:
+def analyse_word_stats(content_list: list[str]) -> dict[str, str | int | float]:
     """
     Analyse word statistics from a list of message content.
 
@@ -127,7 +127,7 @@ def analyse_word_stats(content_list: list[str]) -> dict[str, Any]:
     }
 
 
-def get_channel_stats(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def get_channel_stats(messages: list[dict[str, str]]) -> list[dict[str, str | int]]:
     """
     Get statistics about channel activity.
 
@@ -148,7 +148,7 @@ def get_channel_stats(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
-def analyse_messages(time_filter: str = None) -> dict[str, Any] | str:
+def analyse_messages(time_filter: str = None) -> dict[str, int | str | float | list[dict[str, str | int]]] | str:
     """
     analyse all messages in the database.
 
@@ -198,7 +198,8 @@ def analyse_messages(time_filter: str = None) -> dict[str, Any] | str:
         return f'Error during analysis: {str(e)}'
 
 
-def analyse_user_messages(member: discord.User, time_filter: str = None) -> dict[str, Any] | str | None:
+def analyse_user_messages(member: discord.User, time_filter: str = None) -> dict[str, int | str | float | list[
+    dict[str, str | int]]] | str | None:
     """
     analyse messages from a specific user.
 
@@ -227,7 +228,7 @@ def analyse_user_messages(member: discord.User, time_filter: str = None) -> dict
         word_stats = analyse_word_stats(content_list)
         
         if not word_stats:
-            return f'No analyzable content found for user {member.display_name}.'
+            return f'No analysable content found for user {member.display_name}.'
         
         # Get channel stats for this user
         active_channels = get_channel_stats(messages_by_user)
@@ -303,7 +304,7 @@ async def format_analysis(ctx: Context, graph: bool = False) -> None:
     else:
         message.content = message.content.replace(f'-{flag}', '')
     
-    # Send initial "Analyzing..." message
+    # Send initial "Analysing..." message
     new_msg = await message.channel.send('Analysing...')
     
     # Check if a user was specified
@@ -347,6 +348,7 @@ async def format_analysis(ctx: Context, graph: bool = False) -> None:
             
             # Replace user IDs with display names
             for user in top_5_users:
+                user: dict = user  # type hinting
                 user_id = int(user['user'].strip())
                 
                 # Try to get member from guild first
@@ -378,6 +380,7 @@ async def format_analysis(ctx: Context, graph: bool = False) -> None:
             # Add top channels
             msg += '\nTop 5 most active channels:\n'
             for i, channel in enumerate(top_5_channels, start=1):
+                channel: dict = channel  # type hinting
                 msg += f"**{i}. {channel['channel']}** {channel['num_messages']} messages\n"
             
             # Send the message
@@ -395,7 +398,7 @@ async def format_analysis(ctx: Context, graph: bool = False) -> None:
         await ctx.send(f'Error during analysis: {e}')
 
 
-async def generate_user_activity_graph(ctx: Context, result: dict[str, Any],
+async def generate_user_activity_graph(ctx: Context, result: dict[str, int | str | float | list[dict[str, str | int]]],
                                        guild: discord.Guild, message: discord.Message) -> None:
     """
     Generate and send a graph of user activity.
@@ -419,6 +422,7 @@ async def generate_user_activity_graph(ctx: Context, result: dict[str, Any],
         
         # Process each user
         for user in top_15_users:
+            user: dict = user  # type hinting
             user_id = int(user['user'].strip())
             
             # Try to get member from guild first
@@ -517,6 +521,7 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.User
         
         # Add channel information
         for i, channel in enumerate(active_channels, 1):
+            channel: dict = channel  # type hinting
             msg += f"**{i}. {channel['channel']}** {channel['num_messages']} messages\n"
         
         await message.channel.send(msg)
@@ -551,7 +556,7 @@ def format_duration(seconds: int) -> str:
         return f"{int(seconds)}s"
 
 
-def get_voice_statistics() -> dict[str, list[dict[str, Any]]] | None:
+def get_voice_statistics() -> dict[str, list[dict[str, str | int]]] | None:
     """
     Retrieve voice statistics from MongoDB and calculate user and channel totals.
 
@@ -565,7 +570,7 @@ def get_voice_statistics() -> dict[str, list[dict[str, Any]]] | None:
             return None
         
         # Calculate user statistics
-        user_stats = {}
+        user_stats: dict[str, str | int | dict[str, int]] | None = {}
         for session in sessions:
             user_id = session.get('user_id')
             user_name = session.get('user_global_name') or session.get('user_name')
@@ -580,7 +585,7 @@ def get_voice_statistics() -> dict[str, list[dict[str, Any]]] | None:
             user_stats[user_id]['total_seconds'] += duration
         
         # Calculate channel statistics
-        channel_stats = {}
+        channel_stats: dict[str, str | int | dict[str, int]] | None = {}
         for session in sessions:
             channel_id = session.get('channel_id')
             channel_name = session.get('channel_name')
@@ -619,7 +624,7 @@ def get_voice_statistics() -> dict[str, list[dict[str, Any]]] | None:
         return None
 
 
-def get_user_voice_statistics(user_id: str) -> dict[str, Any] | None:
+def get_user_voice_statistics(user_id: str) -> dict[str, str | int | list[dict[str, str | int]]] | None:
     """
     Retrieve voice statistics for a specific user.
 
@@ -641,7 +646,7 @@ def get_user_voice_statistics(user_id: str) -> dict[str, Any] | None:
         if not user_sessions:
             return None
         
-        # Get user name
+        # Get username
         user_name = user_sessions[0].get('user_global_name') or user_sessions[0].get('user_name')
         
         # Calculate total time
@@ -735,6 +740,7 @@ async def add_voice_analysis_for_user(message: discord.Message, member: discord.
     
     result += f"**Top {len(stats['channels'])} Most Used Voice Channels**\n"
     for i, channel in enumerate(stats['channels'], 1):
+        channel: dict = channel  # type hinting
         formatted_time = format_duration(channel['total_seconds'])
         result += f"{i}. {channel['name']}: {formatted_time}\n"
     
@@ -756,8 +762,8 @@ async def format_voice_analysis(ctx: Context) -> None:
     except discord.Forbidden:
         pass
     
-    # Send initial "Analyzing..." message
-    new_msg = await message.channel.send('Analyzing voice statistics...')
+    # Send initial "Analysing..." message
+    new_msg = await message.channel.send('Analysing voice statistics...')
     
     # Check if a user was specified
     if len(message.content.split()) > 1:

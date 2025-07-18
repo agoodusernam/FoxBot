@@ -1,19 +1,21 @@
 import enum
+import functools
 from collections.abc import Iterator
 from dataclasses import dataclass
 
 
+@functools.total_ordering
 class SchoolQualif(enum.Enum):
 	"""
 	Enum to represent different qualifications required for jobs, cost per year, and length of study in years.
 	"""
-	HIGH_SCHOOL = [0, 0, 0]
-	ASSOCIATE = [1, 3_885, 2]
-	BACHELOR = [2, 15_419, 4]
-	MASTER = [3, 20_000, 2]
-	PHD = [4, 18_030, 6]
+	HIGH_SCHOOL = (0, 0, 0)
+	ASSOCIATE = (1, 3_885, 2)
+	BACHELOR = (2, 15_419, 4)
+	MASTER = (3, 20_000, 2)
+	PHD = (4, 18_030, 6)
 	DOCTORATE = PHD
-	POLYMATH = [5, 50_000, 10]  # Special fictional qualification, not required for any job but gives a salary boost
+	POLYMATH = (5, 50_000, 10)  # Special fictional qualification, not required for any job but gives a salary boost
 	
 	def __getitem__(self, item):
 		return self.value[item]
@@ -34,6 +36,14 @@ class SchoolQualif(enum.Enum):
 		"""
 		return self.value[0] < other.value[0]
 	
+	def __eq__(self, other: 'SchoolQualif') -> bool:
+		"""
+		Checks if two SchoolQualif enum members are equal.
+		:param other: The other SchoolQualif member to compare with.
+		:return: True if both members are equal, False otherwise.
+		"""
+		return self.value[0] == other.value[0]
+	
 	@classmethod
 	def from_string(cls, s: str) -> 'SchoolQualif':
 		"""
@@ -45,7 +55,7 @@ class SchoolQualif(enum.Enum):
 			return cls[s.upper().replace(" ", "_")]
 		except KeyError:
 			raise ValueError(f"Invalid school qualification: {s}")
-		
+	
 	def to_string(self) -> str:
 		"""
 		Converts a SchoolQualif enum member to its string representation.
@@ -54,6 +64,7 @@ class SchoolQualif(enum.Enum):
 		return self.name.replace('_', ' ').title()
 
 
+@functools.total_ordering
 class SecurityClearance(enum.Enum):
 	"""
 	Enum to represent different security clearance levels using the US security clearance system.
@@ -81,6 +92,14 @@ class SecurityClearance(enum.Enum):
 		"""
 		return self.value < other.value
 	
+	def __eq__(self, other: 'SecurityClearance') -> bool:
+		"""
+		Checks if two SecurityClearance enum members are equal.
+		:param other: The other SecurityClearance member to compare with.
+		:return: True if both members are equal, False otherwise.
+		"""
+		return self.value == other.value
+	
 	@classmethod
 	def from_string(cls, s: str) -> 'SecurityClearance':
 		try:
@@ -102,7 +121,8 @@ class Job:
 		req_qualifications (tuple[str]): List of qualifications required for the job.
 		req_experience (int): Years of experience required for the job.
 		salary (int): Salary offered per year.
-		salary_variance (int): Variance in salary in per cent
+		salary_variance (int): Variance in salary in percent
+		experience_multiplier (float | int): Multiplier for experience.
 	"""
 	name: str
 	tree: str
@@ -118,14 +138,84 @@ class Job:
 		"""
 		if not isinstance(self.req_qualifications, tuple):
 			raise TypeError("req_qualifications must be a tuple of (SchoolQualif, SecurityClearance)")
+		
 		if len(self.req_qualifications) != 2:
 			raise ValueError("req_qualifications must contain exactly two elements: (SchoolQualif, SecurityClearance)")
+		
+		if not isinstance(self.req_qualifications[0], SchoolQualif):
+			raise TypeError("First element of req_qualifications must be a SchoolQualif enum member")
+		
+		if not isinstance(self.req_qualifications[1], SecurityClearance):
+			raise TypeError("Second element of req_qualifications must be a SecurityClearance enum member")
 		
 		self.school_requirement = self.req_qualifications[0]
 		self.security_clearance = self.req_qualifications[1]
 	
-
-
+	def to_dict(self) -> dict:
+		"""
+		Converts the job to a dictionary representation.
+		:return: A dictionary representation of the job.
+		"""
+		return {
+			"name":                  self.name,
+			"tree":                  self.tree,
+			"req_qualifications":    [
+				self.school_requirement.name,
+				self.security_clearance.name
+			],
+			"req_experience":        self.req_experience,
+			"salary":                self.salary,
+			"salary_variance":       self.salary_variance,
+			"experience_multiplier": self.experience_multiplier
+		}
+	
+	def to_json(self) -> str:
+		"""
+		Converts the job to a JSON string representation.
+		:return: A JSON string representation of the job.
+		"""
+		import json
+		
+		return json.dumps(self.to_dict())
+	
+	@classmethod
+	def from_dict(cls, data: dict) -> 'Job':
+		"""
+		Creates a Job instance from a dictionary representation.
+		:param data: The dictionary representation of the job.
+		:return: A Job instance.
+		"""
+		try:
+			return cls(
+					name=data["name"],
+					tree=data["tree"],
+					req_qualifications=(
+						SchoolQualif[data["req_qualifications"][0]],
+						SecurityClearance[data["req_qualifications"][1]]
+					),
+					req_experience=int(data["req_experience"]),
+					salary=int(data["salary"]),
+					salary_variance=int(data["salary_variance"]),
+					experience_multiplier=float(data["experience_multiplier"])
+			)
+		except (KeyError, ValueError, IndexError) as e:
+			raise ValueError(f"Invalid job data: {e}") from e
+	
+	@classmethod
+	def from_json(cls, json_str: str) -> 'Job':
+		"""
+		Creates a Job instance from a JSON string representation.
+		:param json_str: The JSON string representation of the job.
+		:return: A Job instance.
+		"""
+		import json
+		
+		try:
+			data = json.loads(json_str)
+			return cls.from_dict(data)
+		except json.JSONDecodeError as e:
+			raise ValueError(f"Invalid JSON format: {e}") from e
+	
 @dataclass
 class JobTree:
 	"""

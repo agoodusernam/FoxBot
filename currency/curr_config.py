@@ -1,5 +1,5 @@
-import dataclasses
 from collections.abc import Callable, Awaitable
+from dataclasses import dataclass
 
 import discord.ext.commands
 
@@ -12,7 +12,7 @@ income_tax: float = 0.15  # Tax rate on income
 sales_tax: float = 0.08375  # Sales tax rate on purchases
 
 
-@dataclasses.dataclass
+@dataclass
 class ShopItem:
 	"""
 	Represents an item in the shop.
@@ -33,7 +33,7 @@ class ShopItem:
 	perk: list[Callable[[discord.ext.commands.Context, discord.Member], Awaitable[None]]] | None
 
 
-@dataclasses.dataclass
+@dataclass
 class HouseItem(ShopItem):
 	"""
 	Represents a house item in the shop.
@@ -46,7 +46,7 @@ class HouseItem(ShopItem):
 	rent_income: int
 
 
-@dataclasses.dataclass
+@dataclass
 class BlackMarketItem(ShopItem):
 	"""
 	Represents an item in the black market.
@@ -71,7 +71,7 @@ class BlackMarketItem(ShopItem):
 	trace_back: bool | float = True
 
 
-@dataclasses.dataclass
+@dataclass
 class GunItem(BlackMarketItem):
 	"""
 	Represents a gun item in the black market.
@@ -94,7 +94,8 @@ class GunItem(BlackMarketItem):
 	"""
 	suppressed: bool = False
 
-@dataclasses.dataclass
+
+@dataclass
 class DrugItem(BlackMarketItem):
 	"""
 	Represents a drug item in the black market.
@@ -123,7 +124,7 @@ class DrugItem(BlackMarketItem):
 	od_chance: float = 0.05
 
 
-@dataclasses.dataclass
+@dataclass
 class ShopCategory:
 	"""
 	Represents a category of items in the shop.
@@ -144,7 +145,7 @@ class ShopCategory:
 		return [item.name for item in self.items]
 
 
-@dataclasses.dataclass
+@dataclass
 class BlackMarketCategory:
 	"""
 	Represents a category of items in the black market.
@@ -169,6 +170,7 @@ def get_default_profile(member_id: int | str) -> dict[str, int | float | str | d
 		'wallet':           1_000,
 		'bank':             0,
 		'work_income':      0,
+		'work_str': 'Unemployed',
 		'other_income':     0,
 		'next_income_mult': 1.0,
 		'work_experience':  0,  # Experience in current job, will increase income

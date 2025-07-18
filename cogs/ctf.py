@@ -19,6 +19,17 @@ class CTF(commands.Cog, name='CTF', command_attrs=dict(add_check=not_blacklisted
 		
 		if args.lower() == os.getenv('CTF_FIRST_ANSWER').lower():
 			await ctx.send("Congratulations! You've solved the first challenge!")
+			await ctx.send(f"Your second clue is: {os.getenv('CTF_SECOND_CLUE')}")
+			return
+		
+		if args.lower() == os.getenv('CTF_SECOND_ANSWER').lower():
+			await ctx.send("Well done! You've solved the second challenge!")
+			await ctx.send(f"Your final clue is: {os.getenv('CTF_FINAL_CLUE')}")
+			return
+		
+		if args.lower() == os.getenv('CTF_FINAL_ANSWER').lower():
+			await ctx.send("Amazing! You've completed the CTF challenge!")
+			# TODO: Add reward logic here
 			return
 
 

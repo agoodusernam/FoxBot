@@ -18,6 +18,7 @@ def get_id_from_str(u_id: str) -> int | None:
 	u_id = u_id.replace(">", "", 1)
 	u_id = u_id.replace("@", "", 1)
 	u_id = u_id.replace("#", "", 1)
+	u_id = u_id.replace("&", "", 1)
 	try:
 		return int(u_id)
 	except ValueError:

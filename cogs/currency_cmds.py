@@ -10,7 +10,7 @@ from currency.curr_config import currency_name, loan_interest_rate, income_tax, 
 	ShopItem, HouseItem
 from currency.curr_utils import get_shop_item
 from currency.job_utils import SchoolQualif, SecurityClearance
-from currency.jobs import job_trees, Job, JobTree
+from currency.jobs import job_trees
 
 
 # Create pagination view
@@ -153,17 +153,20 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 		if earnings <= 0:
 			await ctx.send(f'You have no job! Choose a job first using `{ctx.bot.command_prefix}job`.')
 			return
+		
 		wallet = earnings + profile['wallet']
 		curr_utils.set_wallet(ctx.author, wallet)
 		curr_utils.set_debt(ctx.author, debt)
 		curr_utils.inc_age(ctx.author)
 		curr_utils.set_experience(ctx.author, profile['work_experience'] + 1)
 		curr_utils.set_next_income_multiplier(ctx.author, 1.0)  # Reset income multiplier after working
+		
 		if profile['fire_risk'] < 0.001:
 			# If the fire risk is very low, increase it slightly
 			curr_utils.set_fire_risk(ctx.author, 0.01)
 			await ctx.send(f'You worked hard and earned {earnings} {currency_name}!')
 			return
+		
 		curr_utils.set_fire_risk(ctx.author, profile['fire_risk'] * 0.5)
 		await ctx.send(f'You worked hard and earned {earnings} {currency_name}!')
 	
@@ -177,6 +180,7 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 		if profile['income'] <= 0:
 			await ctx.send('You have no job to quit! Choose a job first using `job`.')
 			return
+		
 		curr_utils.set_income(ctx.author, 0)
 		curr_utils.set_fire_risk(ctx.author, 0.0)
 		curr_utils.inc_age(ctx.author)
@@ -209,6 +213,7 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 		if profile['wallet'] < amount:
 			await ctx.send('You do not have enough money in your wallet to pay off that much debt!')
 			return
+		
 		intrest = int(profile['debt'] * loan_interest_rate)
 		if amount >= intrest:
 			new_credit_score = min(profile['credit_score'] + 1, 800)
@@ -223,7 +228,11 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 		curr_utils.set_wallet(ctx.author, int(profile['wallet'] - amount))
 		curr_utils.set_debt(ctx.author, int(profile['debt'] - amount))
 		
-		await ctx.send(f'Paid off {amount} {currency_name} of your debt!')
+		if profile['debt'] > 0:
+			await ctx.send(f'Paid off {amount} {currency_name} of your debt!')
+		else:
+			await ctx.send(f'You have paid off all your {amount} {currency_name} debt!')
+
 	
 	@commands.command(name='get_loan', aliases=['loan'],
 	                  brief='Get a loan',

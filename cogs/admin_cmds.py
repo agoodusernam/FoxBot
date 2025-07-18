@@ -154,7 +154,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  help = "Provides statistics about messages sent in the server",
 					  usage = "analyse [user_id/mention]")
 	@commands.check(is_admin)
-	@commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
+	@commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
 	async def analyse(self, ctx: discord.ext.commands.Context):
 		await analysis.format_analysis(ctx)
 	
@@ -163,7 +163,7 @@ class AdminCmds(commands.Cog, name = 'Admin', command_attrs = dict(hidden = True
 					  help = "Provides statistics about messages sent in the server with graphical representation",
 					  usage = "analyse_graph [user_id/mention]")
 	@commands.check(is_admin)
-	@commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
+	@commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
 	async def analyse_graph(self, ctx: discord.ext.commands.Context):
 		await analysis.format_analysis(ctx, graph = True)
 

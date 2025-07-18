@@ -284,7 +284,7 @@ class HelpPaginationView(discord.ui.View):
 			return False
 		return True
 	
-	@discord.ui.button(label="Previous", style=discord.ButtonStyle.primary, emoji="⬅️",
+	@discord.ui.button(label="Previous", style=discord.ButtonStyle.primary, emoji="⬅️",  # type: ignore
 	                   custom_id="prev")  # type: ignore
 	async def prev_button(self, interaction: discord.Interaction, button) -> None:
 		if self.current_page > 0:
@@ -292,7 +292,7 @@ class HelpPaginationView(discord.ui.View):
 			self.update_buttons()
 			await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)  # type: ignore
 	
-	@discord.ui.button(label="Page 1/2", style=discord.ButtonStyle.secondary, disabled=True,
+	@discord.ui.button(label="Page 1/2", style=discord.ButtonStyle.secondary, disabled=True,  # type: ignore
 	                   custom_id="page")  # type: ignore
 	async def page_button(self, interaction: discord.Interaction, button) -> None:
 		# This button is just a label and doesn't do anything when clicked
