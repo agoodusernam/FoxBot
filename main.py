@@ -95,7 +95,7 @@ emoji_to_role: dict[discord.PartialEmoji, int] = {
 	discord.PartialEmoji(name='❔'): 1352341336459841688,
 	discord.PartialEmoji(name='🎬'): 1380624012090150913,
 	discord.PartialEmoji(name='🎨'): 1295024229799952394,
-	discord.PartialEmoji(name='<:Forsaken:1396046411610718279>'): 1396045343958892605,
+	discord.PartialEmoji.from_str('<:Forsaken:1396046411610718279>'): 1396045343958892605,
 }
 
 bot.emoji_to_role = emoji_to_role
@@ -404,10 +404,12 @@ async def on_raw_reaction_add(payload):
 	try:
 		role_id = bot.emoji_to_role[payload.emoji]
 	except KeyError:
+		print(f"Emoji {payload.emoji} not found in emoji_to_role mapping.")
 		return
 	
 	role = guild.get_role(role_id)
 	if role is None:
+		print(f"Role with ID {role_id} not found for emoji {payload.emoji}.")
 		return
 	
 	try:
