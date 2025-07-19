@@ -15,7 +15,7 @@ from utils import db_stuff, utils
 logger = logging.getLogger(__name__)
 
 # Constants
-EXCLUDED_USER_IDS = ["1107579143140413580"]
+EXCLUDED_USER_IDS = ['1107579143140413580']
 GUILD_ID = 1081760248433492140
 TIME_FILTERS = {
     'w': ('week', datetime.timedelta(days=7)),
