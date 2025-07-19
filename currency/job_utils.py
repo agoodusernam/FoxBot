@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import dataclasses
 import enum
 import functools
 from collections.abc import Iterator
@@ -131,6 +134,7 @@ class Job:
 	salary: int
 	salary_variance: int
 	experience_multiplier: float | int = 1
+	parent_tree: JobTree | None = dataclasses.field(default=None, repr=False)
 	
 	def __post_init__(self):
 		"""
@@ -151,7 +155,25 @@ class Job:
 		self.school_requirement = self.req_qualifications[0]
 		self.security_clearance = self.req_qualifications[1]
 	
-	def to_dict(self) -> dict:
+	def get_next_job(self) -> Job | list[Job] | None:
+		"""
+		Finds the next job or list of jobs in the job tree.
+		:return: The next job(s) in the sequence, or None if it's the last one.
+		"""
+		if not self.parent_tree:
+			return None
+		
+		for i, job_or_list in enumerate(self.parent_tree.jobs):
+			current_jobs = job_or_list if isinstance(job_or_list, list) else [job_or_list]
+			if self in current_jobs:
+				# Check if there is a next level in the tree
+				if i + 1 < len(self.parent_tree.jobs):
+					return self.parent_tree.jobs[i + 1]
+				else:
+					return None
+		return None
+	
+	def to_dict(self) -> dict[str, str | int | float | list[str]]:
 		"""
 		Converts the job to a dictionary representation.
 		:return: A dictionary representation of the job.
@@ -179,7 +201,7 @@ class Job:
 		return json.dumps(self.to_dict())
 	
 	@classmethod
-	def from_dict(cls, data: dict) -> 'Job':
+	def from_dict(cls, data: dict[str, str | int | float | list[str]]) -> 'Job':
 		"""
 		Creates a Job instance from a dictionary representation.
 		:param data: The dictionary representation of the job.
@@ -229,6 +251,17 @@ class JobTree:
 	"""
 	name: str
 	jobs: list[Job | list[Job]]
+	
+	def __post_init__(self):
+		"""
+		Post-initialization to set the parent_tree for each job.
+		"""
+		for job_or_list in self.jobs:
+			if isinstance(job_or_list, list):
+				for job in job_or_list:
+					job.parent_tree = self
+			else:  # It's a single Job object
+				job_or_list.parent_tree = self
 	
 	def __iter__(self) -> Iterator[Job | list[Job]]:
 		for job in self.jobs:

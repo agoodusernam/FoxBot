@@ -5,6 +5,7 @@ from discord.ext import commands
 
 import currency.curr_utils
 import utils.utils
+from command_utils.checks import is_dev
 from currency import curr_utils, curr_config, shop_items
 from currency.curr_config import currency_name, loan_interest_rate, income_tax, DrugItem, BlackMarketItem, GunItem, \
 	ShopItem, HouseItem
@@ -43,7 +44,7 @@ class ShopView(discord.ui.View):
 		# View will be automatically removed from the message
 
 
-class CurrencyCmds(commands.Cog, name='Currency'):
+class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=is_dev, hidden=True)):
 	def __init__(self, bot: commands.Bot):
 		self.bot = bot
 	
@@ -646,5 +647,4 @@ class CurrencyCmds(commands.Cog, name='Currency'):
 		await ctx.send(embed=embed)
 		
 async def setup(bot: commands.Bot) -> None:
-	pass
-	# await bot.add_cog(CurrencyCmds(bot))
+	await bot.add_cog(CurrencyCmds(bot))

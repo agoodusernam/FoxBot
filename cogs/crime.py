@@ -4,6 +4,7 @@ import random
 import discord
 from discord.ext import commands
 
+from command_utils.checks import is_dev
 from currency import curr_utils, curr_config
 
 profile_type = dict[str, int | float | str | dict[str, int]]
@@ -75,7 +76,7 @@ async def got_shot(ctx: commands.Context, profile: profile_type, target: discord
 	return
 
 
-class CrimeCog(commands.Cog, name="Crime"):
+class CrimeCog(commands.Cog, name="Crime", command_attrs=dict(hidden=True, add_check=is_dev)):
 	"""
 	A cog for handling crime-related commands in the bot.
 	"""
