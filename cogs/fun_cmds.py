@@ -1,3 +1,4 @@
+import asyncio
 import math
 import os
 import random
@@ -96,7 +97,9 @@ class FunCommands(commands.Cog, name='Fun'):
         ]
         responses = pos_responses + neut_responses + neg_responses
         answer = random.choice(responses)
-        await ctx.send(f'**{answer}**')
+        await ctx.typing()
+        await asyncio.sleep(2)  # Simulate thinking time
+        await ctx.reply(f'{answer}')
         
     @commands.command(name='owoify', aliases=['owo', 'uwu'],
                         brief='Convert text to OwO language',
