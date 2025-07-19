@@ -171,89 +171,80 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
                 sort_commands=True,
                 dm_help=False
         )
-    
+
     async def send_bot_help(self, mapping):
         ctx = self.context
         if ctx.author.id in bot.blacklist_ids['ids']:
             await ctx.message.channel.send('You are not allowed to use this command.', delete_after=bot.del_after)
             return
-        
-        # Check if the user is an admin or developer
+
         is_admin = ctx.author.id in bot.admin_ids or ctx.author.id in bot.dev_ids
-        
-        # list of embeds for each cog
         embeds = []
-        
-        main_embed = discord.Embed(
-                title="Bot Help",
-                description=f"Use `{ctx.prefix}help [command/category]` for more info",
-                color=discord.Color.blue()
-        )
-        main_embed.set_footer(text=f"Type {ctx.prefix}help <command/category> for detailed info")
-        
-        admin_embed = None
-        if is_admin:
-            admin_embed = discord.Embed(
-                    title="Admin Commands",
-                    description="These commands are only available to administrators",
-                    color=discord.Color.red()
-            )
-        
-        # Process each cog
+
+        # Create a page for each cog
         for cog, cmds in mapping.items():
             cog_name = getattr(cog, "qualified_name", "Miscellaneous")
             
-            # Get commands the user can use (with permission checks)
+            # Filter commands the user can run
             regular_cmds = await self.filter_commands(cmds, sort=True)
             
+            admin_cmds = []
+            if is_admin:
+                all_cmds = cmds
+                regular_cmd_names = {cmd.qualified_name for cmd in regular_cmds}
+                admin_cmds = [cmd for cmd in all_cmds if cmd.qualified_name not in regular_cmd_names]
+
+            # Only create a page if there are commands to show
+            if not regular_cmds and not admin_cmds:
+                continue
+
+            embed = discord.Embed(
+                    title=f"{cog_name} Commands",
+                    description=f"Use `{ctx.prefix}help [command]` for more info on a command.",
+                    color=discord.Color.blue()
+            )
+
             if regular_cmds:
                 cmd_list = []
                 for cmd in regular_cmds:
-                    # Add command with its brief description
                     brief = cmd.brief or "No description"
                     usage = cmd.usage or f"{ctx.prefix}{cmd.name}"
                     cmd_list.append(f"`{usage}` - {brief}")
                 
-                main_embed.add_field(
-                        name=cog_name,
-                        value="\n".join(cmd_list) if cmd_list else "No commands available",
+                embed.add_field(
+                        name="Commands",
+                        value="\n".join(cmd_list),
+                        inline=False
+                )
+
+            if admin_cmds:
+                admin_cmd_list = []
+                for cmd in admin_cmds:
+                    brief = cmd.brief or "No description"
+                    usage = cmd.usage or f"{ctx.prefix}{cmd.name}"
+                    admin_cmd_list.append(f"`{usage}` - {brief}")
+                
+                embed.add_field(
+                        name="Admin Commands",
+                        value="\n".join(admin_cmd_list),
                         inline=False
                 )
             
-            # For admins, also get admin-only commands
-            if is_admin and admin_embed:
-                # Get all commands without permission checks
-                all_cmds = cmds  # Get all commands in this cog
-                
-                # Find admin-only commands by comparing names
-                regular_cmd_names = {cmd.qualified_name for cmd in regular_cmds}
-                admin_cmds = [cmd for cmd in all_cmds if cmd.qualified_name not in regular_cmd_names]
-                
-                if admin_cmds:
-                    admin_cmd_list = []
-                    for cmd in admin_cmds:
-                        # Add command with its brief description
-                        brief = cmd.brief or "No description"
-                        usage = cmd.usage or f"{ctx.prefix}{cmd.name}"
-                        admin_cmd_list.append(f"`{usage}` - {brief}")
-                    
-                    admin_embed.add_field(
-                            name=cog_name,
-                            value="\n".join(admin_cmd_list),
-                            inline=False
-                    )
+            embeds.append(embed)
+
+        if not embeds:
+            await ctx.send("No commands to show.")
+            return
         
-        embeds.append(main_embed)
-        
-        # Add admin embed if it has content
-        if admin_embed and len(admin_embed.fields) > 0:
-            embeds.append(admin_embed)
-        
+        # Add a footer to each embed
+        for i, embed in enumerate(embeds):
+            embed.set_footer(text=f"Page {i + 1}/{len(embeds)}")
+
         # If there's only one page, no need for pagination
         if len(embeds) == 1:
             await ctx.send(embed=embeds[0])
             return
-        
+
         # Use buttons for pagination
         pagination_view = HelpPaginationView(embeds, ctx.author)
         await ctx.send(embed=embeds[0], view=pagination_view)
@@ -286,7 +277,7 @@ class HelpPaginationView(discord.ui.View):
         return True
     
     @discord.ui.button(label="Previous", style=discord.ButtonStyle.primary, emoji="⬅️",  # type: ignore
-                       custom_id="prev")  # type: ignore
+                       custom_id="prev")
     async def prev_button(self, interaction: discord.Interaction, button) -> None:
         if self.current_page > 0:
             self.current_page -= 1
@@ -294,7 +285,7 @@ class HelpPaginationView(discord.ui.View):
             await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)  # type: ignore
     
     @discord.ui.button(label="Page 1/2", style=discord.ButtonStyle.secondary, disabled=True,  # type: ignore
-                       custom_id="page")  # type: ignore
+                       custom_id="page")
     async def page_button(self, interaction: discord.Interaction, button) -> None:
         # This button is just a label and doesn't do anything when clicked
         pass
