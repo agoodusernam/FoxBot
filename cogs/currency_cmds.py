@@ -630,12 +630,16 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
 				# If we found qualified jobs at this level, add them and break
 				if qualified_jobs:
 					for job in qualified_jobs:
+						value = (f"Salary: {job.salary} {currency_name}\n"
+						         f"Required Exp: {job.req_experience} years\n")
+						if job.school_requirement != SchoolQualif.HIGH_SCHOOL:
+							value += f"School Requirement: {job.school_requirement.to_string()}\n"
+						if job.security_clearance != SecurityClearance.NONE:
+							value += f"Clearance: {job.security_clearance.to_string()}"
+						
 						embed.add_field(
 								name=f"{job.name} ({tree.name})",
-								value=f"Salary: {job.salary} {currency_name}\n"
-								      f"Required Exp: {job.req_experience} years\n"
-								      f"Education: {job.school_requirement.to_string()}\n"
-								      f"Clearance: {job.security_clearance.to_string()}",
+								value=value,
 								inline=False
 						)
 					# Break after finding the highest level with qualified jobs
