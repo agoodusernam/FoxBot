@@ -638,7 +638,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
 							value += f"Clearance: {job.security_clearance.to_string()}"
 						
 						embed.add_field(
-								name=f"{job.name} ({tree.name})",
+								name=f"{job.name} ({tree.name.replace('_', ' ').title()})",
 								value=value,
 								inline=False
 						)
