@@ -95,7 +95,7 @@ emoji_to_role: dict[discord.PartialEmoji, int] = {
 	discord.PartialEmoji(name='❔'): 1352341336459841688,
 	discord.PartialEmoji(name='🎬'): 1380624012090150913,
 	discord.PartialEmoji(name='🎨'): 1295024229799952394,
-	discord.PartialEmoji(name=':Forsaken:1396046411610718279'): 1396045343958892605,
+	discord.PartialEmoji(name='<:Forsaken:1396046411610718279>'): 1396045343958892605,
 }
 
 bot.emoji_to_role = emoji_to_role
