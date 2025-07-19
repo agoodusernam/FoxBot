@@ -631,13 +631,13 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                 if qualified_jobs:
                     for job in qualified_jobs:
                         value = (f'Salary: {job.salary} {currency_name}\n'
-                                 f'Required Exp: {job.req_experience} years\n')
+                                 f'Required Work Experience: {job.req_experience} years\n')
                         if job.school_requirement != SchoolQualif.HIGH_SCHOOL:
                             value += f'School Requirement: {job.school_requirement.to_string()}\n'
                         if job.security_clearance != SecurityClearance.NONE:
-                            value += f'Clearance: {job.security_clearance.to_string()}'
+                            value += f'Clearance: {job.security_clearance.to_string()}\n'
                         if job.experience_multiplier > 1.0:
-                            value += f'\nExperience Multiplier: {job.experience_multiplier}x'
+                            value += f'Work Experience Multiplier: {job.experience_multiplier}x'
                         
                         embed.add_field(
                                 name=f'{job.name} ({tree.name.replace('_', ' ').title()})',

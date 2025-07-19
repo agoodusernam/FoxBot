@@ -71,6 +71,45 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def suggest_cmd(self, ctx: discord.ext.commands.Context, *, args: str):
         await suggest.send_suggestion(ctx, args)
+        
+    @commands.command(name='8ball', aliases=['eight_ball', 'magic_8_ball'],
+                        brief='Ask the magic 8-ball a question',
+                        help='Ask the magic 8-ball a question and get a random answer')
+    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    async def eight_ball(self, ctx: discord.ext.commands.Context):
+        # 10 of each type of response
+        pos_responses = [
+            'It is certain', 'It is decidedly so', 'Without a doubt', 'Yes definitely',
+            'You may rely on it', 'As I see it, yes', 'Most likely', 'Outlook good',
+            'Yes', 'Signs point to yes'
+        ]
+        neut_responses = [
+            'Reply hazy try again', 'Ask again later',
+            'Better not tell you now', 'Cannot predict now', 'Concentrate and ask again',
+            'Maybe', 'My sources are unsure', 'Unclear, ask again later', 'I see no clear answer',
+            "I shouldn't answer that"
+        ]
+        neg_responses = [
+            "Don't count on it", 'Certainly not', 'My sources say unlikely',
+            'Outlook not so good', 'Very doubtful', 'No', 'Definitely not',
+            'You should not count on it', 'I would not rely on it', 'In my opinion, no'
+        ]
+        responses = pos_responses + neut_responses + neg_responses
+        answer = random.choice(responses)
+        await ctx.send(f'**{answer}**')
+        
+    @commands.command(name='owoify', aliases=['owo', 'uwu'],
+                        brief='Convert text to OwO language',
+                        help='Converts the given text to OwO language (UwU style)',
+                        usage='owoify <text>')
+    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    async def owoify(self, ctx: discord.ext.commands.Context, *, text: str):
+        # Simple conversion to OwO language
+        owo_text = text.replace('r', 'w').replace('l', 'w').replace('v', 'w')
+        owo_text = owo_text.replace('th', 'd').replace('Th', 'D').replace('TH', 'D')
+        if owo_text.endswith('!'):
+            owo_text = owo_text + ' OwO'
+        await ctx.send(owo_text)
     
     @commands.command(name='code', aliases=['source', 'github'],
                       brief='Get the bot\'s source code',
