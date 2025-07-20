@@ -13,6 +13,7 @@ class SchoolQualif(enum.Enum):
     Enum to represent different qualifications required for jobs, cost per year, and length of study in years.
     """
     HIGH_SCHOOL = (0, 0, 0)
+    NONE = HIGH_SCHOOL
     ASSOCIATE = (1, 3_885, 2)
     BACHELOR = (2, 15_419, 4)
     MASTER = (3, 20_000, 2)

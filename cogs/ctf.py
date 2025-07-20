@@ -13,7 +13,7 @@ class CTF(commands.Cog, name='CTF', command_attrs=dict(add_check=not_blacklisted
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def submit(self, ctx: commands.Context, *, args: str):
         """The command to submit a solution to a CTF challenge."""
-        if not args:
+        if not args or args in ['help', 'h', '?', '', ' ']:
             await ctx.send(f'Your first clue is: {os.getenv('CTF_FIRST_CLUE')}')
             return
         

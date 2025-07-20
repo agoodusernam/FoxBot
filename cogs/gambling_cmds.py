@@ -41,6 +41,7 @@ class GamblingCmds(commands.Cog, name='Gambling', command_attrs=dict(add_check=i
                       help=f'Buy a lottery ticket for a chance to win a jackpot! 1 ticket costs 5 {curr_config.currency_name}.',
                       usage='lottery <tickets>')
     @commands.cooldown(1, 60, commands.BucketType.user)  # type: ignore
+    #TODO: Implement lottery drawing and winner selection using discord.ext.tasks
     async def lottery_cmd(self, ctx: commands.Context, tickets: int = 1):
         if tickets <= 0:
             await ctx.send('You must buy at least one ticket!')

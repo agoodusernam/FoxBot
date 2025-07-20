@@ -115,8 +115,8 @@ class FunCommands(commands.Cog, name='Fun'):
         await ctx.send(owo_text)
     
     @commands.command(name='code', aliases=['source', 'github'],
-                      brief='Get the bot\'s source code',
-                      help='Get the link to the bot\'s source code on GitHub')
+                      brief="Get the bot's source code",
+                      help="Get the link to the bot's source code on GitHub")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def code(self, ctx: discord.ext.commands.Context):
         await ctx.message.channel.send(
@@ -125,7 +125,7 @@ class FunCommands(commands.Cog, name='Fun'):
     
     @commands.command(name='lines_of_code', aliases=['lines', 'loc'],
                       brief='Get the number of lines of code in the bot',
-                      help='Get the number of lines of code in the bot\'s source code')
+                      help="Get the number of lines of code in the bot's source code")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def lines_of_code(self, ctx: discord.ext.commands.Context):
         # function that returns the number of lines of code in a given directory recursively, excluding .venv

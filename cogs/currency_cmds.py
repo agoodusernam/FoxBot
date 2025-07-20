@@ -43,7 +43,9 @@ class ShopView(discord.ui.View):
             item.disabled = True
     # View will be automatically removed from the message
 
-
+#TODO: Add a command to check the user's profile, including their job, income, qualifications, and other details
+#TODO: Add other money making activities like hunting, fishing and others
+#TODO: Add illegal jobs
 class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=is_dev, hidden=True)):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -140,6 +142,8 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       help='Work to earn some money. You can do this every day.')
     @commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)  # type: ignore
     async def work_cmd(self, ctx: commands.Context):
+        #TODO: Check if the user has a job before allowing them to work
+        #TODO: Check for promotions and raises
         profile = curr_utils.get_profile(ctx.author)
         fired = profile['fire_risk'] > random.random()
         if fired:
@@ -599,6 +603,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       usage='jobs')
     @commands.cooldown(1, 4 * 60, commands.BucketType.user)  # type: ignore
     async def jobs_cmd(self, ctx: commands.Context):
+        #TODO: Make the user able to choose a job from the list
         profile = curr_utils.get_profile(ctx.author)
         school_qualif = SchoolQualif.from_string(profile['qualifications'][0])
         clearance = SecurityClearance.from_string(profile['qualifications'][1])
@@ -630,7 +635,9 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                 # If we found qualified jobs at this level, add them and break
                 if qualified_jobs:
                     for job in qualified_jobs:
-                        value = (f'Salary: {job.salary} {currency_name}\n'
+                        # Calculate the salary with variance to 0.01% precision
+                        salary_mult = 1 + (random.randint(0, job.salary_variance * 10000) / 10000)
+                        value = (f'Salary: {int(job.salary * salary_mult)} {currency_name}\n'
                                  f'Required Work Experience: {job.req_experience} years\n')
                         if job.school_requirement != SchoolQualif.HIGH_SCHOOL:
                             value += f'School Requirement: {job.school_requirement.to_string()}\n'

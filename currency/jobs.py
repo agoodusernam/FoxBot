@@ -85,10 +85,10 @@ retail_tree = JobTree(
         ]
 )
 
-# Information Technology Jobs
+# Information_Technology Jobs
 IT_intern = Job(
         name="IT Intern",
-        tree="Information Technology",
+        tree="Information_Technology",
         req_qualifications=(SchoolQualif.HIGH_SCHOOL, SecurityClearance.NONE),
         req_experience=0,
         salary=0,
@@ -98,7 +98,7 @@ IT_intern = Job(
 
 helpdesk = Job(
         name="Helpdesk Technician",
-        tree="Information Technology",
+        tree="Information_Technology",
         req_qualifications=(SchoolQualif.HIGH_SCHOOL, SecurityClearance.NONE),
         req_experience=1,
         salary=30_000,
@@ -107,7 +107,7 @@ helpdesk = Job(
 
 helpdesk_specialist = Job(
         name="Helpdesk Specialist",
-        tree="Information Technology",
+        tree="Information_Technology",
         req_qualifications=(SchoolQualif.ASSOCIATE, SecurityClearance.NONE),
         req_experience=2,
         salary=40_000,
@@ -116,7 +116,7 @@ helpdesk_specialist = Job(
 
 technician = Job(
         name="IT Technician",
-        tree="Information Technology",
+        tree="Information_Technology",
         req_qualifications=(SchoolQualif.ASSOCIATE, SecurityClearance.NONE),
         req_experience=3,
         salary=50_000,
@@ -125,7 +125,7 @@ technician = Job(
 
 j_system_administrator = Job(
         name="Junior System Administrator",
-        tree="Information Technology",
+        tree="Information_Technology",
         req_qualifications=(SchoolQualif.BACHELOR, SecurityClearance.NONE),
         req_experience=4,
         salary=60_000,
@@ -134,7 +134,7 @@ j_system_administrator = Job(
 
 system_administrator = Job(
         name="System Administrator",
-        tree="Information Technology",
+        tree="Information_Technology",
         req_qualifications=(SchoolQualif.BACHELOR, SecurityClearance.NONE),
         req_experience=6,
         salary=75_000,
@@ -143,7 +143,7 @@ system_administrator = Job(
 
 supervisor = Job(
         name="IT Supervisor",
-        tree="Information Technology",
+        tree="Information_Technology",
         req_qualifications=(SchoolQualif.MASTER, SecurityClearance.NONE),
         req_experience=8,
         salary=90_000,
@@ -152,7 +152,7 @@ supervisor = Job(
 
 it_manager = Job(
         name="IT Manager",
-        tree="Information Technology",
+        tree="Information_Technology",
         req_qualifications=(SchoolQualif.MASTER, SecurityClearance.NONE),
         req_experience=10,
         salary=120_000,
@@ -161,15 +161,15 @@ it_manager = Job(
 
 it_director = Job(
         name="Director of Information Technology",
-        tree="Information Technology",
+        tree="Information_Technology",
         req_qualifications=(SchoolQualif.MASTER, SecurityClearance.NONE),
         req_experience=12,
-        salary=150_000,
+        salary=160_000,
         salary_variance=30
 )
 
 it_tree = JobTree(
-        name="Information Technology",
+        name="Information_Technology",
         jobs=[
             [IT_intern, helpdesk],
             helpdesk_specialist,
@@ -463,9 +463,9 @@ enlisted_army_tree = JobTree(
 warrant_officer_1 = Job(
         name="Warrant Officer 1",
         tree="Commissioned_Officer_Army",
-        req_qualifications=(SchoolQualif.ASSOCIATE, SecurityClearance.CONFIDENTIAL),
+        req_qualifications=(SchoolQualif.HIGH_SCHOOL, SecurityClearance.NONE),
         req_experience=0,
-        salary=30_000,
+        salary=28_000,
         salary_variance=5
 )
 
@@ -622,7 +622,7 @@ certified_nurse_assistant = Job(
         tree="Healthcare",
         req_qualifications=(SchoolQualif.HIGH_SCHOOL, SecurityClearance.NONE),
         req_experience=0,
-        salary=30_000,
+        salary=27_500,
         salary_variance=5
 )
 
@@ -771,7 +771,7 @@ chief_financial_officer = Job(
         req_qualifications=(SchoolQualif.MASTER, SecurityClearance.NONE),
         req_experience=20,
         salary=150_000,
-        salary_variance=30
+        salary_variance=45
 )
 
 finance_tree = JobTree(

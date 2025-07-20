@@ -508,6 +508,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         embed.timestamp = discord.utils.utcnow()
         if logging_channel:
             await logging_channel.send(embed=embed)
+        
+        if before.channel.name.startswith('private_'):
+            if before.channel and len(before.channel.members) == 0:
+                await before.channel.delete(reason='Private VC empty after member left')
 
 
 @bot.event
