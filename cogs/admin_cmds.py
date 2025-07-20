@@ -383,7 +383,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         data = {
             'user_id':   member.id,
             'reason':    reason,
-            'timestamp': discord.utils.utcnow().isoformat(),
+            'timestamp': int(discord.utils.utcnow().timestamp()),
             'issuer_id': ctx.author.id,
         }
         
@@ -410,8 +410,9 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send(f'{member.display_name} has no warns.', delete_after=ctx.bot.del_after)
             return
         
-        warn_list = '\n'.join([f'**{i + 1}.** {warn["reason"]} (Issued by'
-                               f'{(await ctx.bot.fetch_user(warn["issuer_id"])).display_name} at {warn["timestamp"]})'
+        warn_list = '\n'.join([f'**{i + 1}.** {warn["reason"]} (Issued by '
+                               f'{(await ctx.bot.fetch_user(warn["issuer_id"])).display_name} at '
+                               f'<t:{warn["timestamp"]}>)'
                                for i, warn in enumerate(warns)])
         
         embed = discord.Embed(title=f'Warns for {member.display_name}', description=warn_list,
