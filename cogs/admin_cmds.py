@@ -9,6 +9,7 @@ from discord.ext import commands
 from discord.utils import get
 
 import utils.utils as utils
+from utils import db_stuff
 from command_utils import analysis
 from command_utils.checks import is_admin
 
@@ -73,7 +74,7 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
 
 
 class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
-    '''Admin commands for managing the server and users.'''
+    """Admin commands for managing the server and users."""
     
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -363,6 +364,59 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             pass
         
         await last_log(ctx, anonymous=True)
+    
+    @commands.command(name='warn',
+                      brief='Warn a user',
+                      help='Admin only: Warn a user without showing in the public logs',
+                      usage='warn <user_id/mention> <reason>')
+    @commands.check(is_admin)
+    async def warn(self, ctx: discord.ext.commands.Context, member: discord.Member, *,
+                   reason: str = 'No reason provided'):
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            pass
+        
+        if member is None:
+            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
+            return
+        data = {
+            'user_id':   member.id,
+            'reason':    reason,
+            'timestamp': discord.utils.utcnow().isoformat(),
+            'issuer_id': ctx.author.id,
+        }
+        
+        db_stuff.send_to_db("warns", data)
+        await ctx.send(f'{member.display_name} has been warned for: {reason}', delete_after=ctx.bot.del_after)
+    
+    @commands.command(name='warns',
+                      brief='View warns for a user',
+                      help='Admin only: View all warns for a user',
+                      usage='warns <user_id/mention>')
+    @commands.check(is_admin)
+    async def view_warns(self, ctx: discord.ext.commands.Context, member: discord.Member):
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            pass
+        
+        if member is None:
+            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
+            return
+        
+        warns = db_stuff.get_many_from_db("warns", {"user_id": member.id})
+        if not warns:
+            await ctx.send(f'{member.display_name} has no warns.', delete_after=ctx.bot.del_after)
+            return
+        
+        warn_list = '\n'.join([f'**{i + 1}.** {warn["reason"]} (Issued by'
+                               f'{(await ctx.bot.fetch_user(warn["issuer_id"])).display_name} at {warn["timestamp"]})'
+                               for i, warn in enumerate(warns)])
+        
+        embed = discord.Embed(title=f'Warns for {member.display_name}', description=warn_list,
+                              color=discord.Color.red())
+        await ctx.send(embed=embed)
 
 
 async def setup(bot):

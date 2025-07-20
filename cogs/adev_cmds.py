@@ -86,7 +86,7 @@ async def upload_whole_server(guild: discord.Guild, author: discord.Member, nolo
 
 
 class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_check=is_dev)):
-    '''Developer commands for bot maintenance and management.'''
+    """Developer commands for bot maintenance and management."""
     
     def __init__(self, bot: commands.Bot):
         self.bot = bot

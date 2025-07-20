@@ -350,7 +350,7 @@ def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[s
 		return None
 
 
-def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by, direction: str, limit: int = 0) -> list[
+def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by=None, direction: str="a", limit: int = 0) -> list[
 	                                                                                                                 dict[
 		                                                                                                                 str, Any]] | None:
 	"""
@@ -372,7 +372,10 @@ def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by, di
 		direction = pymongo.ASCENDING
 	else:
 		direction = pymongo.DESCENDING
-	
+		
+	if sort_by is None:
+		results = collection.find(query)
+		return [dict(result) for result in results]
 	try:
 		if limit > 0:
 			results = collection.find(query).sort(sort_by, direction).limit(limit)
