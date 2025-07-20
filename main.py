@@ -2,6 +2,7 @@ import atexit
 import json
 import os
 from pathlib import Path
+import re
 
 import discord
 from discord.ext import commands
@@ -88,14 +89,14 @@ bot.config = config
 bot.role_message_id = 1380639010564603976
 emoji_to_role: dict[discord.PartialEmoji, int] = {
     discord.PartialEmoji.from_str('<:jjs:1380607586231128155>'):         1314274909815439420,
-    discord.PartialEmoji(name='❕'): 1321214081977421916,
+    discord.PartialEmoji(name='❕'):                                      1321214081977421916,
     discord.PartialEmoji.from_str('<:grass_block:1380607192717328505>'): 1380623674918310079,
     discord.PartialEmoji.from_str('<:Vrchat:1380607441691214048>'):      1380623882574368939,
     discord.PartialEmoji.from_str('<:rust:1380606572127850639>'):        1130284770757197896,
-    discord.PartialEmoji(name='❔'): 1352341336459841688,
-    discord.PartialEmoji(name='🎬'): 1380624012090150913,
-    discord.PartialEmoji(name='🎨'): 1295024229799952394,
-    discord.PartialEmoji.from_str('<:Forsaken:1396046411610718279>'): 1396045343958892605,
+    discord.PartialEmoji(name='❔'):                                      1352341336459841688,
+    discord.PartialEmoji(name='🎬'):                                      1380624012090150913,
+    discord.PartialEmoji(name='🎨'):                                      1295024229799952394,
+    discord.PartialEmoji.from_str('<:Forsaken:1396046411610718279>'):    1396045343958892605,
 }
 
 bot.emoji_to_role = emoji_to_role
@@ -107,6 +108,22 @@ if not os.path.isfile('blacklist_users.json'):
 else:
     with open('blacklist_users.json', 'r') as blacklist_file:
         bot.blacklist_ids = json.load(blacklist_file)
+
+# Regular Expression to extract URL from the string
+regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
+url_pattern = re.compile(regex, re.IGNORECASE)
+
+
+def find_url_in_string(string: str) -> bool:
+    """
+    Find a URL in a string using a regular expression.
+    :param string: The string to search for a URL.
+    :return: If a URL is found, return True; otherwise, return False.
+    """
+    global url_pattern
+    
+    match = url_pattern.search(string)
+    return match is not None
 
 
 # Bot configuration
@@ -126,38 +143,41 @@ async def on_ready() -> None:
     
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     print('------')
+    apply_blacklist: bool = False
+    apply_reactions: bool = False
     
-    # Apply blacklist to channel
-    channel = bot.get_channel(1379193761791213618)
-    for u_id in bot.blacklist_ids['ids']:
-        await channel.set_permissions(get(bot.get_all_members(), id=u_id), send_messages=False)
-    
-    for key, value in bot.logging_channels.items():
-        channel: discord.TextChannel = bot.get_channel(value)
-        bot.logging_channels[key] = channel
-    
-    guild = bot.get_guild(1081760248433492140)
-    for vc_channel in guild.voice_channels:
-        members = [member for member in vc_channel.members]
-        if members:
-            for member in members:
-                voice_log.handle_join(member, vc_channel)
-    
-    react_role_msg = await bot.get_channel(1337465612875595776).fetch_message(bot.role_message_id)
-    if react_role_msg is None:
-        print(f"Role message with ID {bot.role_message_id} not found. Reaction roles will not work.")
-    else:
-        # Add reaction roles to the message
-        for emoji, role_id in bot.emoji_to_role.items():
-            role = guild.get_role(role_id)
-            if role is not None:
-                try:
-                    await react_role_msg.add_reaction(emoji)
-                except Exception as e:
-                    print(f"Failed to add reaction {emoji} for role {role.name}: {e}")
-            
-            else:
-                print(f"Role with ID {role_id} not found. Skipping emoji {emoji}.")
+    if apply_blacklist:
+        guild = bot.get_guild(1081760248433492140)
+        channel = bot.get_channel(1379193761791213618)
+        for u_id in bot.blacklist_ids['ids']:
+            await channel.set_permissions(get(bot.get_all_members(), id=u_id), send_messages=False)
+        
+        for key, value in bot.logging_channels.items():
+            channel: discord.TextChannel = bot.get_channel(value)
+            bot.logging_channels[key] = channel
+        
+        for vc_channel in guild.voice_channels:
+            members = [member for member in vc_channel.members]
+            if members:
+                for member in members:
+                    voice_log.handle_join(member, vc_channel)
+    if apply_reactions:
+        guild = bot.get_guild(1081760248433492140)
+        react_role_msg = await bot.get_channel(1337465612875595776).fetch_message(bot.role_message_id)
+        if react_role_msg is None:
+            print(f"Role message with ID {bot.role_message_id} not found. Reaction roles will not work.")
+        else:
+            # Add reaction roles to the message
+            for emoji, role_id in bot.emoji_to_role.items():
+                role = guild.get_role(role_id)
+                if role is not None:
+                    try:
+                        await react_role_msg.add_reaction(emoji)
+                    except Exception as e:
+                        print(f"Failed to add reaction {emoji} for role {role.name}: {e}")
+                
+                else:
+                    print(f"Role with ID {role_id} not found. Skipping emoji {emoji}.")
     
     await bot.change_presence(activity=discord.CustomActivity(name='f!help'))
 
@@ -171,16 +191,16 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
                 sort_commands=True,
                 dm_help=False
         )
-
+    
     async def send_bot_help(self, mapping):
         ctx = self.context
         if ctx.author.id in bot.blacklist_ids['ids']:
             await ctx.message.channel.send('You are not allowed to use this command.', delete_after=bot.del_after)
             return
-
+        
         is_admin = ctx.author.id in bot.admin_ids or ctx.author.id in bot.dev_ids
         embeds = []
-
+        
         # Create a page for each cog
         for cog, cmds in mapping.items():
             cog_name = getattr(cog, "qualified_name", "Miscellaneous")
@@ -193,17 +213,17 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
                 all_cmds = cmds
                 regular_cmd_names = {cmd.qualified_name for cmd in regular_cmds}
                 admin_cmds = [cmd for cmd in all_cmds if cmd.qualified_name not in regular_cmd_names]
-
+            
             # Only create a page if there are commands to show
             if not regular_cmds and not admin_cmds:
                 continue
-
+            
             embed = discord.Embed(
                     title=f"{cog_name} Commands",
                     description=f"Use `{ctx.prefix}help [command]` for more info on a command.",
                     color=discord.Color.blue()
             )
-
+            
             if regular_cmds:
                 cmd_list = []
                 for cmd in regular_cmds:
@@ -216,7 +236,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
                         value="\n".join(cmd_list),
                         inline=False
                 )
-
+            
             if admin_cmds:
                 admin_cmd_list = []
                 for cmd in admin_cmds:
@@ -231,7 +251,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
                 )
             
             embeds.append(embed)
-
+        
         if not embeds:
             await ctx.send("No commands to show.")
             return
@@ -239,12 +259,12 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
         # Add a footer to each embed
         for i, embed in enumerate(embeds):
             embed.set_footer(text=f"Page {i + 1}/{len(embeds)}")
-
+        
         # If there's only one page, no need for pagination
         if len(embeds) == 1:
             await ctx.send(embed=embeds[0])
             return
-
+        
         # Use buttons for pagination
         pagination_view = HelpPaginationView(embeds, ctx.author)
         await ctx.send(embed=embeds[0], view=pagination_view)
@@ -328,6 +348,15 @@ async def on_message(message: discord.Message):
     if message.content.startswith('​'):  # Zero-width space
         print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
         return
+    
+    if message.channel.id == 1352374592034963506 and find_url_in_string(message.content) and not message.author.bot:
+        # If the message contains a URL, delete it and send a warning
+        await message.delete()
+        await message.channel.send(
+            'Please do not post links in this channel.',
+            delete_after=bot.del_after
+        )
+        
     
     # Process commands first
     if (not bot.maintenance_mode) or (message.author.id in bot.admin_ids) or (message.author.id in bot.dev_ids):
@@ -508,29 +537,3 @@ async def not_blacklisted(ctx: discord.ext.commands.Context):
 
 # Run the bot
 bot.run(token=os.getenv('TOKEN'), reconnect=True)
-
-# TODO: Take over the url deleting in counting from yag
-"""
-# Regular Expression to extract URL from the string
-import re
-
-regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
-
-# Compile the Regular Expression
-p = re.compile(regex, re.IGNORECASE)
-
-# Find the match between string and the regular expression
-while True:
-	s = input("Enter a string to find URLs: ")
-	m = p.finditer(s)
-	found = False
-	if m:
-		for match in m:
-			found = True
-			break
-	
-	if found:
-		print("URLs found in the string.")
-	else:
-		print("No URLs found in the string.")
-"""
