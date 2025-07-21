@@ -1,7 +1,6 @@
 import atexit
 import json
 import os
-from pathlib import Path
 import re
 
 import discord
@@ -11,6 +10,8 @@ from dotenv import load_dotenv
 
 from custom_logging import voice_log
 from utils import db_stuff, utils
+from config.bot_config import load_config
+from config.blacklist_manager import BlacklistManager
 
 load_dotenv()
 
@@ -20,94 +21,22 @@ def on_exit():
     db_stuff.disconnect()
 
 
-def load_config():
-    """Load configuration from config.json file or create default if not exists"""
-    config_path = Path("config.json")
-    
-    # Default configuration
-    default_config: dict[str, str | int | list[int] | dict[str, int | dict[str, list[int]] | discord.TextChannel]] = {
-        "command_prefix":   "f!",
-        "del_after":        3,
-        "admin_ids":        [235644709714788352, 542798185857286144, 937278965557641227],
-        "dev_ids":          [542798185857286144],
-        "no_log":           {
-            "user_ids":     [1329366814517628969, 1329366963805491251, 1329367238146396211,
-                             1329367408330145805, 235148962103951360, 1299640624848306177],
-            "channel_ids":  [],
-            "category_ids": [1329366612821938207]
-        },
-        "send_blacklist":   {
-            "channel_ids":  [],
-            "category_ids": []
-        },
-        "logging_channels": {
-            "voice": 1329366741909770261
-        },
-        "maintenance_mode": False,
-    }
-    
-    # Create a config file with defaults if it doesn't exist
-    if not config_path.exists():
-        with open(config_path, "w", encoding="utf-8") as _f:
-            json.dump(default_config, _f, indent=4)
-        print("Created default config.json file")
-        return default_config
-    
-    # Load existing config
-    try:
-        with open(config_path, "r", encoding="utf-8") as _f:
-            _config = json.load(_f)
-        print("Configuration loaded successfully")
-        return _config
-    except Exception as e:
-        print(f"Error loading config: {e}")
-        print("Writing default configuration")
-        with open(config_path, "w", encoding="utf-8") as _f:
-            json.dump(default_config, _f, indent=4)
-        return default_config
-
-
-# Load configuration
+# Load configuration using the new system
 config = load_config()
+
+# Initialize blacklist manager
+blacklist_manager = BlacklistManager()
 
 # Create bot with intents
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix=config["command_prefix"], intents=intents)
+bot = commands.Bot(command_prefix=config.command_prefix, intents=intents)
 
-# Initialize bot configuration from loaded config
-bot.today = utils.formatted_time()
-bot.del_after = config["del_after"]
-bot.admin_ids = config["admin_ids"]
-bot.dev_ids = config["dev_ids"]
-bot.no_log = config["no_log"]
-bot.logging_channels = config["logging_channels"]
-bot.send_blacklist = config["send_blacklist"]
-bot.maintenance_mode = config["maintenance_mode"]
+# Attach configuration and managers to bot for easy access
 bot.config = config
+bot.blacklist = blacklist_manager
 
-# Reaction roles
-bot.role_message_id = 1380639010564603976
-emoji_to_role: dict[discord.PartialEmoji, int] = {
-    discord.PartialEmoji.from_str('<:jjs:1380607586231128155>'):         1314274909815439420,
-    discord.PartialEmoji(name='❕'):                                      1321214081977421916,
-    discord.PartialEmoji.from_str('<:grass_block:1380607192717328505>'): 1380623674918310079,
-    discord.PartialEmoji.from_str('<:Vrchat:1380607441691214048>'):      1380623882574368939,
-    discord.PartialEmoji.from_str('<:rust:1380606572127850639>'):        1130284770757197896,
-    discord.PartialEmoji(name='❔'):                                      1352341336459841688,
-    discord.PartialEmoji(name='🎬'):                                      1380624012090150913,
-    discord.PartialEmoji(name='🎨'):                                      1295024229799952394,
-    discord.PartialEmoji.from_str('<:Forsaken:1396046411610718279>'):    1396045343958892605,
-}
-
-bot.emoji_to_role = emoji_to_role
-
-# Load blacklist
-if not os.path.isfile('blacklist_users.json'):
-    with open('blacklist_users.json', 'w') as blacklist_file:
-        json.dump(bot.blacklist_ids, blacklist_file, indent=4)
-else:
-    with open('blacklist_users.json', 'r') as blacklist_file:
-        bot.blacklist_ids = json.load(blacklist_file)
+# Set dynamic properties
+bot.config.today = utils.formatted_time()
 
 # Regular Expression to extract URL from the string
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
@@ -138,7 +67,7 @@ async def on_ready() -> None:
         print(f" - {cog}")
     
     print(f"Total commands: {len(bot.commands)}")
-    if bot.maintenance_mode:
+    if bot.config.maintenance_mode:
         print("Bot is in maintenance mode. Only admins can use commands.")
     
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
@@ -149,33 +78,30 @@ async def on_ready() -> None:
     if apply_blacklist:
         guild = bot.get_guild(1081760248433492140)
         channel = bot.get_channel(1379193761791213618)
-        for u_id in bot.blacklist_ids['ids']:
+        for u_id in bot.blacklist.blacklist_ids:
             await channel.set_permissions(get(bot.get_all_members(), id=u_id), send_messages=False)
-        
-        for key, value in bot.logging_channels.items():
-            channel: discord.TextChannel = bot.get_channel(value)
-            bot.logging_channels[key] = channel
         
         for vc_channel in guild.voice_channels:
             members = [member for member in vc_channel.members]
             if members:
                 for member in members:
                     voice_log.handle_join(member, vc_channel)
+    
     if apply_reactions:
         guild = bot.get_guild(1081760248433492140)
-        react_role_msg = await bot.get_channel(1337465612875595776).fetch_message(bot.role_message_id)
+        react_role_msg = await bot.get_channel(1337465612875595776).fetch_message(bot.config.reaction_roles.message_id)
         if react_role_msg is None:
-            print(f"Role message with ID {bot.role_message_id} not found. Reaction roles will not work.")
+            print(f"Role message with ID {bot.config.reaction_roles.message_id} not found. Reaction roles will not work.")
         else:
             # Add reaction roles to the message
-            for emoji, role_id in bot.emoji_to_role.items():
+            emoji_to_role = bot.config.get_emoji_to_role_discord_objects()
+            for emoji, role_id in emoji_to_role.items():
                 role = guild.get_role(role_id)
                 if role is not None:
                     try:
                         await react_role_msg.add_reaction(emoji)
                     except Exception as e:
                         print(f"Failed to add reaction {emoji} for role {role.name}: {e}")
-                
                 else:
                     print(f"Role with ID {role_id} not found. Skipping emoji {emoji}.")
     
@@ -194,11 +120,11 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
     
     async def send_bot_help(self, mapping):
         ctx = self.context
-        if ctx.author.id in bot.blacklist_ids['ids']:
-            await ctx.message.channel.send('You are not allowed to use this command.', delete_after=bot.del_after)
+        if bot.blacklist.is_blacklisted(ctx.author.id):
+            await ctx.message.channel.send('You are not allowed to use this command.', delete_after=bot.config.del_after)
             return
         
-        is_admin = ctx.author.id in bot.admin_ids or ctx.author.id in bot.dev_ids
+        is_admin = ctx.author.id in bot.config.admin_ids or ctx.author.id in bot.config.dev_ids
         embeds = []
         
         # Create a page for each cog
@@ -327,11 +253,11 @@ async def on_command_error(ctx: discord.ext.commands.Context, error: discord.ext
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.message.channel.send(
                 f'This command is on cooldown. Please try again in {error.retry_after:.0f} seconds.',
-                delete_after=bot.del_after
+                delete_after=bot.config.del_after
         )
         await ctx.message.delete()
     elif isinstance(error, commands.CheckFailure):
-        await ctx.message.channel.send('You do not have permission to use this command.', delete_after=bot.del_after)
+        await ctx.message.channel.send('You do not have permission to use this command.', delete_after=bot.config.del_after)
         await ctx.message.delete()
     
     else:
@@ -341,7 +267,7 @@ async def on_command_error(ctx: discord.ext.commands.Context, error: discord.ext
 # Message event for logging and processing
 @bot.event
 async def on_message(message: discord.Message):
-    bot.today = utils.formatted_today()
+    bot.config.today = utils.formatted_today()
     if message.author.bot:
         return
     
@@ -354,18 +280,18 @@ async def on_message(message: discord.Message):
         await message.delete()
         await message.channel.send(
             'Please do not post links in this channel.',
-            delete_after=bot.del_after
+            delete_after=bot.config.del_after
         )
         
     
     # Process commands first
-    if (not bot.maintenance_mode) or (message.author.id in bot.admin_ids) or (message.author.id in bot.dev_ids):
+    if (not bot.config.maintenance_mode) or (message.author.id in bot.config.admin_ids) or (message.author.id in bot.config.dev_ids):
         await bot.process_commands(message)
         
         # Don't log command messages
         if message.content.startswith(bot.command_prefix):
             return
-    elif bot.maintenance_mode:
+    elif bot.config.maintenance_mode:
         await message.channel.send('The bot is currently in maintenance mode. Please try again later.')
     
     if ((message.channel.id == 1346720879651848202) and (message.author.id == 542798185857286144) and
@@ -375,9 +301,9 @@ async def on_message(message: discord.Message):
     
     # Log regular messages
     if (message.author != bot.user) and (
-            message.author.id not in bot.no_log['user_ids']) and (
-            message.channel.id not in bot.no_log['channel_ids']) and (
-            message.channel.category_id not in bot.no_log['category_ids']):
+            message.author.id not in bot.config.no_log.user_ids) and (
+            message.channel.id not in bot.config.no_log.channel_ids) and (
+            message.channel.category_id not in bot.config.no_log.category_ids):
         
         has_attachment = bool(message.attachments)
         
@@ -414,15 +340,16 @@ async def on_message(message: discord.Message):
 # Reaction role events
 @bot.event
 async def on_raw_reaction_add(payload):
-    if payload.message_id != bot.role_message_id:
+    if payload.message_id != bot.config.reaction_roles.message_id:
         return
     
     guild = bot.get_guild(payload.guild_id)
     if guild is None:
         return
     
+    emoji_to_role = bot.config.get_emoji_to_role_discord_objects()
     try:
-        role_id = bot.emoji_to_role[payload.emoji]
+        role_id = emoji_to_role[payload.emoji]
     except KeyError:
         print(f"Emoji {payload.emoji} not found in emoji_to_role mapping.")
         return
@@ -440,15 +367,16 @@ async def on_raw_reaction_add(payload):
 
 @bot.event
 async def on_raw_reaction_remove(payload):
-    if payload.message_id != bot.role_message_id:
+    if payload.message_id != bot.config.reaction_roles.message_id:
         return
     
     guild = bot.get_guild(payload.guild_id)
     if guild is None:
         return
     
+    emoji_to_role = bot.config.get_emoji_to_role_discord_objects()
     try:
-        role_id = bot.emoji_to_role[payload.emoji]
+        role_id = emoji_to_role[payload.emoji]
     except KeyError:
         return
     
@@ -470,7 +398,7 @@ async def on_raw_reaction_remove(payload):
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
     if member.bot:
         return
-    logging_channel = bot.logging_channels.get('voice')
+    logging_channel = bot.get_channel(bot.config.logging_channels.voice) if bot.config.logging_channels.voice else None
     
     # Member joined channel
     if before.channel is None and after.channel is not None:
@@ -533,8 +461,8 @@ async def not_blacklisted(ctx: discord.ext.commands.Context):
     """
     Check if the user is blacklisted from using commands.
     """
-    if ctx.author.id in bot.blacklist_ids['ids']:
-        await ctx.send('You are not allowed to use this command.', delete_after=bot.del_after)
+    if bot.blacklist.is_blacklisted(ctx.author.id):
+        await ctx.send('You are not allowed to use this command.', delete_after=bot.config.del_after)
         return False
     return True
 

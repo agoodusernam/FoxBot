@@ -1,0 +1,6 @@
+cachetools~=6.1.0
+pymongo~=4.13.2
+requests~=2.32.4
+python-dotenv~=1.1.1
+matplotlib~=3.10.3
+discord.py~=2.5.2
