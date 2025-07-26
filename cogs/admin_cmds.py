@@ -13,6 +13,8 @@ from utils import db_stuff
 from command_utils import analysis
 from command_utils.checks import is_admin
 
+STAFF_ROLE_ID = 1396395163835699310 # Role ID for staff, used in checks
+
 
 def save_perms(ctx: discord.ext.commands.Context) -> None:
     previous_perms: dict[int, dict[str, dict[str, Union[bool, None]]]] = {}
@@ -340,7 +342,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Send the last modlog message',
                       usage='last_log')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    @commands.has_role(1097024744982859816)
+    @commands.has_role(STAFF_ROLE_ID)
     async def send_last_log(self, ctx: discord.ext.commands.Context):
         try:
             await ctx.message.delete()
@@ -356,7 +358,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Send the last modlog message without mentioning the moderator',
                       usage='last_log_anonymous')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    @commands.has_role(1097024744982859816)
+    @commands.has_role(STAFF_ROLE_ID)
     async def send_last_log_anonymous(self, ctx: discord.ext.commands.Context):
         try:
             await ctx.message.delete()
