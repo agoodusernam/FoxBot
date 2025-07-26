@@ -8,10 +8,10 @@ from discord.ext import commands
 from discord.utils import get
 from dotenv import load_dotenv
 
+from config.blacklist_manager import BlacklistManager
+from config.bot_config import load_config
 from custom_logging import voice_log
 from utils import db_stuff, utils
-from config.bot_config import load_config
-from config.blacklist_manager import BlacklistManager
 
 load_dotenv()
 
@@ -34,6 +34,8 @@ bot = commands.Bot(command_prefix=config.command_prefix, intents=intents)
 # Attach configuration and managers to bot for easy access
 bot.config = config
 bot.blacklist = blacklist_manager
+bot.admin_ids = config.admin_ids
+bot.dev_ids = config.dev_ids
 
 # Set dynamic properties
 bot.config.today = utils.formatted_time()
@@ -74,21 +76,20 @@ async def on_ready() -> None:
     print('------')
     apply_blacklist: bool = False
     apply_reactions: bool = False
-    
+    guild = bot.get_guild(1081760248433492140)
     if apply_blacklist:
-        guild = bot.get_guild(1081760248433492140)
+
         channel = bot.get_channel(1379193761791213618)
         for u_id in bot.blacklist.blacklist_ids:
             await channel.set_permissions(get(bot.get_all_members(), id=u_id), send_messages=False)
-        
-        for vc_channel in guild.voice_channels:
-            members = [member for member in vc_channel.members]
-            if members:
-                for member in members:
-                    voice_log.handle_join(member, vc_channel)
+    
+    for vc_channel in guild.voice_channels:
+        members = [member for member in vc_channel.members]
+        if members:
+            for member in members:
+                voice_log.handle_join(member, vc_channel)
     
     if apply_reactions:
-        guild = bot.get_guild(1081760248433492140)
         react_role_msg = await bot.get_channel(1337465612875595776).fetch_message(bot.config.reaction_roles.message_id)
         if react_role_msg is None:
             print(f"Role message with ID {bot.config.reaction_roles.message_id} not found. Reaction roles will not work.")
