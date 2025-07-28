@@ -36,6 +36,7 @@ bot.config = config
 bot.blacklist = blacklist_manager
 bot.admin_ids = config.admin_ids
 bot.dev_ids = config.dev_ids
+bot.del_after = config.del_after
 
 # Set dynamic properties
 bot.config.today = utils.formatted_time()

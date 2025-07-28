@@ -78,19 +78,16 @@ class FunCommands(commands.Cog, name='Fun'):
                         help='Ask the magic 8-ball a question and get a random answer')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def eight_ball(self, ctx: discord.ext.commands.Context):
-        # 10 of each type of response
-        pos_responses = [
+        pos_responses = [ # 10 positive responses
             'It is certain', 'It is decidedly so', 'Without a doubt', 'Yes definitely',
             'You may rely on it', 'As I see it, yes', 'Most likely', 'Outlook good',
             'Yes', 'Signs point to yes'
         ]
-        neut_responses = [
-            'Reply hazy try again', 'Ask again later',
-            'Better not tell you now', 'Cannot predict now', 'Concentrate and ask again',
-            'Maybe', 'My sources are unsure', 'Unclear, ask again later', 'I see no clear answer',
+        neut_responses = [ # 4 neutral responses
+            'Reply hazy try again', 'Better not tell you now', 'I see no clear answer',
             "I shouldn't answer that"
         ]
-        neg_responses = [
+        neg_responses = [ # 10 negative responses
             "Don't count on it", 'Certainly not', 'My sources say unlikely',
             'Outlook not so good', 'Very doubtful', 'No', 'Definitely not',
             'You should not count on it', 'I would not rely on it', 'In my opinion, no'
