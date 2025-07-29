@@ -2,6 +2,7 @@
 Blacklist management utilities
 """
 import json
+from collections.abc import Iterator
 from pathlib import Path
 
 
@@ -61,3 +62,7 @@ class BlacklistManager:
         """Clear all blacklisted users"""
         self._blacklist_ids.clear()
         self.save()
+        
+    def __iter__(self) -> Iterator[int]:
+        """Iterate over blacklisted user IDs"""
+        return iter(self._blacklist_ids)

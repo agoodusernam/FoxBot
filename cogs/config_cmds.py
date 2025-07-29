@@ -132,7 +132,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
     
     async def _handle_blacklist_config(self, ctx: Context, key: str, value: str):
         if key is None:
-            blacklist_ids = ", ".join(f"<@{uid}>" for uid in self.bot.blacklist.blacklist_ids) if self.bot.blacklist.blacklist_ids else "No users blacklisted"
+            blacklist_ids = ", ".join(f"<@{uid}>" for uid in self.bot.blacklist) if self.bot.blacklist else "No users blacklisted"
             embed = discord.Embed(title="Blacklist Configuration", color=discord.Color.red())
             embed.add_field(name="blacklisted_users", value=f"{blacklist_ids}", inline=True)
             await ctx.send(embed=embed)
