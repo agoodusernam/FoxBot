@@ -12,6 +12,7 @@ class CContext(commands.Context):
             await self.message.delete()
         
         except:
-            # If the message cannot be deleted for any reason (e.g., permissions, message not found), just ignore the error.
+            # If the message cannot be deleted for any reason (e.g., permissions, message not found)
+            # just ignore the error. We don't care if we can't delete the message.
             return False
         return True

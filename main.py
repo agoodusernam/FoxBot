@@ -1,3 +1,4 @@
+# pylint: disable=trailing-whitespace
 import atexit
 import json
 import os
@@ -8,6 +9,7 @@ from discord.ext import commands
 from discord.utils import get
 from dotenv import load_dotenv
 
+from command_utils.CContext import CContext
 from config.blacklist_manager import BlacklistManager
 from config.bot_config import load_config
 from custom_logging import voice_log
@@ -15,6 +17,9 @@ from utils import db_stuff, utils
 
 load_dotenv()
 
+class CoolBot(commands.Bot):
+    async def get_context(self, message, *, cls=CContext):
+        return await super().get_context(message, cls=cls)
 
 @atexit.register
 def on_exit():
@@ -29,7 +34,7 @@ blacklist_manager = BlacklistManager()
 
 # Create bot with intents
 intents = discord.Intents.all()
-bot = commands.Bot(command_prefix=config.command_prefix, intents=intents)
+bot = CoolBot(command_prefix=config.command_prefix, intents=intents)
 
 # Attach configuration and managers to bot for easy access
 bot.config = config
@@ -93,7 +98,8 @@ async def on_ready() -> None:
     if apply_reactions:
         react_role_msg = await bot.get_channel(1337465612875595776).fetch_message(bot.config.reaction_roles.message_id)
         if react_role_msg is None:
-            print(f"Role message with ID {bot.config.reaction_roles.message_id} not found. Reaction roles will not work.")
+            print(f"Role message with ID {bot.config.reaction_roles.message_id} not found. " +
+                  f"Reaction roles will not work.")
         else:
             # Add reaction roles to the message
             emoji_to_role = bot.config.get_emoji_to_role_discord_objects()
@@ -269,11 +275,10 @@ async def on_command_error(ctx: discord.ext.commands.Context, error: discord.ext
 # Message event for logging and processing
 @bot.event
 async def on_message(message: discord.Message):
-    bot.config.today = utils.formatted_today()
     if message.author.bot:
         return
     
-    if message.content.startswith('​'):  # Zero-width space
+    if message.content.startswith('\u200B'):  # Zero-width space
         print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
         return
     
@@ -288,6 +293,7 @@ async def on_message(message: discord.Message):
     
     # Process commands first
     if (not bot.config.maintenance_mode) or (message.author.id in bot.config.admin_ids) or (message.author.id in bot.config.dev_ids):
+        bot.config.today = utils.formatted_today()
         await bot.process_commands(message)
         
         # Don't log command messages

@@ -19,11 +19,11 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
                       help="Get NASA's Astronomy Picture of the Day with explanation")
     @commands.cooldown(1, 5, BucketType.user)  # type: ignore
     async def nasa_pic(self, ctx: discord.ext.commands.Context):
-        if os.path.exists(f'nasa/nasa_pic_{ctx.bot.today}.jpg'):
+        if os.path.exists(f'nasa/nasa_pic_{ctx.bot.config.today}.jpg'):
             await ctx.send(f'**{ctx.bot.nasa_data['title']}**\n')
             await ctx.send(
-                    file=discord.File(f'nasa/nasa_pic_{ctx.bot.today}.jpg',
-                                      filename=f'nasa_pic_{ctx.bot.today}.jpg'))
+                    file=discord.File(f'nasa/nasa_pic_{ctx.bot.config.today}.jpg',
+                                      filename=f'nasa_pic_{ctx.bot.config.today}.jpg'))
             await ctx.send(f'**Explanation:** {ctx.bot.nasa_data['explanation']}')
             return
         
@@ -32,12 +32,12 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
             nasa_data = api_stuff.get_nasa_apod()
             ctx.bot.nasa_data = deepcopy(nasa_data)
             
-            utils.download_from_url(f'nasa/nasa_pic_{ctx.bot.today}.jpg', nasa_data['url'])
+            utils.download_from_url(f'nasa/nasa_pic_{ctx.bot.config.today}.jpg', nasa_data['url'])
             
             await ctx.send(f'**{nasa_data['title']}**\n')
             await ctx.send(
-                    file=discord.File(f'nasa/nasa_pic_{ctx.bot.today}.jpg',
-                                      filename=f'nasa_pic_{ctx.bot.today}.jpg'))
+                    file=discord.File(f'nasa/nasa_pic_{ctx.bot.config.today}.jpg',
+                                      filename=f'nasa_pic_{ctx.bot.config.today}.jpg'))
             await ctx.send(f'**Explanation:** {nasa_data['explanation']}')
             await fetch_msg.delete()
         

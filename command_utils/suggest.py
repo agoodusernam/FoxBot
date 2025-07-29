@@ -1,5 +1,6 @@
 import discord
-import discord.ext.commands as commands
+
+from command_utils.CContext import CContext
 
 HELP_MSG = '''Please post your suggestions for the <@1377636535968600135> in here using `f!suggest <suggestion>`.
 If you have any additional comments, please use the thread.
@@ -11,11 +12,8 @@ If you have any additional comments, please use the thread.
 '''
 
 
-async def send_suggestion(ctx: commands.Context, suggestion: str) -> None:
-    try:
-        await ctx.message.delete()
-    except discord.Forbidden:
-        pass
+async def send_suggestion(ctx: CContext, suggestion: str) -> None:
+    await ctx.delete()
     
     channel: discord.TextChannel = ctx.bot.get_channel(1379193761791213618)
     last_msgs = [a_message async for a_message in channel.history(limit=3)]

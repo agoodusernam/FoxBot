@@ -9,6 +9,7 @@ import discord
 import matplotlib.pyplot as plt
 from discord.ext.commands import Context
 
+from command_utils.CContext import CContext
 from utils import db_stuff, utils
 
 # Configure logging
@@ -281,7 +282,7 @@ def analyse_user_messages(member: discord.User, time_filter: str = None) -> dict
         return f'Error during analysis: {str(e)}'
 
 
-async def format_analysis(ctx: Context, graph: bool = False) -> None:
+async def format_analysis(ctx: CContext, graph: bool = False) -> None:
     """
     Format and send analysis results.
 
@@ -289,35 +290,30 @@ async def format_analysis(ctx: Context, graph: bool = False) -> None:
         ctx: Discord command context
         graph: Whether to generate and send a graph
     """
-    message = ctx.message
     
     # Try to delete the command message
-    try:
-        await message.delete()
-    except discord.Forbidden:
-        pass
-    
+    await ctx.delete()
     # Parse time filter from message
-    flag = message.content.split()[-1].replace('-', '')
+    flag = ctx.message.content.split()[-1].replace('-', '')
     if flag not in ['w', 'd', 'h', 'all']:
         flag = None
     else:
-        message.content = message.content.replace(f'-{flag}', '')
+        ctx.message.content = ctx.message.content.replace(f'-{flag}', '')
     
     # Send initial "Analysing..." message
-    new_msg = await message.channel.send('Analysing...')
+    new_msg = await ctx.message.channel.send('Analysing...')
     
     # Check if a user was specified
-    if len(message.content.split()) > 1:
+    if len(ctx.message.content.split()) > 1:
         try:
-            member_id = utils.get_id_from_str(message.content.split()[1])
+            member_id = utils.get_id_from_str(ctx.message.content.split()[1])
             member = await ctx.bot.fetch_user(member_id)
             
             if member is None:
                 await new_msg.edit(content=f'User with ID {member_id} not found.')
                 return
             
-            await analyse_single_user_cmd(message, member, flag)
+            await analyse_single_user_cmd(ctx.message, member, flag)
             await new_msg.delete()
             return
         
@@ -388,7 +384,7 @@ async def format_analysis(ctx: Context, graph: bool = False) -> None:
             
             # Generate graph if requested
             if graph:
-                await generate_user_activity_graph(ctx, result, guild, message)
+                await generate_user_activity_graph(ctx, result, guild, ctx.message)
         
         elif isinstance(result, str):
             await new_msg.edit(content=result)
@@ -687,17 +683,17 @@ def get_user_voice_statistics(user_id: str) -> dict[str, str | int | list[dict[s
         return None
 
 
-async def voice_analysis(message: discord.Message) -> None:
+async def voice_analysis(ctx: discord.ext.commands.Context) -> None:
     """
     Generate voice activity statistics and send as a message.
 
     Args:
-        message: Discord message
+        ctx: Discord context
     """
     stats = get_voice_statistics()
     
     if not stats:
-        await message.channel.send("No voice activity data available.")
+        await ctx.send("No voice activity data available.")
         return
     
     result = "**Voice Activity Statistics**\n\n"
@@ -716,7 +712,7 @@ async def voice_analysis(message: discord.Message) -> None:
         formatted_time = format_duration(channel['total_seconds'])
         result += f"{i}. {channel['name']}: {formatted_time}\n"
     
-    await message.channel.send(result)
+    await ctx.send(result)
 
 
 async def add_voice_analysis_for_user(message: discord.Message, member: discord.User) -> None:
@@ -747,48 +743,44 @@ async def add_voice_analysis_for_user(message: discord.Message, member: discord.
     await message.channel.send(result)
 
 
-async def format_voice_analysis(ctx: Context) -> None:
+async def format_voice_analysis(ctx: CContext) -> None:
     """
     Format and send voice analysis results.
 
     Args:
         ctx: Discord command context
     """
-    message = ctx.message
     
     # Try to delete the command message
-    try:
-        await message.delete()
-    except discord.Forbidden:
-        pass
+    await ctx.delete()
     
     # Send initial "Analysing..." message
-    new_msg = await message.channel.send('Analysing voice statistics...')
+    new_msg: discord.Message = await ctx.send('Analysing voice statistics...')
     
     # Check if a user was specified
-    if len(message.content.split()) > 1:
+    if len(ctx.message.content.split()) > 1:
         try:
-            member_id = utils.get_id_from_str(message.content.split()[1])
+            member_id = utils.get_id_from_str(ctx.message.content.split()[1])
             member = await ctx.bot.fetch_user(member_id)
             
             if member is None:
                 await new_msg.edit(content=f'User with ID {member_id} not found.')
                 return
             
-            await add_voice_analysis_for_user(message, member)
+            await add_voice_analysis_for_user(ctx.message, member)
             await new_msg.delete()
             return
         
         except ValueError:
             await new_msg.edit(
-                    content=f'Invalid user ID format. Please provide a valid integer ID. Provided: {message.content.split()[1]}'
+                    content=f'Invalid user ID format. Please provide a valid integer ID. Provided: {ctx.message.content.split()[1]}'
             )
             return
     
     # No user specified, show general voice stats
     try:
-        await voice_analysis(message)
+        await voice_analysis(ctx)
         await new_msg.delete()
     except Exception as e:
         logger.error(f"Error during voice analysis: {e}")
-        await message.channel.send(f'Error during voice analysis: {e}')
+        await ctx.send(f'Error during voice analysis: {e}')

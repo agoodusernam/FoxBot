@@ -22,7 +22,7 @@ def get_id_from_str(u_id: str) -> int | None:
 	try:
 		return int(u_id)
 	except ValueError:
-		return None
+		raise ValueError("Invalid user ID")
 
 
 def formatted_time() -> str:

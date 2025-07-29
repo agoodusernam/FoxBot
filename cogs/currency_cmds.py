@@ -116,12 +116,13 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       usage='pay <user> <amount>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def pay_cmd(self, ctx: commands.Context, user: str, amount: int):
-        recipient = discord.utils.get(ctx.guild.members, name=utils.utils.get_id_from_str(user))
-        if recipient is None or recipient is False:
-            await ctx.send('Invalid user ID or mention!')
+        try:
+            recipient = discord.utils.get(ctx.guild.members, name=utils.utils.get_id_from_str(user))
+        except ValueError:
+            await ctx.send('Invalid user specified. Please mention a valid user or provide their ID.')
             return
         
-        if recipient.id == ctx.author:
+        if recipient.id == ctx.author.id:
             await ctx.send('You cannot pay yourself!')
             return
         if amount <= 0:
