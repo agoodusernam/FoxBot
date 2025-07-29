@@ -8,6 +8,7 @@ from discord.ext import commands
 from command_utils.checks import is_dev
 from custom_logging import voice_log
 from utils import db_stuff
+from command_utils.CContext import CContext
 
 
 # added the 'a' to the start of the file so it loads first
@@ -94,43 +95,31 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     @commands.command(name='restart',
                       brief='Restart the bot',
                       help='Dev only: restart the bot instance')
-    async def restart_cmd(self, ctx: discord.ext.commands.Context):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def restart_cmd(self, ctx: CContext):
+        await ctx.delete()
         await shutdown(ctx.bot, update=False, restart=True)
     
     @commands.command(name='shutdown',
                       brief='Shutdown the bot',
                       help='Dev only: Shutdown the bot instance')
-    async def shutdown(self, ctx: discord.ext.commands.Context):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def shutdown(self, ctx: CContext):
+        await ctx.delete()
         await shutdown(ctx.bot, update=False, restart=False)
     
     @commands.command(name='update',
                       brief='Update the bot code',
                       help='Dev only: Update the bot code from the repository',
                       usage='update')
-    async def update(self, ctx: discord.ext.commands.Context):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def update(self, ctx: CContext):
+        await ctx.delete()
         await shutdown(ctx.bot, update=True, restart=True)
     
     @commands.command(name='upload_all_history',
                       brief='Upload all messages from a server',
                       help='Dev only: Upload all messages from a specific guild to the database',
                       usage='upload_all_history')
-    async def upload_all_history(self, ctx: discord.ext.commands.Context):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def upload_all_history(self, ctx: CContext):
+        await ctx.delete()
         
         nolog_channels = [1299640499493273651, 1329366175796432898, 1329366741909770261, 1329366878623236126,
                           1329367139018215444, 1329367314671472682, 1329367677940006952]
@@ -141,20 +130,12 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
                       brief='Toggle maintenance mode',
                       help='Dev only: Toggle maintenance mode for the bot',
                       usage='maintenance_mode <on/off>')
-    async def maintenance_mode(self, ctx: discord.ext.commands.Context, mode: str):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def maintenance_mode(self, ctx: CContext, mode: bool):
+        await ctx.delete()
         
-        if mode.lower() not in ['on', 'off']:
-            await ctx.message.channel.send("Please specify 'on' or 'off' for maintenance mode.",
-                                           delete_after=ctx.bot.del_after)
-            return
+        ctx.bot.maintenance_mode = mode
         
-        ctx.bot.maintenance_mode = mode.lower() == 'on'
-        
-        status = 'enabled' if ctx.bot.maintenance_mode else 'disabled'
+        status: str = 'enabled' if ctx.bot.maintenance_mode else 'disabled'
         await ctx.message.channel.send(f'Maintenance mode has been {status}.', delete_after=ctx.bot.del_after)
 
 

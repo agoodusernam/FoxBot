@@ -56,6 +56,15 @@ async def got_shot(ctx: commands.Context, profile: profile_type, target: discord
     elif profile['bank'] >= amount:
         profile['bank'] -= amount
         curr_utils.set_bank(ctx.author, profile['bank'])
+    elif profile['wallet'] + profile['bank'] >= amount:
+        # If the user has enough in total, deduct from wallet first, then bank
+        remaining_amount = amount - profile['wallet']
+        profile['wallet'] = 0
+        curr_utils.set_wallet(ctx.author, profile['wallet'])
+        
+        if remaining_amount > 0:
+            profile['bank'] -= remaining_amount
+            curr_utils.set_bank(ctx.author, profile['bank'])
     elif profile['wallet'] + profile['bank'] < amount:
         # If the user has less than the amount in total, deduct everything and add the rest to debt
         payable = profile['wallet'] + profile['bank']
@@ -150,5 +159,4 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
 
 
 async def setup(bot: commands.Bot):
-    pass
-# await bot.add_cog(CrimeCog(bot))
+    await bot.add_cog(CrimeCog(bot))

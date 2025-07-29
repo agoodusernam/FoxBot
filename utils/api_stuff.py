@@ -1,12 +1,12 @@
 import os
 import random
-import cachetools
+import cachetools.func
 
-import discord
+from discord.ext.commands import Context
 import requests
 
 
-@cachetools.cached(cache=cachetools.TTLCache(maxsize=8, ttl=3_600))  # Cache for 1 hour
+@cachetools.func.ttl_cache(maxsize=5, ttl=3600)  # Cache for 1 hour
 def get_nasa_apod() -> dict[str, str]:
 	api_key = os.getenv('NASA_API_KEY')
 
@@ -19,7 +19,7 @@ def get_nasa_apod() -> dict[str, str]:
 	return response.json()
 
 
-async def get_dog_pic(message: discord.Message) -> None:
+async def get_dog_pic(ctx: Context) -> None:
 	url = 'https://dog.ceo/api/breeds/image/random'
 	response = requests.get(url, timeout=5)
 
@@ -30,10 +30,10 @@ async def get_dog_pic(message: discord.Message) -> None:
 	if 'message' not in data:
 		raise ValueError('Unexpected response format from dog API')
 
-	await message.channel.send(data['message'])
+	await ctx.send(data['message'])
 
 
-async def get_fox_pic(message: discord.Message) -> None:
+async def get_fox_pic(ctx: Context) -> None:
 	url = 'https://randomfox.ca/floof/'
 	response = requests.get(url, timeout=5)
 
@@ -44,10 +44,10 @@ async def get_fox_pic(message: discord.Message) -> None:
 	if 'image' not in data:
 		raise ValueError('Unexpected response format from fox API')
 
-	await message.channel.send(data['image'])
+	await ctx.send(data['image'])
 
 
-async def get_cat_pic(message: discord.Message) -> None:
+async def get_cat_pic(ctx: Context) -> None:
 	url = 'https://api.thecatapi.com/v1/images/search'
 
 	header = {'x-api-key': os.getenv('CAT_API_KEY'), 'Content-Type': 'application/json'}
@@ -60,10 +60,10 @@ async def get_cat_pic(message: discord.Message) -> None:
 	if not data or 'url' not in data[0]:
 		raise ValueError('Unexpected response format from cat API')
 
-	await message.channel.send(data[0]['url'])
+	await ctx.send(data[0]['url'])
 
 
-async def get_insult(message: discord.Message) -> None:
+async def get_insult(ctx: Context) -> None:
 	url = 'https://evilinsult.com/generate_insult.php?lang=en&type=json'
 	response = requests.get(url, timeout=5)
 
@@ -74,10 +74,10 @@ async def get_insult(message: discord.Message) -> None:
 	if 'insult' not in data:
 		raise ValueError('Unexpected response format from insult API')
 
-	await message.channel.send(data['insult'])
+	await ctx.send(data['insult'])
 
 
-async def get_advice(message: discord.Message) -> None:
+async def get_advice(ctx: Context) -> None:
 	url = 'https://api.adviceslip.com/advice'
 	response = requests.get(url, timeout=5)
 
@@ -88,10 +88,10 @@ async def get_advice(message: discord.Message) -> None:
 	if 'slip' not in data or 'advice' not in data['slip']:
 		raise ValueError('Unexpected response format from advice API')
 
-	await message.channel.send(data['slip']['advice'])
+	await ctx.send(data['slip']['advice'])
 
 
-async def get_joke(message: discord.Message) -> None:
+async def get_joke(ctx: Context) -> None:
 	url = 'https://v2.jokeapi.dev/joke/Any?blacklistFlags=racist,sexist'
 	response = requests.get(url, timeout=5)
 
@@ -112,10 +112,10 @@ async def get_joke(message: discord.Message) -> None:
 	else:
 		raise ValueError('Unexpected joke format from joke API')
 
-	await message.channel.send(to_send)
+	await ctx.send(to_send)
 
 
-async def get_wyr(message: discord.Message) -> None:
+async def get_wyr(ctx: Context) -> None:
 	url = 'https://api.truthordarebot.xyz/api/wyr'
 	response = requests.get(url, timeout=5)
 
@@ -126,7 +126,7 @@ async def get_wyr(message: discord.Message) -> None:
 	if 'question' not in data:
 		raise ValueError('Unexpected response format from Would You Rather API')
 
-	await message.channel.send(data['question'])
+	await ctx.send(data['question'])
 
 
 def get_karma_pic() -> tuple[str, str] | None:

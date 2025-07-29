@@ -9,6 +9,7 @@ from discord.ext import commands
 from discord.utils import get
 
 import utils.utils as utils
+from command_utils.CContext import CContext
 from utils import db_stuff
 from command_utils import analysis
 from command_utils.checks import is_admin
@@ -83,34 +84,26 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     
     @commands.command(name='rek',
                       brief='Absolutely rek a user',
-                      help='Admin only: Timeout a user for 28 days and add them to blacklist',
+                      help='Admin only: Timeout a user for 28 days',
                       usage='rek <user_id/mention>')
     @commands.check(is_admin)
-    async def rek(self, ctx: discord.ext.commands.Context, member: discord.Member) -> None:
-        del_after = ctx.bot.del_after
-        
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def rek(self, ctx: CContext, member: discord.Member) -> None:
+        await ctx.delete()
         
         if member is None:
-            await ctx.send(f'User not found.', delete_after=del_after)
+            await ctx.send(f'User not found.', delete_after=ctx.bot.del_after)
             return
         
         await member.timeout(datetime.timedelta(days=28), reason='get rekt nerd')
-        await ctx.send(f'{member.display_name} has been rekt.', delete_after=del_after)
+        await ctx.send(f'{member.display_name} has been rekt.', delete_after=ctx.bot.del_after)
         return
     
     @commands.command(name='hardlockdown',
                       brief='Lock down the entire server',
-                      help='Admin only: Timeout all non-admin users for 28 days and add them to blacklist')
+                      help='Admin only: Timeout all non-admin users for 28 days')
     @commands.check(is_admin)
-    async def hard_lockdown(self, ctx: discord.ext.commands.Context):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def hard_lockdown(self, ctx: CContext):
+        await ctx.delete()
         # await admin_cmds.hardlockdown(ctx.message)
         
         for member in ctx.guild.members:
@@ -120,18 +113,15 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await member.timeout(datetime.timedelta(days=28), reason='Hard lockdown initiated by admin')
         
         await ctx.message.channel.send(
-                'Hard lockdown initiated. All non-admin users have been timed out for 28 days and added to the blacklist.',
+                'Hard lockdown initiated. All non-admin users have been timed out for 28 days.',
                 delete_after=ctx.bot.del_after)
     
     @commands.command(name='unhardlockdown',
                       brief='Unlock the server from hard lockdown',
                       help='Admin only: Remove timeouts and blacklist from all users')
     @commands.check(is_admin)
-    async def unhard_lockdown(self, ctx: discord.ext.commands.Context):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def unhard_lockdown(self, ctx: CContext):
+        await ctx.delete()
         guild: discord.Guild = ctx.guild
         for member in guild.members:
             if member.id in ctx.bot.admin_ids:
@@ -150,7 +140,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             with open('blacklist_users.json', 'r') as f:
                 ctx.bot.blacklist_ids = json.load(f)
         
-        await ctx.message.channel.send('Hard lockdown lifted. All users have been removed from timeout and blacklist.',
+        await ctx.message.channel.send('Hard lockdown lifted. All users have been removed from timeout.',
                                        delete_after=ctx.bot.del_after)
     
     @commands.command(name='analyse', aliases=['analysis', 'analyze', 'stats', 'statistics', 'ana'],
@@ -159,7 +149,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='analyse [user_id/mention]')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
-    async def analyse(self, ctx: discord.ext.commands.Context):
+    async def analyse(self, ctx: CContext):
         await analysis.format_analysis(ctx)
     
     @commands.command(name='analyse_graph', aliases=['graph_analysis', 'graph_stats', 'graph_analyse', 'anag'],
@@ -168,7 +158,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='analyse_graph [user_id/mention]')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
-    async def analyse_graph(self, ctx: discord.ext.commands.Context):
+    async def analyse_graph(self, ctx: CContext):
         await analysis.format_analysis(ctx, graph=True)
     
     @commands.command(name='analyse_voice', aliases=['voice_analysis', 'voice_stats', 'voice_analyse', 'anavc'],
@@ -177,7 +167,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='analyse_voice [user_id/mention]')
     @commands.check(is_admin)
     @commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
-    async def analyse_voice(self, ctx: discord.ext.commands.Context):
+    async def analyse_voice(self, ctx: CContext):
         await analysis.format_voice_analysis(ctx)
     
     @commands.command(name='blacklist',
@@ -185,74 +175,52 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Prevent a user from using bot commands',
                       usage='blacklist <user_id/mention>')
     @commands.check(is_admin)
-    async def blacklist_id(self, ctx: discord.ext.commands.Context, u_id: str):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def blacklist_id(self, ctx: CContext, user: discord.User):
+        await ctx.delete()
         
-        try:
-            if u_id is None:
-                raise ValueError
-            u_id = utils.get_id_from_str(u_id)
-        except ValueError:
-            await ctx.message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-                                           delete_after=ctx.bot.del_after)
+        if user is None:
+            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
             return
         
-        if u_id in ctx.bot.blacklist_ids:
-            await ctx.message.channel.send(f'User with ID {u_id} is already blacklisted.',
-                                           delete_after=ctx.bot.del_after)
-            return
+        u_id = user.id
         
-        if u_id in ctx.bot.admin_ids:
+        if (u_id in ctx.bot.admin_ids) or (u_id in ctx.bot.dev_ids):
             await ctx.message.channel.send('You cannot blacklist an admin.', delete_after=ctx.bot.del_after)
             return
         
-        ctx.bot.blacklist_ids['ids'].append(u_id)
-        if os.path.isfile(f'blacklist_users.json'):
-            os.remove(f'blacklist_users.json')
+        if ctx.bot.blacklist.add_user(u_id):
+            await ctx.send(f'User **{user.display_name}** has been blacklisted.', delete_after=ctx.bot.del_after)
+            
+            channel = ctx.bot.get_channel(1379193761791213618)
+            await channel.set_permissions(get(ctx.bot.get_all_members(), id=u_id), send_messages=False)
+        else:
+            await ctx.message.channel.send(f'User **{user.display_name}** is already blacklisted.', delete_after=ctx.bot.del_after)
+            return
         
-        with open('blacklist_users.json', 'w') as f:
-            json.dump(ctx.bot.blacklist_ids, f, indent=4)
-        
-        channel = ctx.bot.get_channel(1379193761791213618)
-        await channel.set_permissions(get(ctx.bot.get_all_members(), id=u_id), send_messages=False)
-        
-        await ctx.message.channel.send(f'User <@{u_id}> has been blacklisted.', delete_after=ctx.bot.del_after)
     
     @commands.command(name='unblacklist',
                       brief='Remove user from blacklist',
                       help='Admin only: Allow a blacklisted user to use bot commands again',
                       usage='unblacklist <user_id/mention>')
     @commands.check(is_admin)
-    async def unblacklist_id(self, ctx: discord.ext.commands.Context, u_id: str):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def unblacklist_id(self, ctx: CContext, user: discord.User):
+        await ctx.delete()
         
-        try:
-            if u_id is None:
-                raise ValueError
-            u_id = utils.get_id_from_str(u_id)
-        except ValueError:
-            await ctx.message.channel.send('Invalid user ID format. Please provide a valid integer ID.',
-                                           delete_after=ctx.bot.del_after)
+        if user is None:
+            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
             return
         
-        if u_id not in ctx.bot.blacklist_ids['ids']:
-            await ctx.message.channel.send(f'User with ID {u_id} is not blacklisted.', delete_after=ctx.bot.del_after)
+        u_id = user.id
+        
+        if ctx.bot.blacklist.remove_user(u_id):
+            await ctx.send(f'User **{user.display_name}** has been removed from the blacklist.',
+                           delete_after=ctx.bot.del_after)
+            
+            channel = ctx.bot.get_channel(1379193761791213618)
+            await channel.set_permissions(get(ctx.bot.get_all_members(), id=u_id), send_messages=True)
+        else:
+            await ctx.send(f'User **{user.display_name}** was not blacklisted.', delete_after=ctx.bot.del_after)
             return
-        
-        ctx.bot.blacklist_ids['ids'].remove(u_id)
-        if os.path.isfile(f'blacklist_users.json'):
-            os.remove(f'blacklist_users.json')
-        
-        with open('blacklist_users.json', 'w') as f:
-            json.dump(ctx.bot.blacklist_ids, f, indent=4)
-        
-        await ctx.message.channel.send(f'User with ID {u_id} has been unblacklisted.', delete_after=ctx.bot.del_after)
     
     @commands.command(name='echo',
                       brief='Make the bot say something',
@@ -260,22 +228,19 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='echo [channel id] <message>')
     @commands.check(is_admin)
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def echo_cmd(self, ctx: discord.ext.commands.Context):
-        message = ctx.message
-        del_after = ctx.bot.del_after
-        client = ctx.bot
-        if message.content is None:
-            await message.channel.send('Nothing to echo.', delete_after=del_after)
+    async def echo_cmd(self, ctx: CContext, *, message: str):
+        if message is None:
+            await ctx.channel.send('Nothing to echo.', delete_after=ctx.bot.del_after)
             return
         
-        msg = message.content.replace('f!echo', '', 1)
+        msg: str = message
         
         # Send the message content back to the channel
-        split_message = msg.split()
-        channel = message.channel
+        split_message: list[str] = msg.split()
+        channel: discord.abc.MessageableChannel = ctx.channel
         try:
-            channel_id = int(split_message[0].replace('#', '', 1).replace('<', '', 1).replace('>', '', 1))
-            channel = client.get_channel(channel_id)
+            channel_id: int = int(split_message[0].replace('#', '', 1).replace('<', '', 1).replace('>', '', 1))
+            channel: discord.abc.MessageableChannel = ctx.bot.get_channel(channel_id)
             msg = msg.replace(str(channel_id), '', 1)
         except ValueError:
             pass
@@ -283,18 +248,15 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await channel.send(msg)
         
         # Delete the original message
-        await message.delete()
+        await ctx.message.delete()
     
     @commands.command(name='edit_message',
                       brief='Edit a message the bot has sent',
                       help='Admin only: Edit a specific message sent by the bot',
                       usage='edit_message <channel_id> <message_id> <new_content>')
     @commands.check(is_admin)
-    async def edit_message_cmd(self, ctx: discord.ext.commands.Context, *, args: str):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def edit_message_cmd(self, ctx: CContext, *, args: str):
+        await ctx.delete()
         
         split_args = args.split(' ', 2)
         try:
@@ -343,11 +305,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='last_log')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     @commands.has_role(STAFF_ROLE_ID)
-    async def send_last_log(self, ctx: discord.ext.commands.Context):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def send_last_log(self, ctx: CContext):
+        await ctx.delete()
         
         await last_log(ctx)
     
@@ -359,11 +318,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='last_log_anonymous')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     @commands.has_role(STAFF_ROLE_ID)
-    async def send_last_log_anonymous(self, ctx: discord.ext.commands.Context):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def send_last_log_anonymous(self, ctx: CContext):
+        await ctx.delete()
         
         await last_log(ctx, anonymous=True)
     
@@ -372,12 +328,9 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Warn a user without showing in the public logs',
                       usage='warn <user_id/mention> <reason>')
     @commands.check(is_admin)
-    async def warn(self, ctx: discord.ext.commands.Context, member: discord.Member, *,
+    async def warn(self, ctx: CContext, member: discord.Member, *,
                    reason: str = 'No reason provided'):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+        await ctx.delete()
         
         if member is None:
             await ctx.send('User not found.', delete_after=ctx.bot.del_after)
@@ -397,11 +350,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: View all warns for a user',
                       usage='warns <user_id/mention>')
     @commands.check(is_admin)
-    async def view_warns(self, ctx: discord.ext.commands.Context, member: discord.Member):
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            pass
+    async def view_warns(self, ctx: CContext, member: discord.Member):
+        await ctx.delete()
         
         if member is None:
             await ctx.send('User not found.', delete_after=ctx.bot.del_after)
