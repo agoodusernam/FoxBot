@@ -23,7 +23,7 @@ class BlacklistManager:
         
         try:
             with open(self.blacklist_path, "r", encoding="utf-8") as f:
-                self._blacklist_ids = json.load(f)
+                self._blacklist_ids = json.load(f)['ids']
         except Exception as e:
             print(f"Error loading blacklist: {e}")
             self._blacklist_ids = []
@@ -31,7 +31,8 @@ class BlacklistManager:
     def save(self) -> None:
         """Save blacklist to file"""
         with open(self.blacklist_path, "w", encoding="utf-8") as f:
-            json.dump(self._blacklist_ids, f, indent=4)
+            to_save: dict[str, list[int]] = {'ids': self._blacklist_ids}
+            json.dump(to_save, f, indent=4)
     
     def add_user(self, user_id: int) -> bool:
         """Add user to blacklist. Returns True if user was added, False if already blacklisted"""
