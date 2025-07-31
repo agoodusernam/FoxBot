@@ -5,8 +5,8 @@ import os
 import re
 
 import discord
+import discord.utils
 from discord.ext import commands
-from discord.utils import get
 from dotenv import load_dotenv
 
 from command_utils.CContext import CContext
@@ -87,7 +87,7 @@ async def on_ready() -> None:
 
         channel = bot.get_channel(1379193761791213618)
         for u_id in bot.blacklist.blacklist_ids:
-            await channel.set_permissions(get(bot.get_all_members(), id=u_id), send_messages=False)
+            await channel.set_permissions(discord.utils.get(bot.get_all_members(), id=u_id), send_messages=False)
     
     for vc_channel in guild.voice_channels:
         members = [member for member in vc_channel.members]

@@ -312,7 +312,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     
     @commands.command(name='last_log_anonymous', aliases=['last_log_a', 'lastlog_anonymous', 'lastlog_a',
                                                           'last_modlog_anonymous', 'last_modlog_a',
-                                                          'modlog_anonymous', 'modlog_a', 'log_anonymous', 'log_a'],
+                                                          'modlog_anonymous', 'modlog_a', 'log_anonymous', 'log_a',
+                                                          'loga'],
                       brief='Send the last modlog message anonymously',
                       help='Admin only: Send the last modlog message without mentioning the moderator',
                       usage='last_log_anonymous')
