@@ -24,6 +24,10 @@ TIME_FILTERS = {
     'h': ('hour', datetime.timedelta(hours=1))
 }
 
+def allow_characters(string: str) -> str:
+    allowed_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_|<>,.-_+=()[]{}:;!?@#$%^&* `~')
+    
+    return ''.join(char for char in string if char in allowed_chars)
 
 def check_valid_syntax(message: dict[str, Any]) -> bool:
     """
@@ -436,7 +440,7 @@ async def generate_user_activity_graph(ctx: Context, result: dict[str, int | str
                 display = discord_member.display_name
             
             # Clean name for display
-            clean_name = ''.join(e for e in display if e.isalnum())
+            clean_name = allow_characters(display)
             usernames.append(clean_name)
             message_counts.append(user['num_messages'])
         
@@ -469,7 +473,7 @@ async def generate_user_activity_graph(ctx: Context, result: dict[str, int | str
         try:
             os.remove(graph_file)
         except:
-            pass
+            pass # Ignore if file deletion fails, we'd rather keep the bot running and clean up manually later
     
     except Exception as e:
         logger.error(f"Error generating graph: {e}")
