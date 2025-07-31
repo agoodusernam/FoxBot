@@ -7,9 +7,10 @@ import re
 import discord
 import discord.utils
 from discord.ext import commands
+from discord.ext.commands import Context, Command
 from dotenv import load_dotenv
 
-from command_utils.CContext import CContext
+from command_utils.CContext import CoolBot, CContext
 from config.blacklist_manager import BlacklistManager
 from config.bot_config import load_config
 from custom_logging import voice_log
@@ -17,9 +18,7 @@ from utils import db_stuff, utils
 
 load_dotenv()
 
-class CoolBot(commands.Bot):
-    async def get_context(self, message, *, cls=CContext):
-        return await super().get_context(message, cls=cls)
+
 
 @atexit.register
 def on_exit():
@@ -126,13 +125,13 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
                 dm_help=False
         )
     
-    async def send_bot_help(self, mapping):
-        ctx = self.context
+    async def send_bot_help(self, mapping: dict[commands.Cog, list[commands.Command]]) -> None:
+        ctx: Context = self.context
         if bot.blacklist.is_blacklisted(ctx.author.id):
             await ctx.message.channel.send('You are not allowed to use this command.', delete_after=bot.config.del_after)
             return
         
-        is_admin = ctx.author.id in bot.config.admin_ids or ctx.author.id in bot.config.dev_ids
+        is_admin: bool = ctx.author.id in bot.config.admin_ids or ctx.author.id in bot.config.dev_ids
         embeds = []
         
         # Create a page for each cog
@@ -140,26 +139,26 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
             cog_name = getattr(cog, "qualified_name", "Miscellaneous")
             
             # Filter commands the user can run
-            regular_cmds = await self.filter_commands(cmds, sort=True)
+            regular_cmds: list[commands.Command] = await self.filter_commands(cmds, sort=True)
             
-            admin_cmds = []
+            admin_cmds: list[commands.Command] = []
             if is_admin:
-                all_cmds = cmds
-                regular_cmd_names = {cmd.qualified_name for cmd in regular_cmds}
+                all_cmds: list[commands.Command] = cmds
+                regular_cmd_names: set[str] = {cmd.qualified_name for cmd in regular_cmds}
                 admin_cmds = [cmd for cmd in all_cmds if cmd.qualified_name not in regular_cmd_names]
             
             # Only create a page if there are commands to show
             if not regular_cmds and not admin_cmds:
                 continue
             
-            embed = discord.Embed(
+            embed: discord.Embed = discord.Embed(
                     title=f"{cog_name} Commands",
                     description=f"Use `{ctx.prefix}help [command]` for more info on a command.",
                     color=discord.Color.blue()
             )
             
             if regular_cmds:
-                cmd_list = []
+                cmd_list: list[str] = []
                 for cmd in regular_cmds:
                     brief = cmd.brief or "No description"
                     usage = cmd.usage or f"{ctx.prefix}{cmd.name}"
@@ -172,7 +171,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
                 )
             
             if admin_cmds:
-                admin_cmd_list = []
+                admin_cmd_list: list[str] = []
                 for cmd in admin_cmds:
                     brief = cmd.brief or "No description"
                     usage = cmd.usage or f"{ctx.prefix}{cmd.name}"
@@ -200,7 +199,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
             return
         
         # Use buttons for pagination
-        pagination_view = HelpPaginationView(embeds, ctx.author)
+        pagination_view: HelpPaginationView = HelpPaginationView(embeds, ctx.author)
         await ctx.send(embed=embeds[0], view=pagination_view)
 
 
@@ -257,7 +256,7 @@ bot.help_command = CustomHelpCommand()
 
 
 @bot.event
-async def on_command_error(ctx: discord.ext.commands.Context, error: discord.ext.commands.CommandError):
+async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandError):
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.message.channel.send(
                 f'This command is on cooldown. Please try again in {error.retry_after:.0f} seconds.',
@@ -313,9 +312,9 @@ async def on_message(message: discord.Message):
             message.channel.id not in bot.config.no_log.channel_ids) and (
             message.channel.category_id not in bot.config.no_log.category_ids):
         
-        has_attachment = bool(message.attachments)
+        has_attachment: bool = bool(message.attachments)
         
-        reply = None if message.reference is None else str(message.reference.message_id)
+        reply: str | None = None if message.reference is None else str(message.reference.message_id)
         
         json_data = {
             'author':             message.author.name,
@@ -465,12 +464,12 @@ async def load_extensions() -> None:
 
 
 @bot.check
-async def not_blacklisted(ctx: discord.ext.commands.Context):
+async def not_blacklisted(ctx: CContext):
     """
     Check if the user is blacklisted from using commands.
     """
     if bot.blacklist.is_blacklisted(ctx.author.id):
-        await ctx.send('You are not allowed to use this command.', delete_after=bot.config.del_after)
+        await ctx.send('You are not allowed to use this command.')
         return False
     return True
 

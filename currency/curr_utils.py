@@ -1,3 +1,5 @@
+from typing import TypedDict, cast
+
 import discord
 
 from currency import shop_items
@@ -6,17 +8,35 @@ from utils import db_stuff
 from utils.db_stuff import get_from_db
 
 
-def create_new_profile(member: discord.Member):
+class Profile(TypedDict, total=False):
+    user_id: str
+    wallet: int
+    bank: int
+    work_income: int
+    work_str: str
+    other_income: int
+    next_income_mult: float
+    work_experience: int
+    qualifications: tuple[str, str]
+    fire_risk: float
+    debt: int
+    credit_score: int
+    age: int  # Age in months
+    inventory: dict[str, int]
+    illegal_items: dict[str, int]
+
+
+def create_new_profile(member: discord.Member) -> Profile:
     new_data = get_default_profile(member.id)
-    db_stuff.send_to_db(collection_name='currency', data=new_data)
+    db_stuff.send_to_db(collection_name='currency', data=dict(new_data))
     return new_data
 
 
-def get_profile(member: discord.Member) -> dict[str, int | float | str | dict[str, int]]:
+def get_profile(member: discord.Member) -> Profile:
     profile_ = db_stuff.get_from_db(collection_name='currency', query={'user_id': str(member.id)})
     if not profile_ or profile_ is None:
         return create_new_profile(member)
-    return profile_
+    return cast(Profile, profile_)
 
 
 def get_lottery_tickets(member: discord.Member) -> int:
@@ -156,9 +176,9 @@ def add_lottery_tickets(member: discord.Member, amount: int) -> None:
     :param member: The Discord member whose lottery tickets are being updated.
     :param amount: The number of lottery tickets to add.
     """
-    profile = get_profile(member)
+    tickets = get_lottery_tickets(member)
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)},
-                           {'lottery_tickets': profile['lottery_tickets'] + amount})
+                           {'lottery_tickets': tickets + amount})
 
 
 def inc_age(member: discord.Member) -> None:
@@ -299,7 +319,7 @@ def get_top_balances(limit: int = 10) -> list[dict[str, int]]:
     return [{'user_id': profile['user_id'], 'wallet': profile['wallet']} for profile in top_balances]
 
 
-def calculate_max_loan(profile: dict[str, int | str | dict[str, int]]) -> int:
+def calculate_max_loan(profile: Profile) -> int:
     """
     Calculates the maximum loan amount based on the member's income, debt, and credit score.
     :param profile: The Discord member's profile for whom to calculate the maximum loan.

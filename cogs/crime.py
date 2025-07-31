@@ -4,13 +4,14 @@ import random
 import discord
 from discord.ext import commands
 
+from command_utils.CContext import CContext
 from command_utils.checks import is_dev
 from currency import curr_utils, curr_config
 
 profile_type = dict[str, int | float | str | dict[str, int]]
 
 
-async def rob_success_n(ctx: commands.Context, profile: profile_type, target: discord.Member, target_profile:
+async def rob_success_n(ctx: CContext, profile: profile_type, target: discord.Member, target_profile:
 profile_type):
     await ctx.send(f'You successfully robbed {target.display_name} and stole some money!')
     # Calculate the amount to steal, between 1 and 10% of the target's wallet
@@ -27,7 +28,7 @@ profile_type):
         return
 
 
-async def rob_success_og(ctx: commands.Context, profile: profile_type, target: discord.Member,
+async def rob_success_og(ctx: CContext, profile: profile_type, target: discord.Member,
                          target_profile: profile_type):
     await ctx.send(f'You successfully robbed {target.display_name} and stole some money!')
     # Calculate the amount to steal, between 1 and 5% of the target's wallet
@@ -44,7 +45,7 @@ async def rob_success_og(ctx: commands.Context, profile: profile_type, target: d
         return
 
 
-async def got_shot(ctx: commands.Context, profile: profile_type, target: discord.Member, target_profile: profile_type):
+async def got_shot(ctx: CContext, profile: profile_type, target: discord.Member, target_profile: profile_type):
     await ctx.send(f'You were caught trying to rob {target.display_name} and got shot!')
     # Deduct a random amount from the user's wallet
     amount = random.randint(2000, 20000)
@@ -98,7 +99,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
                       help="Attempt to steal from someone's wallet.",
                       usage='rob <target>')
     @commands.cooldown(1, 60 * 60, commands.BucketType.user)  # type: ignore
-    async def rob_cmd(self, ctx: commands.Context, target: discord.Member) -> None:
+    async def rob_cmd(self, ctx: CContext, target: discord.Member) -> None:
         if target.id == ctx.author.id:
             await ctx.send('You cannot rob yourself!')
             return None

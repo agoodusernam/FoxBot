@@ -8,11 +8,11 @@ from discord.ext import commands
 from command_utils.checks import is_dev
 from custom_logging import voice_log
 from utils import db_stuff
-from command_utils.CContext import CContext
+from command_utils.CContext import CContext, CoolBot
 
 
 # added the 'a' to the start of the file so it loads first
-async def shutdown(bot: 'discord.Client', update=False, restart=False) -> None:
+async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
     voice_log.leave_all(bot)
     db_stuff.disconnect()
     await bot.close()

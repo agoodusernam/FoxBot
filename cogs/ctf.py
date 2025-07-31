@@ -2,6 +2,7 @@ import os
 
 from discord.ext import commands
 
+from command_utils.CContext import CContext
 from command_utils.checks import not_blacklisted
 
 
@@ -11,7 +12,7 @@ class CTF(commands.Cog, name='CTF', command_attrs=dict(add_check=not_blacklisted
     
     @commands.command(name='submit')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def submit(self, ctx: commands.Context, *, args: str):
+    async def submit(self, ctx: CContext, *, args: str):
         """The command to submit a solution to a CTF challenge."""
         if not args or args in ['help', 'h', '?', '', ' ']:
             await ctx.send(f'Your first clue is: {os.getenv('CTF_FIRST_CLUE')}')

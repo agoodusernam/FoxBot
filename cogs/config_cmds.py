@@ -3,7 +3,8 @@ Configuration management commands for bot admins
 """
 import discord
 from discord.ext import commands
-from discord.ext.commands import Context
+
+from command_utils.CContext import CContext
 from command_utils.checks import is_admin
 
 
@@ -15,7 +16,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
     
     @commands.command(name="config", brief="View or modify bot configuration")
     @commands.check(is_admin)
-    async def config_command(self, ctx: Context, section: str = None, key: str = None, *, value: str = None):
+    async def config_command(self, ctx: CContext, section: str = None, key: str = None, *, value: str = None):
         """
         View or modify bot configuration
         Usage:
@@ -55,7 +56,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
         else:
             await ctx.send(f"Unknown section: {section}", delete_after=self.bot.config.del_after)
     
-    async def _handle_basic_config(self, ctx: Context, key, value):
+    async def _handle_basic_config(self, ctx: CContext, key, value):
         if key is None:
             embed = discord.Embed(title="Basic Configuration", color=discord.Color.green())
             embed.add_field(name="command_prefix", value=f"`{self.bot.config.command_prefix}`", inline=True)
@@ -95,7 +96,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
         # Save config
         self.bot.config.save()
     
-    async def _handle_users_config(self, ctx: Context, key, value):
+    async def _handle_users_config(self, ctx: CContext, key, value):
         if key is None:
             embed = discord.Embed(title="User Configuration", color=discord.Color.orange())
             admin_ids = ", ".join(f"<@{uid}>" for uid in self.bot.config.admin_ids)
@@ -108,7 +109,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
         # User management would require more complex handling
         await ctx.send("User management commands coming soon!", delete_after=self.bot.config.del_after)
     
-    async def _handle_logging_config(self, ctx: Context, key: str, value: str):
+    async def _handle_logging_config(self, ctx: CContext, key: str, value: str):
         if key is None:
             embed = discord.Embed(title="Logging Configuration", color=discord.Color.purple())
             embed.add_field(name="voice", value=f"<#{self.bot.config.logging_channels.voice}>" if self.bot.config.logging_channels.voice else "Not set", inline=True)
@@ -120,7 +121,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
         # Channel management would require parsing channel mentions/IDs
         await ctx.send("Logging channel management commands coming soon!", delete_after=self.bot.config.del_after)
     
-    async def _handle_reaction_roles_config(self, ctx: Context, key: str, value: str):
+    async def _handle_reaction_roles_config(self, ctx: CContext, key: str, value: str):
         if key is None:
             embed = discord.Embed(title="Reaction Roles Configuration", color=discord.Color.gold())
             embed.add_field(name="message_id", value=f"`{self.bot.config.reaction_roles.message_id}`" if self.bot.config.reaction_roles.message_id else "Not set", inline=True)
@@ -130,7 +131,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
         
         await ctx.send("Reaction role management commands coming soon!", delete_after=self.bot.config.del_after)
     
-    async def _handle_blacklist_config(self, ctx: Context, key: str, value: str):
+    async def _handle_blacklist_config(self, ctx: CContext, key: str, value: str):
         if key is None:
             blacklist_ids = ", ".join(f"<@{uid}>" for uid in self.bot.blacklist) if self.bot.blacklist else "No users blacklisted"
             embed = discord.Embed(title="Blacklist Configuration", color=discord.Color.red())
@@ -138,11 +139,12 @@ class ConfigCog(commands.Cog, name="Configuration"):
             await ctx.send(embed=embed)
             return
         
-        await ctx.send("Blacklist management commands coming soon!", delete_after=self.bot.config.del_after)
+        await ctx.send(f"To add or remove from the blacklist, use {ctx.prefix}blacklist <user> or " +
+                       f"{ctx.prefix}unblacklist <user>", delete_after=self.bot.config.del_after)
     
     @commands.command(name="reload_config", brief="Reload configuration from file")
     @commands.check(is_admin)
-    async def reload_config(self, ctx: Context):
+    async def reload_config(self, ctx: CContext):
         """Reload bot configuration from config.json"""
         try:
             self.bot.config.reload()
@@ -152,7 +154,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
     
     @commands.command(name="save_config", brief="Save current configuration to file")
     @commands.check(is_admin)
-    async def save_config(self, ctx: Context):
+    async def save_config(self, ctx: CContext):
         """Save current bot configuration to config.json"""
         try:
             self.bot.config.save()

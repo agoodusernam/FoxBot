@@ -7,6 +7,7 @@ import discord
 from discord.ext import commands
 
 from command_utils import suggest
+from command_utils.CContext import CContext
 
 
 async def dice_roll(del_after: int, message: discord.Message) -> None:
@@ -48,21 +49,21 @@ class FunCommands(commands.Cog, name='Fun'):
                       help='Roll a dice between two values',
                       usage='dice <min> <max>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def dice(self, ctx: discord.ext.commands.Context):
+    async def dice(self, ctx: CContext):
         await dice_roll(ctx.bot.del_after, ctx.message)
     
     @commands.command(name='flip', aliases=['coin_flip', 'coinflip'],
                       brief='Flip a coin',
                       help='Flip a coin and get either Heads or Tails')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def flip(self, ctx: discord.ext.commands.Context):
+    async def flip(self, ctx: CContext):
         await ctx.message.channel.send(f'You flipped a coin and got: **{random.choice(['Heads', 'Tails'])}**')
     
     @commands.command(name='ping', aliases=['latency'],
                       brief='Check the bot\'s latency',
                       help='Shows the bot\'s current latency in milliseconds')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def ping(self, ctx: discord.ext.commands.Context):
+    async def ping(self, ctx: CContext):
         await ctx.message.channel.send(f'{ctx.bot.latency * 1000:.1f}ms')  # type: ignore
     
     @commands.command(name='suggest', aliases=['suggestion'],
@@ -70,14 +71,14 @@ class FunCommands(commands.Cog, name='Fun'):
                       help='Submit a suggestion for the bot',
                       usage='suggest <suggestion>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def suggest_cmd(self, ctx: discord.ext.commands.Context, *, args: str):
+    async def suggest_cmd(self, ctx: CContext, *, args: str):
         await suggest.send_suggestion(ctx, args)
         
     @commands.command(name='8ball', aliases=['eight_ball', 'magic_8_ball'],
                         brief='Ask the magic 8-ball a question',
                         help='Ask the magic 8-ball a question and get a random answer')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def eight_ball(self, ctx: discord.ext.commands.Context):
+    async def eight_ball(self, ctx: CContext):
         pos_responses = [ # 10 positive responses
             'It is certain', 'It is decidedly so', 'Without a doubt', 'Yes definitely',
             'You may rely on it', 'As I see it, yes', 'Most likely', 'Outlook good',
@@ -103,7 +104,7 @@ class FunCommands(commands.Cog, name='Fun'):
                         help='Converts the given text to OwO language (UwU style)',
                         usage='owoify <text>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def owoify(self, ctx: discord.ext.commands.Context, *, text: str):
+    async def owoify(self, ctx: CContext, *, text: str):
         # Simple conversion to OwO language
         owo_text = text.replace('r', 'w').replace('l', 'w').replace('v', 'w')
         owo_text = owo_text.replace('th', 'd').replace('Th', 'D').replace('TH', 'D')
@@ -115,7 +116,7 @@ class FunCommands(commands.Cog, name='Fun'):
                       brief="Get the bot's source code",
                       help="Get the link to the bot's source code on GitHub")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def code(self, ctx: discord.ext.commands.Context):
+    async def code(self, ctx: CContext):
         await ctx.message.channel.send(
                 'You can find the source code for this bot on GitHub: https://github.com/agoodusernam/FoxBot'
         )
@@ -124,7 +125,7 @@ class FunCommands(commands.Cog, name='Fun'):
                       brief='Get the number of lines of code in the bot',
                       help="Get the number of lines of code in the bot's source code")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def lines_of_code(self, ctx: discord.ext.commands.Context):
+    async def lines_of_code(self, ctx: CContext):
         # function that returns the number of lines of code in a given directory recursively, excluding .venv
         total_lines = 0
         

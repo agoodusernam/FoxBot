@@ -12,7 +12,10 @@ class CContext(commands.Context):
             await self.message.delete()
         
         except:
-            # If the message cannot be deleted for any reason (e.g., permissions, message not found)
-            # just ignore the error. We don't care if we can't delete the message.
+            # just ignore the error. We don't care if we can't delete the message
             return False
         return True
+
+class CoolBot(commands.Bot):
+    async def get_context(self, message, *, cls=CContext):
+        return await super().get_context(message, cls=cls)

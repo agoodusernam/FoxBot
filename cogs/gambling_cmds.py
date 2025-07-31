@@ -1,6 +1,7 @@
 from discord.ext import commands
 
 import command_utils.gambling_utils as gambling_utils
+from command_utils.CContext import CContext
 from command_utils.checks import is_dev
 from currency import curr_utils, gambling_config, curr_config
 
@@ -14,7 +15,7 @@ class GamblingCmds(commands.Cog, name='Gambling', command_attrs=dict(add_check=i
                       help=f'Try your luck with the slot machine! You can win or lose {curr_config.currency_name}.',
                       usage='slot <bet_amount>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def slot_cmd(self, ctx: commands.Context, bet_amount: int):
+    async def slot_cmd(self, ctx: CContext, bet_amount: int):
         if bet_amount <= 0:
             await ctx.send('You must bet a positive amount!')
             return
@@ -42,7 +43,7 @@ class GamblingCmds(commands.Cog, name='Gambling', command_attrs=dict(add_check=i
                       usage='lottery <tickets>')
     @commands.cooldown(1, 60, commands.BucketType.user)  # type: ignore
     #TODO: Implement lottery drawing and winner selection using discord.ext.tasks
-    async def lottery_cmd(self, ctx: commands.Context, tickets: int = 1):
+    async def lottery_cmd(self, ctx: CContext, tickets: int = 1):
         if tickets <= 0:
             await ctx.send('You must buy at least one ticket!')
             return None

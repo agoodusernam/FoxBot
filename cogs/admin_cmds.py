@@ -17,7 +17,7 @@ from command_utils.checks import is_admin
 STAFF_ROLE_ID = 1396395163835699310 # Role ID for staff, used in checks
 
 
-def save_perms(ctx: discord.ext.commands.Context) -> None:
+def save_perms(ctx: CContext) -> None:
     previous_perms: dict[int, dict[str, dict[str, Union[bool, None]]]] = {}
     
     for channel in ctx.message.guild.channels:
