@@ -388,7 +388,7 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
             
             # Generate graph if requested
             if graph:
-                await generate_user_activity_graph(ctx, result, guild, ctx.message)
+                await generate_user_activity_graph(ctx, result, guild)
         
         elif isinstance(result, str):
             await new_msg.edit(content=result)
@@ -399,7 +399,7 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
 
 
 async def generate_user_activity_graph(ctx: Context, result: dict[str, int | str | float | list[dict[str, str | int]]],
-                                       guild: discord.Guild, message: discord.Message) -> None:
+                                       guild: discord.Guild) -> None:
     """
     Generate and send a graph of user activity.
 
@@ -407,7 +407,6 @@ async def generate_user_activity_graph(ctx: Context, result: dict[str, int | str
         ctx: Discord command context
         result: Analysis results
         guild: Discord guild
-        message: Original command message
     """
     try:
         # Get top 15 users
@@ -467,7 +466,7 @@ async def generate_user_activity_graph(ctx: Context, result: dict[str, int | str
         plt.savefig(graph_file)
         plt.close()
         
-        await message.channel.send(file=discord.File(graph_file))
+        await ctx.send(file=discord.File(graph_file))
         
         # Clean up the file
         try:
@@ -615,8 +614,8 @@ def get_voice_statistics() -> dict[str, list[dict[str, str | int]]] | None:
         )
         
         return {
-            'users':    top_users[:5],  # Top 5 users
-            'channels': top_channels[:5]  # Top 5 channels
+            'users':    top_users[:15],  # Top 5 users
+            'channels': top_channels[:15]  # Top 5 channels
         }
     
     except Exception as e:
@@ -687,12 +686,13 @@ def get_user_voice_statistics(user_id: str) -> dict[str, str | int | list[dict[s
         return None
 
 
-async def voice_analysis(ctx: discord.ext.commands.Context) -> None:
+async def voice_analysis(ctx: CContext, graph: bool = False) -> None:
     """
     Generate voice activity statistics and send as a message.
 
     Args:
         ctx: Discord context
+        graph: Whether to generate and send a graph
     """
     stats = get_voice_statistics()
     
@@ -704,7 +704,7 @@ async def voice_analysis(ctx: discord.ext.commands.Context) -> None:
     
     # Top users
     result += "**Top 5 Users by Voice Activity**\n"
-    for i, user in enumerate(stats['users'], 1):
+    for i, user in enumerate(stats['users'][:5], 1):
         formatted_time = format_duration(user['total_seconds'])
         result += f"{i}. {user['name']}: {formatted_time}\n"
     
@@ -712,11 +712,17 @@ async def voice_analysis(ctx: discord.ext.commands.Context) -> None:
     
     # Top channels
     result += "**Top 5 Voice Channels by [Man Hours](https://en.wikipedia.org/wiki/Man-hour)**\n"
-    for i, channel in enumerate(stats['channels'], 1):
+    for i, channel in enumerate(stats['channels'][:5], 1):
         formatted_time = format_duration(channel['total_seconds'])
         result += f"{i}. {channel['name']}: {formatted_time}\n"
     
     await ctx.send(result)
+    if graph:
+        try:
+            await generate_voice_activity_graph(ctx, stats)
+        except Exception as e:
+            logger.error(f"Error generating voice activity graph: {e}")
+            await ctx.send(f'Error generating graph: {e}')
 
 
 async def add_voice_analysis_for_user(message: discord.Message, member: discord.User) -> None:
@@ -747,12 +753,13 @@ async def add_voice_analysis_for_user(message: discord.Message, member: discord.
     await message.channel.send(result)
 
 
-async def format_voice_analysis(ctx: CContext) -> None:
+async def format_voice_analysis(ctx: CContext, graph: bool = False) -> None:
     """
     Format and send voice analysis results.
 
     Args:
         ctx: Discord command context
+        graph: Whether to generate and send a graph
     """
     
     # Try to delete the command message
@@ -783,8 +790,88 @@ async def format_voice_analysis(ctx: CContext) -> None:
     
     # No user specified, show general voice stats
     try:
-        await voice_analysis(ctx)
+        await voice_analysis(ctx, graph)
         await new_msg.delete()
     except Exception as e:
         logger.error(f"Error during voice analysis: {e}")
         await ctx.send(f'Error during voice analysis: {e}')
+
+
+async def generate_voice_activity_graph(ctx: CContext, stats: dict[str, list[dict[str, str | int]]]):
+    """ Generate and
+    send a graph of voice activity.
+    Args:
+        ctx: Discord command context
+        stats: Voice analysis statistics
+    """
+    try:
+        guild = ctx.guild
+        if not guild:
+            await ctx.send("Could not retrieve guild information.")
+            return
+    
+        top_users = stats.get('users', [])
+        if not top_users:
+            await ctx.send("No user voice activity data to graph.")
+            return
+    
+        usernames = []
+        voice_time_hours = []
+    
+        for user_data in top_users:
+            user_id_str = user_data.get('id')
+            if not user_id_str:
+                continue
+    
+            user_id = int(user_id_str)
+            total_seconds = user_data.get('total_seconds', 0)
+    
+            display_name = user_data.get('name', str(user_id))
+            try:
+                member = guild.get_member(user_id) or await ctx.bot.fetch_user(user_id)
+                if member:
+                    display_name = member.display_name
+            except discord.NotFound:
+                pass  # Keep the stored name if user not found
+            except Exception as e:
+                logger.warning(f"Could not fetch user {user_id}: {e}")
+    
+    
+            usernames.append(allow_characters(display_name))
+            voice_time_hours.append(total_seconds / 3600)
+    
+        if not usernames:
+            await ctx.send("No valid user data to generate a graph.")
+            return
+    
+        # Reverse for horizontal bar chart
+        usernames.reverse()
+        voice_time_hours.reverse()
+    
+        # Create the plot
+        plt.figure(figsize=(10, 8), facecolor='#1f1f1f')
+        ax = plt.gca()
+        ax.set_facecolor('#2d2d2d')
+        plt.barh(usernames, voice_time_hours, color='#8a2be2')
+        plt.xlabel('Total Voice Time (hours)', color='white')
+        plt.title('Top Users by Voice Activity', color='white')
+        plt.tick_params(axis='both', colors='white')
+    
+        for spine in ax.spines.values():
+            spine.set_color('#555555')
+        plt.tight_layout()
+    
+        graph_file = 'top_voice_users.png'
+        plt.savefig(graph_file)
+        plt.close()
+    
+        await ctx.send(file=discord.File(graph_file))
+    
+        try:
+            os.remove(graph_file)
+        except OSError as e:
+            logger.warning(f"Could not remove graph file {graph_file}: {e}")
+    
+    except Exception as e:
+        logger.error(f"Error generating voice activity graph: {e}")
+        await ctx.send(f'Error generating graph: {e}')

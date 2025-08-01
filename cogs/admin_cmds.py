@@ -170,6 +170,16 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     async def analyse_voice(self, ctx: CContext):
         await analysis.format_voice_analysis(ctx)
     
+    @commands.command(name='analyse_graph', aliases=['graph_voice_analysis', 'voice_graph_stats',
+                                                     'graph_analyse_voice', 'anavcg'],
+                      brief='Analyze server message data with graphs',
+                      help='Provides statistics about messages sent in the server with graphical representation',
+                      usage='analyse_graph [user_id/mention]')
+    @commands.check(is_admin)
+    @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
+    async def analyse_graph(self, ctx: CContext):
+        await analysis.format_voice_analysis(ctx, graph=True)
+    
     @commands.command(name='blacklist',
                       brief='Blacklist a user',
                       help='Admin only: Prevent a user from using bot commands',
