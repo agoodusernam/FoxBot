@@ -11,7 +11,7 @@ from currency import curr_utils, curr_config, shop_items
 from currency.curr_config import currency_name, loan_interest_rate, income_tax, DrugItem, BlackMarketItem, GunItem, \
     ShopItem, HouseItem
 from currency.curr_utils import get_shop_item, Profile
-from currency.job_utils import SchoolQualif, SecurityClearance
+from currency.job_utils import SchoolQualif, SecurityClearance, Job
 from currency.jobs import job_trees
 
 
@@ -637,8 +637,10 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                 # If we found qualified jobs at this level, add them and break
                 if qualified_jobs:
                     for job in qualified_jobs:
+                        if job.name() == profile['work_str'] or job.tree.name == profile['work_tree']:
+                            continue
                         # Calculate the salary with variance to 0.01% precision
-                        salary_mult = 1 + (random.randint(0, job.salary_variance * 10000) / 10000)
+                        salary_mult = 1 + (random.randint(0, job.salary_variance * 10) / 1000) # salary variance is an int for percentage
                         value = (f'Salary: {int(job.salary * salary_mult)} {currency_name}\n'
                                  f'Required Work Experience: {job.req_experience} years\n')
                         if job.school_requirement != SchoolQualif.HIGH_SCHOOL:

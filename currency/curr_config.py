@@ -171,6 +171,7 @@ def get_default_profile(member_id: int | str) -> dict:
         'bank':             0,
         'work_income':      0,
         'work_str':         'Unemployed',
+        'work_tree':       'None',
         'other_income':     0,
         'next_income_mult': 1.0,
         'work_experience':  0,  # Experience in current job, will increase income

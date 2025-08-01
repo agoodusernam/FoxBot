@@ -462,7 +462,7 @@ enlisted_army_tree = JobTree(
 
 warrant_officer_1 = Job(
         name="Warrant Officer 1",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.HIGH_SCHOOL, SecurityClearance.NONE),
         req_experience=0,
         salary=28_000,
@@ -471,7 +471,7 @@ warrant_officer_1 = Job(
 
 warrant_officer_2 = Job(
         name="Warrant Officer 2",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.ASSOCIATE, SecurityClearance.CONFIDENTIAL),
         req_experience=2,
         salary=32_500,
@@ -480,7 +480,7 @@ warrant_officer_2 = Job(
 
 warrant_officer_3 = Job(
         name="Warrant Officer 3",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.BACHELOR, SecurityClearance.SECRET),
         req_experience=4,
         salary=35_000,
@@ -489,7 +489,7 @@ warrant_officer_3 = Job(
 
 warrant_officer_4 = Job(
         name="Warrant Officer 4",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.BACHELOR, SecurityClearance.SECRET),
         req_experience=6,
         salary=40_000,
@@ -498,7 +498,7 @@ warrant_officer_4 = Job(
 
 warrant_officer_5 = Job(
         name="Warrant Officer 5",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.BACHELOR, SecurityClearance.SECRET),
         req_experience=8,
         salary=45_000,
@@ -507,7 +507,7 @@ warrant_officer_5 = Job(
 
 second_lieutenant = Job(
         name="Second Lieutenant",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.BACHELOR, SecurityClearance.SECRET),
         req_experience=10,
         salary=50_000,
@@ -516,7 +516,7 @@ second_lieutenant = Job(
 
 first_lieutenant = Job(
         name="First Lieutenant",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.BACHELOR, SecurityClearance.TOP_SECRET),
         req_experience=12,
         salary=55_000,
@@ -525,7 +525,7 @@ first_lieutenant = Job(
 
 captain = Job(
         name="Captain",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.BACHELOR, SecurityClearance.TOP_SECRET),
         req_experience=14,
         salary=60_000,
@@ -534,7 +534,7 @@ captain = Job(
 
 major = Job(
         name="Major",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.BACHELOR, SecurityClearance.TS_SCI),
         req_experience=16,
         salary=70_000,
@@ -543,7 +543,7 @@ major = Job(
 
 lieutenant_colonel = Job(
         name="Lieutenant Colonel",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.BACHELOR, SecurityClearance.TS_SCI),
         req_experience=18,
         salary=80_000,
@@ -552,7 +552,7 @@ lieutenant_colonel = Job(
 
 colonel = Job(
         name="Colonel",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.MASTER, SecurityClearance.TS_SCI),
         req_experience=20,
         salary=90_000,
@@ -561,7 +561,7 @@ colonel = Job(
 
 brigadier_general = Job(
         name="Brigadier General",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.MASTER, SecurityClearance.SPECIAL),
         req_experience=22,
         salary=100_000,
@@ -570,7 +570,7 @@ brigadier_general = Job(
 
 major_general = Job(
         name="Major General",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.MASTER, SecurityClearance.SPECIAL),
         req_experience=24,
         salary=110_000,
@@ -579,7 +579,7 @@ major_general = Job(
 
 lieutenant_general = Job(
         name="Lieutenant General",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.MASTER, SecurityClearance.SPECIAL),
         req_experience=26,
         salary=120_000,
@@ -588,15 +588,15 @@ lieutenant_general = Job(
 
 general = Job(
         name="General",
-        tree="Commissioned_Officer_Army",
+        tree="Army_Commissioned_Officer",
         req_qualifications=(SchoolQualif.MASTER, SecurityClearance.SPECIAL),
         req_experience=28,
         salary=130_000,
         salary_variance=30
 )
 
-commissioned_officer_army_tree = JobTree(
-        name="Commissioned_Officer_Army",
+Army_Commissioned_Officer_tree = JobTree(
+        name="Army_Commissioned_Officer",
         jobs=[
             warrant_officer_1,
             warrant_officer_2,

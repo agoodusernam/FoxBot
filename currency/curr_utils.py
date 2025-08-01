@@ -14,6 +14,7 @@ class Profile(TypedDict):
     bank: int
     work_income: int
     work_str: str
+    work_tree: str
     other_income: int
     next_income_mult: float
     work_experience: int
