@@ -603,7 +603,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='View available jobs',
                       help='View the jobs you can take to earn money',
                       usage='jobs')
-    @commands.cooldown(1, (4 * 60), commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 4 * 60 * 60, commands.BucketType.user)  # type: ignore
     async def jobs_cmd(self, ctx: CContext):
         #TODO: Make the user able to choose a job from the list
         profile = curr_utils.get_profile(ctx.author)
