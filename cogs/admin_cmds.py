@@ -155,7 +155,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='analyse_graph', aliases=['graph_analysis', 'graph_stats', 'graph_analyse', 'anag'],
                       brief='Analyze server message data with graphs',
                       help='Provides statistics about messages sent in the server with graphical representation',
-                      usage='analyse_graph [user_id/mention]')
+                      usage='analyse_graph')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
     async def analyse_graph(self, ctx: CContext):
@@ -174,7 +174,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                                                      'graph_analyse_voice', 'anavcg'],
                       brief='Analyze server message data with graphs',
                       help='Provides statistics about messages sent in the server with graphical representation',
-                      usage='analyse_graph [user_id/mention]')
+                      usage='analyse_graph')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
     async def analyse_graph(self, ctx: CContext):
