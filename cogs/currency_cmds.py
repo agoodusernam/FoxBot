@@ -637,7 +637,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                 # If we found qualified jobs at this level, add them and break
                 if qualified_jobs:
                     for job in qualified_jobs:
-                        if job.name() == profile['work_str'] or job.tree.name == profile['work_tree']:
+                        if job.tree.name == profile['work_tree']:
                             continue
                         # Calculate the salary with variance to 0.01% precision
                         salary_mult = 1 + (random.randint(0, job.salary_variance * 10) / 1000) # salary variance is an int for percentage
