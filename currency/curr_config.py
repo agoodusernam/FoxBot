@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 import discord.ext.commands
 
-from currency.curr_utils import Profile
 from currency.job_utils import SchoolQualif, SecurityClearance
 
 loan_interest_rate: float = 0.09 / 12  # Monthly interest rate
@@ -160,18 +159,19 @@ class BlackMarketCategory:
     items: list[BlackMarketItem]
 
 
-def get_default_profile(member_id: int | str) -> Profile:
+def get_default_profile(member_id: int | str) -> dict:
     """
     Generates a default currency profile for a new member.
     :param member_id: The ID of the member for whom to create the profile.
     :return: A dictionary containing the default profile data.
     """
-    default: Profile = {
+    default: dict = {
         'user_id':          str(member_id),
         'wallet':           1_000,
         'bank':             0,
         'work_income':      0,
         'work_str':         'Unemployed',
+        'work_tree':       'None',
         'other_income':     0,
         'next_income_mult': 1.0,
         'work_experience':  0,  # Experience in current job, will increase income

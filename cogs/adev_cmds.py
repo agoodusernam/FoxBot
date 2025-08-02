@@ -136,7 +136,19 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         ctx.bot.maintenance_mode = mode
         
         status: str = 'enabled' if ctx.bot.maintenance_mode else 'disabled'
-        await ctx.message.channel.send(f'Maintenance mode has been {status}.', delete_after=ctx.bot.del_after)
+        await ctx.send(f'Maintenance mode has been {status}.', delete_after=ctx.bot.del_after)
+    
+    @commands.command(name='reset_cooldowns',
+                        brief='Reset command cooldowns',
+                        help='Dev only: Reset all command cooldowns for the bot',
+                        usage='reset_cooldowns')
+    async def reset_cooldowns(self, ctx: CContext):
+        await ctx.delete()
+        
+        for command in self.bot.commands:
+            command.reset_cooldown(ctx)
+        
+        await ctx.send('All command cooldowns have been reset.', delete_after=ctx.bot.del_after)
 
 
 async def setup(bot):

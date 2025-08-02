@@ -8,12 +8,13 @@ from utils import db_stuff
 from utils.db_stuff import get_from_db
 
 
-class Profile(TypedDict, total=False):
+class Profile(TypedDict):
     user_id: str
     wallet: int
     bank: int
     work_income: int
     work_str: str
+    work_tree: str
     other_income: int
     next_income_mult: float
     work_experience: int
@@ -29,7 +30,7 @@ class Profile(TypedDict, total=False):
 def create_new_profile(member: discord.Member) -> Profile:
     new_data = get_default_profile(member.id)
     db_stuff.send_to_db(collection_name='currency', data=dict(new_data))
-    return new_data
+    return cast(Profile, new_data)
 
 
 def get_profile(member: discord.Member) -> Profile:

@@ -61,6 +61,22 @@ def find_url_in_string(string: str) -> bool:
     match = url_pattern.search(string)
     return match is not None
 
+def seconds_to_human_readable(seconds: int) -> str:
+    """
+    Convert seconds to a human-readable format.
+    :param seconds: The number of seconds to convert.
+    :return: A string representing the time in a human-readable format.
+    """
+    if seconds < 60:
+        return f"{seconds} seconds"
+    elif seconds < 3600:
+        return f"{seconds // 60} minutes and {seconds % 60} seconds"
+    elif seconds < 86400:
+        return f"{seconds // 3600} hours, {(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
+    else:
+        return f"{seconds // 86400} days, {(seconds % 86400) // 3600} hours, " \
+               f"{(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
+
 
 # Bot configuration
 @bot.event
@@ -258,13 +274,13 @@ bot.help_command = CustomHelpCommand()
 @bot.event
 async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandError):
     if isinstance(error, commands.CommandOnCooldown):
-        await ctx.message.channel.send(
-                f'This command is on cooldown. Please try again in {error.retry_after:.0f} seconds.',
+        await ctx.send(
+                f'This command is on cooldown. Please try again in {seconds_to_human_readable(int(error.retry_after))}.',
                 delete_after=bot.config.del_after
         )
         await ctx.message.delete()
     elif isinstance(error, commands.CheckFailure):
-        await ctx.message.channel.send('You do not have permission to use this command.', delete_after=bot.config.del_after)
+        await ctx.send('You do not have permission to use this command.', delete_after=bot.config.del_after)
         await ctx.message.delete()
     
     else:
