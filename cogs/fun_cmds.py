@@ -47,7 +47,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='dice', aliases=['roll', 'dice_roll'],
                       brief='Roll a dice',
                       help='Roll a dice between two values',
-                      usage='dice <min> <max>')
+                      usage='f!dice <min> <max>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def dice(self, ctx: CContext):
         await dice_roll(ctx.bot.del_after, ctx.message)
@@ -69,7 +69,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='suggest', aliases=['suggestion'],
                       brief='Submit a suggestion',
                       help='Submit a suggestion for the bot',
-                      usage='suggest <suggestion>')
+                      usage='f!suggest <suggestion>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def suggest_cmd(self, ctx: CContext, *, args: str):
         await suggest.send_suggestion(ctx, args)
@@ -102,7 +102,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='owoify', aliases=['owo', 'uwu'],
                         brief='Convert text to OwO language',
                         help='Converts the given text to OwO language (UwU style)',
-                        usage='owoify <text>')
+                        usage='f!owoify <text>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def owoify(self, ctx: CContext, *, text: str):
         # Simple conversion to OwO language

@@ -85,7 +85,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='rek',
                       brief='Absolutely rek a user',
                       help='Admin only: Timeout a user for 28 days',
-                      usage='rek <user_id/mention>')
+                      usage='f!rek <user_id/mention>')
     @commands.check(is_admin)
     async def rek(self, ctx: CContext, member: discord.Member) -> None:
         await ctx.delete()
@@ -146,7 +146,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='analyse', aliases=['analysis', 'analyze', 'stats', 'statistics', 'ana'],
                       brief='Analyze server message data',
                       help='Provides statistics about messages sent in the server',
-                      usage='analyse [user_id/mention]')
+                      usage='f!analyse [user_id/mention]')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
     async def analyse(self, ctx: CContext):
@@ -155,7 +155,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='analyse_graph', aliases=['graph_analysis', 'graph_stats', 'graph_analyse', 'anag'],
                       brief='Analyze server message data with graphs',
                       help='Provides statistics about messages sent in the server with graphical representation',
-                      usage='analyse_graph')
+                      usage='f!analyse_graph')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
     async def analyse_graph(self, ctx: CContext):
@@ -164,7 +164,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='analyse_voice', aliases=['voice_analysis', 'voice_stats', 'voice_analyse', 'anavc'],
                       brief='Analyze voice channel usage',
                       help='Provides statistics about voice channel usage in the server',
-                      usage='analyse_voice [user_id/mention]')
+                      usage='f!analyse_voice [user_id/mention]')
     @commands.check(is_admin)
     @commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
     async def analyse_voice(self, ctx: CContext):
@@ -174,7 +174,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                                                      'graph_analyse_voice', 'anavcg'],
                       brief='Analyze server message data with graphs',
                       help='Provides statistics about messages sent in the server with graphical representation',
-                      usage='analyse_graph')
+                      usage='f!analyse_graph')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
     async def analyse_graph(self, ctx: CContext):
@@ -183,7 +183,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='blacklist',
                       brief='Blacklist a user',
                       help='Admin only: Prevent a user from using bot commands',
-                      usage='blacklist <user_id/mention>')
+                      usage='f!blacklist <user_id/mention>')
     @commands.check(is_admin)
     async def blacklist_id(self, ctx: CContext, user: discord.User):
         await ctx.delete()
@@ -211,7 +211,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='unblacklist',
                       brief='Remove user from blacklist',
                       help='Admin only: Allow a blacklisted user to use bot commands again',
-                      usage='unblacklist <user_id/mention>')
+                      usage='f!unblacklist <user_id/mention>')
     @commands.check(is_admin)
     async def unblacklist_id(self, ctx: CContext, user: discord.User):
         await ctx.delete()
@@ -235,12 +235,12 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='echo',
                       brief='Make the bot say something',
                       help='Admin only: Makes the bot say the specified message',
-                      usage='echo [channel id] <message>')
+                      usage='f!echo [channel id] <message>')
     @commands.check(is_admin)
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def echo_cmd(self, ctx: CContext, *, message: str):
         if message is None:
-            await ctx.channel.send('Nothing to echo.', delete_after=ctx.bot.del_after)
+            await ctx.send('Nothing to echo.', delete_after=ctx.bot.del_after)
             return
         
         msg: str = message
@@ -258,12 +258,12 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await channel.send(msg)
         
         # Delete the original message
-        await ctx.message.delete()
+        await ctx.delete()
     
     @commands.command(name='edit_message',
                       brief='Edit a message the bot has sent',
                       help='Admin only: Edit a specific message sent by the bot',
-                      usage='edit_message <channel_id> <message_id> <new_content>')
+                      usage='f!edit_message <channel_id> <message_id> <new_content>')
     @commands.check(is_admin)
     async def edit_message_cmd(self, ctx: CContext, *, args: str):
         await ctx.delete()
@@ -312,7 +312,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='last_log', aliases=['lastlog', 'lastmodlog', 'last_modlog', 'modlog', 'log'],
                       brief='Send the last modlog message',
                       help='Admin only: Send the last modlog message',
-                      usage='last_log')
+                      usage='f!last_log')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     @commands.has_role(STAFF_ROLE_ID)
     async def send_last_log(self, ctx: CContext):
@@ -326,7 +326,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                                                           'loga'],
                       brief='Send the last modlog message anonymously',
                       help='Admin only: Send the last modlog message without mentioning the moderator',
-                      usage='last_log_anonymous')
+                      usage='f!last_log_anonymous')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     @commands.has_role(STAFF_ROLE_ID)
     async def send_last_log_anonymous(self, ctx: CContext):
@@ -337,7 +337,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='warn',
                       brief='Warn a user',
                       help='Admin only: Warn a user without showing in the public logs',
-                      usage='warn <user_id/mention> <reason>')
+                      usage='f!warn <user_id/mention> <reason>')
     @commands.check(is_admin)
     async def warn(self, ctx: CContext, member: discord.Member, *,
                    reason: str = 'No reason provided'):
@@ -359,7 +359,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='warns',
                       brief='View warns for a user',
                       help='Admin only: View all warns for a user',
-                      usage='warns <user_id/mention>')
+                      usage='f!warns <user_id/mention>')
     @commands.check(is_admin)
     async def view_warns(self, ctx: CContext, member: discord.Member):
         await ctx.delete()

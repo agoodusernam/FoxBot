@@ -901,7 +901,7 @@ detective = Job(
         salary_variance=10
 )
 
-local_LE_corpral = Job(
+local_LE_corporal = Job(
         name="Corporal",
         tree="Local_Law_Enforcement",
         req_qualifications=(SchoolQualif.BACHELOR, SecurityClearance.CONFIDENTIAL),
@@ -970,7 +970,7 @@ local_law_enforcement_tree = JobTree(
             police_cadet,
             police_officer,
             detective,
-            local_LE_corpral,
+            local_LE_corporal,
             local_LE_sergeant,
             local_LE_lieutenant,
             local_LE_captain,

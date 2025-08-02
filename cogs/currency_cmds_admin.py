@@ -16,7 +16,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
     @commands.command(name="set_wallet", aliases=["set_bal"],
                       brief="Set a user's wallet",
                       help="Set a user's wallet balance",
-                      usage="set_wallet<user> <amount>")
+                      usage="f!set_wallet<user> <amount>")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def set_wallet_cmd(self, ctx: CContext, user: discord.Member, amount: int):
         if user is None:
@@ -33,7 +33,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
     @commands.command(name="set_bank",
                       brief="Set a user's bank balance",
                       help="Set a user's bank balance",
-                      usage="set_bank <user> <amount>")
+                      usage="f!set_bank <user> <amount>")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def set_bank_cmd(self, ctx: CContext, user: discord.Member, amount: int):
         if user is None:
@@ -50,7 +50,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
     @commands.command(name="set_debt",
                       brief="Set a user's debt",
                       help="Set a user's debt for loans",
-                      usage="set_debt <user> <amount>")
+                      usage="f!set_debt <user> <amount>")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def set_debt_cmd(self, ctx: CContext, user: discord.Member, amount: int):
         if user is None:
@@ -67,7 +67,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
     @commands.command(name="set_income",
                       brief="Set a user's income",
                       help="Set a user's income for working",
-                      usage="set_income <user> <amount>")
+                      usage="f!set_income <user> <amount>")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def set_income_cmd(self, ctx: CContext, user: discord.Member, amount: int):
         if user is None:
@@ -84,7 +84,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
     @commands.command(name="set_stock",
                       brief="Set the stock of a shop item",
                       help="Set the stock of a specific shop item",
-                      usage="set_stock <item_name> <amount>")
+                      usage="f!set_stock <item_name> <amount>")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def set_stock_cmd(self, ctx: CContext, item_name: str, amount: int):
         item = get_shop_item(item_name)
@@ -102,7 +102,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
     @commands.command(name="reset_profile",
                       brief="Reset a user's currency profile",
                       help="Reset a user's currency profile to default values",
-                      usage="reset_profile <user>")
+                      usage="f!reset_profile <user>")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def reset_profile_cmd(self, ctx: CContext, user: discord.Member):
         if user is None:

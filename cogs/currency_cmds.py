@@ -64,7 +64,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='baltop', aliases=['balance_top', 'bal_top'],
                       brief='Check the top balances',
                       help='Check the top users with the highest balances',
-                      usage='baltop')
+                      usage='f!baltop')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def baltop_cmd(self, ctx: CContext):
         top_users = curr_utils.get_top_balances()
@@ -80,7 +80,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='deposit', aliases=['dep'],
                       brief='Deposit money into your bank',
                       help='Deposit some of your money from your wallet into your bank',
-                      usage='deposit <amount>')
+                      usage='f!deposit <amount>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def deposit_cmd(self, ctx: CContext, amount: int):
         if amount <= 0:
@@ -97,7 +97,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='withdraw', aliases=['with'],
                       brief='Withdraw money from your bank',
                       help='Withdraw some of your money from your bank into your wallet',
-                      usage='withdraw <amount>')
+                      usage='f!withdraw <amount>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def withdraw_cmd(self, ctx: CContext, amount: int):
         if amount <= 0:
@@ -114,7 +114,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='pay', aliases=['give'],
                       brief='Pay another user',
                       help='Pay another user some of your money',
-                      usage='pay <user> <amount>')
+                      usage='f!pay <user> <amount>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def pay_cmd(self, ctx: CContext, user: str, amount: int):
         try:
@@ -180,7 +180,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='quit',
                       brief='Quit your current job',
                       help='Quit your current job so you can get a new one',
-                      usage='quit')
+                      usage='f!quit')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def quit_cmd(self, ctx: CContext):
         profile = curr_utils.get_profile(ctx.author)
@@ -207,7 +207,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='pay_debt', aliases=['payloan', 'pay_load', 'repay', 'paydebt'],
                       brief='Pay off your debt',
                       help='Pay off some of your debt from loans',
-                      usage='pay_debt <amount>')
+                      usage='f!pay_debt <amount>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def pay_debt_cmd(self, ctx: CContext, amount: int):
         if amount <= 0:
@@ -243,7 +243,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='get_loan', aliases=['loan'],
                       brief='Get a loan',
                       help='Get a loan to increase your wallet balance',
-                      usage='get_loan <amount>')
+                      usage='f!get_loan <amount>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def get_loan_cmd(self, ctx: CContext, amount: int):
         if amount <= 0:
@@ -267,7 +267,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='credit_score', aliases=['credit'],
                       brief='Check your credit score',
                       help='Check your current credit score',
-                      usage='credit_score')
+                      usage='f!credit_score')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def credit_score_cmd(self, ctx: CContext):
         profile = curr_utils.get_profile(ctx.author)
@@ -278,7 +278,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='shop', aliases=['store'],
                       brief='View the shop',
                       help='View the items available for purchase in the shop',
-                      usage='shop')
+                      usage='f!shop')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def shop_cmd(self, ctx: CContext):
         embed = discord.Embed(title='Shop', description='Items available for purchase', colour=discord.Colour.green())
@@ -322,7 +322,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='blackmarket', aliases=['bm'],
                       brief='View the black market',
                       help='View the items available for purchase in the black market',
-                      usage='blackmarket')
+                      usage='f!blackmarket')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def blackmarket_cmd(self, ctx: CContext):
         embed = discord.Embed(title='Black Market', description='Items available for purchase',
@@ -362,7 +362,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='buy', aliases=['purchase'],
                       brief='Buy an item from the shop',
                       help='Buy an item from the shop or black market',
-                      usage='buy <item_name> [quantity]')
+                      usage='f!buy <item_name> [quantity]')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def buy_cmd(self, ctx: CContext, *, args: str):
         # Split the arguments into item name and quantity
@@ -420,8 +420,8 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             # check if the user gets caught by cops
             cops_chance = random.random()
             if cops_chance <= item.cops_risk:
-                await ctx.send(f'You got caught by the cops while trying to buy {item.name}! \nYou have been fined '
-                               f'5,000 {currency_name} for illegal activity, remember to pay it off with `'
+                await ctx.send(f'You got caught by the cops while trying to buy {item.name}! \nYou have been fined ' +
+                               f'5,000 {currency_name} for illegal activity, remember to pay it off with ' +
                                f'`{ctx.bot.command_prefix}pay_debt`.')
                 
                 curr_utils.set_fire_risk(ctx.author, 0.3)
@@ -436,7 +436,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='inventory', aliases=['inv'],
                       brief='Check your inventory',
                       help='Check the items you own in your inventory',
-                      usage='inventory')
+                      usage='f!inventory')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def inventory_cmd(self, ctx: CContext):
         profile = curr_utils.get_profile(ctx.author)
@@ -456,22 +456,23 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='use', aliases=['use_item'],
                       brief='Use an item from your inventory',
                       help='Use an item from your inventory to gain its benefits',
-                      usage='use <item_name>')
+                      usage='f!use <item_name>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def use_cmd(self, ctx: CContext, *, item_name: str):
-        profile = curr_utils.get_profile(ctx.author)
-        inventory = profile['inventory']
-        illegal_items = profile['illegal_items']
-        item_name = item_name.lower()
-        illegal = False
-        if item_name not in inventory.keys() and item_name not in illegal_items.keys():
+        profile: Profile = curr_utils.get_profile(ctx.author)
+        inventory: dict[str, int] = profile['inventory']
+        illegal_items: dict[str, int] = profile['illegal_items']
+        item_name: str = item_name.lower()
+        illegal: bool = False
+        if item_name not in [key.lower() for key in inventory.keys()] and item_name not in [key.lower() for key in
+                                                                                            illegal_items.keys()]:
             await ctx.send(f'You do not own any {item_name}!')
             return
         if item_name in illegal_items:
             illegal = True
             inventory = illegal_items
         
-        item_quantity = inventory[item_name]
+        item_quantity: int = inventory[item_name]
         if item_quantity <= 0:
             await ctx.send(f'You do not own any {item_name}!')
             return
@@ -482,7 +483,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             return
         
         # Decrease the quantity in the inventory
-        remove = False
+        remove: bool = False
         if not isinstance(item, GunItem):
             inventory[item_name] -= 1
             if inventory[item_name] <= 0:
@@ -524,7 +525,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='sell',
                       brief='Sell an item from your inventory',
                       help='Sell an item from your inventory for money',
-                      usage='sell <item_name> [quantity]')
+                      usage='f!sell <item_name> [quantity]')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def sell_cmd(self, ctx: CContext, *, args: str):
         # Split the arguments into item name and quantity
@@ -601,7 +602,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='jobs',
                       brief='View available jobs',
                       help='View the jobs you can take to earn money',
-                      usage='jobs')
+                      usage='f!jobs')
     @commands.cooldown(1, 4 * 60 * 60, commands.BucketType.user)  # type: ignore
     async def jobs_cmd(self, ctx: CContext):
         #TODO: Make the user able to choose a job from the list

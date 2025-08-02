@@ -109,7 +109,7 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     @commands.command(name='update',
                       brief='Update the bot code',
                       help='Dev only: Update the bot code from the repository',
-                      usage='update')
+                      usage='f!update')
     async def update(self, ctx: CContext):
         await ctx.delete()
         await shutdown(ctx.bot, update=True, restart=True)
@@ -117,7 +117,7 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     @commands.command(name='upload_all_history',
                       brief='Upload all messages from a server',
                       help='Dev only: Upload all messages from a specific guild to the database',
-                      usage='upload_all_history')
+                      usage='f!upload_all_history')
     async def upload_all_history(self, ctx: CContext):
         await ctx.delete()
         
@@ -129,7 +129,7 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     @commands.command(name='maintenance_mode',
                       brief='Toggle maintenance mode',
                       help='Dev only: Toggle maintenance mode for the bot',
-                      usage='maintenance_mode <on/off>')
+                      usage='f!maintenance_mode <on/off>')
     async def maintenance_mode(self, ctx: CContext, mode: bool):
         await ctx.delete()
         
@@ -141,7 +141,7 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     @commands.command(name='reset_cooldowns',
                         brief='Reset command cooldowns',
                         help='Dev only: Reset all command cooldowns for the bot',
-                        usage='reset_cooldowns')
+                        usage='f!reset_cooldowns')
     async def reset_cooldowns(self, ctx: CContext):
         await ctx.delete()
         
