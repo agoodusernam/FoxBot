@@ -460,4 +460,6 @@ categories = [var for var in globals().values() if isinstance(var, ShopCategory)
 bm_categories = [var for var in globals().values() if isinstance(var, BlackMarketCategory)]
 
 all_items = [var for var in globals().values() if isinstance(var, ShopItem)]
-all_guns = [var.name for var in globals().values() if isinstance(var, GunItem)]
+all_guns = [var for var in globals().values() if isinstance(var, GunItem)]
+all_drugs = [var for var in globals().values() if isinstance(var, DrugItem)]
+all_bm_items = [var for var in globals().values() if isinstance(var, BlackMarketItem)]

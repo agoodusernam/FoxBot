@@ -225,7 +225,7 @@ class HelpPaginationView(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         # Only allow the original command author to use the buttons
         if interaction.user != self.author:
-            await interaction.response().send_message("You cannot use these buttons.", ephemeral=True)
+            await interaction.response.send_message("You cannot use these buttons.", ephemeral=True)
             return False
         return True
     

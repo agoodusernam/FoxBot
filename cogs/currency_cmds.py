@@ -26,17 +26,17 @@ class ShopView(discord.ui.View):
     async def previous_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.current_page > 0:
             self.current_page -= 1
-            await interaction.response().edit_message(embed=self.embeds[self.current_page])
+            await interaction.response.edit_message(embed=self.embeds[self.current_page])
         else:
-            await interaction.response().defer()
+            await interaction.response.defer()
     
     @discord.ui.button(label='Next', style=discord.ButtonStyle.gray)  # type: ignore
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.current_page < len(self.embeds) - 1:
             self.current_page += 1
-            await interaction.response().edit_message(embed=self.embeds[self.current_page])
+            await interaction.response.edit_message(embed=self.embeds[self.current_page])
         else:
-            await interaction.response().defer()
+            await interaction.response.defer()
     
     async def on_timeout(self):
         # Disable all buttons when the view times out
@@ -284,7 +284,6 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         embed = discord.Embed(title='Shop', description='Items available for purchase', colour=discord.Colour.green())
         embed.set_thumbnail(url=ctx.guild.icon.url)
         categories = shop_items.categories
-        # bm_categories = shop_items.bm_categories
         
         # Create list to store category embeds
         embeds = []
