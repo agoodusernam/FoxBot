@@ -143,7 +143,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await ctx.message.channel.send('Hard lockdown lifted. All users have been removed from timeout.',
                                        delete_after=ctx.bot.del_after)
     
-    @commands.command(name='analyse', aliases=['analysis', 'analyze', 'stats', 'statistics', 'ana'],
+    @commands.command(name='analyse', aliases=['ana'],
                       brief='Analyze server message data',
                       help='Provides statistics about messages sent in the server',
                       usage='f!ana [user_id/mention]')
@@ -152,7 +152,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     async def analyse(self, ctx: CContext):
         await analysis.format_analysis(ctx)
     
-    @commands.command(name='analyse_graph', aliases=['graph_analysis', 'graph_stats', 'graph_analyse', 'anag'],
+    @commands.command(name='analyse_graph', aliases=['anag'],
                       brief='Analyze server message data with graphs',
                       help='Provides statistics about messages sent in the server with graphical representation',
                       usage='f!anag')
@@ -161,7 +161,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     async def analyse_graph(self, ctx: CContext):
         await analysis.format_analysis(ctx, graph=True)
     
-    @commands.command(name='analyse_voice', aliases=['voice_analysis', 'voice_stats', 'voice_analyse', 'anavc'],
+    @commands.command(name='analyse_voice', aliases=['anavc'],
                       brief='Analyze voice channel usage',
                       help='Provides statistics about voice channel usage in the server',
                       usage='f!anavc [user_id/mention]')
@@ -170,8 +170,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     async def analyse_voice(self, ctx: CContext):
         await analysis.format_voice_analysis(ctx)
     
-    @commands.command(name='analyse_vc_graph', aliases=['graph_voice_analysis', 'voice_graph_stats',
-                                                     'graph_analyse_voice', 'anavcg'],
+    @commands.command(name='analyse_vc_graph', aliases=['anavcg'],
                       brief='Analyze server message data with graphs',
                       help='Provides statistics about messages sent in the server with graphical representation',
                       usage='f!anavcg')
