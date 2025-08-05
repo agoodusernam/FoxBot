@@ -176,7 +176,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!anavcg')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
-    async def analyse_graph(self, ctx: CContext):
+    async def analyse_vc_graph(self, ctx: CContext):
         await analysis.format_voice_analysis(ctx, graph=True)
     
     @commands.command(name='blacklist',
