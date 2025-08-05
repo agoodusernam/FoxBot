@@ -9,10 +9,10 @@ from discord.ext import commands
 from discord.utils import get
 
 import utils.utils as utils
-from command_utils.CContext import CContext
-from utils import db_stuff
 from command_utils import analysis
+from command_utils.CContext import CContext
 from command_utils.checks import is_admin
+from utils import db_stuff
 
 STAFF_ROLE_ID = 1396395163835699310 # Role ID for staff, used in checks
 
@@ -170,7 +170,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     async def analyse_voice(self, ctx: CContext):
         await analysis.format_voice_analysis(ctx)
     
-    @commands.command(name='analyse_graph', aliases=['graph_voice_analysis', 'voice_graph_stats',
+    @commands.command(name='analyse_vc_graph', aliases=['graph_voice_analysis', 'voice_graph_stats',
                                                      'graph_analyse_voice', 'anavcg'],
                       brief='Analyze server message data with graphs',
                       help='Provides statistics about messages sent in the server with graphical representation',
