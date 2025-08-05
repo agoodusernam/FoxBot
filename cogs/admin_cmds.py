@@ -146,7 +146,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='analyse', aliases=['analysis', 'analyze', 'stats', 'statistics', 'ana'],
                       brief='Analyze server message data',
                       help='Provides statistics about messages sent in the server',
-                      usage='f!analyse [user_id/mention]')
+                      usage='f!ana [user_id/mention]')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
     async def analyse(self, ctx: CContext):
@@ -155,7 +155,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='analyse_graph', aliases=['graph_analysis', 'graph_stats', 'graph_analyse', 'anag'],
                       brief='Analyze server message data with graphs',
                       help='Provides statistics about messages sent in the server with graphical representation',
-                      usage='f!analyse_graph')
+                      usage='f!anag')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
     async def analyse_graph(self, ctx: CContext):
@@ -164,7 +164,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='analyse_voice', aliases=['voice_analysis', 'voice_stats', 'voice_analyse', 'anavc'],
                       brief='Analyze voice channel usage',
                       help='Provides statistics about voice channel usage in the server',
-                      usage='f!analyse_voice [user_id/mention]')
+                      usage='f!anavc [user_id/mention]')
     @commands.check(is_admin)
     @commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
     async def analyse_voice(self, ctx: CContext):
@@ -174,7 +174,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                                                      'graph_analyse_voice', 'anavcg'],
                       brief='Analyze server message data with graphs',
                       help='Provides statistics about messages sent in the server with graphical representation',
-                      usage='f!analyse_graph')
+                      usage='f!anavcg')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
     async def analyse_graph(self, ctx: CContext):
