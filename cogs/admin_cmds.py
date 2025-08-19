@@ -150,7 +150,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
     async def analyse(self, ctx: CContext):
-        await analysis.format_analysis(ctx)
+        await analysis.format_analysis(ctx, graph=False)
     
     @commands.command(name='analyse_graph', aliases=['anag'],
                       brief='Analyze server message data with graphs',
@@ -168,7 +168,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.check(is_admin)
     @commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
     async def analyse_voice(self, ctx: CContext):
-        await analysis.format_voice_analysis(ctx)
+        await analysis.format_voice_analysis(ctx, graph=False)
     
     @commands.command(name='analyse_vc_graph', aliases=['anavcg'],
                       brief='Analyze server message data with graphs',
@@ -316,7 +316,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.has_role(STAFF_ROLE_ID)
     async def send_last_log(self, ctx: CContext):
         await ctx.delete()
-        
         await last_log(ctx)
     
     @commands.command(name='last_log_anonymous', aliases=['last_log_a', 'lastlog_anonymous', 'lastlog_a',
@@ -330,7 +329,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.has_role(STAFF_ROLE_ID)
     async def send_last_log_anonymous(self, ctx: CContext):
         await ctx.delete()
-        
         await last_log(ctx, anonymous=True)
     
     @commands.command(name='warn',
@@ -345,6 +343,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         if member is None:
             await ctx.send('User not found.', delete_after=ctx.bot.del_after)
             return
+        
         data = {
             'user_id':   member.id,
             'reason':    reason,

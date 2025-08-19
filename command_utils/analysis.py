@@ -47,13 +47,14 @@ def check_valid_syntax(message: dict[str, Any]) -> bool:
     return all(key in message for key in required_keys)
 
 
-def get_valid_messages(time_filter: str = None) -> tuple[list[dict[str, str]], int]:
+def get_valid_messages(flag: str = None, ctx: CContext = None) -> tuple[list[dict[str, str]], int]:
     """
     Download and validate messages from the database.
 
     Args:
-        time_filter: Optional time filter - 'w' for last week, 'd' for last day, 
+        flag: Optional time filter - 'w' for last week, 'd' for last day,
                     'h' for last hour, or None for all messages
+        ctx: Discord command context, used to get the guild for user validation
 
     Returns:
         Tuple containing a list of valid messages and the total message count
@@ -62,6 +63,9 @@ def get_valid_messages(time_filter: str = None) -> tuple[list[dict[str, str]], i
         # Download all messages from database
         messages = db_stuff.download_all()
         total_messages = len(messages)
+        guild = None
+        if ctx is not None:
+            guild = ctx.bot.get_guild(1081760248433492140)
         
         if not messages:
             logger.warning('No messages found or failed to connect to the database.')
@@ -79,8 +83,8 @@ def get_valid_messages(time_filter: str = None) -> tuple[list[dict[str, str]], i
                 db_stuff.delete_message(message['_id'])
         
         # Apply time filter if specified
-        if time_filter in TIME_FILTERS:
-            filter_name, time_delta = TIME_FILTERS[time_filter]
+        if flag in TIME_FILTERS:
+            filter_name, time_delta = TIME_FILTERS[flag]
             time_ago = discord.utils.utcnow() - time_delta
             
             valid_messages = [
@@ -88,6 +92,11 @@ def get_valid_messages(time_filter: str = None) -> tuple[list[dict[str, str]], i
                 if utils.parse_utciso8601(msg['timestamp']) >= time_ago
             ]
             logger.info(f'Applied {filter_name} filter: {len(valid_messages)} messages')
+        
+        if flag == "nl" and guild is not None:
+            # only show users who are in the server
+            valid_messages = [msg if guild.get_member(int(msg['author_id'])) else None for msg in valid_messages]
+            valid_messages = [msg for msg in valid_messages if msg is not None]
         
         logger.info(f'Total valid messages: {len(valid_messages)}')
         logger.info(f'Total messages in database: {total_messages}')
@@ -153,19 +162,21 @@ def get_channel_stats(messages: list[dict[str, str]]) -> list[dict[str, str | in
     ]
 
 
-def analyse_messages(time_filter: str = None) -> dict[str, int | str | float | list[dict[str, str | int]]] | str:
+def analyse_messages(ctx: CContext, time_filter: str = None) -> (dict[str, int | str | float | list[dict[str,
+str | int]]] | str):
     """
     analyse all messages in the database.
 
     Args:
         time_filter: Optional time filter - 'w' for last week, 'd' for last day, 
                     'h' for last hour, or None for all messages
+        ctx: Discord command context, used to get the guild for user validation
 
     Returns:
         Dictionary containing analysis results or error message
     """
     try:
-        valid_messages, total_messages = get_valid_messages(time_filter)
+        valid_messages, total_messages = get_valid_messages(time_filter, ctx=ctx)
         if not valid_messages:
             return 'No valid messages found to analyse.'
         
@@ -299,13 +310,13 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
     await ctx.delete()
     # Parse time filter from message
     flag = ctx.message.content.split()[-1].replace('-', '')
-    if flag not in ['w', 'd', 'h', 'all']:
+    if flag not in ['w', 'd', 'h', 'nl']:
         flag = None
     else:
         ctx.message.content = ctx.message.content.replace(f'-{flag}', '')
     
     # Send initial "Analysing..." message
-    new_msg = await ctx.message.channel.send('Analysing...')
+    new_msg = await ctx.send('Analysing...')
     
     # Check if a user was specified
     if len(ctx.message.content.split()) > 1:
@@ -327,7 +338,7 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
     
     # analyse all messages
     try:
-        result = analyse_messages(flag)
+        result = analyse_messages(ctx, flag)
         
         if isinstance(result, dict):
             guild = ctx.bot.get_guild(GUILD_ID)
@@ -352,10 +363,10 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
                 user_id = int(user['user'].strip())
                 
                 # Try to get member from guild first
-                member = guild.get_member(user_id)
-                if isinstance(member, discord.Member):
-                    user['user'] = member.display_name
-                elif member is None:
+                guild_member: discord.Member | None = guild.get_member(user_id)
+                if isinstance(guild_member, discord.Member):
+                    user['user'] = guild_member.display_name
+                elif guild_member is None:
                     # Fetch user if not in guild
                     try:
                         fetched_user = await ctx.bot.fetch_user(user_id)
@@ -501,11 +512,8 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.User
         
         # Determine how many channels to show
         num_channels = 5
-        if time_filter == 'all':
-            num_channels = len(result['active_channels_lb'])
-            active_channels = active_channels[:num_channels]
-        else:
-            active_channels = active_channels[:5]
+        
+        active_channels = active_channels[:num_channels]
         
         # Format message
         msg = (
