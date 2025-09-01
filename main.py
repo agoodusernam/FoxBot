@@ -7,7 +7,7 @@ import re
 import discord
 import discord.utils
 from discord.ext import commands
-from discord.ext.commands import Context, Command
+from discord.ext.commands import Context
 from dotenv import load_dotenv
 
 from command_utils.CContext import CoolBot, CContext

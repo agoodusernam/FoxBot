@@ -250,10 +250,10 @@ def analyse_user_messages(member: discord.User, time_filter: str = None) -> dict
         active_channels = get_channel_stats(messages_by_user)
         
         # Find most recent message timestamp
-        most_recent = max(
+        most_recent = int(max(
                 (utils.parse_utciso8601(msg['timestamp']) for msg in messages_by_user),
                 default=None
-        )
+        ).timestamp())
         
         # Calculate leaderboard position
         user_message_count = collections.Counter(msg['author_id'] for msg in valid_messages)
@@ -522,7 +522,7 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.User
             f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} "
             f"characters)\n"
             f"Leaderboard position: {result['active_users_lb_position']}\n"
-            f"Most recent message sent at: {result['most_recent_message']}\n"
+            f"Most recent message sent at: <t:{result['most_recent_message']}>\n"
             f"Top {num_channels} most active channels:\n"
         )
         
