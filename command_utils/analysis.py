@@ -93,8 +93,8 @@ def get_valid_messages(flag: str = None, ctx: CContext = None) -> tuple[list[dic
             ]
             logger.info(f'Applied {filter_name} filter: {len(valid_messages)} messages')
         
-        if flag == "nl" and guild is not None:
-            # only show users who are in the server
+        if flag != "il" and guild is not None:
+            # don't include messages from users no longer in the guild
             valid_messages = [msg if guild.get_member(int(msg['author_id'])) else None for msg in valid_messages]
             valid_messages = [msg for msg in valid_messages if msg is not None]
         
@@ -310,7 +310,7 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
     await ctx.delete()
     # Parse time filter from message
     flag = ctx.message.content.split()[-1].replace('-', '')
-    if flag not in ['w', 'd', 'h', 'nl']:
+    if flag not in ['w', 'd', 'h', 'il']:
         flag = None
     else:
         ctx.message.content = ctx.message.content.replace(f'-{flag}', '')
@@ -563,9 +563,13 @@ def format_duration(seconds: int) -> str:
         return f"{int(seconds)}s"
 
 
-def get_voice_statistics() -> dict[str, list[dict[str, str | int]]] | None:
+def get_voice_statistics(include_left: bool = False, guild: discord.Guild = None) -> dict[str, list[dict[str, str | int]]] | None:
     """
     Retrieve voice statistics from MongoDB and calculate user and channel totals.
+    
+    Args:
+        include_left: Whether to include users who have left the server
+        guild: Discord guild, used to check if users are still in the server
 
     Returns:
         Dictionary containing voice statistics or None if no data
@@ -580,6 +584,9 @@ def get_voice_statistics() -> dict[str, list[dict[str, str | int]]] | None:
         user_stats: dict[str, str | int | dict[str, int]] | None = {}
         for session in sessions:
             user_id = session.get('user_id')
+            if not include_left and guild is not None:
+                if guild.get_member(int(user_id)) is None:
+                    continue
             user_name = session.get('user_global_name') or session.get('user_name')
             duration = session.get('duration_seconds', 0)
             
@@ -694,15 +701,20 @@ def get_user_voice_statistics(user_id: str) -> dict[str, str | int | list[dict[s
         return None
 
 
-async def voice_analysis(ctx: CContext, graph: bool = False) -> None:
+async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool = False) -> None:
     """
     Generate voice activity statistics and send as a message.
 
     Args:
         ctx: Discord context
         graph: Whether to generate and send a graph
+        include_left: Whether to include users who have left the server
     """
-    stats = get_voice_statistics()
+    guild: discord.Guild | None = None
+    if not include_left:
+        guild = ctx.bot.get_guild(GUILD_ID)
+        
+    stats = get_voice_statistics(include_left, guild)
     
     if not stats:
         await ctx.send("No voice activity data available.")
@@ -769,7 +781,7 @@ async def format_voice_analysis(ctx: CContext, graph: bool = False) -> None:
         ctx: Discord command context
         graph: Whether to generate and send a graph
     """
-    
+    include_left: bool = ctx.message.content.endswith('-il')
     # Try to delete the command message
     await ctx.delete()
     
@@ -798,7 +810,7 @@ async def format_voice_analysis(ctx: CContext, graph: bool = False) -> None:
     
     # No user specified, show general voice stats
     try:
-        await voice_analysis(ctx, graph)
+        await voice_analysis(ctx, graph, include_left)
         await new_msg.delete()
     except Exception as e:
         logger.error(f"Error during voice analysis: {e}")

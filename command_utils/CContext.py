@@ -1,4 +1,3 @@
-import discord
 from discord.ext import commands
 
 
@@ -12,7 +11,7 @@ class CContext(commands.Context):
             await self.message.delete()
         
         except:
-            # just ignore the error. We don't care if we can't delete the message
+            # We don't care if we can't delete the message
             return False
         return True
 
