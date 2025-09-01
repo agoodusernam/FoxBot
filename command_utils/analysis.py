@@ -250,10 +250,10 @@ def analyse_user_messages(member: discord.User, time_filter: str = None) -> dict
         active_channels = get_channel_stats(messages_by_user)
         
         # Find most recent message timestamp
-        most_recent = int(max(
+        most_recent = max(
                 (utils.parse_utciso8601(msg['timestamp']) for msg in messages_by_user),
                 default=None
-        ).timestamp())
+        )
         
         # Calculate leaderboard position
         user_message_count = collections.Counter(msg['author_id'] for msg in valid_messages)
@@ -278,7 +278,7 @@ def analyse_user_messages(member: discord.User, time_filter: str = None) -> dict
         
         # Format most recent message timestamp
         formatted_time = (
-            f"{most_recent:%H:%M:%S} on the {most_recent:%d.%m.%Y}"
+            int(most_recent.timestamp())
             if most_recent else 'N/A'
         )
         
