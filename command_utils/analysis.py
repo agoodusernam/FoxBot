@@ -602,6 +602,9 @@ def get_voice_statistics(include_left: bool = False, guild: discord.Guild = None
         channel_stats: dict[str, str | int | dict[str, int]] | None = {}
         for session in sessions:
             channel_id = session.get('channel_id')
+            exists = discord.utils.get(guild.channels, id=int(channel_id)) if guild else None
+            if not isinstance(exists, discord.VoiceChannel):
+                continue
             channel_name = session.get('channel_name')
             duration = session.get('duration_seconds', 0)
             
