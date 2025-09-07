@@ -698,14 +698,14 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                 f'No job offer found with name "{job_name}". Please check the available jobs using `jobs` command.')
             return
         
-        matched_job = job_utils.job_from_name(matched_job, job_trees)
-        if matched_job is None:
+        job_obj = job_utils.job_from_name(matched_job, job_trees)
+        if job_obj is None:
             await ctx.send('An error occurred while processing the command. Please try again later.')
             return
         
         # Assign the job to the user
         salary = salary_offers[ctx.author.id][matched_job]
-        curr_utils.set_job(ctx.author, matched_job, salary)
+        curr_utils.set_job(ctx.author, job_obj, salary)
         curr_utils.inc_age(ctx.author)
         # Clear the job offers after applying
         salary_offers[ctx.author.id] = {}
