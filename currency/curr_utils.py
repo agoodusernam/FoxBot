@@ -1,30 +1,12 @@
-from typing import TypedDict, cast
+from typing import cast
 
 import discord
 
 from currency import shop_items
 from currency.curr_config import get_default_profile, ShopItem
+from currency.job_utils import Profile, Job
 from utils import db_stuff
 from utils.db_stuff import get_from_db
-
-
-class Profile(TypedDict):
-    user_id: str
-    wallet: int
-    bank: int
-    work_income: int
-    work_str: str
-    work_tree: str
-    other_income: int
-    next_income_mult: float
-    work_experience: int
-    qualifications: tuple[str, str]
-    fire_risk: float
-    debt: int
-    credit_score: int
-    age: int  # Age in months
-    inventory: dict[str, int]
-    illegal_items: dict[str, int]
 
 
 def create_new_profile(member: discord.Member) -> Profile:
@@ -116,58 +98,34 @@ def set_stock(item: ShopItem, amount: int) -> None:
 
 
 def set_wallet(member: discord.Member, amount: int) -> None:
-    profile = get_profile(member)
-    
-    profile['wallet'] = amount
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'wallet': amount})
 
 
 def set_bank(member: discord.Member, amount: int) -> None:
-    profile = get_profile(member)
-    
-    profile['bank'] = amount
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'bank': amount})
 
 
 def set_income(member: discord.Member, amount: int) -> None:
-    profile = get_profile(member)
-    
-    profile['work_income'] = amount
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'work_income': amount})
 
 
 def set_other_income(member: discord.Member, amount: int) -> None:
-    profile = get_profile(member)
-    
-    profile['other_income'] = amount
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'other_income': amount})
 
 
 def set_next_income_multiplier(member: discord.Member, multiplier: float) -> None:
-    profile = get_profile(member)
-    
-    profile['next_income_mult'] = multiplier
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'next_income_mult': multiplier})
 
 
 def set_fire_risk(member: discord.Member, risk: float) -> None:
-    profile = get_profile(member)
-    
-    profile['fire_risk'] = risk
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'fire_risk': risk})
 
 
 def set_debt(member: discord.Member, amount: int) -> None:
-    profile = get_profile(member)
-    
-    profile['debt'] = amount
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'debt': amount})
 
 
 def set_credit_score(member: discord.Member, score: int) -> None:
-    profile = get_profile(member)
-    
-    profile['credit_score'] = score
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'credit_score': score})
 
 
@@ -199,11 +157,33 @@ def set_experience(member: discord.Member, amount: int) -> None:
     :param member: The Discord member whose work experience is to be set.
     :param amount: The amount of work experience to set.
     """
-    profile = get_profile(member)
-    
-    profile['work_experience'] = amount
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'work_experience': amount})
 
+def set_job(member: discord.Member, job: Job, income: int) -> None:
+    """
+    Sets the job of the member in their currency profile.
+    :param member: The Discord member whose job is to be set.
+    :param job: The Job object representing the new job.
+    :param income: The income associated with the new job.
+    """
+    profile = get_profile(member)
+    
+    profile['work_str'] = job.name
+    profile['work_income'] = income
+    profile['work_tree'] = job.tree
+    db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, dict(profile))
+
+def reset_job(member: discord.Member) -> None:
+    """
+    Resets the job of the member to 'Unemployed' in their currency profile.
+    :param member: The Discord member whose job is to be reset.
+    """
+    profile = get_profile(member)
+    
+    profile['work_str'] = 'Unemployed'
+    profile['work_income'] = 0
+    profile['work_tree'] = ""
+    db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, dict(profile))
 
 def add_to_inventory(member: discord.Member, item: str, amount: int, illegal: bool = False) -> None:
     """

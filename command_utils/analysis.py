@@ -29,7 +29,7 @@ def allow_characters(string: str) -> str:
     
     return ''.join(char for char in string if char in allowed_chars)
 
-def check_valid_syntax(message: dict[str, Any]) -> bool:
+def check_required_keys(message: dict[str, Any]) -> bool:
     """
     Validate that a message contains all required keys.
 
@@ -77,7 +77,7 @@ def get_valid_messages(flag: str = None, ctx: CContext = None) -> tuple[list[dic
         # Validate messages and remove invalid ones
         valid_messages = []
         for message in all_messages:
-            if check_valid_syntax(message):
+            if check_required_keys(message):
                 valid_messages.append(message)
             else:
                 db_stuff.delete_message(message['_id'])
@@ -162,8 +162,8 @@ def get_channel_stats(messages: list[dict[str, str]]) -> list[dict[str, str | in
     ]
 
 
-def analyse_messages(ctx: CContext, time_filter: str = None) -> (dict[str, int | str | float | list[dict[str,
-str | int]]] | str):
+def analyse_messages(ctx: CContext, time_filter: str = None) -> dict[str, int | str | float | list[dict[str,
+                                                                     str | int]]] | str:
     """
     analyse all messages in the database.
 
@@ -215,7 +215,7 @@ str | int]]] | str):
 
 
 def analyse_user_messages(member: discord.User, time_filter: str = None) -> dict[str, int | str | float | list[
-    dict[str, str | int]]] | str | None:
+                                                                            dict[str, str | int]]] | str | None:
     """
     analyse messages from a specific user.
 

@@ -5,6 +5,7 @@ import enum
 import functools
 from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import TypedDict
 
 
 @functools.total_ordering
@@ -66,6 +67,9 @@ class SchoolQualif(enum.Enum):
         :return: The string representation of the qualification.
         """
         return self.name.replace('_', ' ').title()
+    
+    def __hash__(self) -> int:
+        return super().__hash__()
 
 
 @functools.total_ordering
@@ -111,9 +115,14 @@ class SecurityClearance(enum.Enum):
         except KeyError:
             raise ValueError(f"Invalid security clearance: {s}")
     
-    def to_string(self) -> str:
+    
+    def __str__(self) -> str:
         return self.name.replace('_', ' ').title()
 
+    to_string = __str__
+    
+    def __hash__(self) -> int:
+        return super().__hash__()
 
 @dataclass
 class Job:
@@ -138,9 +147,7 @@ class Job:
     parent_tree: JobTree | None = dataclasses.field(default=None, repr=False)
     
     def __post_init__(self):
-        """
-        Post-initialization to ensure that req_qualifications is a tuple of SchoolQualif and SecurityClearance.
-        """
+    
         if not isinstance(self.req_qualifications, tuple):
             raise TypeError("req_qualifications must be a tuple of (SchoolQualif, SecurityClearance)")
         
@@ -155,6 +162,7 @@ class Job:
         
         self.school_requirement = self.req_qualifications[0]
         self.security_clearance = self.req_qualifications[1]
+        self.init_complete = True
     
     def get_next_job(self) -> Job | list[Job] | None:
         """
@@ -238,7 +246,12 @@ class Job:
             return cls.from_dict(data)
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON format: {e}") from e
-
+    
+    def __hash__(self) -> int:
+        if self.init_complete:
+            return hash((self.name, self.salary, self.salary_variance, self.req_experience, self.req_qualifications))
+        else:
+            raise TypeError("Unhashable type: 'Job' (initialization not complete)")
 
 @dataclass
 class JobTree:
@@ -268,3 +281,22 @@ class JobTree:
     def __iter__(self) -> Iterator[Job | list[Job]]:
         for job in self.jobs:
             yield job
+
+
+class Profile(TypedDict):
+    user_id: str
+    wallet: int
+    bank: int
+    work_income: int
+    work_str: str
+    work_tree: str
+    other_income: int
+    next_income_mult: float
+    work_experience: int
+    qualifications: tuple[str, str]
+    fire_risk: float
+    debt: int
+    credit_score: int
+    age: int  # Age in months
+    inventory: dict[str, int]
+    illegal_items: dict[str, int]

@@ -112,6 +112,19 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
         curr_utils.delete_profile(user)
         curr_utils.create_new_profile(user)
         await ctx.send(f"Reset {user.display_name}'s currency profile to default values!")
+        
+    @commands.command(name="reset_job",
+                        brief="Reset a user's job profile",
+                        help="Reset a user's job profile to default values",
+                        usage="f!reset_job <user>")
+    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    async def reset_job_cmd(self, ctx: CContext, user: discord.Member):
+        if user is None:
+            await ctx.send("Invalid user ID or mention!")
+            return
+        
+        curr_utils.reset_job(user)
+        await ctx.send(f"Reset {user.display_name}'s job profile to default values!")
 
 
 async def setup(bot: commands.Bot):
