@@ -159,7 +159,8 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             curr_utils.set_experience(ctx.author, profile['work_experience'] // 2)
             return
         
-        earnings = int(profile['work_income'] * (1 - income_tax))
+        earnings = int(
+            profile['work_income'] * (1 - income_tax)) // 12  # work_income is yearly, so divide by 12 for monthly
         debt = int(profile['debt'] * (1 + loan_interest_rate))
         if earnings <= 0:
             await ctx.send(f'You have no job! Choose a job first using `{ctx.bot.command_prefix}job`.')
@@ -695,7 +696,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         if matched_job is None:
             await ctx.send(
-                f'No job offer found with name "{job_name}". Please check the available jobs using `jobs` command.')
+                    f'No job offer found with name "{job_name}". Please check the available jobs using `jobs` command.')
             return
         
         job_obj = job_utils.job_from_name(matched_job, job_trees)
@@ -710,7 +711,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         # Clear the job offers after applying
         salary_offers[ctx.author.id] = {}
         await ctx.send(
-            f'Congratulations! You have been hired as a {matched_job} with a salary of {salary} {currency_name}.')
+                f'Congratulations! You have been hired as a {matched_job} with a salary of {salary} {currency_name}.')
     
     @commands.command(name='profile',
                       brief='Check your profile',
@@ -725,16 +726,14 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         embed.add_field(name='Job', value=profile['work_tree'] if profile['work_income'] > 0 else 'Unemployed',
                         inline=True)
-        embed.add_field(name='Income', value=f"{profile['work_income']} {currency_name} per work session" if profile[
-                                                                                                                 'work_income'] > 0 else 'N/A',
-                        inline=True)
-        embed.add_field(name='Work Experience', value=f"{profile['work_experience']} years", inline=True)
-        embed.add_field(name='Qualifications', value=', '.join(profile['qualifications']) if profile['qualifications'][
-                                                                                                 0] != 'None' else 'None',
-                        inline=False)
+        embed.add_field(name='Income', value=f"{profile['work_income'] // 12} {currency_name} per work session "
+                                             f"including tax" if profile['work_income'] > 0 else 'N/A', inline=True)
+        embed.add_field(name='Work Experience', value=f"{profile['work_experience'] // 12} years", inline=True)
+        embed.add_field(name='Qualifications', value=', '.join(profile['qualifications'])
+                        if profile['qualifications'][0] != 'None' else 'None', inline=False)
         embed.add_field(name='Debt', value=f"{profile['debt']} {currency_name}" if profile['debt'] > 0 else 'No debt',
                         inline=True)
-        embed.add_field(name='Age', value=f"{profile['age']} days", inline=True)
+        embed.add_field(name='Age', value=f"{profile['age'] // 12} years", inline=True)
         
         await ctx.send(embed=embed)
 
