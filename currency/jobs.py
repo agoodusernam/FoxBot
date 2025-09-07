@@ -981,3 +981,4 @@ local_law_enforcement_tree = JobTree(
 )
 
 job_trees = [tree for tree in globals().values() if isinstance(tree, JobTree)]
+all_jobs = [job for job in globals().values() if isinstance(job, Job)]

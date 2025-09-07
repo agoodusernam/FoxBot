@@ -7,11 +7,11 @@ import currency.curr_utils
 import utils.utils
 from command_utils.CContext import CContext
 from command_utils.checks import is_dev
-from currency import curr_utils, curr_config, shop_items
+from currency import curr_utils, curr_config, shop_items, jobs
 from currency.curr_config import currency_name, loan_interest_rate, income_tax, DrugItem, BlackMarketItem, GunItem, \
     ShopItem, HouseItem
 from currency.curr_utils import get_shop_item
-from currency.job_utils import SchoolQualif, SecurityClearance, Profile
+from currency.job_utils import SchoolQualif, SecurityClearance, Profile, Job
 from currency.jobs import job_trees
 
 salary_offers: dict[int, dict[str, int]] = {}
@@ -694,8 +694,9 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             await ctx.send(f'No job offer found with name "{job_name}". Please check the available jobs using `jobs` command.')
             return
         
+        
         for tree in job_trees:
-            if matched_job in [job.name for job in tree.jobs]:
+            if matched_job in [job.name for job in jobs.all_jobs if job in tree.jobs]:
                 matched_job = tree.jobs[tree.jobs.index(matched_job)]
                 break
         
