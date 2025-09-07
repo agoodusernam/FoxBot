@@ -7,7 +7,7 @@ import currency.curr_utils
 import utils.utils
 from command_utils.CContext import CContext
 from command_utils.checks import is_dev
-from currency import curr_utils, curr_config, shop_items, jobs
+from currency import curr_utils, curr_config, shop_items, jobs, job_utils
 from currency.curr_config import currency_name, loan_interest_rate, income_tax, DrugItem, BlackMarketItem, GunItem, \
     ShopItem, HouseItem
 from currency.curr_utils import get_shop_item
@@ -15,6 +15,7 @@ from currency.job_utils import SchoolQualif, SecurityClearance, Profile, Job
 from currency.jobs import job_trees
 
 salary_offers: dict[int, dict[str, int]] = {}
+
 
 # Create pagination view
 class ShopView(discord.ui.View):
@@ -27,23 +28,24 @@ class ShopView(discord.ui.View):
     async def previous_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.current_page > 0:
             self.current_page -= 1
-            await interaction.response.edit_message(embed=self.embeds[self.current_page]) # type: ignore
+            await interaction.response.edit_message(embed=self.embeds[self.current_page])  # type: ignore
         else:
-            await interaction.response.defer() # type: ignore
+            await interaction.response.defer()  # type: ignore
     
     @discord.ui.button(label='Next', style=discord.ButtonStyle.gray)  # type: ignore
     async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if self.current_page < len(self.embeds) - 1:
             self.current_page += 1
-            await interaction.response.edit_message(embed=self.embeds[self.current_page]) # type: ignore
+            await interaction.response.edit_message(embed=self.embeds[self.current_page])  # type: ignore
         else:
-            await interaction.response.defer() # type: ignore
+            await interaction.response.defer()  # type: ignore
     
     async def on_timeout(self):
         # Disable all buttons when the view times out
         for item in self.children:
             item.disabled = True
     # View will be automatically removed from the message
+
 
 #TODO: Add a command to check the user's profile, including their job, income, qualifications, and other details
 #TODO: Add other money making activities like hunting, fishing and others
@@ -566,7 +568,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         if item_quantity < quantity:
             await ctx.send(
-                f'You do not own enough {item_name} to sell! You have {item_quantity}, but requested {quantity}.')
+                    f'You do not own enough {item_name} to sell! You have {item_quantity}, but requested {quantity}.')
             return
         
         item: ShopItem | None = get_shop_item(item_name)
@@ -642,7 +644,8 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                         if job.tree == profile['work_tree']:
                             continue
                         # Calculate the salary with variance to 0.01% precision
-                        salary_mult = 1 + (random.randint(0, job.salary_variance * 10) / 1000) # salary variance is an int for percentage
+                        salary_mult = 1 + (random.randint(0,
+                                                          job.salary_variance * 10) / 1000)  # salary variance is an int for percentage
                         salary = int(job.salary * salary_mult)
                         salary_offers[ctx.author.id][job.name] = salary
                         value = (f'Salary: {salary} {currency_name}\n'
@@ -691,14 +694,14 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                 break
         
         if matched_job is None:
-            await ctx.send(f'No job offer found with name "{job_name}". Please check the available jobs using `jobs` command.')
+            await ctx.send(
+                f'No job offer found with name "{job_name}". Please check the available jobs using `jobs` command.')
             return
         
-        
-        for tree in job_trees:
-            if matched_job in [job.name for job in jobs.all_jobs if job in tree.jobs]:
-                matched_job = tree.jobs[tree.jobs.index(matched_job)]
-                break
+        matched_job = job_utils.job_from_name(matched_job, job_trees)
+        if matched_job is None:
+            await ctx.send('An error occurred while processing the command. Please try again later.')
+            return
         
         # Assign the job to the user
         salary = salary_offers[ctx.author.id][matched_job]
@@ -706,9 +709,9 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         curr_utils.inc_age(ctx.author)
         # Clear the job offers after applying
         salary_offers[ctx.author.id] = {}
-        await ctx.send(f'Congratulations! You have been hired as a {matched_job} with a salary of {salary} {currency_name}.')
-
-
+        await ctx.send(
+            f'Congratulations! You have been hired as a {matched_job} with a salary of {salary} {currency_name}.')
+    
     @commands.command(name='profile',
                       brief='Check your profile',
                       help='Check your job, income, qualifications, and other details',
@@ -717,16 +720,24 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     async def profile_cmd(self, ctx: CContext):
         profile = curr_utils.get_profile(ctx.author)
         embed = discord.Embed(title=f"{ctx.author.display_name}'s Profile", colour=discord.Colour.purple())
-        embed.set_thumbnail(url=ctx.author.display_avatar.url if hasattr(ctx.author, 'display_avatar') and ctx.author.display_avatar else None)
+        embed.set_thumbnail(url=ctx.author.display_avatar.url if hasattr(ctx.author,
+                                                                         'display_avatar') and ctx.author.display_avatar else None)
         
-        embed.add_field(name='Job', value=profile['work_tree'] if profile['work_income'] > 0 else 'Unemployed', inline=True)
-        embed.add_field(name='Income', value=f"{profile['work_income']} {currency_name} per work session" if profile['work_income'] > 0 else 'N/A', inline=True)
+        embed.add_field(name='Job', value=profile['work_tree'] if profile['work_income'] > 0 else 'Unemployed',
+                        inline=True)
+        embed.add_field(name='Income', value=f"{profile['work_income']} {currency_name} per work session" if profile[
+                                                                                                                 'work_income'] > 0 else 'N/A',
+                        inline=True)
         embed.add_field(name='Work Experience', value=f"{profile['work_experience']} years", inline=True)
-        embed.add_field(name='Qualifications', value=', '.join(profile['qualifications']) if profile['qualifications'][0] != 'None' else 'None', inline=False)
-        embed.add_field(name='Debt', value=f"{profile['debt']} {currency_name}" if profile['debt'] > 0 else 'No debt', inline=True)
+        embed.add_field(name='Qualifications', value=', '.join(profile['qualifications']) if profile['qualifications'][
+                                                                                                 0] != 'None' else 'None',
+                        inline=False)
+        embed.add_field(name='Debt', value=f"{profile['debt']} {currency_name}" if profile['debt'] > 0 else 'No debt',
+                        inline=True)
         embed.add_field(name='Age', value=f"{profile['age']} days", inline=True)
         
         await ctx.send(embed=embed)
+
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(CurrencyCmds(bot))

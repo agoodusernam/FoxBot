@@ -115,14 +115,14 @@ class SecurityClearance(enum.Enum):
         except KeyError:
             raise ValueError(f"Invalid security clearance: {s}")
     
-    
     def __str__(self) -> str:
         return self.name.replace('_', ' ').title()
-
+    
     to_string = __str__
     
     def __hash__(self) -> int:
         return super().__hash__()
+
 
 @dataclass
 class Job:
@@ -147,7 +147,7 @@ class Job:
     parent_tree: JobTree | None = dataclasses.field(default=None, repr=False)
     
     def __post_init__(self):
-    
+        
         if not isinstance(self.req_qualifications, tuple):
             raise TypeError("req_qualifications must be a tuple of (SchoolQualif, SecurityClearance)")
         
@@ -253,6 +253,7 @@ class Job:
         else:
             raise TypeError("Unhashable type: 'Job' (initialization not complete)")
 
+
 @dataclass
 class JobTree:
     """
@@ -281,6 +282,25 @@ class JobTree:
     def __iter__(self) -> Iterator[Job | list[Job]]:
         for job in self.jobs:
             yield job
+
+
+def job_from_name(job_name: str, job_trees: list[JobTree]) -> Job | None:
+    """
+    Finds a job by its name across multiple job trees.
+    :param job_name: The name of the job to find.
+    :param job_trees: List of JobTree instances to search in.
+    :return: The Job instance if found, None otherwise.
+    """
+    for tree in job_trees:
+        for job_or_list in tree.jobs:
+            if isinstance(job_or_list, list):
+                for job in job_or_list:
+                    if job.name.lower() == job_name.lower():
+                        return job
+            else:
+                if job_or_list.name.lower() == job_name.lower():
+                    return job_or_list
+    return None
 
 
 class Profile(TypedDict):
