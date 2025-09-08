@@ -379,7 +379,33 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         embed = discord.Embed(title=f'Warns for {member.display_name}', description=warn_list,
                               color=discord.Color.red())
         await ctx.send(embed=embed)
-
+        
+    @commands.command(name='verify', aliases=['ver', 'v'],
+                        brief='Verify a user',
+                        help='Admin only: Assign the verified role to a user',
+                        usage='f!verify <user_id/mention>')
+    @commands.check(is_admin)
+    async def verify(self, ctx: CContext, member: discord.Member):
+        await ctx.delete()
+        
+        if member is None:
+            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
+            return
+        
+        roles: list[int] = [1097799372269428746, 1344288294879629333, 1405824995946532995] # Member, Nick change, TTS perms
+        
+        try:
+            for role_id in roles:
+                role = get(ctx.guild.roles, id=role_id)
+                if role not in member.roles:
+                    await member.add_roles(role, reason='Verified by admin command')
+                    
+            await ctx.send(f'{member.display_name} has been verified.', delete_after=ctx.bot.del_after)
+            
+        except Exception as e:
+            await ctx.send(f'Failed to verify {member.display_name}. Error: {e}', delete_after=ctx.bot.del_after)
+            return
+            
 
 async def setup(bot):
     await bot.add_cog(AdminCmds(bot))
