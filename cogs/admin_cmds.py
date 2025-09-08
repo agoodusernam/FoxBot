@@ -384,7 +384,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                         brief='Verify a user',
                         help='Admin only: Assign the verified role to a user',
                         usage='f!verify <user_id/mention>')
-    @commands.check(is_admin)
+    @commands.has_role(STAFF_ROLE_ID)
     async def verify(self, ctx: CContext, member: discord.Member):
         await ctx.delete()
         
