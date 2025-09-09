@@ -25,7 +25,7 @@ class ShopView(discord.ui.View):
         self.current_page = 0
     
     @discord.ui.button(label='Previous', style=discord.ButtonStyle.gray)  # type: ignore
-    async def previous_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def previous_button(self, interaction: discord.Interaction, _: discord.ui.Button):
         if self.current_page > 0:
             self.current_page -= 1
             await interaction.response.edit_message(embed=self.embeds[self.current_page])  # type: ignore
@@ -33,7 +33,7 @@ class ShopView(discord.ui.View):
             await interaction.response.defer()  # type: ignore
     
     @discord.ui.button(label='Next', style=discord.ButtonStyle.gray)  # type: ignore
-    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def next_button(self, interaction: discord.Interaction, _: discord.ui.Button):
         if self.current_page < len(self.embeds) - 1:
             self.current_page += 1
             await interaction.response.edit_message(embed=self.embeds[self.current_page])  # type: ignore

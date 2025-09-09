@@ -25,9 +25,7 @@ TIME_FILTERS = {
 }
 
 def allow_characters(string: str) -> str:
-    allowed_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_|<>,.-_+=()[]{}:;!?@#$%^&* `~')
-    
-    return ''.join(char for char in string if char in allowed_chars)
+    return ''.join(char for char in string if ord(char) < 256)
 
 def check_required_keys(message: dict[str, Any]) -> bool:
     """
