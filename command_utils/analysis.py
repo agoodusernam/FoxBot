@@ -1,5 +1,6 @@
 # pylint: disable=trailing-whitespace, line-too-long
 import collections
+import copy
 import datetime
 import logging
 import os
@@ -342,8 +343,9 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
             guild = ctx.bot.get_guild(GUILD_ID)
             
             # Get top users and channels
+            active_users_lb = copy.deepcopy(result['active_users_lb'])
             top_5_users = sorted(
-                    result['active_users_lb'],
+                    active_users_lb,
                     key=lambda x: x['num_messages'],
                     reverse=True
             )[:5]
