@@ -69,14 +69,12 @@ def seconds_to_human_readable(seconds: int) -> str:
     """
     if seconds < 60:
         return f"{seconds} seconds"
-    elif seconds < 3600:
+    if seconds < 3600:
         return f"{seconds // 60} minutes and {seconds % 60} seconds"
-    elif seconds < 86400:
+    if seconds < 86400:
         return f"{seconds // 3600} hours, {(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
-    else:
-        return f"{seconds // 86400} days, {(seconds % 86400) // 3600} hours, " \
-               f"{(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
-
+    return f"{seconds // 86400} days, {(seconds % 86400) // 3600} hours, " \
+            f"{(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
 
 # Bot configuration
 @bot.event
