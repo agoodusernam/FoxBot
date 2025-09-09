@@ -1,17 +1,17 @@
 import random
 
 import discord
+from discord import Member
 from discord.ext import commands
 
 import currency.curr_utils
-import utils.utils
 from command_utils.CContext import CContext
 from command_utils.checks import is_dev
-from currency import curr_utils, curr_config, shop_items, jobs, job_utils
+from currency import curr_utils, curr_config, shop_items, job_utils
 from currency.curr_config import currency_name, loan_interest_rate, income_tax, DrugItem, BlackMarketItem, GunItem, \
     ShopItem, HouseItem
 from currency.curr_utils import get_shop_item
-from currency.job_utils import SchoolQualif, SecurityClearance, Profile, Job
+from currency.job_utils import SchoolQualif, SecurityClearance, Profile
 from currency.jobs import job_trees
 
 salary_offers: dict[int, dict[str, int]] = {}
@@ -47,7 +47,6 @@ class ShopView(discord.ui.View):
     # View will be automatically removed from the message
 
 
-#TODO: Add a command to check the user's profile, including their job, income, qualifications, and other details
 #TODO: Add other money making activities like hunting, fishing and others
 #TODO: Add illegal jobs
 class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=is_dev, hidden=True)):
@@ -93,8 +92,9 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         if profile['wallet'] < amount:
             await ctx.send('You do not have enough money in your wallet!')
             return
-        curr_utils.set_wallet(ctx.author, profile['wallet'] - amount)
-        curr_utils.set_bank(ctx.author, profile['bank'] + amount)
+        profile['wallet'] -= amount
+        profile['bank'] += amount
+        curr_utils.set_profile(ctx.author, profile)
         await ctx.send(f'Deposited {amount} {currency_name} into your bank!')
     
     @commands.command(name='withdraw', aliases=['with'],
@@ -110,8 +110,10 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         if profile['bank'] < amount:
             await ctx.send('You do not have enough money in your bank!')
             return
-        curr_utils.set_wallet(ctx.author, profile['wallet'] + amount)
-        curr_utils.set_bank(ctx.author, profile['bank'] - amount)
+        
+        profile['bank'] -= amount
+        profile['wallet'] += amount
+        curr_utils.set_profile(ctx.author, profile)
         await ctx.send(f'Withdrew {amount} {currency_name} from your bank!')
     
     @commands.command(name='pay', aliases=['give'],
@@ -119,14 +121,12 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       help='Pay another user some of your money',
                       usage='f!pay <user> <amount>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def pay_cmd(self, ctx: CContext, user: str, amount: int):
-        try:
-            recipient = discord.utils.get(ctx.guild.members, name=utils.utils.get_id_from_str(user))
-        except ValueError:
-            await ctx.send('Invalid user specified. Please mention a valid user or provide their ID.')
+    async def pay_cmd(self, ctx: CContext, user: Member, amount: int):
+        if user is None:
+            await ctx.send('You must specify a valid user to pay!')
             return
         
-        if recipient.id == ctx.author.id:
+        if user.id == ctx.author.id:
             await ctx.send('You cannot pay yourself!')
             return
         if amount <= 0:
@@ -137,48 +137,50 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             await ctx.send('You do not have enough money in your wallet!')
             return
         
-        recipient_profile = curr_utils.get_profile(recipient)
-        curr_utils.set_wallet(ctx.author, payer_profile['wallet'] - amount)
-        curr_utils.set_wallet(recipient, recipient_profile['wallet'] + amount)
-        await ctx.send(f'Paid {recipient.mention} {amount} {currency_name}!')
+        recipient_profile = curr_utils.get_profile(user)
+        payer_profile['wallet'] -= amount
+        recipient_profile['wallet'] += amount
+        curr_utils.set_profile(ctx.author, payer_profile)
+        curr_utils.set_profile(user, recipient_profile)
+        await ctx.send(f'Paid {user.mention} {amount} {currency_name}!')
     
     @commands.command(name='work',
                       brief='Work to earn money',
                       help='Work to earn some money. You can do this every day.')
     @commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)  # type: ignore
     async def work_cmd(self, ctx: CContext):
-        #TODO: Check if the user has a job before allowing them to work
         #TODO: Check for promotions and raises
         profile = curr_utils.get_profile(ctx.author)
-        curr_utils.inc_age(ctx.author)
+        if profile['work_income'] <= 0:
+            await ctx.send(f'You have no job! Choose a job first using `{ctx.bot.command_prefix}job`.')
+            return
+        earnings: int = int(profile['work_income'] * (1 - income_tax)) // 12
+        # work_income is yearly, so divide by 12 for monthly income
+        
+        profile['age'] += 1
         fired = profile['fire_risk'] > random.random()
         if fired:
             await ctx.send('You were fired from your job! You need to find a new job using the `job` command.')
-            curr_utils.set_income(ctx.author, 0)
-            curr_utils.set_fire_risk(ctx.author, 0.0)  # Reset fire risk after being fired
-            curr_utils.set_experience(ctx.author, profile['work_experience'] // 2)
+            await ctx.send('A severance package has been deposited into your wallet.')
+            profile['work_income'] = 0
+            profile['fire_risk'] = 0
+            profile['work_experience'] = profile['work_experience'] // 2  # Lose half your experience when fired
+            profile['wallet'] += earnings * 2  # Severance package is 2 months of income
+            curr_utils.set_profile(ctx.author, profile)
             return
         
-        earnings = int(
-            profile['work_income'] * (1 - income_tax)) // 12  # work_income is yearly, so divide by 12 for monthly
-        debt = int(profile['debt'] * (1 + loan_interest_rate))
-        if earnings <= 0:
-            await ctx.send(f'You have no job! Choose a job first using `{ctx.bot.command_prefix}job`.')
-            return
         
-        wallet = earnings + profile['wallet']
-        curr_utils.set_wallet(ctx.author, wallet)
-        curr_utils.set_debt(ctx.author, debt)
-        curr_utils.set_experience(ctx.author, profile['work_experience'] + 1)
-        curr_utils.set_next_income_multiplier(ctx.author, 1.0)  # Reset income multiplier after working
+        profile['debt'] = int(profile['debt'] * (1 + loan_interest_rate))
+        profile['wallet'] += earnings
+        profile['work_income'] += 1
+        profile['next_income_mult'] = 1.0 # Reset income multiplier after working
+        profile['fire_risk'] *= 0.8  # Working reduces fire risk
         
         if profile['fire_risk'] < 0.005:
             # If the fire risk is very low, increase it slightly
-            curr_utils.set_fire_risk(ctx.author, 0.005)
-            await ctx.send(f'You worked hard and earned {earnings} {currency_name}!')
-            return
+            profile['fire_risk'] = 0.005
         
-        curr_utils.set_fire_risk(ctx.author, profile['fire_risk'] * 0.5)
+        curr_utils.set_profile(ctx.author, profile)
         await ctx.send(f'You worked hard and earned {earnings} {currency_name}!')
     
     @commands.command(name='quit',
@@ -202,11 +204,10 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def debt_cmd(self, ctx: CContext):
         profile = curr_utils.get_profile(ctx.author)
-        debt = profile['debt']
-        if debt <= 0:
+        if profile['debt'] <= 0:
             await ctx.send('You have no debt!')
         else:
-            await ctx.send(f'You currently owe {debt} {currency_name} in loans.')
+            await ctx.send(f'You currently owe {profile['debt']} {currency_name} in loans.')
     
     @commands.command(name='pay_debt', aliases=['payloan', 'pay_load', 'repay', 'paydebt'],
                       brief='Pay off your debt',
@@ -227,22 +228,20 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         intrest = int(profile['debt'] * loan_interest_rate)
         if amount >= intrest:
-            new_credit_score = min(profile['credit_score'] + 1, 800)
-            if new_credit_score > profile['credit_score']:
-                curr_utils.set_credit_score(ctx.author, new_credit_score)
+            profile['credit_score'] = min(profile['credit_score'] + 1, 800)
         
-        elif amount < intrest * 0.75:
-            new_credit_score = max(profile['credit_score'] - 1, 100)
-            if new_credit_score < profile['credit_score']:
-                curr_utils.set_credit_score(ctx.author, new_credit_score)
+        elif amount < (intrest * 0.75):
+            profile['credit_score'] = max(profile['credit_score'] - 1, 100)
         
-        curr_utils.set_wallet(ctx.author, int(profile['wallet'] - amount))
-        curr_utils.set_debt(ctx.author, int(profile['debt'] - amount))
+        profile['debt'] -= amount
+        profile['wallet'] -= amount
         
         if profile['debt'] > 0:
             await ctx.send(f'Paid off {amount} {currency_name} of your debt!')
         else:
             await ctx.send(f'You have paid off all your {amount} {currency_name} debt!')
+        
+        curr_utils.set_profile(ctx.author, profile)
     
     @commands.command(name='get_loan', aliases=['loan'],
                       brief='Get a loan',
@@ -264,8 +263,9 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             await ctx.send(f'Increase max loan size by increasing income or credit score.')
             return
         
-        curr_utils.set_wallet(ctx.author, profile['wallet'] + amount)
-        curr_utils.set_debt(ctx.author, amount)
+        profile['debt'] = amount
+        profile['wallet'] += amount
+        curr_utils.set_profile(ctx.author, profile)
         await ctx.send(f'You have taken a loan of {amount} {currency_name}. Remember to pay it back with interest!')
     
     @commands.command(name='credit_score', aliases=['credit'],
@@ -726,11 +726,11 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         embed.add_field(name='Job', value=profile['work_tree'] if profile['work_income'] > 0 else 'Unemployed',
                         inline=True)
-        embed.add_field(name='Income', value=f"{profile['work_income'] // 12} {currency_name} per work session "
+        embed.add_field(name='Income', value=f"{profile['work_income'] // 12} {currency_name} per month " +
                                              f"including tax" if profile['work_income'] > 0 else 'N/A', inline=True)
         embed.add_field(name='Work Experience', value=f"{profile['work_experience'] // 12} years", inline=True)
         embed.add_field(name='Qualifications', value=', '.join(profile['qualifications'])
-                        if profile['qualifications'][0] != 'None' else 'None', inline=False)
+        if profile['qualifications'][0] != 'None' else '', inline=False)
         embed.add_field(name='Debt', value=f"{profile['debt']} {currency_name}" if profile['debt'] > 0 else 'No debt',
                         inline=True)
         embed.add_field(name='Age', value=f"{profile['age'] // 12} years", inline=True)

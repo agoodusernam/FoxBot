@@ -21,6 +21,10 @@ def get_profile(member: discord.Member) -> Profile:
         return create_new_profile(member)
     return cast(Profile, profile_)
 
+def set_profile(member: discord.Member, profile: Profile) -> None:
+    db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, dict(profile))
+    return
+
 
 def get_lottery_tickets(member: discord.Member) -> int:
     """
@@ -65,7 +69,7 @@ def delete_profile(member: discord.Member) -> None:
     return
 
 
-def user_has_gun(profile: dict[str, int | float | str | dict[str, int]]) -> bool:
+def user_has_gun(profile: Profile) -> bool:
     """
     Checks if a member has a gun in their inventory.
     :param profile: The profile of the member to check.

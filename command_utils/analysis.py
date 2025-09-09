@@ -1,13 +1,13 @@
+# pylint: disable=trailing-whitespace, line-too-long
 import collections
-import copy
 import datetime
 import logging
 import os
 from typing import Any
 
 import discord
-import matplotlib.pyplot as plt
 from discord.ext.commands import Context
+import matplotlib.pyplot as plt
 
 from command_utils.CContext import CContext
 from utils import db_stuff, utils
@@ -98,12 +98,12 @@ def get_valid_messages(flag: str = None, ctx: CContext = None) -> tuple[list[dic
             valid_messages = [msg if guild.get_member(int(msg['author_id'])) else None for msg in valid_messages]
             valid_messages = [msg for msg in valid_messages if msg is not None]
         
-        logger.info(f'Total valid messages: {len(valid_messages)}')
-        logger.info(f'Total messages in database: {total_messages}')
+        logger.info('Total valid messages: %s', len(valid_messages))
+        logger.info('Total messages in database: %s', total_messages)
         return valid_messages, total_messages
     
     except Exception as e:
-        logger.error(f"Error retrieving messages: {e}")
+        logger.error("Error retrieving messages: %s", e)
         return [], 0
 
 
@@ -210,7 +210,7 @@ def analyse_messages(ctx: CContext, time_filter: str = None) -> dict[str, int | 
         }
     
     except Exception as e:
-        logger.error(f'Error during message analysis: {e}')
+        logger.error('Error during message analysis: %s', e)
         return f'Error during analysis: {str(e)}'
 
 
@@ -293,7 +293,7 @@ def analyse_user_messages(member: discord.User, time_filter: str = None) -> dict
             'most_recent_message':      formatted_time,
         }
     except Exception as e:
-        logger.error(f'Error during user message analysis: {e}')
+        logger.error('Error during user message analysis: %s', e)
         return f'Error during analysis: {str(e)}'
 
 
@@ -328,7 +328,7 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
                 await new_msg.edit(content=f'User with ID {member_id} not found.')
                 return
             
-            await analyse_single_user_cmd(ctx.message, member, flag)
+            await analyse_single_user_cmd(ctx, member, flag)
             await new_msg.delete()
             return
         
@@ -344,9 +344,8 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
             guild = ctx.bot.get_guild(GUILD_ID)
             
             # Get top users and channels
-            active_users_lb = copy.deepcopy(result['active_users_lb'])
             top_5_users = sorted(
-                    active_users_lb,
+                    result['active_users_lb'],
                     key=lambda x: x['num_messages'],
                     reverse=True
             )[:5]
@@ -405,7 +404,7 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
             await new_msg.edit(content=result)
     
     except Exception as e:
-        logger.error(f"Error formatting analysis: {e}")
+        logger.error('Error formatting analysis: %s', e)
         await ctx.send(f'Error during analysis: {e}')
 
 
@@ -486,17 +485,17 @@ async def generate_user_activity_graph(ctx: Context, result: dict[str, int | str
             pass # Ignore if file deletion fails, we'd rather keep the bot running and clean up manually later
     
     except Exception as e:
-        logger.error(f"Error generating graph: {e}")
+        logger.error('Error generating graph: %s', e)
         await ctx.send(f'Error generating graph: {e}')
 
 
-async def analyse_single_user_cmd(message: discord.Message, member: discord.User,
+async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
                                   time_filter: str = None) -> None:
     """
     Format and send analysis results for a single user.
 
     Args:
-        message: Discord message
+        ctx: Discord command context
         member: Discord user to analyse
         time_filter: Optional time filter
     """
@@ -531,13 +530,13 @@ async def analyse_single_user_cmd(message: discord.Message, member: discord.User
             channel: dict = channel  # type hinting
             msg += f"**{i}. {channel['channel']}** {channel['num_messages']} messages\n"
         
-        await message.channel.send(msg)
+        await ctx.send(msg)
     
     elif isinstance(result, str):
-        await message.channel.send(result)
+        await ctx.send(result)
     
     else:
-        await message.channel.send('An error occurred during analysis.')
+        await ctx.send('An error occurred during analysis.')
 
 
 # ===== Voice Analysis Functions =====
@@ -557,10 +556,9 @@ def format_duration(seconds: int) -> str:
     
     if hours > 0:
         return f"{int(hours)}h {int(minutes)}m {int(seconds)}s"
-    elif minutes > 0:
+    if minutes > 0:
         return f"{int(minutes)}m {int(seconds)}s"
-    else:
-        return f"{int(seconds)}s"
+    return f"{int(seconds)}s"
 
 
 def get_voice_statistics(include_left: bool = False, guild: discord.Guild = None) -> dict[str, list[dict[str, str | int]]] | None:
@@ -637,7 +635,7 @@ def get_voice_statistics(include_left: bool = False, guild: discord.Guild = None
         }
     
     except Exception as e:
-        logger.error(f"Error retrieving voice statistics: {e}")
+        logger.error('Error retrieving voice statistics: %s', e)
         return None
 
 
@@ -700,7 +698,7 @@ def get_user_voice_statistics(user_id: str) -> dict[str, str | int | list[dict[s
         }
     
     except Exception as e:
-        logger.error(f"Error retrieving user voice statistics: {e}")
+        logger.error('Error retrieving user voice statistics: %s', e)
         return None
 
 
@@ -744,7 +742,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
         try:
             await generate_voice_activity_graph(ctx, stats)
         except Exception as e:
-            logger.error(f"Error generating voice activity graph: {e}")
+            logger.error('Error generating voice activity graph: %s', e)
             await ctx.send(f'Error generating graph: {e}')
 
 
@@ -816,7 +814,7 @@ async def format_voice_analysis(ctx: CContext, graph: bool = False) -> None:
         await voice_analysis(ctx, graph, include_left)
         await new_msg.delete()
     except Exception as e:
-        logger.error(f"Error during voice analysis: {e}")
+        logger.error('Error during voice analysis: %s', e)
         await ctx.send(f'Error during voice analysis: {e}')
 
 
@@ -893,8 +891,8 @@ async def generate_voice_activity_graph(ctx: CContext, stats: dict[str, list[dic
         try:
             os.remove(graph_file)
         except OSError as e:
-            logger.warning(f"Could not remove graph file {graph_file}: {e}")
+            logger.warning('Could not remove graph file %s: %s', graph_file, e)
     
     except Exception as e:
-        logger.error(f"Error generating voice activity graph: {e}")
+        logger.error('Error generating voice activity graph: %s', e)
         await ctx.send(f'Error generating graph: {e}')

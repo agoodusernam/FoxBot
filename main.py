@@ -1,4 +1,4 @@
-# pylint: disable=trailing-whitespace
+# pylint: disable=trailing-whitespace, line-too-long
 import atexit
 import json
 import os
@@ -95,38 +95,6 @@ async def on_ready() -> None:
     
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     print('------')
-    apply_blacklist: bool = False
-    apply_reactions: bool = False
-    guild = bot.get_guild(1081760248433492140)
-    if apply_blacklist:
-
-        channel = bot.get_channel(1379193761791213618)
-        for u_id in bot.blacklist.blacklist_ids:
-            await channel.set_permissions(discord.utils.get(bot.get_all_members(), id=u_id), send_messages=False)
-    
-    for vc_channel in guild.voice_channels:
-        members = [member for member in vc_channel.members]
-        if members:
-            for member in members:
-                voice_log.handle_join(member, vc_channel)
-    
-    if apply_reactions:
-        react_role_msg = await bot.get_channel(1337465612875595776).fetch_message(bot.config.reaction_roles.message_id)
-        if react_role_msg is None:
-            print(f"Role message with ID {bot.config.reaction_roles.message_id} not found. " +
-                  f"Reaction roles will not work.")
-        else:
-            # Add reaction roles to the message
-            emoji_to_role = bot.config.get_emoji_to_role_discord_objects()
-            for emoji, role_id in emoji_to_role.items():
-                role = guild.get_role(role_id)
-                if role is not None:
-                    try:
-                        await react_role_msg.add_reaction(emoji)
-                    except Exception as e:
-                        print(f"Failed to add reaction {emoji} for role {role.name}: {e}")
-                else:
-                    print(f"Role with ID {role_id} not found. Skipping emoji {emoji}.")
     
     await bot.change_presence(activity=discord.CustomActivity(name='f!help'))
 
@@ -241,7 +209,7 @@ class HelpPaginationView(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         # Only allow the original command author to use the buttons
         if interaction.user != self.author:
-            await interaction.response.send_message("You cannot use these buttons.", ephemeral=True)
+            await interaction.response.send_message("You cannot use these buttons.", ephemeral=True) # type: ignore
             return False
         return True
     

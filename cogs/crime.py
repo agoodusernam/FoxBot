@@ -7,20 +7,17 @@ from discord.ext import commands
 from command_utils.CContext import CContext
 from command_utils.checks import is_dev
 from currency import curr_utils, curr_config
+from currency.job_utils import Profile
 
-profile_type = dict[str, int | float | str | dict[str, int]]
-
-
-async def rob_success_n(ctx: CContext, profile: profile_type, target: discord.Member, target_profile:
-profile_type):
-    await ctx.send(f'You successfully robbed {target.display_name} and stole some money!')
-    # Calculate the amount to steal, between 1 and 10% of the target's wallet
-    amount = math.floor(target_profile['wallet'] * random.uniform(0.01, 0.1))
+async def rob_success(ctx: CContext, profile: Profile, target: discord.Member, target_profile:
+                        Profile, min: float = 0.01, max: float = 0.1):
+    amount = math.floor(target_profile['wallet'] * random.uniform(min, max))
     if amount > 0:
+        await ctx.send(f'You successfully robbed {target.display_name} and stole some money!')
         target_profile['wallet'] -= amount
         profile['wallet'] += amount
-        curr_utils.set_wallet(target, target_profile['wallet'])
-        curr_utils.set_wallet(ctx.author, profile['wallet'])
+        curr_utils.set_profile(target, target_profile)
+        curr_utils.set_profile(ctx.author, profile)
         await ctx.send(f'You stole {amount} {curr_config.currency_name} from {target.display_name}!')
         return
     else:
@@ -28,8 +25,8 @@ profile_type):
         return
 
 
-async def rob_success_og(ctx: CContext, profile: profile_type, target: discord.Member,
-                         target_profile: profile_type):
+async def rob_success_og(ctx: CContext, profile: Profile, target: discord.Member,
+                         target_profile: Profile):
     await ctx.send(f'You successfully robbed {target.display_name} and stole some money!')
     # Calculate the amount to steal, between 1 and 5% of the target's wallet
     amount = math.floor(target_profile['wallet'] * random.uniform(0.01, 0.05))
@@ -45,7 +42,7 @@ async def rob_success_og(ctx: CContext, profile: profile_type, target: discord.M
         return
 
 
-async def got_shot(ctx: CContext, profile: profile_type, target: discord.Member, target_profile: profile_type):
+async def got_shot(ctx: CContext, profile: Profile, target: discord.Member):
     await ctx.send(f'You were caught trying to rob {target.display_name} and got shot!')
     # Deduct a random amount from the user's wallet
     amount = random.randint(2000, 20000)
@@ -120,7 +117,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
             # Neither user has a gun
             winner = random.choice(['user', 'target'])
             if winner == 'user':
-                await rob_success_n(ctx, profile, target, target_profile)
+                await rob_success(ctx, profile, target, target_profile)
                 return None
             else:
                 # 50% chance of failure
@@ -130,7 +127,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
             # User has no gun, target has a gun
             # 99% chance of failure
             if random.random() < 0.99:
-                await got_shot(ctx, profile, target, target_profile)
+                await got_shot(ctx, profile, target)
                 return None
             else:
                 # 5% chance of success
@@ -141,7 +138,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
             # User has a gun, target has no gun
             # 75% chance of success
             if random.random() < 0.75:
-                await rob_success_n(ctx, profile, target, target_profile)
+                await rob_success(ctx, profile, target, target_profile)
                 return None
             else:
                 # 25% chance of failure
@@ -152,10 +149,10 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
             # 50% chance of success
             if random.random() < 0.5:
                 
-                await rob_success_n(ctx, profile, target, target_profile)
+                await rob_success(ctx, profile, target, target_profile)
                 return None
             else:
-                await got_shot(ctx, profile, target, target_profile)
+                await got_shot(ctx, profile, target)
                 return None
 
 
