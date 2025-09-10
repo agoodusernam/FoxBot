@@ -91,6 +91,20 @@ async def on_ready() -> None:
     if bot.config.maintenance_mode:
         print("Bot is in maintenance mode. Only admins can use commands.")
     
+
+    
+    # Reconnect voice states
+    for channel in bot.get_all_channels():
+        if not isinstance(channel, discord.VoiceChannel):
+            continue
+            
+        for member in channel.members:
+            if member.bot:
+                continue
+                
+            voice_log.handle_join(member, channel)
+            print(f'Reconnected voice state for {member.name} in {channel.name}')
+    
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     print('------')
     
@@ -244,10 +258,10 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
                 f'This command is on cooldown. Please try again in {seconds_to_human_readable(int(error.retry_after))}.',
                 delete_after=bot.config.del_after
         )
-        await ctx.message.delete()
+        await ctx.delete()
     elif isinstance(error, commands.CheckFailure):
         await ctx.send('You do not have permission to use this command.', delete_after=bot.config.del_after)
-        await ctx.message.delete()
+        await ctx.delete()
     
     else:
         print(f"Unhandled error: {error}")
@@ -286,7 +300,6 @@ async def on_message(message: discord.Message):
     if ((message.channel.id == 1346720879651848202) and (message.author.id == 542798185857286144) and
             (message.content.startswith('FUN FACT'))):
         await message.channel.send('<@&1352341336459841688>', delete_after=1)
-        print('Fun fact ping sent')
     
     # Log regular messages
     if (message.author != bot.user) and (
@@ -328,7 +341,7 @@ async def on_message(message: discord.Message):
 
 # Reaction role events
 @bot.event
-async def on_raw_reaction_add(payload):
+async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     if payload.message_id != bot.config.reaction_roles.message_id:
         return
     
@@ -355,7 +368,7 @@ async def on_raw_reaction_add(payload):
 
 
 @bot.event
-async def on_raw_reaction_remove(payload):
+async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
     if payload.message_id != bot.config.reaction_roles.message_id:
         return
     
