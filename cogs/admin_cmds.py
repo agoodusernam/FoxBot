@@ -10,6 +10,7 @@ from discord.utils import get
 from command_utils import analysis
 from command_utils.CContext import CContext
 from command_utils.checks import is_admin
+from config import bot_config
 from utils import db_stuff
 
 
@@ -58,15 +59,13 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
     await pub_logs_channel.send(embed=to_send_embed)
     await mod_log_channel.send('Posted')
 
-staff_role_id = 0
+staff_role_id = bot_config.get_config_option('staff_role_id', 0)
 
 class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     """Admin commands for managing the server and users."""
     
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        global staff_role_id
-        staff_role_id = bot.config.staff_role_id
     
     @commands.command(name='rek',
                       brief='Absolutely rek a user',

@@ -232,3 +232,13 @@ def load_config(config_path: Path = Path("config.json")) -> BotConfig:
         config = BotConfig.from_dict(BotConfig.get_default_config())
         # config.save(config_path)
         return config
+    
+def get_config_option(option: str, default: Any = None) -> Any:
+    """
+    Retrieve a specific configuration option from the config file.
+    :param option: str: The configuration option to retrieve.
+    :param default: Any: The default value to return if the option is not found.
+    :return: Any: The value of the configuration option or the default value.
+    """
+    config = load_config()
+    return getattr(config, option, default)
