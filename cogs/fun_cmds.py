@@ -60,8 +60,8 @@ class FunCommands(commands.Cog, name='Fun'):
         await ctx.message.channel.send(f'You flipped a coin and got: **{random.choice(['Heads', 'Tails'])}**')
     
     @commands.command(name='ping', aliases=['latency'],
-                      brief='Check the bot\'s latency',
-                      help='Shows the bot\'s current latency in milliseconds')
+                      brief="Check the bot's latency",
+                      help="Shows the bot's current latency in milliseconds")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def ping(self, ctx: CContext):
         await ctx.message.channel.send(f'{ctx.bot.latency * 1000:.1f}ms')  # type: ignore
@@ -77,7 +77,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='8ball', aliases=['eight_ball', 'magic_8_ball'],
                         brief='Ask the magic 8-ball a question',
                         help='Ask the magic 8-ball a question and get a random answer')
-    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 3, commands.BucketType.user)  # type: ignore
     async def eight_ball(self, ctx: CContext):
         pos_responses = [ # 10 positive responses
             'It is certain', 'It is decidedly so', 'Without a doubt', 'Yes definitely',
@@ -102,10 +102,11 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='owoify', aliases=['owo', 'uwu'],
                         brief='Convert text to OwO language',
                         help='Converts the given text to OwO language (UwU style)',
-                        usage='f!owoify <text>')
+                        usage='f!owo <text>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def owoify(self, ctx: CContext, *, text: str):
         # Simple conversion to OwO language
+        # Why did I add this. I hate myself
         owo_text = text.replace('r', 'w').replace('l', 'w').replace('v', 'w')
         owo_text = owo_text.replace('th', 'd').replace('Th', 'D').replace('TH', 'D')
         if owo_text.endswith('!'):
@@ -117,22 +118,21 @@ class FunCommands(commands.Cog, name='Fun'):
                       help="Get the link to the bot's source code on GitHub")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def code(self, ctx: CContext):
-        await ctx.message.channel.send(
-                'You can find the source code for this bot on GitHub: https://github.com/agoodusernam/FoxBot'
-        )
+        await ctx.send('You can find the source code for this bot on GitHub: https://github.com/agoodusernam/FoxBot')
     
     @commands.command(name='lines_of_code', aliases=['lines', 'loc'],
                       brief='Get the number of lines of code in the bot',
-                      help="Get the number of lines of code in the bot's source code")
+                      help="Get the number of lines of code in the bot's source code",
+                      useage='f!loc')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def lines_of_code(self, ctx: CContext):
         # function that returns the number of lines of code in a given directory recursively, excluding .venv
         total_lines = 0
         
-        for root, dirs, files in os.walk('/root/pyVenv/'):
+        for root, dirs, files in os.walk(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')):
             # Skip .venv directory
-            if 'discBot' in dirs:
-                dirs.remove('discBot')
+            if '.venv' in dirs:
+                dirs.remove('.venv')
             
             # Count lines in .py files
             for file in files:

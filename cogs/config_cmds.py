@@ -16,7 +16,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
     
     @commands.command(name="config", brief="View or modify bot configuration")
     @commands.check(is_admin)
-    async def config_command(self, ctx: CContext, section: str = None, key: str = None, *, value: str = None):
+    async def config_command(self, ctx: CContext, section: str | None = None, key: str | None = None, *, value: str | None = None):
         """
         View or modify bot configuration
         Usage:
@@ -78,17 +78,17 @@ class ConfigCog(commands.Cog, name="Configuration"):
         # Set value
         if key == "command_prefix":
             self.bot.config.command_prefix = value
-            await ctx.send(f"✅ Command prefix set to `{value}`")
+            await ctx.send(f"Command prefix set to `{value}`")
         elif key == "del_after":
             try:
                 self.bot.config.del_after = int(value)
-                await ctx.send(f"✅ Delete after time set to `{value}` seconds")
+                await ctx.send(f"Delete after time set to `{value}` seconds")
             except ValueError:
-                await ctx.send("❌ Delete after time must be a number", delete_after=self.bot.config.del_after)
+                await ctx.send("Delete after time must be a number", delete_after=self.bot.config.del_after)
                 return
         elif key == "maintenance_mode":
             self.bot.config.maintenance_mode = value.lower() in ('true', '1', 'yes', 'on')
-            await ctx.send(f"✅ Maintenance mode set to `{self.bot.config.maintenance_mode}`")
+            await ctx.send(f"Maintenance mode set to `{self.bot.config.maintenance_mode}`")
         else:
             await ctx.send(f"Unknown or read-only key: {key}", delete_after=self.bot.config.del_after)
             return
@@ -148,9 +148,9 @@ class ConfigCog(commands.Cog, name="Configuration"):
         """Reload bot configuration from config.json"""
         try:
             self.bot.config.reload()
-            await ctx.send("✅ Configuration reloaded successfully!")
+            await ctx.send("Configuration reloaded successfully!")
         except Exception as e:
-            await ctx.send(f"❌ Failed to reload config: {e}", delete_after=self.bot.config.del_after)
+            await ctx.send(f"Failed to reload config: {e}", delete_after=self.bot.config.del_after)
     
     @commands.command(name="save_config", brief="Save current configuration to file")
     @commands.check(is_admin)
@@ -158,9 +158,9 @@ class ConfigCog(commands.Cog, name="Configuration"):
         """Save current bot configuration to config.json"""
         try:
             self.bot.config.save()
-            await ctx.send("✅ Configuration saved successfully!")
+            await ctx.send("Configuration saved successfully!")
         except Exception as e:
-            await ctx.send(f"❌ Failed to save config: {e}", delete_after=self.bot.config.del_after)
+            await ctx.send(f"Failed to save config: {e}", delete_after=self.bot.config.del_after)
 
 
 async def setup(bot):

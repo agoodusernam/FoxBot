@@ -1,3 +1,4 @@
+import gc
 import os
 import sys
 from typing import Any
@@ -25,7 +26,7 @@ async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
         os.execv(sys.executable, ['python'] + sys.argv)
 
 
-async def upload_all_history(channel: discord.TextChannel, author: discord.Member) -> None:
+async def upload_all_history(channel: discord.TextChannel, author: discord.Member | discord.User) -> None:
     print(f'Deleting old messages from channel: {channel.name}, ID: {channel.id}')
     db_stuff.del_channel_from_db(channel)
     print(f'Starting to download all messages from channel: {channel.name}, ID: {channel.id}')
@@ -33,6 +34,9 @@ async def upload_all_history(channel: discord.TextChannel, author: discord.Membe
     print(f'Downloaded {len(messages)} messages from channel: {channel.name}, ID: {channel.id}')
     bulk_data: list[dict[str, Any]] = []
     for i, message in enumerate(messages):
+        if not isinstance(message.channel, discord.TextChannel):
+            print("Message channel is not a TextChannel, skipping...")
+            continue
         
         has_attachment = False
         if message.attachments:
@@ -60,12 +64,13 @@ async def upload_all_history(channel: discord.TextChannel, author: discord.Membe
     
     db_stuff.bulk_send_messages(bulk_data)
     del bulk_data
+    gc.collect()
     
     dm = await author.create_dm()
     await dm.send(f'Finished uploading all messages from channel: {channel.name}')
 
 
-async def upload_whole_server(guild: discord.Guild, author: discord.Member, nolog_channels: list[int]) -> None:
+async def upload_whole_server(guild: discord.Guild, author: discord.User | discord.Member, nolog_channels: list[int]) -> None:
     dm = await author.create_dm()
     await dm.send(f'Starting to download all messages from server: {guild.name}')
     await dm.send('--------------------------')
@@ -113,18 +118,22 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     async def update(self, ctx: CContext):
         await ctx.delete()
         await shutdown(ctx.bot, update=True, restart=True)
-    
+        
+    """
     @commands.command(name='upload_all_history',
                       brief='Upload all messages from a server',
                       help='Dev only: Upload all messages from a specific guild to the database',
                       usage='f!upload_all_history')
     async def upload_all_history(self, ctx: CContext):
         await ctx.delete()
+        if ctx.guild is None:
+            raise discord.ext.commands.CommandError("This command can only be used in a server.")
         
         nolog_channels = [1299640499493273651, 1329366175796432898, 1329366741909770261, 1329366878623236126,
                           1329367139018215444, 1329367314671472682, 1329367677940006952]
         
-        await upload_whole_server(ctx.guild, ctx.author, nolog_channels)
+        await upload_whole_server(ctx.guild, ctx.author, nolog_channels)"""
+    
     
     @commands.command(name='maintenance_mode',
                       brief='Toggle maintenance mode',

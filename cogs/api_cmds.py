@@ -43,7 +43,7 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
             await fetch_msg.delete()
         
         except Exception as e:
-            await ctx.send(f'Error fetching NASA picture: {e}')
+            raise discord.ext.commands.CommandError(f"{e}")
     
     @commands.command(name='dog', aliases=['dogpic', 'dog_pic'],
                       brief='Get a random dog picture',

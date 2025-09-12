@@ -470,4 +470,7 @@ async def not_blacklisted(ctx: CContext):
 
 
 # Run the bot
-bot.run(token=os.getenv('TOKEN'), reconnect=True)
+try:
+    bot.run(token=os.getenv('TOKEN'), reconnect=True)
+except TypeError:
+    print('Error: TOKEN environment variable not set.')

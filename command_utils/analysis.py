@@ -46,7 +46,7 @@ def check_required_keys(message: dict[str, Any]) -> bool:
     return all(key in message for key in required_keys)
 
 
-def get_valid_messages(flag: str = None, ctx: CContext = None) -> tuple[list[dict[str, str]], int]:
+def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> tuple[list[dict[str, str]], int]:
     """
     Download and validate messages from the database.
 

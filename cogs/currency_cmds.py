@@ -71,7 +71,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     async def baltop_cmd(self, ctx: CContext):
         top_users = curr_utils.get_top_balances()
         if not top_users:
-            await ctx.send('No users found in the database.')
+            await ctx.send('Not enough users found in the database.')
             return
         
         top_list = '\n'
@@ -121,7 +121,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       help='Pay another user some of your money',
                       usage='f!pay <user> <amount>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def pay_cmd(self, ctx: CContext, user: Member, amount: int):
+    async def pay_cmd(self, ctx: CContext, user: discord.Member, amount: int):
         if user is None:
             await ctx.send('You must specify a valid user to pay!')
             return

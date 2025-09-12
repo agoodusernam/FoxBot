@@ -11,6 +11,9 @@ active_voice_sessions: dict[int, dict[str, Any]] = {}
 def handle_join(member: discord.Member, after: discord.VoiceState | discord.VoiceChannel) -> None:
     """Track when a user joins a voice channel"""
     if isinstance(after, discord.VoiceState):
+        if after.channel is None:
+            print(f'{member.name} joined a voice state with no channel')
+            return
         print(f'{member.name} joined {after.channel.name}')
         
         # Record join time
@@ -66,6 +69,9 @@ def handle_leave(member: discord.Member) -> None:
 
 def handle_move(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState) -> None:
     """Handle a user moving from one channel to another"""
+    if before.channel is None or after.channel is None:
+        print(f'{member.name} moved but one of the channels is None')
+        return
     print(f'{member.name} moved from {before.channel.name} to {after.channel.name}')
     
     # First record the "leave" from the previous channel

@@ -2,32 +2,15 @@ import datetime
 import json
 import os
 import re
-from typing import Union
 
 import discord
 from discord.ext import commands
 from discord.utils import get
 
-import utils.utils as utils
 from command_utils import analysis
 from command_utils.CContext import CContext
 from command_utils.checks import is_admin
 from utils import db_stuff
-
-STAFF_ROLE_ID = 1396395163835699310 # Role ID for staff, used in checks
-
-
-def save_perms(ctx: CContext) -> None:
-    previous_perms: dict[int, dict[str, dict[str, Union[bool, None]]]] = {}
-    
-    for channel in ctx.message.guild.channels:
-        previous_perms[channel.id] = utils.format_permissions(channel.overwrites)
-    
-    if os.path.exists('hardlockdown.txt'):
-        os.rename('hardlockdown.txt', 'hardlockdown_old.txt')
-    
-    with open('hardlockdown.txt', 'w') as file:
-        json.dump(previous_perms, file, indent=4)
 
 
 async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
@@ -75,12 +58,15 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
     await pub_logs_channel.send(embed=to_send_embed)
     await mod_log_channel.send('Posted')
 
+staff_role_id = 0
 
 class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     """Admin commands for managing the server and users."""
     
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        global staff_role_id
+        staff_role_id = bot.config.staff_role_id
     
     @commands.command(name='rek',
                       brief='Absolutely rek a user',
@@ -104,8 +90,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.check(is_admin)
     async def hard_lockdown(self, ctx: CContext):
         await ctx.delete()
-        # await admin_cmds.hardlockdown(ctx.message)
-        
         for member in ctx.guild.members:
             if member.id in ctx.bot.admin_ids:
                 continue
@@ -246,13 +230,12 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         
         # Send the message content back to the channel
         split_message: list[str] = msg.split()
-        channel: discord.abc.MessageableChannel = ctx.channel
         try:
             channel_id: int = int(split_message[0].replace('#', '', 1).replace('<', '', 1).replace('>', '', 1))
             channel: discord.abc.MessageableChannel = ctx.bot.get_channel(channel_id)
             msg = msg.replace(str(channel_id), '', 1)
         except ValueError:
-            pass
+            channel: discord.abc.MessageableChannel = ctx.channel
         
         await channel.send(msg)
         
@@ -313,7 +296,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Send the last modlog message',
                       usage='f!last_log')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    @commands.has_role(STAFF_ROLE_ID)
+    @commands.has_role(staff_role_id)
     async def send_last_log(self, ctx: CContext):
         await ctx.delete()
         await last_log(ctx)
@@ -326,7 +309,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Send the last modlog message without mentioning the moderator',
                       usage='f!last_log_anonymous')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    @commands.has_role(STAFF_ROLE_ID)
+    @commands.has_role(staff_role_id)
     async def send_last_log_anonymous(self, ctx: CContext):
         await ctx.delete()
         await last_log(ctx, anonymous=True)
@@ -384,7 +367,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                         brief='Verify a user',
                         help='Admin only: Assign the verified role to a user',
                         usage='f!verify <user_id/mention>')
-    @commands.has_role(STAFF_ROLE_ID)
+    @commands.has_role(staff_role_id)
     async def verify(self, ctx: CContext, member: discord.Member):
         await ctx.delete()
         
@@ -392,13 +375,14 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send('User not found.', delete_after=ctx.bot.del_after)
             return
         
-        roles: list[int] = [1097799372269428746, 1344288294879629333, 1405824995946532995] # Member, Nick change, TTS perms
         
         try:
-            for role_id in roles:
+            for role_id in ctx.bot.config.verified_roles:
                 role = get(ctx.guild.roles, id=role_id)
+                if role is None:
+                    continue
                 if role not in member.roles:
-                    await member.add_roles(role, reason='Verified by admin command')
+                    await member.add_roles(role, reason='Verified by admin')
                     
             await ctx.send(f'{member.display_name} has been verified.', delete_after=ctx.bot.del_after)
             
