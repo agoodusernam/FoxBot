@@ -4,7 +4,7 @@ Provides type-safe, validated configuration with easy bot.config.* access
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypeVar
 from dataclasses import dataclass, field
 from pathlib import Path
 import json
@@ -70,36 +70,36 @@ class BotConfig:
     def get_default_config(cls) -> dict[str, Any]:
         """Returns default configuration dictionary"""
         return {
-            "command_prefix": "f!",
-            "del_after": 3,
-            "admin_ids": [],
-            "dev_ids": [],
-            "blacklist_ids": [],
+            "command_prefix":   "f!",
+            "del_after":        3,
+            "admin_ids":        [],
+            "dev_ids":          [],
+            "blacklist_ids":    [],
             "maintenance_mode": False,
-            "guild_id": 0,
-            "no_log": {
-                "user_ids": [],
-                "channel_ids": [],
+            "guild_id":         0,
+            "no_log":           {
+                "user_ids":     [],
+                "channel_ids":  [],
                 "category_ids": []
             },
-            "send_blacklist": {
-                "channel_ids": [],
+            "send_blacklist":   {
+                "channel_ids":  [],
                 "category_ids": []
             },
             "logging_channels": {
-                "voice": 0,
-                "moderation": 0,
+                "voice":       0,
+                "moderation":  0,
                 "public_logs": 0
             },
-            "reaction_roles": {
-                "message_id": 0,
+            "reaction_roles":   {
+                "message_id":    0,
                 "emoji_to_role": {
                     "🤷‍♂️": 0
                 }
             },
             
-            "verified_roles": [],
-            "staff_role_id": 0
+            "verified_roles":   [],
+            "staff_role_id":    0
         }
     
     @classmethod
@@ -124,31 +124,31 @@ class BotConfig:
         if "no_log" in data:
             no_log_data = data["no_log"]
             config.no_log = NoLogConfig(
-                user_ids=no_log_data.get("user_ids", []),
-                channel_ids=no_log_data.get("channel_ids", []),
-                category_ids=no_log_data.get("category_ids", [])
+                    user_ids=no_log_data.get("user_ids", []),
+                    channel_ids=no_log_data.get("channel_ids", []),
+                    category_ids=no_log_data.get("category_ids", [])
             )
         
         if "send_blacklist" in data:
             blacklist_data = data["send_blacklist"]
             config.send_blacklist = BlacklistConfig(
-                channel_ids=blacklist_data.get("channel_ids", []),
-                category_ids=blacklist_data.get("category_ids", [])
+                    channel_ids=blacklist_data.get("channel_ids", []),
+                    category_ids=blacklist_data.get("category_ids", [])
             )
         
         if "logging_channels" in data:
             logging_data = data["logging_channels"]
             config.logging_channels = LoggingChannelsConfig(
-                voice=logging_data.get("voice"),
-                moderation=logging_data.get("moderation"),
-                public_logs=logging_data.get("public_logs")
+                    voice=logging_data.get("voice"),
+                    moderation=logging_data.get("moderation"),
+                    public_logs=logging_data.get("public_logs")
             )
         
         if "reaction_roles" in data:
             reaction_data = data["reaction_roles"]
             config.reaction_roles = ReactionRolesConfig(
-                message_id=reaction_data.get("message_id"),
-                emoji_to_role=reaction_data.get("emoji_to_role", {})
+                    message_id=reaction_data.get("message_id"),
+                    emoji_to_role=reaction_data.get("emoji_to_role", {})
             )
         
         return config
@@ -156,35 +156,35 @@ class BotConfig:
     def to_dict(self) -> dict[str, Any]:
         """Convert BotConfig to dictionary for saving"""
         return {
-            "command_prefix": self.command_prefix,
-            "del_after": self.del_after,
+            "command_prefix":   self.command_prefix,
+            "del_after":        self.del_after,
             "maintenance_mode": self.maintenance_mode,
-            "guild_id": self.guild_id,
-            "admin_ids": self.admin_ids,
-            "dev_ids": self.dev_ids,
-            "blacklist_ids": self.blacklist_ids,
-            "staff_role_id": self.staff_role_id,
+            "guild_id":         self.guild_id,
+            "admin_ids":        self.admin_ids,
+            "dev_ids":          self.dev_ids,
+            "blacklist_ids":    self.blacklist_ids,
+            "staff_role_id":    self.staff_role_id,
             
-            "no_log": {
-                "user_ids": self.no_log.user_ids,
-                "channel_ids": self.no_log.channel_ids,
+            "no_log":           {
+                "user_ids":     self.no_log.user_ids,
+                "channel_ids":  self.no_log.channel_ids,
                 "category_ids": self.no_log.category_ids
             },
-            "send_blacklist": {
-                "channel_ids": self.send_blacklist.channel_ids,
+            "send_blacklist":   {
+                "channel_ids":  self.send_blacklist.channel_ids,
                 "category_ids": self.send_blacklist.category_ids
             },
             "logging_channels": {
-                "voice": self.logging_channels.voice,
-                "moderation": self.logging_channels.moderation,
+                "voice":       self.logging_channels.voice,
+                "moderation":  self.logging_channels.moderation,
                 "public_logs": self.logging_channels.public_logs
             },
-            "reaction_roles": {
-                "message_id": self.reaction_roles.message_id,
+            "reaction_roles":   {
+                "message_id":    self.reaction_roles.message_id,
                 "emoji_to_role": self.reaction_roles.emoji_to_role
             },
             
-            "verified_roles": [self.verified_roles]
+            "verified_roles":   [self.verified_roles]
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:
@@ -232,7 +232,8 @@ def load_config(config_path: Path = Path("config.json")) -> BotConfig:
         config = BotConfig.from_dict(BotConfig.get_default_config())
         # config.save(config_path)
         return config
-    
+
+
 def get_config_option(option: str, default: Any = None) -> Any:
     """
     Retrieve a specific configuration option from the config file.
