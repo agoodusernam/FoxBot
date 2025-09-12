@@ -254,11 +254,8 @@ bot.help_command = CustomHelpCommand()
 @bot.event
 async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandError):
     if isinstance(error, commands.CommandOnCooldown):
-        await ctx.send(
-                f'This command is on cooldown. Please try again in {seconds_to_human_readable(int(error.retry_after))}.',
-                delete_after=bot.config.del_after
-        )
-        await ctx.delete()
+        await ctx.send(f'This command is on cooldown. Please try again in '
+                       f'{seconds_to_human_readable(int(error.retry_after))}.')
     elif isinstance(error, commands.CheckFailure):
         await ctx.send('You do not have permission to use this command.', delete_after=bot.config.del_after)
         await ctx.delete()
@@ -285,17 +282,21 @@ async def on_message(message: discord.Message):
             delete_after=bot.config.del_after
         )
         
-    
+    commands_enabled = not bot.config.maintenance_mode
+    if message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids:
+        commands_enabled = True
     # Process commands first
-    if (not bot.config.maintenance_mode) or (message.author.id in bot.config.admin_ids) or (message.author.id in bot.config.dev_ids):
+    if commands_enabled and message.content.startswith(bot.command_prefix):
         bot.config.today = utils.formatted_today()
         await bot.process_commands(message)
         
         # Don't log command messages
         if message.content.startswith(bot.command_prefix):
             return
-    elif bot.config.maintenance_mode:
+    
+    elif not commands_enabled and message.content.startswith(bot.command_prefix):
         await message.channel.send('The bot is currently in maintenance mode. Please try again later.')
+        return
     
     if ((message.channel.id == 1346720879651848202) and (message.author.id == 542798185857286144) and
             (message.content.startswith('FUN FACT'))):

@@ -10,7 +10,7 @@ class CContext(commands.Context):
         try:
             await self.message.delete()
         
-        except:
+        except Exception:
             # We don't care if we can't delete the message
             return False
         return True
