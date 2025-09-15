@@ -366,9 +366,11 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                         brief='Verify a user',
                         help='Admin only: Assign the verified role to a user',
                         usage='f!verify <user_id/mention>')
+    @commands.guild_only()
     @commands.has_role(staff_role_id)
     async def verify(self, ctx: CContext, member: discord.Member):
         await ctx.delete()
+        assert ctx.guild is not None
         
         if member is None:
             await ctx.send('User not found.', delete_after=ctx.bot.del_after)

@@ -256,6 +256,20 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.send(f'This command is on cooldown. Please try again in '
                        f'{seconds_to_human_readable(int(error.retry_after))}.')
+    elif isinstance(error, commands.NoPrivateMessage):
+        await ctx.send('This command cannot be used in private messages.', delete_after=bot.config.del_after)
+        await ctx.delete()
+        
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send(f'Missing required argument: {error.param.name}', delete_after=bot.config.del_after)
+        await ctx.delete()
+    
+    elif isinstance(error, commands.BotMissingPermissions):
+        missing = ', '.join(error.missing_permissions)
+        await ctx.send(f'I am missing the following permissions to run this command: {missing}',
+                       delete_after=bot.config.del_after)
+        await ctx.delete()
+        
     elif isinstance(error, commands.CheckFailure):
         await ctx.send('You do not have permission to use this command.', delete_after=bot.config.del_after)
         await ctx.delete()
@@ -285,14 +299,11 @@ async def on_message(message: discord.Message):
     commands_enabled = not bot.config.maintenance_mode
     if message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids:
         commands_enabled = True
-    # Process commands first
+    
     if commands_enabled and message.content.startswith(bot.command_prefix):
         bot.config.today = utils.formatted_today()
         await bot.process_commands(message)
         
-        # Don't log command messages
-        if message.content.startswith(bot.command_prefix):
-            return
     
     elif not commands_enabled and message.content.startswith(bot.command_prefix):
         await message.channel.send('The bot is currently in maintenance mode. Please try again later.')

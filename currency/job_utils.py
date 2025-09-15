@@ -41,12 +41,14 @@ class SchoolQualif(enum.Enum):
         """
         return self.value[0] < other.value[0]
     
-    def __eq__(self, other: 'SchoolQualif') -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Checks if two SchoolQualif enum members are equal.
         :param other: The other SchoolQualif member to compare with.
         :return: True if both members are equal, False otherwise.
         """
+        if not isinstance(other, SchoolQualif):
+            return NotImplemented
         return self.value[0] == other.value[0]
     
     @classmethod
@@ -92,12 +94,14 @@ class SecurityClearance(enum.Enum):
         """
         return self.value > other.value
     
-    def __lt__(self, other: 'SecurityClearance') -> bool:
+    def __lt__(self, other: object) -> bool:
         """
         Compares two SecurityClearance enum members based on their index.
         :param other: The other SecurityClearance member to compare with.
         :return: True if this member is less than the other, False otherwise.
         """
+        if not isinstance(other, SecurityClearance):
+            return NotImplemented
         return self.value < other.value
     
     def __eq__(self, other: 'SecurityClearance') -> bool:

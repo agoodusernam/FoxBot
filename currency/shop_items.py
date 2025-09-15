@@ -13,7 +13,7 @@ private_vc = ShopItem(
         description="A private voice channel for you and your friends.",
         price=10_000,
         stock=-1,
-        perk=[perks.create_private_vc]  # Duration in days
+        perk=[perks.create_private_vc]
 )
 
 rich_role = ShopItem(

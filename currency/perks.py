@@ -2,7 +2,7 @@ import discord
 from discord.ext.commands import Context
 
 
-async def create_private_vc(ctx: Context, member: discord.Member) -> None:
+async def create_private_vc(ctx: Context, member: discord.Member) -> bool:
     """
     Creates a private voice channel for the member.
     :param member: The member for whom to create the private VC.
@@ -13,6 +13,8 @@ async def create_private_vc(ctx: Context, member: discord.Member) -> None:
     
     # Create the voice channel
     category = discord.utils.get(guild.categories, id=1081760248878071888)
+    if category is None:
+        raise discord.ext.commands.CommandError("Something terrible has happened. 0x1")
     
     try:
         private_vc = await guild.create_voice_channel(vc_name, category=category, position=len(category.channels),
@@ -35,7 +37,7 @@ async def create_private_vc(ctx: Context, member: discord.Member) -> None:
         raise discord.ext.commands.CommandError("The role or member being edited is not part of the guild.")
     
     except discord.Forbidden:
-        raise discord.ext.commands.CommandError("I do not have permission to create a voice channel.")
+        raise discord.ext.commands.BotMissingPermissions(["manage_channels"])
     
     except discord.HTTPException as e:
         raise discord.ext.commands.CommandError(f"Failed to create voice channel: {e}")
@@ -43,10 +45,10 @@ async def create_private_vc(ctx: Context, member: discord.Member) -> None:
     except Exception as e:
         raise discord.ext.commands.CommandError(f"An unexpected error occurred: {e}")
     
-    return None
+    return True
 
 
-async def give_rich_role(ctx: Context, member: discord.Member) -> None:
+async def give_rich_role(ctx: Context, member: discord.Member) -> bool:
     """
     Gives the 'Rich' role to the member.
     :param member: The member to whom to give the 'Rich' role.
@@ -54,10 +56,15 @@ async def give_rich_role(ctx: Context, member: discord.Member) -> None:
     """
     rich_role = discord.utils.get(member.guild.roles, id=1394949504888999957)
     if rich_role is None:
-        raise discord.ext.commands.CommandError("Rich role not found in the server.")
+        raise discord.ext.commands.RoleNotFound("Rich role not found in the server.")
     
-    await member.add_roles(rich_role)
-    return None
+    try:
+        await member.add_roles(rich_role)
+        
+    except discord.Forbidden:
+        raise discord.ext.commands.BotMissingPermissions(["manage_roles"])
+    
+    return True
 
 
 async def send_announcement(ctx: Context, member: discord.Member) -> None:

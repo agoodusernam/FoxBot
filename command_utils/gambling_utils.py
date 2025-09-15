@@ -1,7 +1,7 @@
 import secrets
 
 
-def slots_select_payout(payouts: list[int], probabilities: list[float]):
+def slots_select_payout(payouts: list[float], probabilities: list[float]):
     """
     Select a payout tier based on the given probabilities.
 

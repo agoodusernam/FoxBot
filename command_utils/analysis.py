@@ -4,7 +4,7 @@ import copy
 import datetime
 import logging
 import os
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import discord
 from discord.ext.commands import Context
@@ -27,7 +27,7 @@ TIME_FILTERS = {
 }
 
 def allow_characters(string: str) -> str:
-    return ''.join(char for char in string if ord(char) < 256)
+    return ''.join(char for char in string if char.isprintable())
 
 def check_required_keys(message: dict[str, Any]) -> bool:
     """
@@ -62,6 +62,8 @@ def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> 
     try:
         # Download all messages from database
         messages = db_stuff.download_all()
+        if messages is None:
+            return [], 0
         total_messages = len(messages)
         guild = None
         if ctx is not None:
@@ -87,16 +89,17 @@ def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> 
             filter_name, time_delta = TIME_FILTERS[flag]
             time_ago = discord.utils.utcnow() - time_delta
             
+            # I can't decide if I hate that you can do this purely with list comprehensions or not
             valid_messages = [
                 msg for msg in valid_messages
-                if utils.parse_utciso8601(msg['timestamp']) >= time_ago
+                if utils.check_valid_utciso8601(msg['timestamp']) and
+                utils.parse_utciso8601(msg['timestamp']) >= time_ago
             ]
             logger.info(f'Applied {filter_name} filter: {len(valid_messages)} messages')
         
         if flag != "il" and guild is not None:
             # don't include messages from users no longer in the guild
-            valid_messages = [msg if guild.get_member(int(msg['author_id'])) else None for msg in valid_messages]
-            valid_messages = [msg for msg in valid_messages if msg is not None]
+            valid_messages = [msg for msg in valid_messages if guild.get_member(int(msg['author_id']))]
         
         logger.info('Total valid messages: %s', len(valid_messages))
         logger.info('Total messages in database: %s', total_messages)
@@ -162,7 +165,7 @@ def get_channel_stats(messages: list[dict[str, str]]) -> list[dict[str, str | in
     ]
 
 
-def analyse_messages(ctx: CContext, time_filter: str = None) -> dict[str, int | str | float | list[dict[str,
+def analyse_messages(ctx: CContext, time_filter: str | None = None) -> dict[str, int | str | float | list[dict[str,
                                                                      str | int]]] | str:
     """
     analyse all messages in the database.
@@ -768,7 +771,8 @@ async def add_voice_analysis_for_user(message: discord.Message, member: discord.
     
     result += f"**Top {len(stats['channels'])} Most Used Voice Channels**\n"
     for i, channel in enumerate(stats['channels'], 1):
-        channel: dict = channel  # type hinting
+        if TYPE_CHECKING:
+            channel: dict
         formatted_time = format_duration(channel['total_seconds'])
         result += f"{i}. {channel['name']}: {formatted_time}\n"
     
@@ -859,8 +863,8 @@ async def generate_voice_activity_graph(ctx: CContext, stats: dict[str, list[dic
                 logger.warning(f"Could not fetch user {user_id}: {e}")
     
     
-            usernames.append(allow_characters(display_name))
-            voice_time_hours.append(total_seconds / 3600)
+            usernames.append(allow_characters(str(display_name)))
+            voice_time_hours.append(int(total_seconds) / 3600)
     
         if not usernames:
             await ctx.send("No valid user data to generate a graph.")

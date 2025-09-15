@@ -466,7 +466,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         profile: Profile = curr_utils.get_profile(ctx.author)
         inventory: dict[str, int] = profile['inventory']
         illegal_items: dict[str, int] = profile['illegal_items']
-        item_name: str = item_name.lower()
+        item_name = item_name.lower()
         illegal: bool = False
         if item_name not in [key.lower() for key in inventory.keys()] and item_name not in [key.lower() for key in
                                                                                             illegal_items.keys()]:
