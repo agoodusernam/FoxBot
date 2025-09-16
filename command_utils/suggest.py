@@ -4,7 +4,7 @@ Handles the suggestion command.
 import discord
 import discord.ext.commands
 
-from CContext import CContext
+from command_utils.CContext import CContext
 
 HELP_MSG = '''Please post your suggestions for the server or <@1377636535968600135> in here using `f!suggest <suggestion>`.
 If you have any additional comments, please use the thread.
