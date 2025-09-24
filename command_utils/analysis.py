@@ -4,6 +4,7 @@ import copy
 import datetime
 import logging
 import os
+import string
 from typing import Any, TYPE_CHECKING
 
 import discord
@@ -26,8 +27,6 @@ TIME_FILTERS = {
     'h': ('hour', datetime.timedelta(hours=1))
 }
 
-def allow_characters(string: str) -> str:
-    return ''.join(char for char in string if char.isprintable())
 
 def check_required_keys(message: dict[str, Any]) -> bool:
     """
@@ -439,7 +438,7 @@ async def generate_user_activity_graph(ctx: Context, result: dict[str, int | str
             user_id = int(user['user'].strip())
             
             # Try to get member from guild first
-            discord_member = guild.get_member(user_id)
+            discord_member: discord.Member | discord.User | None = guild.get_member(user_id)
             if discord_member is None:
                 # Fetch user if not in guild
                 try:
@@ -452,9 +451,10 @@ async def generate_user_activity_graph(ctx: Context, result: dict[str, int | str
             if discord_member is not None:
                 display = discord_member.display_name
             
-            # Clean name for display
-            clean_name = allow_characters(display)
-            usernames.append(clean_name)
+            if not all(c in string.printable for c in display) and discord_member is not None:
+                display = discord_member.name
+            
+            usernames.append(display)
             message_counts.append(user['num_messages'])
         
         # Reverse lists so users with most messages are at the top
@@ -857,13 +857,15 @@ async def generate_voice_activity_graph(ctx: CContext, stats: dict[str, list[dic
                 member = guild.get_member(user_id) or await ctx.bot.fetch_user(user_id)
                 if member:
                     display_name = member.display_name
+                    if not all(c in string.printable for c in display_name):
+                        display_name = member.name
             except discord.NotFound:
                 pass  # Keep the stored name if user not found
             except Exception as e:
                 logger.warning(f"Could not fetch user {user_id}: {e}")
-    
-    
-            usernames.append(allow_characters(str(display_name)))
+            
+                
+            usernames.append(str(display_name))
             voice_time_hours.append(int(total_seconds) / 3600)
     
         if not usernames:
