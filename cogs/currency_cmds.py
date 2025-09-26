@@ -1,17 +1,17 @@
 import random
+import typing
 
 import discord
-from discord import Member
 from discord.ext import commands
 
 import currency.curr_utils
 from command_utils.CContext import CContext
 from command_utils.checks import is_dev
-from currency import curr_utils, curr_config, shop_items, job_utils
+from currency import curr_utils, curr_config, shop_items, job_utils, jobs
 from currency.curr_config import currency_name, loan_interest_rate, income_tax, DrugItem, BlackMarketItem, GunItem, \
-    ShopItem, HouseItem
+    ShopItem, HouseItem, Profile, base_fire_chance
 from currency.curr_utils import get_shop_item
-from currency.job_utils import SchoolQualif, SecurityClearance, Profile
+from currency.job_utils import SchoolQualif, SecurityClearance
 from currency.jobs import job_trees
 
 salary_offers: dict[int, dict[str, int]] = {}
@@ -163,25 +163,82 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             await ctx.send('You were fired from your job! You need to find a new job using the `job` command.')
             await ctx.send('A severance package has been deposited into your wallet.')
             profile['work_income'] = 0
+            profile['work_str'] = 'Unemployed'
+            profile['work_tree'] = 'None'
             profile['fire_risk'] = 0
-            profile['work_experience'] = profile['work_experience'] // 2  # Lose half your experience when fired
+            profile['work_experience'] = profile['work_experience'] // 2
             profile['wallet'] += earnings * 2  # Severance package is 2 months of income
             curr_utils.set_profile(ctx.author, profile)
             return
         
+        job_obj = job_utils.job_from_name(profile['work_str'], jobs.job_trees)
+        if job_obj is None:
+            raise discord.ext.commands.CommandError('Job not found in database, contact the bot developer.')
         
-        profile['debt'] = int(profile['debt'] * (1 + loan_interest_rate))
+        if profile['debt'] > 0:
+            profile['debt'] = int(profile['debt'] * (1 + loan_interest_rate))
+            
         profile['wallet'] += earnings
-        profile['work_income'] += 1
+        profile['work_experience'] += 1 * job_obj.experience_multiplier
         profile['next_income_mult'] = 1.0 # Reset income multiplier after working
         profile['fire_risk'] *= 0.8  # Working reduces fire risk
         
-        if profile['fire_risk'] < 0.005:
+        if profile['fire_risk'] < base_fire_chance:
             # If the fire risk is very low, increase it slightly
-            profile['fire_risk'] = 0.005
+            profile['fire_risk'] = base_fire_chance
+        
+        if profile['work_experience'] % 12 == 11:
+            # Every year of experience, give them a raise between 1 and 5%
+            raise_amount = random.uniform(0.01, 0.05)
+            profile['work_income'] = int(profile['work_income'] * (1 + raise_amount))
+            await ctx.send(f'You have been a good employee and received a {raise_amount*100:.1f}% raise!')
+        
+        school_qualif = SchoolQualif.from_string(profile['qualifications'][0])
+        clearance = SecurityClearance.from_string(profile['qualifications'][1])
+        
+        next_job = job_obj.get_next_job()
+        if next_job is None:
+            # No next job available
+            curr_utils.set_profile(ctx.author, profile)
+            await ctx.send(f'You worked hard and earned {earnings} {currency_name}!')
+            return
+            
+        exp_qualified = False
+        school_qualified = False
+        clearance_qualified = False
+        if profile['work_experience'] >= next_job.req_experience:
+            exp_qualified = True
+        if school_qualif >= next_job.school_requirement:
+            school_qualified = True
+        if clearance.value >= next_job.security_clearance.value:
+            clearance_qualified = True
+        
+        if exp_qualified and school_qualified and clearance_qualified:
+            profile['work_str'] = next_job.name
+            profile['work_tree'] = next_job.tree
+            salary_multiplier = 1 + (random.randint(0, next_job.salary_variance * 10) /1000)
+            # Salary multiplier to 0.1% precision
+            profile['work_income'] = int(next_job.salary * salary_multiplier)
+            await ctx.send(f'Congratulations! You have been promoted to {next_job.name}!')
+            await ctx.send(f'New income: {profile["work_income"]} {currency_name} per year.')
+            
+        elif not exp_qualified:
+            # Don't notify if they wouldn't have the experience to get a promotion
+            pass
+        
+        elif not school_qualified:
+            await ctx.send(f'You need a higher school qualification to be promoted to {next_job.name}.')
+            await ctx.send(f'Required: {next_job.school_requirement.to_string()}, You have: {school_qualif.to_string()}')
+            await ctx.send(f'Use `{ctx.bot.command_prefix}school` to study for a higher qualification.')
+            
+        elif not clearance_qualified:
+            await ctx.send(f'You need a higher security clearance to be promoted to {next_job.name}.')
+            await ctx.send(f'Required: {next_job.security_clearance.to_string()}, You have: {clearance.to_string()}')
+            await ctx.send(f"Use `{ctx.bot.command_prefix}clearance` to apply for a higher clearance level.")
+        
         
         curr_utils.set_profile(ctx.author, profile)
-        await ctx.send(f'You worked hard and earned {earnings} {currency_name}!')
+        await ctx.send(f'You worked hard and earned {earnings} {currency_name}')
     
     @commands.command(name='quit',
                       brief='Quit your current job',
@@ -194,9 +251,13 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             await ctx.send('You have no job to quit! Choose a job first using `job`.')
             return
         
-        curr_utils.set_income(ctx.author, 0)
-        curr_utils.set_fire_risk(ctx.author, 0.0)
-        curr_utils.inc_age(ctx.author)
+        profile['work_income'] = 0
+        profile['work_tree'] = 'None'
+        profile['work_str'] = 'Unemployed'
+        profile['fire_risk'] = 0
+        
+        curr_utils.set_profile(ctx.author, profile)
+        await ctx.send('You have quit your job. You can now choose a new job using the `job` command.')
     
     @commands.command(name='debt',
                       brief='Check your debt',
@@ -209,7 +270,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         else:
             await ctx.send(f'You currently owe {profile['debt']} {currency_name} in loans.')
     
-    @commands.command(name='pay_debt', aliases=['payloan', 'pay_load', 'repay', 'paydebt'],
+    @commands.command(name='pay_debt', aliases=['payloan', 'pay_loan', 'repay', 'paydebt'],
                       brief='Pay off your debt',
                       help='Pay off some of your debt from loans',
                       usage='f!pay_debt <amount>')
@@ -248,7 +309,12 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       help='Get a loan to increase your wallet balance',
                       usage='f!get_loan <amount>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def get_loan_cmd(self, ctx: CContext, amount: int):
+    async def get_loan_cmd(self, ctx: CContext, amount: typing.Union[int, str]) -> None:
+        if isinstance(amount, str):
+            # discord.py tries to convert to int first, if that fails we just get the string
+            await ctx.send("You must specify a valid integer amount to get a loan")
+            return
+            
         if amount <= 0:
             await ctx.send('You must request a positive loan amount!')
             return
@@ -267,6 +333,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         profile['wallet'] += amount
         curr_utils.set_profile(ctx.author, profile)
         await ctx.send(f'You have taken a loan of {amount} {currency_name}. Remember to pay it back with interest!')
+        return
     
     @commands.command(name='credit_score', aliases=['credit'],
                       brief='Check your credit score',
@@ -278,6 +345,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         credit_score = profile['credit_score']
         await ctx.send(f'Your current credit score is {credit_score}. ' +
                        f'Improve it by paying off loans and maintaining a good balance.')
+        return
     
     @commands.command(name='shop', aliases=['store'],
                       brief='View the shop',
@@ -322,6 +390,8 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             await ctx.send(embed=embeds[0], view=view)
         else:
             await ctx.send('No items available in the shop.')
+        
+        return
     
     @commands.command(name='blackmarket', aliases=['bm'],
                       brief='View the black market',
@@ -362,6 +432,8 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             await ctx.send(embed=embeds[0], view=view)
         else:
             await ctx.send('No items available in the black market.')
+        
+        return
     
     @commands.command(name='buy', aliases=['purchase'],
                       brief='Buy an item from the shop',
@@ -436,6 +508,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         # Add the item to the user's inventory
         curr_utils.add_to_inventory(ctx.author, item.name.lower(), quantity, illegal=illegal)
         await ctx.send(f'Successfully bought {quantity}x {item.name} for {total_price} {currency_name}!')
+        return
     
     @commands.command(name='inventory', aliases=['inv'],
                       brief='Check your inventory',
@@ -456,6 +529,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         if illegal_items:
             illegal_list = '\n'.join(f'{item}: {quantity}' for item, quantity in illegal_items.items())
             await ctx.send(f'**Illegal Items:**\n{illegal_list}')
+        return
     
     @commands.command(name='use', aliases=['use_item'],
                       brief='Use an item from your inventory',
@@ -525,6 +599,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         elif isinstance(item, GunItem):
             await ctx.send(f'You cannot use guns directly.')
             await ctx.send(f'Use them in a command that requires a gun, like `hunt` or `rob`.')
+        return
     
     @commands.command(name='sell',
                       brief='Sell an item from your inventory',
@@ -602,6 +677,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                 curr_utils.set_inventory(ctx.author, item_name, inventory[item_name])
         
         await ctx.send(f'Sold {quantity}x {item.name} for {total_price} {currency_name}!')
+        return
     
     @commands.command(name='jobs',
                       brief='View available jobs',
@@ -649,7 +725,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                                                           job.salary_variance * 10) / 1000)  # salary variance is an int for percentage
                         salary = int(job.salary * salary_mult)
                         salary_offers[ctx.author.id][job.name] = salary
-                        value = (f'Salary: {salary} {currency_name}\n'
+                        value = (f'Yearly salary: {salary} {currency_name}\n'
                                  f'Required Work Experience: {job.req_experience} years\n')
                         if job.school_requirement != SchoolQualif.HIGH_SCHOOL:
                             value += f'School Requirement: {job.school_requirement.to_string()}\n'
@@ -670,6 +746,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             embed.description = 'No jobs available for your qualifications yet.'
         
         await ctx.send(embed=embed)
+        return
     
     @commands.command(name='job',
                       brief='Apply for a job',
@@ -712,6 +789,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         salary_offers[ctx.author.id] = {}
         await ctx.send(
                 f'Congratulations! You have been hired as a {matched_job} with a salary of {salary} {currency_name}.')
+        return
     
     @commands.command(name='profile',
                       brief='Check your profile',
@@ -736,6 +814,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         embed.add_field(name='Age', value=f"{profile['age'] // 12} years", inline=True)
         
         await ctx.send(embed=embed)
+        return
 
 
 async def setup(bot: commands.Bot) -> None:

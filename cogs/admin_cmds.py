@@ -75,6 +75,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     async def rek(self, ctx: CContext, member: discord.Member) -> None:
         
         if member is None:
+            await ctx.delete()
             await ctx.send(f'User not found.', delete_after=ctx.bot.del_after)
             return
         

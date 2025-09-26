@@ -1,7 +1,7 @@
 from currency.job_utils import Job, SchoolQualif, JobTree, SecurityClearance
 
-zero = Job(
-        name="None",
+unemployed = Job(
+        name="Unemployed",
         tree="None",
         req_qualifications=(SchoolQualif.HIGH_SCHOOL, SecurityClearance.NONE),
         req_experience=0,
@@ -281,7 +281,7 @@ junior_engineer = Job(
 flight_systems_engineer = Job(
         name="Flight Systems Engineer",
         tree="Engineering",
-        req_qualifications=(SchoolQualif.MASTER, SecurityClearance.NONE),
+        req_qualifications=(SchoolQualif.MASTER, SecurityClearance.SECRET),
         req_experience=3,
         salary=70_000,
         salary_variance=10
@@ -290,7 +290,7 @@ flight_systems_engineer = Job(
 orbital_analyst_engineer = Job(
         name="Orbital Analyst Engineer",
         tree="Engineering",
-        req_qualifications=(SchoolQualif.MASTER, SecurityClearance.NONE),
+        req_qualifications=(SchoolQualif.MASTER, SecurityClearance.SECRET),
         req_experience=5,
         salary=70_000,
         salary_variance=10
@@ -299,7 +299,7 @@ orbital_analyst_engineer = Job(
 avionics_engineer = Job(
         name="Avionics Engineer",
         tree="Engineering",
-        req_qualifications=(SchoolQualif.MASTER, SecurityClearance.NONE),
+        req_qualifications=(SchoolQualif.MASTER, SecurityClearance.TOP_SECRET),
         req_experience=7,
         salary=70_000,
         salary_variance=10

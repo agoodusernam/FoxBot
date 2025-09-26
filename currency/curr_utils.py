@@ -1,32 +1,35 @@
-from typing import cast
+from __future__ import annotations
 
+from typing import cast, Any
 import discord
 
 from currency import shop_items
-from currency.curr_config import get_default_profile, ShopItem
-from currency.job_utils import Profile, Job
+from currency.curr_config import get_default_profile, ShopItem, Profile
+from currency.job_utils import Job
 from utils import db_stuff
 from utils.db_stuff import get_from_db
 
 
-def create_new_profile(member: discord.abc.User) -> Profile:
+def create_new_profile(member: discord.User | discord.Member) -> Profile:
     new_data = get_default_profile(member.id)
     db_stuff.send_to_db(collection_name='currency', data=dict(new_data))
-    return cast(Profile, new_data)
+    return new_data
 
 
-def get_profile(member: discord.abc.User) -> Profile:
-    profile_ = db_stuff.get_from_db(collection_name='currency', query={'user_id': str(member.id)})
-    if not profile_:
+def get_profile(member: discord.User | discord.Member) -> Profile:
+    user_profile: dict[str, Any] | None = db_stuff.get_from_db(collection_name='currency', query={'user_id': str(
+            member.id)})
+    if user_profile is None:
         return create_new_profile(member)
-    return cast(Profile, profile_)
+    return cast(Profile, cast(object, user_profile))
 
-def set_profile(member: discord.abc.User, profile: Profile) -> None:
+
+def set_profile(member: discord.User | discord.Member, profile: Profile) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, dict(profile))
     return
 
 
-def get_lottery_tickets(member: discord.abc.User) -> int:
+def get_lottery_tickets(member: discord.User | discord.Member) -> int:
     """
     Retrieves the number of lottery tickets a member has.
     :param member: The Discord member whose lottery tickets are being checked.
@@ -60,13 +63,12 @@ def delete_all_lottery_tickets() -> int | None:
     return db_stuff.del_many_db_entries(collection_name='lottery', query={})
 
 
-def delete_profile(member: discord.abc.User) -> bool:
+def delete_profile(member: discord.User | discord.Member) -> bool:
     """
     Deletes the currency profile of a specific member.
     :param member: The Discord member whose profile is to be deleted.
     """
     return db_stuff.del_db_entry(collection_name='currency', query={'user_id': str(member.id)})
-    
 
 
 def user_has_gun(profile: Profile) -> bool:
@@ -101,39 +103,39 @@ def set_stock(item: ShopItem, amount: int) -> None:
     return
 
 
-def set_wallet(member: discord.abc.User, amount: int) -> None:
+def set_wallet(member: discord.User | discord.Member, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'wallet': amount})
 
 
-def set_bank(member: discord.abc.User, amount: int) -> None:
+def set_bank(member: discord.User | discord.Member, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'bank': amount})
 
 
-def set_income(member: discord.abc.User, amount: int) -> None:
+def set_income(member: discord.User | discord.Member, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'work_income': amount})
 
 
-def set_other_income(member: discord.abc.User, amount: int) -> None:
+def set_other_income(member: discord.User | discord.Member, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'other_income': amount})
 
 
-def set_next_income_multiplier(member: discord.abc.User, multiplier: float) -> None:
+def set_next_income_multiplier(member: discord.User | discord.Member, multiplier: float) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'next_income_mult': multiplier})
 
 
-def set_fire_risk(member: discord.abc.User, risk: float) -> None:
+def set_fire_risk(member: discord.User | discord.Member, risk: float) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'fire_risk': risk})
 
 
-def set_debt(member: discord.abc.User, amount: int) -> None:
+def set_debt(member: discord.User | discord.Member, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'debt': amount})
 
 
-def set_credit_score(member: discord.abc.User, score: int) -> None:
+def set_credit_score(member: discord.User | discord.Member, score: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'credit_score': score})
 
 
-def add_lottery_tickets(member: discord.abc.User, amount: int) -> None:
+def add_lottery_tickets(member: discord.User | discord.Member, amount: int) -> None:
     """
     Adds a specified amount of lottery tickets to the member's profile.
     :param member: The Discord member whose lottery tickets are being updated.
@@ -163,6 +165,7 @@ def set_experience(member: discord.abc.User, amount: int) -> None:
     """
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'work_experience': amount})
 
+
 def set_job(member: discord.abc.User, job: Job, income: int) -> None:
     """
     Sets the job of the member in their currency profile.
@@ -177,7 +180,8 @@ def set_job(member: discord.abc.User, job: Job, income: int) -> None:
     profile['work_tree'] = job.tree
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, dict(profile))
 
-def reset_job(member: discord.abc.User) -> None:
+
+def reset_job(member: discord.User | discord.Member) -> None:
     """
     Resets the job of the member to 'Unemployed' in their currency profile.
     :param member: The Discord member whose job is to be reset.
@@ -186,8 +190,9 @@ def reset_job(member: discord.abc.User) -> None:
     
     profile['work_str'] = 'Unemployed'
     profile['work_income'] = 0
-    profile['work_tree'] = ""
+    profile['work_tree'] = "None"
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, dict(profile))
+
 
 def add_to_inventory(member: discord.abc.User, item: str, amount: int, illegal: bool = False) -> None:
     """

@@ -272,7 +272,7 @@ fentanyl = DrugItem(
         income_multiplier=1.5,
         work_catch_risk=0.3,
         uses=1,
-        od_chance=0.8
+        od_chance=0.5
 )
 
 ominous_knife = BlackMarketItem(

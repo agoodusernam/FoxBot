@@ -61,14 +61,15 @@ def find_url_in_string(string: str) -> bool:
     match = url_pattern.search(string)
     return match is not None
 
-def seconds_to_human_readable(seconds: int) -> str:
+def seconds_to_human_readable(seconds: float) -> str:
     """
     Convert seconds to a human-readable format.
     :param seconds: The number of seconds to convert.
     :return: A string representing the time in a human-readable format.
     """
     if seconds < 60:
-        return f"{seconds} seconds"
+        return f"{seconds:.1f} seconds"
+    seconds: int = int(seconds)
     if seconds < 3600:
         return f"{seconds // 60} minutes and {seconds % 60} seconds"
     if seconds < 86400:
@@ -227,7 +228,7 @@ class HelpPaginationView(discord.ui.View):
     
     @discord.ui.button(label="Previous", style=discord.ButtonStyle.primary, emoji="⬅️",  # type: ignore
                        custom_id="prev")
-    async def prev_button(self, interaction: discord.Interaction, button) -> None:
+    async def prev_button(self, button: discord.ui.Button, interaction: discord.Interaction) -> None:
         if self.current_page > 0:
             self.current_page -= 1
             self.update_buttons()
@@ -240,7 +241,7 @@ class HelpPaginationView(discord.ui.View):
         pass
     
     @discord.ui.button(label="Next", style=discord.ButtonStyle.primary, emoji="➡️", custom_id="next")  # type: ignore
-    async def next_button(self, interaction: discord.Interaction, button) -> None:
+    async def next_button(self, button: discord.ui.Button, interaction: discord.Interaction) -> None:
         if self.current_page < self.total_pages - 1:
             self.current_page += 1
             self.update_buttons()
@@ -254,8 +255,8 @@ bot.help_command = CustomHelpCommand()
 @bot.event
 async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandError):
     if isinstance(error, commands.CommandOnCooldown):
-        await ctx.send(f'This command is on cooldown. Please try again in '
-                       f'{seconds_to_human_readable(int(error.retry_after))}.')
+        await ctx.send('This command is on cooldown. Please try again in ' +
+                       f'{seconds_to_human_readable(error.retry_after)}.')
     elif isinstance(error, commands.NoPrivateMessage):
         await ctx.send('This command cannot be used in private messages.', delete_after=bot.config.del_after)
         await ctx.delete()
@@ -274,8 +275,15 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
         await ctx.send('You do not have permission to use this command.', delete_after=bot.config.del_after)
         await ctx.delete()
     
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send(f'Bad argument: {error}')
+    
+    elif isinstance(error, commands.CommandNotFound):
+        await ctx.send(f'Command not found: {error}', delete_after=bot.config.del_after)
+        await ctx.delete()
+    
     else:
-        print(f"Unhandled error: {error}")
+        print(f"Unexpected error: {error}")
 
 
 # Message event for logging and processing
@@ -311,7 +319,7 @@ async def on_message(message: discord.Message):
     
     if ((message.channel.id == 1346720879651848202) and (message.author.id == 542798185857286144) and
             (message.content.startswith('FUN FACT'))):
-        await message.channel.send('<@&1352341336459841688>', delete_after=1)
+        await message.channel.send('<@&1352341336459841688>', delete_after=2)
     
     # Log regular messages
     if (message.author != bot.user) and (
@@ -456,13 +464,6 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
                 await before.channel.delete(reason='Private VC empty after member left')
 
 
-@bot.event
-async def on_guild_update(before: discord.Guild, after: discord.Guild):
-    if after.vanity_url_code != 'foxeshaven':
-        await bot.get_channel(1329366175796432898).send("<@235644709714788352> <@542798185857286144> Guild invite " +
-                                                        "has been updated!")
-
-
 async def load_extensions() -> None:
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py') and not filename.startswith('_'):
@@ -476,7 +477,6 @@ async def not_blacklisted(ctx: CContext):
     Check if the user is blacklisted from using commands.
     """
     if bot.blacklist.is_blacklisted(ctx.author.id):
-        await ctx.send('You are not allowed to use this command.')
         return False
     return True
 

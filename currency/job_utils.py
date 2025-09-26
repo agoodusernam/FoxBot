@@ -3,9 +3,9 @@ from __future__ import annotations
 import dataclasses
 import enum
 import functools
+import random
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import TypedDict
 
 
 @functools.total_ordering
@@ -13,6 +13,7 @@ class SchoolQualif(enum.Enum):
     """
     Enum to represent different qualifications required for jobs, cost per year, and length of study in years.
     """
+    # LEVEL, COST PER YEAR, LENGTH OF STUDY (in years)
     HIGH_SCHOOL = (0, 0, 0)
     NONE = HIGH_SCHOOL
     ASSOCIATE = (1, 3_885, 2)
@@ -31,6 +32,8 @@ class SchoolQualif(enum.Enum):
         :param other: The other SchoolQualif member to compare with.
         :return: True if this member is greater than the other, False otherwise.
         """
+        if not isinstance(other, SchoolQualif):
+            raise NotImplementedError
         return self.value[0] > other.value[0]
     
     def __lt__(self, other: 'SchoolQualif') -> bool:
@@ -39,6 +42,8 @@ class SchoolQualif(enum.Enum):
         :param other: The other SchoolQualif member to compare with.
         :return: True if this member is less than the other, False otherwise.
         """
+        if not isinstance(other, SchoolQualif):
+            raise NotImplementedError
         return self.value[0] < other.value[0]
     
     def __eq__(self, other: object) -> bool:
@@ -48,7 +53,7 @@ class SchoolQualif(enum.Enum):
         :return: True if both members are equal, False otherwise.
         """
         if not isinstance(other, SchoolQualif):
-            return NotImplemented
+            raise NotImplementedError
         return self.value[0] == other.value[0]
     
     @classmethod
@@ -92,6 +97,8 @@ class SecurityClearance(enum.Enum):
         :param other: The other SecurityClearance member to compare with.
         :return: True if this member is greater than the other, False otherwise.
         """
+        if not isinstance(other, SecurityClearance):
+            raise NotImplementedError
         return self.value > other.value
     
     def __lt__(self, other: object) -> bool:
@@ -101,7 +108,7 @@ class SecurityClearance(enum.Enum):
         :return: True if this member is less than the other, False otherwise.
         """
         if not isinstance(other, SecurityClearance):
-            return NotImplemented
+            raise NotImplementedError
         return self.value < other.value
     
     def __eq__(self, other: 'SecurityClearance') -> bool:
@@ -110,6 +117,8 @@ class SecurityClearance(enum.Enum):
         :param other: The other SecurityClearance member to compare with.
         :return: True if both members are equal, False otherwise.
         """
+        if not isinstance(other, SecurityClearance):
+            raise NotImplementedError
         return self.value == other.value
     
     @classmethod
@@ -147,7 +156,7 @@ class Job:
     req_experience: int
     salary: int
     salary_variance: int
-    experience_multiplier: float | int = 1
+    experience_multiplier: int = 1
     parent_tree: JobTree | None = dataclasses.field(default=None, repr=False)
     
     def __post_init__(self):
@@ -168,7 +177,7 @@ class Job:
         self.security_clearance = self.req_qualifications[1]
         self.init_complete = True
     
-    def get_next_job(self) -> Job | list[Job] | None:
+    def get_next_job(self) -> Job | None:
         """
         Finds the next job or list of jobs in the job tree.
         :return: The next job(s) in the sequence, or None if it's the last one.
@@ -177,11 +186,14 @@ class Job:
             return None
         
         for i, job_or_list in enumerate(self.parent_tree.jobs):
-            current_jobs = job_or_list if isinstance(job_or_list, list) else [job_or_list]
+            current_jobs: list[Job] = job_or_list if isinstance(job_or_list, list) else [job_or_list]
             if self in current_jobs:
                 # Check if there is a next level in the tree
                 if i + 1 < len(self.parent_tree.jobs):
+                    if isinstance(self.parent_tree.jobs[i + 1], list):
+                        return random.choice(self.parent_tree.jobs[i + 1])
                     return self.parent_tree.jobs[i + 1]
+                    
                 else:
                     return None
         return None
@@ -231,7 +243,7 @@ class Job:
                     req_experience=int(data["req_experience"]),
                     salary=int(data["salary"]),
                     salary_variance=int(data["salary_variance"]),
-                    experience_multiplier=float(data["experience_multiplier"])
+                    experience_multiplier=int(data["experience_multiplier"])
             )
         except (KeyError, ValueError, IndexError) as e:
             raise ValueError(f"Invalid job data: {e}") from e
@@ -306,21 +318,3 @@ def job_from_name(job_name: str, job_trees: list[JobTree]) -> Job | None:
                     return job_or_list
     return None
 
-
-class Profile(TypedDict):
-    user_id: str
-    wallet: int
-    bank: int
-    work_income: int
-    work_str: str
-    work_tree: str
-    other_income: int
-    next_income_mult: float
-    work_experience: int
-    qualifications: tuple[str, str]
-    fire_risk: float
-    debt: int
-    credit_score: int
-    age: int  # Age in months
-    inventory: dict[str, int]
-    illegal_items: dict[str, int]

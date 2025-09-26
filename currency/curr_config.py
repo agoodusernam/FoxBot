@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from collections.abc import Callable, Awaitable
 from dataclasses import dataclass
+from typing import TypedDict
 
 import discord.ext.commands
 
@@ -10,6 +13,7 @@ currency_name: str = 'FoxCoins'
 retirement_age: int = 65 * 12  # Age at which a member can retire
 income_tax: float = 0.15  # Tax rate on income
 sales_tax: float = 0.08375  # Sales tax rate on purchases
+base_fire_chance: float = 0.003546099 # probability to get fired, on average, twice in an entire lifetime
 
 
 @dataclass
@@ -30,7 +34,7 @@ class ShopItem:
     description: str
     price: int
     stock: int
-    perk: list[Callable[[discord.ext.commands.Context, discord.Member], Awaitable[None]]] | None
+    perk: list[Callable[["discord.ext.commands.Context", discord.Member], Awaitable[None | bool]]] | None
 
 
 @dataclass
@@ -159,13 +163,32 @@ class BlackMarketCategory:
     items: list[BlackMarketItem]
 
 
-def get_default_profile(member_id: int | str) -> dict:
+class Profile(TypedDict):
+    user_id: str
+    wallet: int
+    bank: int
+    work_income: int
+    work_str: str
+    work_tree: str
+    other_income: int
+    next_income_mult: float
+    work_experience: int
+    qualifications: tuple[str, str]
+    fire_risk: float
+    debt: int
+    credit_score: int
+    age: int  # Age in months
+    inventory: dict[str, int]
+    illegal_items: dict[str, int]
+
+
+def get_default_profile(member_id: int | str) -> Profile:
     """
     Generates a default currency profile for a new member.
     :param member_id: The ID of the member for whom to create the profile.
     :return: A dictionary containing the default profile data.
     """
-    default: dict = {
+    default: Profile = {
         'user_id':          str(member_id),
         'wallet':           1_000,
         'bank':             0,

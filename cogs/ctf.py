@@ -6,11 +6,12 @@ from command_utils.CContext import CContext
 from command_utils.checks import not_blacklisted
 
 
-class CTF(commands.Cog, name='CTF', command_attrs=dict(add_check=not_blacklisted)):
+class CTF(commands.Cog, name='CTF'):
     def __init__(self, bot):
         self.bot = bot
     
     @commands.command(name='submit')
+    @commands.guild_only()
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def submit(self, ctx: CContext, *, args: str):
         """The command to submit a solution to a CTF challenge."""

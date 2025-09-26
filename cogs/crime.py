@@ -7,7 +7,8 @@ from discord.ext import commands
 from command_utils.CContext import CContext
 from command_utils.checks import is_dev
 from currency import curr_utils, curr_config
-from currency.job_utils import Profile
+from currency.curr_config import Profile
+
 
 async def rob_success(ctx: CContext, profile: Profile, target: discord.Member, target_profile:
                         Profile, min: float = 0.01, max: float = 0.1):
@@ -95,7 +96,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
                       brief='Rob someone',
                       help="Attempt to steal from someone's wallet.",
                       usage='rob <target>')
-    @commands.cooldown(1, 60 * 60, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)  # type: ignore
     async def rob_cmd(self, ctx: CContext, target: discord.Member) -> None:
         if target.id == ctx.author.id:
             await ctx.send('You cannot rob yourself!')
