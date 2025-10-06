@@ -441,7 +441,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         
         formatted_messages = '\n\n'.join(
                 [f'**Channel:** <#{msg["channel_id"]}>\n**Timestamp:** <t' +
-                 f':{int(msg["timestamp"].timestamp())}>\n**Content:** {msg["content"]}'
+                 f':{int(msg["timestamp"].timestamp())}>\n**Content:** {discord.utils.escape_mentions(msg["content"])}'
                  for msg in messages])
         if len(formatted_messages) > 2000:
             formatted_messages = formatted_messages[:1995] + '...'
