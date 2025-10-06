@@ -440,7 +440,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             return
         
         formatted_messages = '\n\n'.join(
-                [f'**Message ID:** {msg["message_id"]}\n**Channel:** <#{msg["channel_id"]}>\n**Timestamp:** <t' +
+                [f'**Channel:** <#{msg["channel_id"]}>\n**Timestamp:** <t' +
                  f':{int(msg["timestamp"].timestamp())}>\n**Content:** {msg["content"]}'
                  for msg in messages])
         if len(formatted_messages) > 2000:
