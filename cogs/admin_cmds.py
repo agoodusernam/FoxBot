@@ -433,7 +433,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             return
         
         messages = analysis.remove_invalid_messages(db_stuff.download_all())
-        messages = [msg for msg in messages if msg['author_id'] == member.id]
+        messages = [msg for msg in messages if msg['author_id'] == str(member.id)]
         messages = sort_by_timestamp(messages)[:number_of_messages]
         if not messages:
             await ctx.send(f'No messages found for {member.display_name}.', delete_after=ctx.bot.del_after)
