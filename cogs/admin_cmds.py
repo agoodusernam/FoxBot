@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import re
+from typing import Any
 
 import discord
 from discord.ext import commands
@@ -11,7 +12,7 @@ from command_utils import analysis
 from command_utils.CContext import CContext
 from command_utils.checks import is_admin
 from config import bot_config
-from utils import db_stuff
+from utils import db_stuff, utils
 
 
 async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
@@ -60,6 +61,13 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
     await mod_log_channel.send('Posted')
 
 staff_role_id = bot_config.get_config_option('staff_role_id', 0)
+
+def sort_by_timestamp(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    for message in messages:
+        if utils.check_valid_utciso8601(message['timestamp']):
+            message['timestamp'] = utils.parse_utciso8601(message['timestamp'])
+    
+    return sorted(messages, key=lambda x: x['timestamp'], reverse=True)
 
 class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     """Admin commands for managing the server and users."""
@@ -406,6 +414,40 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         except Exception as e:
             await ctx.send(f'Failed to verify {member.display_name}. Error: {e}', delete_after=ctx.bot.del_after)
             return
+    
+    @commands.command(name='last_messages', aliases=['lastmsgs', 'last_msgs', 'lm'],
+                      brief='Fetch last messages from a user',
+                      help='Admin only: Fetch the last messages sent by a user in the server',
+                      usage='f!last_messages <user_id/mention> [number_of_messages]')
+    @commands.has_role(staff_role_id)
+    async def last_messages(self, ctx: CContext, member: discord.Member, number_of_messages: int = 5):
+        await ctx.delete()
+        
+        if member is None:
+            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
+            return
+        
+        if number_of_messages < 1:
+            await ctx.send('Please specify a number between above 0 for the number of messages.',
+                           delete_after=ctx.bot.del_after)
+            return
+        
+        messages = analysis.remove_invalid_messages(db_stuff.download_all())
+        messages = [msg for msg in messages if msg['author_id'] == member.id]
+        messages = sort_by_timestamp(messages)[:number_of_messages]
+        if not messages:
+            await ctx.send(f'No messages found for {member.display_name}.', delete_after=ctx.bot.del_after)
+            return
+        
+        formatted_messages = '\n\n'.join(
+                [f'**Message ID:** {msg["message_id"]}\n**Channel:** <#{msg["channel_id"]}>\n**Timestamp:** <t' +
+                 f':{int(msg["timestamp"].timestamp())}>\n**Content:** {msg["content"]}'
+                 for msg in messages])
+        if len(formatted_messages) > 2000:
+            formatted_messages = formatted_messages[:1995] + '...'
+            
+        await ctx.send(f"Last {number_of_messages} sent by {member.display_name}:")
+        await ctx.send(formatted_messages)
             
 
 async def setup(bot):

@@ -46,6 +46,16 @@ def check_required_keys(message: dict[str, Any]) -> bool:
     return all(key in message for key in required_keys)
 
 
+def remove_invalid_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    valid_messages = []
+    for message in messages:
+        if check_required_keys(message):
+            valid_messages.append(message)
+        else:
+            db_stuff.delete_message(message['_id'])
+    
+    return valid_messages
+
 def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> tuple[list[dict[str, str]], int]:
     """
     Download and validate messages from the database.
@@ -76,12 +86,8 @@ def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> 
         all_messages = [msg for msg in messages if msg['author_id'] not in EXCLUDED_USER_IDS]
         
         # Validate messages and remove invalid ones
-        valid_messages = []
-        for message in all_messages:
-            if check_required_keys(message):
-                valid_messages.append(message)
-            else:
-                db_stuff.delete_message(message['_id'])
+        valid_messages = remove_invalid_messages(all_messages)
+
         
         # Apply time filter if specified
         if flag in TIME_FILTERS:
