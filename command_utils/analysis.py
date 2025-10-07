@@ -782,12 +782,14 @@ async def add_voice_analysis_for_user(ctx: CContext, member: discord.User) -> No
         if TYPE_CHECKING:
             channel: dict
         formatted_time = format_duration(channel['total_seconds'])
-        channelobj = ctx.bot.get_channel(channel['id'])
-        print(channel['id'])
-        if channelobj is not None:
-            result += f"{i}. {channelobj.name}: {formatted_time}\n"
-        else:
+        try:
+            channelobj = await ctx.bot.fetch_channel(channel['id'])
+        except discord.NotFound:
             result += f"{i}. {channel['name']}: {formatted_time}\n"
+            continue
+
+        result += f"{i}. {channelobj.name}: {formatted_time}\n"
+        
     
     await ctx.send(result)
 
