@@ -681,12 +681,10 @@ def get_user_voice_statistics(user_id: str) -> dict[str, str | int | list[dict[s
         channel_stats = {}
         for session in user_sessions:
             channel_id = session.get('channel_id')
-            channel_name = session.get('channel_name')
             duration = session.get('duration_seconds', 0)
             
             if channel_id not in channel_stats:
                 channel_stats[channel_id] = {
-                    'name':          channel_name,
                     'total_seconds': 0
                 }
             
@@ -694,7 +692,7 @@ def get_user_voice_statistics(user_id: str) -> dict[str, str | int | list[dict[s
         
         # Sort channels by time
         top_channels = sorted(
-                [{'id': channel_id, 'name': data['name'], 'total_seconds': data['total_seconds']}
+                [{'id': channel_id, 'total_seconds': data['total_seconds']}
                  for channel_id, data in channel_stats.items()],
                 key=lambda x: x['total_seconds'],
                 reverse=True
@@ -780,7 +778,7 @@ async def add_voice_analysis_for_user(message: discord.Message, member: discord.
         if TYPE_CHECKING:
             channel: dict
         formatted_time = format_duration(channel['total_seconds'])
-        result += f"{i}. {channel['name']}: {formatted_time}\n"
+        result += f"{i}. <#{channel['id']}>: {formatted_time}\n"
     
     await message.channel.send(result)
 
