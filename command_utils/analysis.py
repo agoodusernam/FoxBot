@@ -12,7 +12,7 @@ from discord.ext.commands import Context
 import matplotlib.pyplot as plt
 
 import config.bot_config
-from command_utils.CContext import CContext
+from command_utils.CContext import CContext, CoolBot
 from utils import db_stuff, utils
 
 # Configure logging
@@ -681,10 +681,12 @@ def get_user_voice_statistics(user_id: str) -> dict[str, str | int | list[dict[s
         channel_stats = {}
         for session in user_sessions:
             channel_id = session.get('channel_id')
+            channel_name = session.get('channel_name')
             duration = session.get('duration_seconds', 0)
             
             if channel_id not in channel_stats:
                 channel_stats[channel_id] = {
+                    'name':          channel_name,
                     'total_seconds': 0
                 }
             
@@ -692,7 +694,7 @@ def get_user_voice_statistics(user_id: str) -> dict[str, str | int | list[dict[s
         
         # Sort channels by time
         top_channels = sorted(
-                [{'id': channel_id, 'total_seconds': data['total_seconds']}
+                [{'id': channel_id, 'name': data['name'], 'total_seconds': data['total_seconds']}
                  for channel_id, data in channel_stats.items()],
                 key=lambda x: x['total_seconds'],
                 reverse=True
@@ -754,18 +756,20 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
             await ctx.send(f'Error generating graph: {e}')
 
 
-async def add_voice_analysis_for_user(message: discord.Message, member: discord.User) -> None:
+async def add_voice_analysis_for_user(ctx: CContext, member: discord.User) -> None:
     """
     Generate voice activity statistics for a specific user.
 
     Args:
-        message: Discord message
+        ctx: The Discord command context
         member: Discord user to analyse
     """
     stats = get_user_voice_statistics(str(member.id))
+    if TYPE_CHECKING:
+        ctx.bot: CoolBot
     
     if not stats:
-        await message.channel.send(f"No voice activity data available for {member.display_name}.")
+        await ctx.send(f"No voice activity data available for {member.display_name}.")
         return
     
     formatted_total_time = format_duration(stats['total_seconds'])
@@ -778,9 +782,13 @@ async def add_voice_analysis_for_user(message: discord.Message, member: discord.
         if TYPE_CHECKING:
             channel: dict
         formatted_time = format_duration(channel['total_seconds'])
-        result += f"{i}. <#{channel['id']}>: {formatted_time}\n"
+        channelobj = ctx.bot.get_channel(channel['channel_id'])
+        if channelobj:
+            result += f"{i}. {channelobj.name}: {formatted_time}\n"
+        else:
+            result += f"{i}. {channel['name']}: {formatted_time}\n"
     
-    await message.channel.send(result)
+    await ctx.send(result)
 
 
 async def format_voice_analysis(ctx: CContext, graph: bool = False) -> None:
@@ -808,7 +816,7 @@ async def format_voice_analysis(ctx: CContext, graph: bool = False) -> None:
                 await new_msg.edit(content=f'User with ID {member_id} not found.')
                 return
             
-            await add_voice_analysis_for_user(ctx.message, member)
+            await add_voice_analysis_for_user(ctx, member)
             await new_msg.delete()
             return
         
