@@ -783,7 +783,8 @@ async def add_voice_analysis_for_user(ctx: CContext, member: discord.User) -> No
             channel: dict
         formatted_time = format_duration(channel['total_seconds'])
         channelobj = ctx.bot.get_channel(channel['id'])
-        if channelobj:
+        print(channelobj)
+        if channelobj is not None:
             result += f"{i}. {channelobj.name}: {formatted_time}\n"
         else:
             result += f"{i}. {channel['name']}: {formatted_time}\n"
