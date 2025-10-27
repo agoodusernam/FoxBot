@@ -13,7 +13,6 @@ from command_utils import analysis
 from command_utils.CContext import CContext
 from command_utils.checks import is_admin
 from config import bot_config
-from main import forced_landmines
 from utils import db_stuff, utils
 
 
@@ -488,8 +487,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='landmines', aliases=['lm_list', 'lms'],
                       brief='List landmines',
                       help='Admin only: List all landmines',
-                      usage='f!landmines'
-                      )
+                      usage='f!landmines')
     @commands.check(is_admin)
     async def landmines(self, ctx: CContext) -> None:
         if not ctx.bot.landmine_channels:
