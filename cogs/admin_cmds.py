@@ -13,6 +13,7 @@ from command_utils import analysis
 from command_utils.CContext import CContext
 from command_utils.checks import is_admin
 from config import bot_config
+from main import forced_landmines
 from utils import db_stuff, utils
 
 
@@ -483,6 +484,29 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         ctx.bot.forced_landmines.add(user.id)
         
         await ctx.send(f'{user.display_name} has been forced into landmine the next time they send a message.')
+    
+    @commands.command(name='landmines', aliases=['lm_list', 'lms'],
+                      brief='List landmines',
+                      help='Admin only: List all landmines',
+                      usage='f!landmines'
+                      )
+    @commands.check(is_admin)
+    async def landmines(self, ctx: CContext) -> None:
+        if not ctx.bot.landmine_channels:
+            await ctx.send('No landmines have been set.', delete_after=ctx.bot.del_after)
+            return
+        
+        landmine_list = '\n'.join(
+                [f'Channel: <#{channel_id}> - Landmines: {amount}'
+                 for channel_id, amount in ctx.bot.landmine_channels.items()])
+        
+        await ctx.send(f'Landmines set in the following channels:\n{landmine_list}')
+        
+        if ctx.bot.forced_landmines:
+            forced_landmines_list = ', '.join(
+                    [f'<@{user_id}>' for user_id in ctx.bot.forced_landmines])
+            await ctx.send(f'Forced landmines for the following users: {forced_landmines_list}')
+
         
 
 async def setup(bot):
