@@ -297,8 +297,11 @@ async def landmine_explode(message: discord.Message) -> None:
         await message.author.timeout(datetime.timedelta(seconds=10), reason='Landmine exploded')
         
         await message.channel.send('Landmine exploded! You cannot talk for 10 seconds.')
-        await message.channel.send(f'There are now {bot.landmine_channels[message.channel.id]} landmines left in this channel.')
+        await message.channel.send(f'There are now {bot.landmine_channels[message.channel.id] - 1} landmines left in '
+                                   f'this channel.')
         bot.landmine_channels[message.channel.id] -= 1
+        if bot.landmine_channels[message.channel.id] == 0:
+            del bot.landmine_channels[message.channel.id]
     except Exception:
         pass
 
