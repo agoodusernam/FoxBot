@@ -1,12 +1,13 @@
 import datetime
 import json
 import os
+import random
 import re
 import typing
 from typing import Any
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.utils import get
 
 from command_utils import analysis
@@ -15,6 +16,8 @@ from command_utils.checks import is_admin
 from config import bot_config
 from utils import db_stuff, utils
 
+utc = datetime.timezone.utc
+time = datetime.time(hour=0, minute=0, tzinfo=utc)
 
 async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
     mod_log_channel = ctx.bot.get_channel(1329367677940006952)  # Channel where the carlbot logs are sent
@@ -476,8 +479,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='force_lm', aliases=['flm'],
                       brief='Force a landmine',
                       help='Admin only: Force a landmine for a specified user',
-                      usage='f!force_lm <user>'
-                      )
+                      usage='f!force_lm <user>')
     @commands.check(is_admin)
     async def force_landmine(self, ctx: CContext, user: discord.Member) -> None:
         ctx.bot.forced_landmines.add(user.id)
@@ -504,7 +506,44 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             forced_landmines_list = ', '.join(
                     [f'<@{user_id}>' for user_id in ctx.bot.forced_landmines])
             await ctx.send(f'Forced landmines for the following users: {forced_landmines_list}')
-
+    
+    @commands.command(name='clear_lm', aliases=['clm'],
+                      brief='Clear landmines',
+                      help='Admin only: Clear all landmines',
+                      usage='f!clear_lm')
+    @commands.check(is_admin)
+    async def clear_landmines(self, ctx: CContext) -> None:
+        ctx.bot.landmine_channels = {}
+        
+        await ctx.send('All landmines have been cleared.')
+        
+    @commands.command(name='random_lm', aliases=['rlm'],
+                      brief='Randomly set landmines',
+                      help='Admin only: Randomly set landmines in all channels',
+                      usage='f!random_lm')
+    @commands.check(is_admin)
+    async def random_landmines(self, ctx: CContext) -> None:
+        await self.set_some_landmines()
+        await self.landmines(ctx)
+    
+    @tasks.loop(time=time)
+    async def set_some_landmines(self):
+        if hasattr(self.bot, 'landmine_channels'):
+            # It should always have it, but the type checker doesn't know that
+            existing_mines: dict[int, int] = self.bot.landmine_channels
+        else:
+            existing_mines = {}
+            self.bot.landmine_channels = {}
+        
+        guild = discord.utils.get(self.bot.guilds, id=1081760248433492140)
+        category = discord.utils.get(guild.categories, id=1081760248433492141)
+        channels: list[discord.TextChannel] = [channel for channel in category.channels if isinstance(channel,
+                                                                                               discord.TextChannel)]
+        chosen_channels: list[discord.TextChannel] = random.sample(channels, k=3)
+        
+        for channel in chosen_channels:
+            if channel.id not in existing_mines.keys():
+                self.bot.landmine_channels[channel.id] = random.randint(1, 5)
         
 
 async def setup(bot):
