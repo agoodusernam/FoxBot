@@ -480,7 +480,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       )
     @commands.check(is_admin)
     async def force_landmine(self, ctx: CContext, user: discord.Member) -> None:
-        ctx.bot.forced_landmines += user.id
+        ctx.bot.forced_landmines.add(user.id)
         
         await ctx.send(f'{user.display_name} has been forced into landmine the next time they send a message.')
         
