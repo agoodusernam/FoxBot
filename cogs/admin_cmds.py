@@ -469,7 +469,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                            delete_after=ctx.bot.del_after)
             return
         
-        ctx.bot.landmines[channel.id] = amount
+        ctx.bot.landmine_channels[channel.id] = amount
         
         await ctx.send(f'You have set {amount} landmines in {channel.mention}!')
         
