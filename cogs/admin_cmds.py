@@ -456,8 +456,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!landmine [channel_id] [amount]'
                       )
     @commands.check(is_admin)
-    async def landmine(self, ctx: CContext, channel_or_amount: typing.Union[discord.TextChannel, int], amount: int) \
-            -> None:
+    async def landmine(self, ctx: CContext, channel_or_amount: typing.Union[discord.TextChannel, int], amount: int =
+    0) -> None:
         if isinstance(channel_or_amount, int):
             channel = ctx.channel
             amount: int = channel_or_amount
