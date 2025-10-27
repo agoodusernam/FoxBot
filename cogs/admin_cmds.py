@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import re
+import typing
 from typing import Any
 
 import discord
@@ -448,7 +449,30 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             
         await ctx.send(f"Last {number_of_messages} sent by {member.display_name}:")
         await ctx.send(formatted_messages)
-            
+    
+    @commands.command(name='landmine', aliases=['lm'],
+                      brief='Set landmines in a channel',
+                      help='Admin only: Set a specified number of landmines in a channel',
+                      usage='f!landmine [channel_id] [amount]'
+                      )
+    @commands.check(is_admin)
+    async def landmine(self, ctx: CContext, channel_or_amount: typing.Union[discord.TextChannel, int], amount: int) \
+            -> None:
+        if isinstance(channel_or_amount, int):
+            channel = ctx.channel
+            amount: int = channel_or_amount
+        else:
+            channel = channel_or_amount
+        
+        if amount < 1:
+            await ctx.send('Please specify a number between above 0 for the number of landmines.',
+                           delete_after=ctx.bot.del_after)
+            return
+        
+        ctx.bot.landmines[channel.id] = amount
+        
+        await ctx.send(f'You have set {amount} landmines in {channel.mention}!')
+        
 
 async def setup(bot):
     await bot.add_cog(AdminCmds(bot))

@@ -1,7 +1,9 @@
 # pylint: disable=trailing-whitespace, line-too-long
 import atexit
+import datetime
 import json
 import os
+import random
 import re
 
 import discord
@@ -17,7 +19,6 @@ from custom_logging import voice_log
 from utils import db_stuff, utils
 
 load_dotenv()
-
 
 
 @atexit.register
@@ -44,6 +45,8 @@ bot.del_after = config.del_after
 
 # Set dynamic properties
 bot.config.today = utils.formatted_time()
+landmine_channels: dict[int, int] = {}
+bot.landmine_channels = landmine_channels
 
 # Regular Expression to extract URL from the string
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
@@ -61,6 +64,7 @@ def find_url_in_string(string: str) -> bool:
     match = url_pattern.search(string)
     return match is not None
 
+
 def seconds_to_human_readable(seconds: float) -> str:
     """
     Convert seconds to a human-readable format.
@@ -75,7 +79,8 @@ def seconds_to_human_readable(seconds: float) -> str:
     if seconds < 86400:
         return f"{seconds // 3600} hours, {(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
     return f"{seconds // 86400} days, {(seconds % 86400) // 3600} hours, " \
-            f"{(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
+           f"{(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
+
 
 # Bot configuration
 @bot.event
@@ -92,17 +97,15 @@ async def on_ready() -> None:
     if bot.config.maintenance_mode:
         print("Bot is in maintenance mode. Only admins can use commands.")
     
-
-    
     # Reconnect voice states
     for channel in bot.get_all_channels():
         if not isinstance(channel, discord.VoiceChannel):
             continue
-            
+        
         for member in channel.members:
             if member.bot:
                 continue
-                
+            
             voice_log.handle_join(member, channel)
             print(f'Reconnected voice state for {member.name} in {channel.name}')
     
@@ -125,7 +128,8 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
     async def send_bot_help(self, mapping: dict[commands.Cog, list[commands.Command]]) -> None:
         ctx: Context = self.context
         if bot.blacklist.is_blacklisted(ctx.author.id):
-            await ctx.message.channel.send('You are not allowed to use this command.', delete_after=bot.config.del_after)
+            await ctx.message.channel.send('You are not allowed to use this command.',
+                                           delete_after=bot.config.del_after)
             return
         
         is_admin: bool = ctx.author.id in bot.config.admin_ids or ctx.author.id in bot.config.dev_ids
@@ -222,7 +226,7 @@ class HelpPaginationView(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         # Only allow the original command author to use the buttons
         if interaction.user != self.author:
-            await interaction.response.send_message("You cannot use these buttons.", ephemeral=True) # type: ignore
+            await interaction.response.send_message("You cannot use these buttons.", ephemeral=True)  # type: ignore
             return False
         return True
     
@@ -260,7 +264,7 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
     elif isinstance(error, commands.NoPrivateMessage):
         await ctx.send('This command cannot be used in private messages.', delete_after=bot.config.del_after)
         await ctx.delete()
-        
+    
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(f'Missing required argument: {error.param.name}', delete_after=bot.config.del_after)
         await ctx.delete()
@@ -270,7 +274,7 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
         await ctx.send(f'I am missing the following permissions to run this command: {missing}',
                        delete_after=bot.config.del_after)
         await ctx.delete()
-        
+    
     elif isinstance(error, commands.CheckFailure):
         await ctx.send('You do not have permission to use this command.', delete_after=bot.config.del_after)
         await ctx.delete()
@@ -286,6 +290,25 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
         print(f"Unexpected error: {error}")
 
 
+async def landmine_explode(message: discord.Message) -> None:
+    if message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids:
+        return
+    try:
+        await message.author.timeout(datetime.timedelta(seconds=60))
+        
+        await message.channel.send('Landmine exploded! You cannot talk for 1 minute.')
+    except Exception:
+        pass
+
+
+async def check_landmine(message: discord.Message) -> None:
+    if message.channel.id not in bot.landmine_channels.keys():
+        return
+    
+    if random.random() < 0.1:  # 10% chance for a landmine to explode
+        await landmine_explode(message)
+
+
 # Message event for logging and processing
 @bot.event
 async def on_message(message: discord.Message):
@@ -296,14 +319,16 @@ async def on_message(message: discord.Message):
         print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
         return
     
+    await check_landmine(message)
+    
     if message.channel.id == 1352374592034963506 and find_url_in_string(message.content) and not message.author.bot:
         # If the message contains a URL, delete it and send a warning
         await message.delete()
         await message.channel.send(
-            'Please do not post links in this channel.',
-            delete_after=bot.config.del_after
+                'Please do not post links in this channel.',
+                delete_after=bot.config.del_after
         )
-        
+    
     commands_enabled = not bot.config.maintenance_mode
     if message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids:
         commands_enabled = True
@@ -311,7 +336,7 @@ async def on_message(message: discord.Message):
     if commands_enabled and message.content.startswith(bot.command_prefix):
         bot.config.today = utils.formatted_today()
         await bot.process_commands(message)
-        
+    
     
     elif not commands_enabled and message.content.startswith(bot.command_prefix):
         await message.channel.send('The bot is currently in maintenance mode. Please try again later.')
