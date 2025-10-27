@@ -450,7 +450,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await ctx.send(f"Last {number_of_messages} sent by {member.display_name}:")
         await ctx.send(formatted_messages)
     
-    @commands.command(name='landmine', aliases=['lm'],
+    @commands.command(name='landmine',
                       brief='Set landmines in a channel',
                       help='Admin only: Set a specified number of landmines in a channel',
                       usage='f!landmine [channel_id] [amount]'
