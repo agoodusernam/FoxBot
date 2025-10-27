@@ -47,6 +47,8 @@ bot.del_after = config.del_after
 bot.config.today = utils.formatted_time()
 landmine_channels: dict[int, int] = {}
 bot.landmine_channels = landmine_channels
+forced_landmines: set[int] = set()
+bot.forced_landmines = forced_landmines
 
 # Regular Expression to extract URL from the string
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
@@ -290,24 +292,37 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
         print(f"Unexpected error: {error}")
 
 
-async def landmine_explode(message: discord.Message) -> None:
-    if message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids:
-        return
+async def landmine_explode(message: discord.Message, forced=False) -> None:
     try:
         await message.author.timeout(datetime.timedelta(seconds=10), reason='Landmine exploded')
         
         await message.channel.send('Landmine exploded! You cannot talk for 10 seconds.')
-        await message.channel.send(f'There are now {bot.landmine_channels[message.channel.id] - 1} landmines left in '
-                                   f'this channel.')
-        bot.landmine_channels[message.channel.id] -= 1
-        if bot.landmine_channels[message.channel.id] == 0:
-            del bot.landmine_channels[message.channel.id]
+        
+        if not forced:
+            await message.channel.send(
+                f'There are now {bot.landmine_channels[message.channel.id] - 1} landmines left in '
+                f'this channel.')
+            bot.landmine_channels[message.channel.id] -= 1
+            if bot.landmine_channels[message.channel.id] == 0:
+                del bot.landmine_channels[message.channel.id]
+        else:
+            left = bot.landmine_channels.get(message.channel.id, 0)
+            await message.channel.send(f'There are now {left} landmines left in this channel.')
+            bot.forced_landmines.remove(message.author.id)
+            
     except Exception:
         pass
 
 
 async def check_landmine(message: discord.Message) -> None:
+    if message.author.id in bot.forced_landmines:
+        await landmine_explode(message, forced=True)
+        
     if message.channel.id not in bot.landmine_channels.keys():
+        return
+    
+    if (message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids or
+            message.author.guild_permissions.administrator):
         return
     
     if random.random() < 0.1:  # 10% chance for a landmine to explode

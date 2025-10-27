@@ -416,7 +416,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send(f'Failed to verify {member.display_name}. Error: {e}', delete_after=ctx.bot.del_after)
             return
     
-    @commands.command(name='last_messages', aliases=['lastmsgs', 'last_msgs', 'lm'],
+    @commands.command(name='last_messages', aliases=['lastmsgs', 'last_msgs'],
                       brief='Fetch last messages from a user',
                       help='Admin only: Fetch the last messages sent by a user in the server',
                       usage='f!last_messages <user_id/mention> [number_of_messages]')
@@ -450,7 +450,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await ctx.send(f"Last {number_of_messages} sent by {member.display_name}:")
         await ctx.send(formatted_messages)
     
-    @commands.command(name='landmine',
+    @commands.command(name='landmine', aliases=['lm'],
                       brief='Set landmines in a channel',
                       help='Admin only: Set a specified number of landmines in a channel',
                       usage='f!landmine [channel_id] [amount]'
@@ -464,14 +464,25 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         else:
             channel = channel_or_amount
         
-        if amount < 1:
-            await ctx.send('Please specify a number between above 0 for the number of landmines.',
+        if amount < 0:
+            await ctx.send('Please specify the number of landmines.',
                            delete_after=ctx.bot.del_after)
             return
         
         ctx.bot.landmine_channels[channel.id] = amount
         
         await ctx.send(f'You have set {amount} landmines in {channel.mention}!')
+    
+    @commands.command(name='force_lm', aliases=['flm'],
+                      brief='Force a landmine',
+                      help='Admin only: Force a landmine for a specified user',
+                      usage='f!force_lm <user>'
+                      )
+    @commands.check(is_admin)
+    async def force_landmine(self, ctx: CContext, user: discord.Member) -> None:
+        ctx.bot.forced_landmines += user.id
+        
+        await ctx.send(f'{user.display_name} has been forced into landmine the next time they send a message.')
         
 
 async def setup(bot):
