@@ -294,9 +294,10 @@ async def landmine_explode(message: discord.Message) -> None:
     if message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids:
         return
     try:
-        await message.author.timeout(datetime.timedelta(seconds=60))
+        await message.author.timeout(datetime.timedelta(seconds=10), reason='Landmine exploded')
         
-        await message.channel.send('Landmine exploded! You cannot talk for 1 minute.')
+        await message.channel.send('Landmine exploded! You cannot talk for 10 seconds.')
+        bot.landmine_channels[message.channel.id] -= 1
     except Exception:
         pass
 
