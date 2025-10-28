@@ -16,8 +16,7 @@ from command_utils.checks import is_admin
 from config import bot_config
 from utils import db_stuff, utils
 
-utc = datetime.timezone.utc
-time = datetime.time(hour=0, minute=0, tzinfo=utc)
+time = datetime.time(hour=0, minute=0, tzinfo=datetime.timezone.utc)
 
 async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
     mod_log_channel = ctx.bot.get_channel(1329367677940006952)  # Channel where the carlbot logs are sent

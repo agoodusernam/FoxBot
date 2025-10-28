@@ -294,20 +294,31 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
 
 async def landmine_explode(message: discord.Message, forced=False) -> None:
     try:
-        await message.author.timeout(datetime.timedelta(seconds=10), reason='Landmine exploded')
-        
-        await message.channel.send('Landmine exploded! You cannot talk for 10 seconds.')
+        msgs: list[str] = ["Landmine exploded!", "You stepped in a claymore!", "A grenade exploded next to you!",
+                "A rogue cluster bomblet went off!", "You tripped down some stairs. (How did you manage that one?)",
+                "You went too close to a proximity mine.", "A tree fell on you. (What an idiot.)",
+                "You were hit by a car.", "You got struck by lightning.", "You fell off a cliff.",
+                "You tripped on a rock and drowned in a puddle.",
+                "A subspace tripmine appeared under you and detonated.",
+                "You fell beyond the event horizon of a black hole and disappeared forever.",
+                "nuke"]
+        msg: str = random.choice(msgs)
+        if msg == "nuke":
+            await message.author.timeout(datetime.timedelta(seconds=60), reason='Nuke exploded')
+            await message.channel.send(f'A nuclear bomb went off below your feet! You cannot talk for 60 seconds.')
+        else:
+            await message.author.timeout(datetime.timedelta(seconds=10), reason='Landmine exploded')
+            await message.channel.send(f'{msg} You cannot talk for 10 seconds.')
         
         if not forced:
             await message.channel.send(
-                f'There are now {bot.landmine_channels[message.channel.id] - 1} landmines left in '
-                f'this channel.')
+                f'There are now {bot.landmine_channels[message.channel.id] - 1} traps left in this channel.')
             bot.landmine_channels[message.channel.id] -= 1
             if bot.landmine_channels[message.channel.id] == 0:
                 del bot.landmine_channels[message.channel.id]
         else:
             left = bot.landmine_channels.get(message.channel.id, 0)
-            await message.channel.send(f'There are now {left} landmines left in this channel.')
+            await message.channel.send(f'There are now {left} traps left in this channel.')
             bot.forced_landmines.remove(message.author.id)
             
     except Exception:
