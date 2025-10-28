@@ -305,10 +305,10 @@ async def landmine_explode(message: discord.Message, forced=False) -> None:
         msg: str = random.choice(msgs)
         if msg == "nuke":
             await message.author.timeout(datetime.timedelta(seconds=60), reason='Nuke exploded')
-            await message.channel.send(f'A nuclear bomb went off below your feet! You cannot talk for 60 seconds.')
+            await message.reply(f'A nuclear bomb went off below your feet! You cannot talk for 60 seconds.')
         else:
             await message.author.timeout(datetime.timedelta(seconds=10), reason='Landmine exploded')
-            await message.channel.send(f'{msg} You cannot talk for 10 seconds.')
+            await message.reply(f'{msg} You cannot talk for 10 seconds.')
         
         if not forced:
             await message.channel.send(
