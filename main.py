@@ -336,7 +336,7 @@ async def check_landmine(message: discord.Message) -> None:
             message.author.guild_permissions.administrator):
         return
     
-    if random.random() < 0.1:  # 10% chance for a landmine to explode
+    if random.random() < 0.05:  # 5% chance for a landmine to explode
         await landmine_explode(message)
 
 
