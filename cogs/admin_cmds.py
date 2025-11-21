@@ -259,9 +259,11 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         try:
             channel_id: int = int(split_message[0].replace('#', '', 1).replace('<', '', 1).replace('>', '', 1))
             channel: discord.abc.MessageableChannel = ctx.bot.get_channel(channel_id)
+            if channel is None:
+                raise ValueError
             msg = msg.replace(str(channel_id), '', 1)
         except ValueError:
-            channel: discord.abc.MessageableChannel = ctx.channel
+            channel = ctx.channel
         
         await channel.send(msg)
         
