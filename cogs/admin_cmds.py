@@ -425,7 +425,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Fetch the last messages sent by a user in the server',
                       usage='f!last_messages <user_id/mention> [number_of_messages]')
     @commands.has_role(staff_role_id)
-    async def last_messages(self, ctx: CContext, member: discord.Member, number_of_messages: int = 5):
+    async def last_messages(self, ctx: CContext, member: discord.User, number_of_messages: int = 5):
         await ctx.delete()
         
         if member is None:
