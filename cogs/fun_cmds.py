@@ -1,38 +1,40 @@
 import asyncio
+import ctypes.util
 import math
 import os
 import random
 
 import discord
 from discord.ext import commands
+from gtts import gTTS
 
 from command_utils import suggest
 from command_utils.CContext import CContext
 
 
 async def dice_roll(del_after: int, message: discord.Message) -> None:
-    nums: list[int | str] = message.content.replace('f!dice', '').replace('f!roll', '').split()
-    if len(nums) < 2:
+    str_nums: list[str] = message.content.replace('f!dice', '').replace('f!roll', '').split()
+    if len(str_nums) < 2:
         await message.delete()
         await message.channel.send('Please choose 2 numbers to roll the dice, e.g. `dice 1 6`',
                                    delete_after=del_after)
         return
     try:
-        nums = list(map(int, nums))
+        nums: list[int] = list(map(int, str_nums))
     except ValueError:
         await message.delete()
         await message.channel.send('Please provide valid numbers for the dice roll, e.g. `dice 1 6`',
                                    delete_after=del_after)
         return
     if nums[0] > nums[1]:
-        num: int | str = random.randint(nums[1], nums[0])
+        num: int = random.randint(nums[1], nums[0])
     else:
         num = random.randint(nums[0], nums[1])
     oversize = False
     if math.log10(num) > 1984:
         oversize = True
-        num = hex(num)
-        if len(num) > 1984:
+        str_num = hex(num)
+        if len(str_num) > 1984:
             await message.channel.send('The output number would be too large to send in discord')
             return
     
@@ -148,7 +150,51 @@ class FunCommands(commands.Cog, name='Fun'):
                     print(f'Error reading {file_path}: {e}')
         
         await ctx.send(f'There are {total_lines} lines of code in the bot')
-
+    
+    @commands.command(name='tts',
+                      brief='Send a text-to-speech message',
+                      help='Send a text-to-speech message in the current channel',
+                      usage='f!tts <message>')
+    @commands.cooldown(1, 3, commands.BucketType.guild) # type: ignore
+    async def tts(self, ctx: CContext, *, message: str):
+        if isinstance(ctx.author, discord.User):
+            return
+        opus = ctypes.util.find_library('opus')
+        if opus is None:
+            await ctx.send('Could not find opus library. TTS command is unavailable.')
+            return
+        
+        state = ctx.author.voice
+        if state is None or state.channel is None:
+            await ctx.send('You must be in a voice channel to use this command.')
+            return
+        
+        lock: asyncio.Lock
+        if hasattr(ctx.bot, 'tts_lock'):
+            lock = ctx.bot.tts_lock
+        else:
+            lock = asyncio.Lock()
+            ctx.bot.tts_lock = lock
+        
+        
+        vc_client: discord.VoiceClient
+        await lock.acquire()
+        gTTS(text=message).save('msg.mp3')
+        def done(error: Exception | None) -> None:
+            lock.release()
+            if os.path.exists('msg.mp3'):
+                os.remove('msg.mp3')
+        discord.opus.load_opus(opus)
+        if hasattr(ctx.bot, 'vc_client'):
+            if not ctx.bot.vc_client.channel.id == state.channel.id:
+                await ctx.bot.vc_client.move_to(state.channel)
+            vc_client = ctx.bot.vc_client
+        else:
+            vc_client = await state.channel.connect(timeout=15.0, reconnect=False)
+            ctx.bot.vc_client = vc_client
+        
+        audio = discord.FFmpegPCMAudio(source='msg.mp3')
+        vc_client.play(audio, after=done)
 
 async def setup(bot) -> None:
     await bot.add_cog(FunCommands(bot))

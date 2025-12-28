@@ -3,7 +3,6 @@ import os
 from discord.ext import commands
 
 from command_utils.CContext import CContext
-from command_utils.checks import not_blacklisted
 
 
 class CTF(commands.Cog, name='CTF'):

@@ -25,30 +25,9 @@ load_dotenv()
 def on_exit():
     db_stuff.disconnect()
 
-
-# Load configuration using the new system
-config = load_config()
-
-# Initialize blacklist manager
-blacklist_manager = BlacklistManager()
-
 # Create bot with intents
-intents = discord.Intents.all()
-bot = CoolBot(command_prefix=config.command_prefix, intents=intents)
-
-# Attach configuration and managers to bot for easy access
-bot.config = config
-bot.blacklist = blacklist_manager
-bot.admin_ids = config.admin_ids
-bot.dev_ids = config.dev_ids
-bot.del_after = config.del_after
-
-# Set dynamic properties
-bot.config.today = utils.formatted_time()
-landmine_channels: dict[int, int] = {}
-bot.landmine_channels = landmine_channels
-forced_landmines: set[int] = set()
-bot.forced_landmines = forced_landmines
+bot = CoolBot(intents=discord.Intents.all(), config=load_config())
+bot.blacklist = BlacklistManager()
 
 # Regular Expression to extract URL from the string
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
@@ -75,7 +54,7 @@ def seconds_to_human_readable(seconds: float) -> str:
     """
     if seconds < 60:
         return f"{seconds:.1f} seconds"
-    seconds: int = int(seconds)
+    seconds: int = int(seconds) # type: ignore
     if seconds < 3600:
         return f"{seconds // 60} minutes and {seconds % 60} seconds"
     if seconds < 86400:
@@ -99,18 +78,23 @@ async def on_ready() -> None:
     if bot.config.maintenance_mode:
         print("Bot is in maintenance mode. Only admins can use commands.")
     
+    if bot.config.staging:
+        print("Staging mode is enabled. Most features are disabled.")
+    
     # Reconnect voice states
-    for channel in bot.get_all_channels():
-        if not isinstance(channel, discord.VoiceChannel):
-            continue
-        
-        for member in channel.members:
-            if member.bot:
+    if not bot.config.staging:
+        for channel in bot.get_all_channels():
+            if not isinstance(channel, discord.VoiceChannel):
                 continue
             
-            voice_log.handle_join(member, channel)
-            print(f'Reconnected voice state for {member.name} in {channel.name}')
-    
+            for member in channel.members:
+                if member.bot:
+                    continue
+                
+                voice_log.handle_join(member, channel)
+                print(f'Reconnected voice state for {member.name} in {channel.name}')
+                
+    assert not bot.user is None
     print(f'Logged in as {bot.user} (ID: {bot.user.id})')
     print('------')
     
@@ -127,7 +111,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
                 dm_help=False
         )
     
-    async def send_bot_help(self, mapping: dict[commands.Cog, list[commands.Command]]) -> None:
+    async def send_bot_help(self, mapping: dict[commands.Cog, list[commands.Command]]) -> None: # type: ignore
         ctx: Context = self.context
         if bot.blacklist.is_blacklisted(ctx.author.id):
             await ctx.message.channel.send('You are not allowed to use this command.',
@@ -228,17 +212,17 @@ class HelpPaginationView(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         # Only allow the original command author to use the buttons
         if interaction.user != self.author:
-            await interaction.response.send_message("You cannot use these buttons.", ephemeral=True)  # type: ignore
+            await interaction.response().send_message("You cannot use these buttons.", ephemeral=True)  # type: ignore
             return False
         return True
     
     @discord.ui.button(label="Previous", style=discord.ButtonStyle.primary, emoji="⬅️",  # type: ignore
                        custom_id="prev")
-    async def prev_button(self, button: discord.ui.Button, interaction: discord.Interaction) -> None:
+    async def prev_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         if self.current_page > 0:
             self.current_page -= 1
             self.update_buttons()
-            await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)  # type: ignore
+            await interaction.response().edit_message(embed=self.embeds[self.current_page], view=self)  # type: ignore
     
     @discord.ui.button(label="Page 1/2", style=discord.ButtonStyle.secondary, disabled=True,  # type: ignore
                        custom_id="page")
@@ -247,7 +231,7 @@ class HelpPaginationView(discord.ui.View):
         pass
     
     @discord.ui.button(label="Next", style=discord.ButtonStyle.primary, emoji="➡️", custom_id="next")  # type: ignore
-    async def next_button(self, button: discord.ui.Button, interaction: discord.Interaction) -> None:
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         if self.current_page < self.total_pages - 1:
             self.current_page += 1
             self.update_buttons()
@@ -292,7 +276,8 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
         print(f"Unexpected error: {error}")
 
 
-async def landmine_explode(message: discord.Message, forced=False) -> None:
+async def landmine_explode(message: discord.Message, forced=False) -> bool:
+    assert not isinstance(message.author, discord.User)
     try:
         msgs: list[str] = ["Landmine exploded!", "You stepped in a claymore!", "A grenade exploded next to you!",
                 "A rogue cluster bomblet went off!", "You tripped down some stairs. (How did you manage that one?)",
@@ -326,8 +311,11 @@ async def landmine_explode(message: discord.Message, forced=False) -> None:
 
 
 async def check_landmine(message: discord.Message) -> None:
+    if isinstance(message.author, discord.User):
+        return
     if message.author.id in bot.forced_landmines:
         await landmine_explode(message, forced=True)
+        return
         
     if message.channel.id not in bot.landmine_channels.keys():
         return
@@ -345,6 +333,21 @@ async def check_landmine(message: discord.Message) -> None:
 async def on_message(message: discord.Message):
     if message.author.bot:
         return
+    commands_enabled: bool = True
+    if bot.config.staging:
+        commands_enabled = False
+    if bot.config.maintenance_mode:
+        commands_enabled = False
+    if message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids:
+        commands_enabled = True
+        
+    if bot.config.staging:
+        if commands_enabled and message.content.startswith(bot.command_prefix):
+            bot.config.today = utils.formatted_today()
+            await bot.process_commands(message)
+        return
+    
+    assert isinstance(bot.command_prefix, str)
     
     if message.content.startswith('\u200B'):  # Zero-width space
         print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
@@ -359,10 +362,6 @@ async def on_message(message: discord.Message):
                 'Please do not post links in this channel.',
                 delete_after=bot.config.del_after
         )
-    
-    commands_enabled = not bot.config.maintenance_mode
-    if message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids:
-        commands_enabled = True
     
     if commands_enabled and message.content.startswith(bot.command_prefix):
         bot.config.today = utils.formatted_today()
@@ -418,6 +417,13 @@ async def on_message(message: discord.Message):
 # Reaction role events
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
+    if payload.guild_id is None:
+        return
+    if payload.member is None:
+        return
+    if bot.config.staging:
+        return
+    
     if payload.message_id != bot.config.reaction_roles.message_id:
         return
     
@@ -446,6 +452,13 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
 @bot.event
 async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
     if payload.message_id != bot.config.reaction_roles.message_id:
+        return
+    if bot.config.staging:
+        return
+    
+    if payload.guild_id is None:
+        return
+    if payload.member is None:
         return
     
     guild = bot.get_guild(payload.guild_id)
@@ -476,14 +489,22 @@ async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
 async def on_voice_state_update(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
     if member.bot:
         return
+    if bot.config.staging:
+        return
+    
     logging_channel = bot.get_channel(bot.config.logging_channels.voice) if bot.config.logging_channels.voice else None
+    
+    if not isinstance(logging_channel, discord.TextChannel):
+        return
+    
+    url = member.avatar.url if member.avatar is not None else member.default_avatar.url
     
     # Member joined channel
     if before.channel is None and after.channel is not None:
         voice_log.handle_join(member, after)
         embed = discord.Embed(title=f'{member.display_name} joined #{after.channel.name}',
                               color=discord.Color.green())
-        embed.set_author(name=member.name, icon_url=member.avatar.url)
+        embed.set_author(name=member.name, icon_url=url)
         embed.timestamp = discord.utils.utcnow()
         if logging_channel:
             await logging_channel.send(embed=embed)
@@ -495,7 +516,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         if logging_channel:
             embed = discord.Embed(title=f'{member.display_name} left #{before.channel.name}',
                                   color=discord.Color.red())
-            embed.set_author(name=member.name, icon_url=member.avatar.url)
+            embed.set_author(name=member.name, icon_url=url)
             embed.timestamp = discord.utils.utcnow()
             await logging_channel.send(embed=embed)
         
@@ -505,12 +526,12 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
     
     # Member moved to another channel
     elif before.channel != after.channel:
-        if after.channel is None:
+        if before.channel is None or after.channel is None:
             return
         voice_log.handle_move(member, before, after)
         embed = discord.Embed(title=f'{member.display_name} moved from #{before.channel.name} to'
                                     f' #{after.channel.name}', color=discord.Color.blue())
-        embed.set_author(name=member.name, icon_url=member.avatar.url)
+        embed.set_author(name=member.name, icon_url=url)
         embed.timestamp = discord.utils.utcnow()
         if logging_channel:
             await logging_channel.send(embed=embed)
@@ -538,7 +559,7 @@ async def not_blacklisted(ctx: CContext):
 
 
 # Run the bot
-try:
-    bot.run(token=os.getenv('TOKEN'), reconnect=True)
-except TypeError:
-    print('Error: TOKEN environment variable not set.')
+token = os.getenv('TOKEN')
+if not isinstance(token, str):
+    raise TypeError('TOKEN environment variable not set.')
+bot.run(token=token, reconnect=True)

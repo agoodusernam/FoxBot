@@ -358,7 +358,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         categories = shop_items.categories
         
         # Create list to store category embeds
-        embeds = []
+        embeds: list[discord.Embed] = []
         
         # Add regular categories
         for category in categories:
@@ -405,7 +405,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         categories = shop_items.bm_categories
         
         # Create list to store category embeds
-        embeds = []
+        embeds: list[discord.Embed] = []
         
         for category in categories:
             category_embed = discord.Embed(
@@ -440,9 +440,9 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       help='Buy an item from the shop or black market',
                       usage='f!buy <item_name> [quantity]')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def buy_cmd(self, ctx: CContext, *, args: str):
+    async def buy_cmd(self, ctx: CContext, *, arg: str):
         # Split the arguments into item name and quantity
-        args = args.strip().split()
+        args: list[str] = arg.strip().split()
         if len(args) < 1:
             await ctx.send('You must specify an item to buy')
             return
@@ -606,9 +606,9 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       help='Sell an item from your inventory for money',
                       usage='f!sell <item_name> [quantity]')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def sell_cmd(self, ctx: CContext, *, args: str):
+    async def sell_cmd(self, ctx: CContext, *, arg: str):
         # Split the arguments into item name and quantity
-        args = args.strip().split()
+        args: list[str] = arg.strip().split()
         if len(args) < 1:
             await ctx.send('You must specify an item to sell')
             return

@@ -1,4 +1,9 @@
+import datetime
+
 from discord.ext import commands
+
+from config.blacklist_manager import BlacklistManager
+from config.bot_config import BotConfig
 
 
 class CContext(commands.Context):
@@ -16,5 +21,19 @@ class CContext(commands.Context):
         return True
 
 class CoolBot(commands.Bot):
+    
+    def __init__(self, *args, **kwargs) -> None:
+        self.config: BotConfig = kwargs.pop('config')
+        self.blacklist: BlacklistManager
+        self.admin_ids: list[int] = self.config.admin_ids
+        self.dev_ids: list[int] = self.config.dev_ids
+        self.del_after: int = self.config.del_after
+        self.config.today = datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y_%H-%M-%S')
+        kwargs['command_prefix'] = self.config.command_prefix
+        self.landmine_channels: dict[int, int] = {}
+        self.forced_landmines: set[int] = set()
+        
+        super().__init__(*args, **kwargs)
+        
     async def get_context(self, message, *, cls=CContext):
         return await super().get_context(message, cls=cls)

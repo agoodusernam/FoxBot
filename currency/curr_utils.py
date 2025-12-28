@@ -10,13 +10,13 @@ from utils import db_stuff
 from utils.db_stuff import get_from_db
 
 
-def create_new_profile(member: discord.User | discord.Member) -> Profile:
+def create_new_profile(member: discord.abc.Snowflake) -> Profile:
     new_data = get_default_profile(member.id)
     db_stuff.send_to_db(collection_name='currency', data=dict(new_data))
     return new_data
 
 
-def get_profile(member: discord.User | discord.Member) -> Profile:
+def get_profile(member: discord.abc.Snowflake) -> Profile:
     user_profile: dict[str, Any] | None = db_stuff.get_from_db(collection_name='currency', query={'user_id': str(
             member.id)})
     if user_profile is None:
@@ -24,12 +24,12 @@ def get_profile(member: discord.User | discord.Member) -> Profile:
     return cast(Profile, cast(object, user_profile))
 
 
-def set_profile(member: discord.User | discord.Member, profile: Profile) -> None:
+def set_profile(member: discord.abc.Snowflake, profile: Profile) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, dict(profile))
     return
 
 
-def get_lottery_tickets(member: discord.User | discord.Member) -> int:
+def get_lottery_tickets(member: discord.abc.Snowflake) -> int:
     """
     Retrieves the number of lottery tickets a member has.
     :param member: The Discord member whose lottery tickets are being checked.
@@ -41,7 +41,7 @@ def get_lottery_tickets(member: discord.User | discord.Member) -> int:
     return lottery_profile['lottery_tickets']
 
 
-def set_lottery_tickets(member: discord.abc.User, amount: int) -> None:
+def set_lottery_tickets(member: discord.abc.Snowflake, amount: int) -> None:
     """
     Sets the number of lottery tickets a member has.
     :param member: The Discord member whose lottery tickets are being set.
@@ -63,7 +63,7 @@ def delete_all_lottery_tickets() -> int | None:
     return db_stuff.del_many_db_entries(collection_name='lottery', query={})
 
 
-def delete_profile(member: discord.User | discord.Member) -> bool:
+def delete_profile(member: discord.abc.Snowflake) -> bool:
     """
     Deletes the currency profile of a specific member.
     :param member: The Discord member whose profile is to be deleted.
@@ -103,39 +103,39 @@ def set_stock(item: ShopItem, amount: int) -> None:
     return
 
 
-def set_wallet(member: discord.User | discord.Member, amount: int) -> None:
+def set_wallet(member: discord.abc.Snowflake, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'wallet': amount})
 
 
-def set_bank(member: discord.User | discord.Member, amount: int) -> None:
+def set_bank(member: discord.abc.Snowflake, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'bank': amount})
 
 
-def set_income(member: discord.User | discord.Member, amount: int) -> None:
+def set_income(member: discord.abc.Snowflake, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'work_income': amount})
 
 
-def set_other_income(member: discord.User | discord.Member, amount: int) -> None:
+def set_other_income(member: discord.abc.Snowflake, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'other_income': amount})
 
 
-def set_next_income_multiplier(member: discord.User | discord.Member, multiplier: float) -> None:
+def set_next_income_multiplier(member: discord.abc.Snowflake, multiplier: float) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'next_income_mult': multiplier})
 
 
-def set_fire_risk(member: discord.User | discord.Member, risk: float) -> None:
+def set_fire_risk(member: discord.abc.Snowflake, risk: float) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'fire_risk': risk})
 
 
-def set_debt(member: discord.User | discord.Member, amount: int) -> None:
+def set_debt(member: discord.abc.Snowflake, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'debt': amount})
 
 
-def set_credit_score(member: discord.User | discord.Member, score: int) -> None:
+def set_credit_score(member: discord.abc.Snowflake, score: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'credit_score': score})
 
 
-def add_lottery_tickets(member: discord.User | discord.Member, amount: int) -> None:
+def add_lottery_tickets(member: discord.abc.Snowflake, amount: int) -> None:
     """
     Adds a specified amount of lottery tickets to the member's profile.
     :param member: The Discord member whose lottery tickets are being updated.
@@ -146,7 +146,7 @@ def add_lottery_tickets(member: discord.User | discord.Member, amount: int) -> N
                            {'lottery_tickets': tickets + amount})
 
 
-def inc_age(member: discord.abc.User) -> None:
+def inc_age(member: discord.abc.Snowflake) -> None:
     """
     Increments the age of the member in their currency profile.
     :param member: The Discord member whose age is to be incremented.
@@ -157,7 +157,7 @@ def inc_age(member: discord.abc.User) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'age': profile['age']})
 
 
-def set_experience(member: discord.abc.User, amount: int) -> None:
+def set_experience(member: discord.abc.Snowflake, amount: int) -> None:
     """
     Sets the work experience of the member in their currency profile.
     :param member: The Discord member whose work experience is to be set.
@@ -166,7 +166,7 @@ def set_experience(member: discord.abc.User, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'work_experience': amount})
 
 
-def set_job(member: discord.abc.User, job: Job, income: int) -> None:
+def set_job(member: discord.abc.Snowflake, job: Job, income: int) -> None:
     """
     Sets the job of the member in their currency profile.
     :param member: The Discord member whose job is to be set.
@@ -181,7 +181,7 @@ def set_job(member: discord.abc.User, job: Job, income: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, dict(profile))
 
 
-def reset_job(member: discord.User | discord.Member) -> None:
+def reset_job(member: discord.abc.Snowflake) -> None:
     """
     Resets the job of the member to 'Unemployed' in their currency profile.
     :param member: The Discord member whose job is to be reset.
@@ -194,7 +194,7 @@ def reset_job(member: discord.User | discord.Member) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, dict(profile))
 
 
-def add_to_inventory(member: discord.abc.User, item: str, amount: int, illegal: bool = False) -> None:
+def add_to_inventory(member: discord.abc.Snowflake, item: str, amount: int, illegal: bool = False) -> None:
     """
     Adds a specified amount of an item to the member's inventory.
     :param member: The Discord member whose inventory is being updated.
@@ -231,7 +231,7 @@ def set_inventory(member: discord.abc.User, item: str, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'inventory': profile['inventory']})
 
 
-def set_illegal_items(member: discord.abc.User, item: str, amount: int) -> None:
+def set_illegal_items(member: discord.abc.Snowflake, item: str, amount: int) -> None:
     """
     Sets the amount of an illegal item in the member's inventory.
     :param member: The Discord member whose illegal items are being updated.
@@ -245,7 +245,7 @@ def set_illegal_items(member: discord.abc.User, item: str, amount: int) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'illegal_items': profile['illegal_items']})
 
 
-def remove_from_inventory(member: discord.abc.User, item: str) -> None:
+def remove_from_inventory(member: discord.abc.Snowflake, item: str) -> None:
     """
     Removes an item from the member's inventory.
     :param member: The Discord member whose inventory is being updated.
@@ -259,7 +259,7 @@ def remove_from_inventory(member: discord.abc.User, item: str) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'inventory': profile['inventory']})
 
 
-def remove_illegal_item(member: discord.abc.User, item: str) -> None:
+def remove_illegal_item(member: discord.abc.Snowflake, item: str) -> None:
     """
     Removes an illegal item from the member's inventory.
     :param member: The Discord member whose illegal items are being updated.
@@ -273,7 +273,7 @@ def remove_illegal_item(member: discord.abc.User, item: str) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'illegal_items': profile['illegal_items']})
 
 
-def clear_inventory(member: discord.abc.User) -> None:
+def clear_inventory(member: discord.abc.Snowflake) -> None:
     """
     Clears the entire inventory of the member.
     :param member: The Discord member whose inventory is being cleared.
@@ -285,7 +285,7 @@ def clear_inventory(member: discord.abc.User) -> None:
     db_stuff.edit_db_entry('currency', {'user_id': str(member.id)}, {'inventory': profile['inventory']})
 
 
-def clear_illegal_items(member: discord.abc.User) -> None:
+def clear_illegal_items(member: discord.abc.Snowflake) -> None:
     """
     Clears all illegal items from the member's inventory.
     :param member: The Discord member whose illegal items are being cleared.

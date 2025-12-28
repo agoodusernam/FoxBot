@@ -15,6 +15,9 @@ import config.bot_config
 from command_utils.CContext import CContext, CoolBot
 from utils import db_stuff, utils
 
+# omg this code is so ass
+# i really hope it doesnt break because if it does im fucked
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -222,7 +225,7 @@ def analyse_messages(ctx: CContext, time_filter: str | None = None) -> dict[str,
         return f'Error during analysis: {str(e)}'
 
 
-def analyse_user_messages(member: discord.User, time_filter: str = None) -> dict[str, int | str | float | list[
+def analyse_user_messages(member: discord.User, time_filter: str | None = None) -> dict[str, int | str | float | list[
                                                                             dict[str, str | int]]] | str | None:
     """
     analyse messages from a specific user.
@@ -500,7 +503,7 @@ async def generate_user_activity_graph(ctx: Context, result: dict[str, int | str
 
 
 async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
-                                  time_filter: str = None) -> None:
+                                  time_filter: str | None = None) -> None:
     """
     Format and send analysis results for a single user.
 
@@ -649,7 +652,7 @@ def get_voice_statistics(include_left: bool = False, guild: discord.Guild = None
         return None
 
 
-def get_user_voice_statistics(user_id: str) -> dict[str, str | int | list[dict[str, str | int]]] | None:
+def get_user_voice_statistics(user_id: str) -> dict[str, str | None | int | list[dict[str, Any]]] | None:
     """
     Retrieve voice statistics for a specific user.
 
@@ -765,8 +768,6 @@ async def add_voice_analysis_for_user(ctx: CContext, member: discord.User) -> No
         member: Discord user to analyse
     """
     stats = get_user_voice_statistics(str(member.id))
-    if TYPE_CHECKING:
-        ctx.bot: CoolBot
     
     if not stats:
         await ctx.send(f"No voice activity data available for {member.display_name}.")

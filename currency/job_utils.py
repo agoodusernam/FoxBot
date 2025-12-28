@@ -33,7 +33,7 @@ class SchoolQualif(enum.Enum):
         :return: True if this member is greater than the other, False otherwise.
         """
         if not isinstance(other, SchoolQualif):
-            raise NotImplementedError
+            raise TypeError
         return self.value[0] > other.value[0]
     
     def __lt__(self, other: 'SchoolQualif') -> bool:
@@ -43,7 +43,7 @@ class SchoolQualif(enum.Enum):
         :return: True if this member is less than the other, False otherwise.
         """
         if not isinstance(other, SchoolQualif):
-            raise NotImplementedError
+            raise TypeError
         return self.value[0] < other.value[0]
     
     def __eq__(self, other: object) -> bool:
@@ -53,7 +53,7 @@ class SchoolQualif(enum.Enum):
         :return: True if both members are equal, False otherwise.
         """
         if not isinstance(other, SchoolQualif):
-            raise NotImplementedError
+            raise TypeError
         return self.value[0] == other.value[0]
     
     @classmethod
@@ -98,7 +98,7 @@ class SecurityClearance(enum.Enum):
         :return: True if this member is greater than the other, False otherwise.
         """
         if not isinstance(other, SecurityClearance):
-            raise NotImplementedError
+            raise TypeError
         return self.value > other.value
     
     def __lt__(self, other: object) -> bool:
@@ -108,17 +108,17 @@ class SecurityClearance(enum.Enum):
         :return: True if this member is less than the other, False otherwise.
         """
         if not isinstance(other, SecurityClearance):
-            raise NotImplementedError
+            raise TypeError
         return self.value < other.value
     
-    def __eq__(self, other: 'SecurityClearance') -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Checks if two SecurityClearance enum members are equal.
         :param other: The other SecurityClearance member to compare with.
         :return: True if both members are equal, False otherwise.
         """
         if not isinstance(other, SecurityClearance):
-            raise NotImplementedError
+            raise TypeError
         return self.value == other.value
     
     @classmethod
@@ -317,4 +317,3 @@ def job_from_name(job_name: str, job_trees: list[JobTree]) -> Job | None:
                 if job_or_list.name.lower() == job_name.lower():
                     return job_or_list
     return None
-

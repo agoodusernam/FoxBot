@@ -4,7 +4,7 @@ Provides type-safe, validated configuration with easy bot.config.* access
 """
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import Any
 from dataclasses import dataclass, field
 from pathlib import Path
 import json
@@ -50,6 +50,7 @@ class BotConfig:
     maintenance_mode: bool = False
     guild_id: int = 0
     verified_roles: list[int] = field(default_factory=list)
+    staging: bool = False
     
     # User permissions
     admin_ids: list[int] = field(default_factory=list)
@@ -99,7 +100,8 @@ class BotConfig:
             },
             
             "verified_roles":   [],
-            "staff_role_id":    0
+            "staff_role_id":    0,
+            "staging":          False,
         }
     
     @classmethod
@@ -113,6 +115,7 @@ class BotConfig:
         config.maintenance_mode = data.get("maintenance_mode", config.maintenance_mode)
         config.guild_id = data.get("guild_id", config.guild_id)
         config.verified_roles = data.get("verified_roles", config.verified_roles)
+        config.staging = data.get("staging", config.staging)
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -184,7 +187,8 @@ class BotConfig:
                 "emoji_to_role": self.reaction_roles.emoji_to_role
             },
             
-            "verified_roles":   [self.verified_roles]
+            "verified_roles":   [self.verified_roles],
+            "staging":          self.staging,
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:
