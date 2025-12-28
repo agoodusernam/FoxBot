@@ -523,6 +523,13 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         if before.channel.name.startswith('private_'):
             if before.channel and len(before.channel.members) == 0:
                 await before.channel.delete(reason='Private VC empty after member left')
+        
+        if not hasattr(bot, 'vc_client'):
+            return
+        
+        if len(before.channel.members) == 1 and bot.vc_client.channel.id == before.channel.id:
+            await bot.vc_client.disconnect()
+            del bot.vc_client
     
     # Member moved to another channel
     elif before.channel != after.channel:

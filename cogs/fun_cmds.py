@@ -3,9 +3,11 @@ import ctypes.util
 import math
 import os
 import random
+import time
 
 import discord
 from discord.ext import commands
+from discord.ext.tasks import loop
 from gtts import gTTS
 
 from command_utils import suggest
@@ -178,6 +180,7 @@ class FunCommands(commands.Cog, name='Fun'):
         
         
         vc_client: discord.VoiceClient
+        ctx.bot.last_tts_sent_time = time.time()
         await lock.acquire()
         gTTS(text=message).save('msg.mp3')
         def done(error: Exception | None) -> None:
@@ -195,6 +198,15 @@ class FunCommands(commands.Cog, name='Fun'):
         
         audio = discord.FFmpegPCMAudio(source='msg.mp3')
         vc_client.play(audio, after=done)
+    
+    @discord.ext.tasks.loop(minutes=1.0)
+    async def check_tts_leave(self):
+        now = time.time()
+        if hasattr(self.bot, 'last_tts_sent_time') and hasattr(self.bot, 'vc_client'):
+            if now - self.bot.last_tts_sent_time > 300:
+                await self.bot.vc_client.disconnect()
+                del self.bot.vc_client
+                del self.bot.last_tts_sent_time
 
 async def setup(bot) -> None:
     await bot.add_cog(FunCommands(bot))
