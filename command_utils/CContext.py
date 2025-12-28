@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 from discord.ext import commands
 
@@ -32,8 +33,14 @@ class CoolBot(commands.Bot):
         kwargs['command_prefix'] = self.config.command_prefix
         self.landmine_channels: dict[int, int] = {}
         self.forced_landmines: set[int] = set()
+        self.logger: logging.Handler = logging.StreamHandler()
         
         super().__init__(*args, **kwargs)
+    
+    def run(self, *args, **kwargs):
+        kwargs['log_handler'] = self.logger
+        kwargs['root_logger'] = True
+        super().run(*args, **kwargs)
         
     async def get_context(self, message, *, cls=CContext):
         return await super().get_context(message, cls=cls)

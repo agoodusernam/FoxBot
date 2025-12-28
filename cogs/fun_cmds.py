@@ -12,7 +12,7 @@ from discord.ext.tasks import loop
 from gtts import gTTS
 
 from command_utils import suggest
-from command_utils.CContext import CContext
+from command_utils.CContext import CContext, CoolBot
 
 
 async def dice_roll(del_after: int, message: discord.Message) -> None:
@@ -49,6 +49,10 @@ async def dice_roll(del_after: int, message: discord.Message) -> None:
 
 
 class FunCommands(commands.Cog, name='Fun'):
+    def __init__(self, bot: CoolBot):
+        self.bot: CoolBot = bot
+        self.check_tts_leave.start()
+        
     @commands.command(name='dice', aliases=['roll', 'dice_roll'],
                       brief='Roll a dice',
                       help='Roll a dice between two values',
@@ -128,7 +132,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='lines_of_code', aliases=['lines', 'loc'],
                       brief='Get the number of lines of code in the bot',
                       help="Get the number of lines of code in the bot's source code",
-                      useage='f!loc')
+                      usage='f!loc')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def lines_of_code(self, ctx: CContext):
         # function that returns the number of lines of code in a given directory recursively, excluding .venv
@@ -190,6 +194,10 @@ class FunCommands(commands.Cog, name='Fun'):
             lock.release()
             if os.path.exists('msg.mp3'):
                 os.remove('msg.mp3')
+                
+            if error:
+                ctx.bot.logger.error(f'TTS playback error: {error}')
+                
         discord.opus.load_opus(opus)
         if hasattr(ctx.bot, 'vc_client'):
             if not ctx.bot.vc_client.channel.id == state.channel.id:
@@ -206,10 +214,10 @@ class FunCommands(commands.Cog, name='Fun'):
     async def check_tts_leave(self):
         now = time.time()
         if hasattr(self.bot, 'last_tts_sent_time') and hasattr(self.bot, 'vc_client'):
-            if now - self.bot.last_tts_sent_time > 300:
+            if now - self.bot.last_tts_sent_time > 180.0:
                 await self.bot.vc_client.disconnect()
                 del self.bot.vc_client
                 del self.bot.last_tts_sent_time
 
-async def setup(bot) -> None:
+async def setup(bot: CoolBot) -> None:
     await bot.add_cog(FunCommands(bot))

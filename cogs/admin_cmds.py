@@ -11,12 +11,11 @@ from discord.ext import commands, tasks
 from discord.utils import get
 
 from command_utils import analysis
-from command_utils.CContext import CContext
+from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_admin
 from config import bot_config
 from utils import db_stuff, utils
 
-time = datetime.time(hour=0, minute=0, tzinfo=datetime.timezone.utc)
 
 async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
     mod_log_channel = ctx.bot.get_channel(1329367677940006952)  # Channel where the carlbot logs are sent
@@ -75,8 +74,8 @@ def sort_by_timestamp(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
 class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     """Admin commands for managing the server and users."""
     
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: CoolBot) -> None:
+        self.bot: CoolBot = bot
     
     @commands.command(name='rek',
                       brief='Absolutely rek a user',
@@ -460,8 +459,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!landmine [channel_id] [amount]'
                       )
     @commands.check(is_admin)
-    async def landmine(self, ctx: CContext, channel_or_amount: typing.Union[discord.TextChannel, int], amount: int =
-    0) -> None:
+    async def landmine(self, ctx: CContext, channel_or_amount: typing.Union[discord.TextChannel, int], amount: int = 0) -> None:
         if isinstance(channel_or_amount, int):
             channel = ctx.channel
             amount: int = channel_or_amount
@@ -527,10 +525,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await self.set_some_landmines()
         await self.landmines(ctx)
     
-    @tasks.loop(time=time)
-    async def set_some_landmines(self):
+    async def set_some_landmines(self) -> None:
         if hasattr(self.bot, 'landmine_channels'):
-            # It should always have it, but the type checker doesn't know that
             existing_mines: dict[int, int] = self.bot.landmine_channels
         else:
             existing_mines = {}
@@ -540,7 +536,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         category = discord.utils.get(guild.categories, id=1081760248433492141)
         channels: list[discord.TextChannel] = [channel for channel in category.channels if isinstance(channel,
                                                                                                discord.TextChannel)]
-        chosen_channels: list[discord.TextChannel] = random.sample(channels, k=3)
+        chosen_channels: list[discord.TextChannel] = random.choices(channels, k=3)
         
         for channel in chosen_channels:
             if channel.id not in existing_mines.keys():
