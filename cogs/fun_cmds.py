@@ -7,6 +7,7 @@ import time
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import guild_only
 from discord.ext.tasks import loop
 from gtts import gTTS
 
@@ -158,6 +159,8 @@ class FunCommands(commands.Cog, name='Fun'):
                       help='Send a text-to-speech message in the current channel',
                       usage='f!tts <message>')
     @commands.cooldown(1, 3, commands.BucketType.guild) # type: ignore
+    @guild_only()
+    @commands.has_role(1405824995946532995) # TODO: Make configurable
     async def tts(self, ctx: CContext, *, message: str):
         if isinstance(ctx.author, discord.User):
             return
