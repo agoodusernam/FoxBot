@@ -51,7 +51,6 @@ async def dice_roll(del_after: int, message: discord.Message) -> None:
 class FunCommands(commands.Cog, name='Fun'):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
-        self.check_tts_leave.start()
         
     @commands.command(name='dice', aliases=['roll', 'dice_roll'],
                       brief='Roll a dice',
@@ -168,6 +167,11 @@ class FunCommands(commands.Cog, name='Fun'):
     async def tts(self, ctx: CContext, *, message: str):
         if isinstance(ctx.author, discord.User):
             return
+        
+        if message.strip() == '':
+            await ctx.send('Please provide a message to convert to speech.')
+            return
+        
         opus = ctypes.util.find_library('opus')
         if opus is None:
             await ctx.send('Could not find opus library. TTS command is unavailable.')
@@ -197,6 +201,8 @@ class FunCommands(commands.Cog, name='Fun'):
                 
             if error:
                 ctx.bot.logger.error(f'TTS playback error: {error}')
+            
+            self.check_tts_leave.start()
                 
         discord.opus.load_opus(opus)
         if hasattr(ctx.bot, 'vc_client'):
@@ -211,13 +217,24 @@ class FunCommands(commands.Cog, name='Fun'):
         vc_client.play(audio, after=done)
     
     @discord.ext.tasks.loop(minutes=1.0)
-    async def check_tts_leave(self):
-        now = time.time()
+    async def check_tts_leave(self) -> None:
         if hasattr(self.bot, 'last_tts_sent_time') and hasattr(self.bot, 'vc_client'):
-            if now - self.bot.last_tts_sent_time > 180.0:
+            if not self.bot.vc_client.is_connected:
+                del self.bot.vc_client
+                del self.bot.last_tts_sent_time
+                self.check_tts_leave.stop()
+                return
+            
+            if time.time() - self.bot.last_tts_sent_time > 180.0:
                 await self.bot.vc_client.disconnect()
                 del self.bot.vc_client
                 del self.bot.last_tts_sent_time
+                self.check_tts_leave.stop()
+                
+            return
+        
+        self.check_tts_leave.stop()
+        return
 
 async def setup(bot: CoolBot) -> None:
     await bot.add_cog(FunCommands(bot))
