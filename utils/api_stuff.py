@@ -152,6 +152,6 @@ async def get_no(ctx: Context) -> None:
     data = response.json()
     
     if "response" not in data:
-        raise discord.ext.commands.CommandError(f'Unexpected response format from no API: {response}')
+        raise discord.ext.commands.CommandError(f'Unexpected response format from no API: {data}')
     
     await ctx.send(data["response"])
