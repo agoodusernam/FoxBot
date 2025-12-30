@@ -105,6 +105,13 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
             return
         file_path, file_name = karma_pic
         await ctx.send(file=discord.File(file_path, filename=file_name))
+    
+    @commands.command(name='no',
+                      brief="Get a random 'no' response",
+                      help="Fetches and displays a random 'no' response from an API")
+    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    async def no(self, ctx: CContext):
+        await api_stuff.get_no(ctx)
 
 
 async def setup(bot):

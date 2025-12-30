@@ -140,3 +140,18 @@ def get_karma_pic() -> tuple[str, str] | None:
     file_path = f'data/karma_pics/{chosen_pic}'
     
     return file_path, chosen_pic
+
+
+async def get_no(ctx: Context) -> None:
+    url = "https://naas.isalman.dev/no"
+    response = requests.get(url, timeout=5)
+    
+    if response.status_code != 200:
+        raise discord.ext.commands.CommandError(f'Failed to fetch no: {response.status_code}')
+    
+    data = response.json()
+    
+    if "response" not in data:
+        raise discord.ext.commands.CommandError('Unexpected response format from no API')
+    
+    await ctx.send(data["response"])
