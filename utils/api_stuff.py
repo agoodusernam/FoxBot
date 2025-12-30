@@ -35,17 +35,23 @@ async def get_dog_pic(ctx: Context) -> None:
 
 
 async def get_fox_pic(ctx: Context) -> None:
-    url = 'https://randomfox.ca/floof/'
+    urls = ['https://randomfox.ca/floof/', 'https://api.sefinek.net/api/v2/random/animal/fox']
+    url = random.choice(urls)
     response = requests.get(url, timeout=5)
     
     if response.status_code != 200:
         raise discord.ext.commands.CommandError(f'Failed to fetch fox picture: {response.status_code}')
     
     data = response.json()
-    if 'image' not in data:
-        raise discord.ext.commands.CommandError('Unexpected response format from fox API')
+    if 'image' in data:
+        await ctx.send(data['image'])
+        return
+        
+    if 'message' in data:
+        await ctx.send(data['message'])
+        return
     
-    await ctx.send(data['image'])
+    raise discord.ext.commands.CommandError('Unexpected response format from fox API')
 
 
 async def get_cat_pic(ctx: Context) -> None:

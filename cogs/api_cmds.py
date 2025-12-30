@@ -6,14 +6,14 @@ from discord.ext import commands
 from discord.ext.commands import BucketType
 
 from utils import api_stuff, utils
-from command_utils.CContext import CContext
+from command_utils.CContext import CContext, CoolBot
 
 
 class ApiCommands(commands.Cog, name='Images and APIs'):
     """These commands fetch images and data from various APIs."""
     
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: CoolBot):
+        self.bot: CoolBot = bot
     
     @commands.command(name='nasa', aliases=['nasa_pic', 'nasa_apod', 'nasapic'],
                       brief="NASA's picture of the day",
