@@ -13,11 +13,10 @@ from utils import db_stuff
 from command_utils.CContext import CContext, CoolBot
 
 async def aexec(code: str) -> Any:
-    # Make an async function with the code and `exec` it
-    exec(f'async def __ex(): {code}')
-
-    # Get `__ex` from local variables, call it and return the result
-    return await locals()['__ex']()
+    locs: dict[str, Any] = {}
+    
+    exec(f'async def __ex(): {code}', globals(), locs)
+    return await locs['__ex']()
 
 # added the 'a' to the start of the file so it loads first
 async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
