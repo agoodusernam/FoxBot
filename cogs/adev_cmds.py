@@ -187,11 +187,8 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         await ctx.delete()
         if ctx.author.id != 542798185857286144: return
         
-        try:
-            result = await aexec(f'await discord.utils.maybe_coroutine({func_name})')
-            await ctx.send(f'Return: {utils.utils.get_str(result)}', delete_after=ctx.bot.del_after)
-        except Exception as e:
-            await ctx.send(f'Failed to run function: {e}', delete_after=ctx.bot.del_after)
+        result = await aexec(f'await discord.utils.maybe_coroutine({func_name})')
+        await ctx.send(f'Return: {utils.utils.get_str(result)}', delete_after=ctx.bot.del_after)
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))
