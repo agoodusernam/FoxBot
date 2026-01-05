@@ -6,6 +6,7 @@ from typing import Any
 import discord
 from discord.ext import commands
 
+import utils.utils
 from command_utils.checks import is_dev
 from custom_logging import voice_log
 from utils import db_stuff
@@ -25,8 +26,23 @@ async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
     if restart:
         os.execv(sys.executable, ['python'] + sys.argv)
 
+def update_timestamps() -> None:
+    entries = db_stuff.download_all()
+    entries_len = len(entries)
+    edited = 0
+    for entry in entries:
+        iso_timestamp = utils.utils.parse_utciso8601(entry.get('timestamp'))
+        if iso_timestamp is None:
+            print(f'Invalid timestamp: {entry.get("timestamp", "<none>")}')
+            continue
+        
+        timestamp: float = iso_timestamp.timestamp()
+        success = db_stuff.edit_db_entry('messages', {'_id': entry['_id']}, {'timestamp': timestamp})
+        if success: edited += 1
+        if edited % 1000 == 0: print(f'Updated {edited}/{entries_len} timestamps')
+        
 
-async def upload_all_history(channel: discord.TextChannel, author: discord.Member | discord.User) -> None:
+async def upload_all_history(channel: discord.TextChannel) -> None:
     print(f'Deleting old messages from channel: {channel.name}, ID: {channel.id}')
     db_stuff.del_channel_from_db(channel)
     print(f'Starting to download all messages from channel: {channel.name}, ID: {channel.id}')
@@ -55,7 +71,7 @@ async def upload_all_history(channel: discord.TextChannel, author: discord.Membe
             'content':            message.content,
             'reply_to':           reply,
             'HasAttachments':     has_attachment,
-            'timestamp':          message.created_at.isoformat(),
+            'timestamp':          message.created_at.timestamp(),
             'id':                 str(message.id),
             'channel':            message.channel.name,
             'channel_id':         str(message.channel.id)
@@ -65,9 +81,6 @@ async def upload_all_history(channel: discord.TextChannel, author: discord.Membe
     db_stuff.bulk_send_messages(bulk_data)
     del bulk_data
     gc.collect()
-    
-    dm = await author.create_dm()
-    await dm.send(f'Finished uploading all messages from channel: {channel.name}')
 
 
 async def upload_whole_server(guild: discord.Guild, author: discord.User | discord.Member, nolog_channels: list[int]) -> None:
@@ -81,7 +94,8 @@ async def upload_whole_server(guild: discord.Guild, author: discord.User | disco
             continue
         if channel.permissions_for(guild.me).read_message_history:
             await dm.send(f'Uploading messages from channel: {channel.name}')
-            await upload_all_history(channel, author)
+            await upload_all_history(channel)
+            await dm.send(f'Finished uploading all messages from channel: {channel.name}')
             await dm.send('--------------------------')
         else:
             await dm.send(f'Skipping channel {channel.name} due to insufficient permissions')
@@ -158,7 +172,19 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
             command.reset_cooldown(ctx)
         
         await ctx.send('All command cooldowns have been reset.', delete_after=ctx.bot.del_after)
-
+    
+    @commands.command(name='run_func',
+                      brief='Run a function',
+                      help='Dev only: Run a function from the bot',
+                      usage='f!run_func <function_name>')
+    async def run_func(self, ctx: CContext, func_name: str):
+        await ctx.delete()
+        if ctx.author.id != 542798185857286144: return
+        
+        try:
+            exec(f'await discord.utils.maybe_coroutine({func_name})')
+        except Exception as e:
+            await ctx.send(f'Failed to run function: {e}', delete_after=ctx.bot.del_after)
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

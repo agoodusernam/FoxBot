@@ -359,7 +359,7 @@ async def on_message(message: discord.Message):
         # If the message contains a URL, delete it and send a warning
         await message.delete()
         await message.channel.send(
-                'Please do not post links in this channel.',
+                'Please do not send links in this channel.',
                 delete_after=bot.config.del_after
         )
     
@@ -382,36 +382,7 @@ async def on_message(message: discord.Message):
             message.channel.id not in bot.config.no_log.channel_ids) and (
             message.channel.category_id not in bot.config.no_log.category_ids):
         
-        has_attachment: bool = bool(message.attachments)
-        
-        reply: str | None = None if message.reference is None else str(message.reference.message_id)
-        
-        json_data = {
-            'author':             message.author.name,
-            'author_id':          str(message.author.id),
-            'author_global_name': message.author.global_name,
-            'content':            message.content,
-            'reply_to':           reply,
-            'HasAttachments':     has_attachment,
-            'timestamp':          message.created_at.isoformat(),
-            'id':                 str(message.id),
-            'channel':            message.channel.name,
-            'channel_id':         str(message.channel.id)
-        }
-        
-        if os.getenv('LOCAL_SAVE') == 'True':
-            with utils.make_file() as file:
-                file.write(json.dumps(json_data, ensure_ascii=False) + '\n')
-        
-        print(f'Message from {message.author.display_name} [#{message.channel}]: {message.content}')
-        if has_attachment:
-            if os.environ.get('LOCAL_IMG_SAVE') == 'True':
-                await utils.save_attachments(message)
-            else:
-                for attachment in message.attachments:
-                    await db_stuff.send_attachment(message, attachment)
-        
-        db_stuff.send_message(json_data)
+        await utils.log_msg(message)
 
 
 # Reaction role events

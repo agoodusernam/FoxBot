@@ -58,7 +58,7 @@ def disconnect():
             _mongo_client = None
 
 
-def send_message(message: Mapping[str, Any]) -> None:
+def send_message(message: Mapping[str, Any]) -> bool:
     """
     Saves a single message to MongoDB.
     :param message: A dictionary representing the message to be saved.
@@ -67,7 +67,7 @@ def send_message(message: Mapping[str, Any]) -> None:
     client = _connect()
     if not client:
         print('Failed to connect to MongoDB')
-        return
+        return False
     
     db = client['discord']
     collection: Collection[Mapping[str, Any]] = db['messages']
@@ -75,8 +75,10 @@ def send_message(message: Mapping[str, Any]) -> None:
     try:
         collection.insert_one(message)
         print('Message saved successfully')
+        return True
     except Exception as e:
         print(f'Error saving message: {e}')
+        return False
 
 
 def bulk_send_messages(messages: list[dict[str, Any]]) -> None:
@@ -113,7 +115,7 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
         return None
     
     db = client['discord']
-    fs = GridFS(db, 'attachments')  # Create GridFS instance
+    fs = GridFS(db, 'attachments')
     
     try:
         # Download the attachment data
@@ -264,14 +266,14 @@ def send_to_db(collection_name: str, data: Mapping[str, Any]) -> None:
         print(f'Error sending data to {collection_name} collection: {e}')
 
 
-def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_data: Mapping[str, Any]) -> None:
+def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_data: Mapping[str, Any]) -> bool:
     """
     Generic function to edit an entry in a specified MongoDB collection.
     """
     client = _connect()
     if not client:
         print('Failed to connect to MongoDB')
-        return
+        return False
     
     db = client['discord']
     collection: Collection[Mapping[str, Any]] = db[collection_name]
@@ -279,11 +281,13 @@ def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_data: M
     try:
         result = collection.update_one(query, {'$set': update_data})
         if result.modified_count > 0:
-            print(f'Entry updated successfully in {collection_name} collection')
+            return True
         else:
             print(f'No entry matched the query in {collection_name} collection')
+            return False
     except Exception as e:
         print(f'Error updating entry in {collection_name} collection: {e}')
+        return False
 
 
 def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> bool:

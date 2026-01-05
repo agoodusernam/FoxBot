@@ -59,7 +59,7 @@ def remove_invalid_messages(messages: list[dict[str, Any]]) -> list[dict[str, An
     
     return valid_messages
 
-def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> tuple[list[dict[str, str]], int]:
+def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> tuple[list[dict[str, str | float]], int]:
     """
     Download and validate messages from the database.
 
@@ -100,8 +100,7 @@ def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> 
             # I can't decide if I hate that you can do this purely with list comprehensions or not
             valid_messages = [
                 msg for msg in valid_messages
-                if utils.check_valid_utciso8601(msg['timestamp']) and
-                utils.parse_utciso8601(msg['timestamp']) >= time_ago
+                if datetime.datetime.fromtimestamp(msg['timestamp'], datetime.UTC) >= time_ago
             ]
             logger.info(f'Applied {filter_name} filter: {len(valid_messages)} messages')
         
@@ -152,7 +151,7 @@ def analyse_word_stats(content_list: list[str]) -> dict[str, str | int | float]:
     }
 
 
-def get_channel_stats(messages: list[dict[str, str]]) -> list[dict[str, str | int]]:
+def get_channel_stats(messages: list[dict[str, str | float]]) -> list[dict[str, str | int]]:
     """
     Get statistics about channel activity.
 
@@ -201,7 +200,7 @@ def analyse_messages(ctx: CContext, time_filter: str | None = None) -> dict[str,
         
         # Get user message counts
         user_message_count = collections.Counter(msg['author_id'] for msg in valid_messages)
-        active_users = [
+        active_users: list[dict[str, int | str]] = [
             {'user': user, 'num_messages': count}
             for user, count in user_message_count.items()
         ]
@@ -262,7 +261,7 @@ def analyse_user_messages(member: discord.User, time_filter: str | None = None) 
         
         # Find most recent message timestamp
         most_recent = max(
-                (utils.parse_utciso8601(msg['timestamp']) for msg in messages_by_user),
+                (datetime.datetime.fromtimestamp(msg['timestamp'], tz=datetime.UTC) for msg in messages_by_user),
                 default=None
         )
         
@@ -283,8 +282,7 @@ def analyse_user_messages(member: discord.User, time_filter: str | None = None) 
         # Find user's position in leaderboard
         lb_position = next(
                 (i for i, user in enumerate(active_user_lb, 1)
-                 if user['user'] == user_id_str),
-                0
+                 if user['user'] == user_id_str), 0
         )
         
         # Format most recent message timestamp
@@ -320,7 +318,7 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
     # Try to delete the command message
     await ctx.delete()
     # Parse time filter from message
-    flag = ctx.message.content.split()[-1].replace('-', '')
+    flag: str | None = ctx.message.content.split()[-1].replace('-', '')
     if flag not in ['w', 'd', 'h', 'il']:
         flag = None
     else:

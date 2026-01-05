@@ -66,8 +66,7 @@ staff_role_id = bot_config.get_config_option('staff_role_id', 0)
 
 def sort_by_timestamp(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for message in messages:
-        if utils.check_valid_utciso8601(message['timestamp']):
-            message['timestamp'] = utils.parse_utciso8601(message['timestamp'])
+        message['timestamp'] = datetime.datetime.fromtimestamp(message['timestamp'], tz=datetime.timezone.utc)
     
     return sorted(messages, key=lambda x: x['timestamp'], reverse=True)
 

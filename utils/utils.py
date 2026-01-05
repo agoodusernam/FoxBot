@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import urllib.request
 from io import TextIOWrapper
@@ -6,6 +7,8 @@ from pathlib import Path
 from typing import Union
 
 import discord
+
+import db_stuff
 
 
 def get_id_from_str(u_id: str) -> int | None:
@@ -162,8 +165,8 @@ def parse_utciso8601(date_str: str) -> datetime.datetime | None:
 	"""
     try:
         return datetime.datetime.fromisoformat(date_str)
-    except TypeError as e:
-        print(f'Error parsing date string "{date_str}": {e}')
+    except TypeError:
+        print(f'Error parsing date string "{date_str}"')
         return None
 
 def check_valid_utciso8601(date_str: str) -> bool:
@@ -201,3 +204,35 @@ discord.PermissionOverwrite]) -> dict[str, dict[str, Union[bool, None]]]:
             formatted[f'O{key.id}'] = format_perms_overwrite(permissions[key])
     
     return formatted
+
+async def log_msg(message: discord.Message) -> bool:
+    has_attachment: bool = bool(message.attachments)
+    
+    reply: str | None = None if message.reference is None else str(message.reference.message_id)
+    
+    json_data = {
+        'author':             message.author.name,
+        'author_id':          str(message.author.id),
+        'author_global_name': message.author.global_name,
+        'content':            message.content,
+        'reply_to':           reply,
+        'HasAttachments':     has_attachment,
+        'timestamp':          message.created_at.timestamp(),
+        'id':                 str(message.id),
+        'channel':            message.channel.name, # type: ignore
+        'channel_id':         str(message.channel.id)
+    }
+    
+    if os.getenv('LOCAL_SAVE') == 'True':
+        with make_file() as file:
+            file.write(json.dumps(json_data, ensure_ascii=False) + '\n')
+    
+    print(f'Message from {message.author.display_name} [#{message.channel}]: {message.content}')
+    if has_attachment:
+        if os.environ.get('LOCAL_IMG_SAVE') == 'True':
+            await save_attachments(message)
+        else:
+            for attachment in message.attachments:
+                await db_stuff.send_attachment(message, attachment)
+    
+    return db_stuff.send_message(json_data)

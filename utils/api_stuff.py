@@ -7,7 +7,7 @@ from discord.ext.commands import Context
 import requests
 
 
-@cachetools.func.ttl_cache(maxsize=5, ttl=3600)  # Cache for 1 hour
+@cachetools.func.ttl_cache(maxsize=2, ttl=3600)  # Cache for 1 hour
 def get_nasa_apod() -> dict[str, str]:
     api_key = os.getenv('NASA_API_KEY')
     
