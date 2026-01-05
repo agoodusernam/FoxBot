@@ -8,7 +8,7 @@ from typing import Union
 
 import discord
 
-import db_stuff
+from utils import db_stuff # type: ignore # IDE hates this, and so do I, but it seems to work
 
 
 def get_id_from_str(u_id: str) -> int | None:
