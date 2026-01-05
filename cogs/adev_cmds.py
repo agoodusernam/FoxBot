@@ -14,10 +14,7 @@ from command_utils.CContext import CContext, CoolBot
 
 async def aexec(code: str) -> Any:
     # Make an async function with the code and `exec` it
-    exec(
-        f'async def __ex(): ' +
-        ''.join(f'\n {l}' for l in code.split('\n'))
-    )
+    exec(f'async def __ex(): {code}')
 
     # Get `__ex` from local variables, call it and return the result
     return await locals()['__ex']()
