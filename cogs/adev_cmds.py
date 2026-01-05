@@ -1,3 +1,4 @@
+import asyncio
 import gc
 import os
 import sys
@@ -185,8 +186,7 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     async def run_func(self, ctx: CContext, func_name: str):
         await ctx.delete()
         if ctx.author.id != 542798185857286144: return
-        
-        result = await aexec(f'await discord.utils.maybe_coroutine({func_name})')
+        result: Any = asyncio.create_task(aexec(f'await discord.utils.maybe_coroutine({func_name})'))
         await ctx.send(f'Return: {utils.utils.get_str(result)}', delete_after=ctx.bot.del_after)
 
 async def setup(bot):
