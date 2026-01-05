@@ -1,6 +1,6 @@
-import asyncio
 import datetime
 import logging
+import threading
 
 from discord.ext import commands
 
@@ -9,6 +9,7 @@ from config.bot_config import BotConfig
 
 
 class CContext(commands.Context):
+    bot: "CoolBot"
     async def delete(self) -> bool:
         """Delete the command message if possible.
         Returns:
@@ -23,7 +24,6 @@ class CContext(commands.Context):
         return True
 
 class CoolBot(commands.Bot):
-    
     def __init__(self, *args, **kwargs) -> None:
         self.config: BotConfig = kwargs.pop('config')
         self.blacklist: BlacklistManager
@@ -35,7 +35,7 @@ class CoolBot(commands.Bot):
         self.landmine_channels: dict[int, int] = {}
         self.forced_landmines: set[int] = set()
         self.logger: logging.Handler = logging.StreamHandler()
-        self.dev_task: asyncio.Task | None = None
+        self.dev_func_thread: threading.Thread | None = None
         
         super().__init__(*args, **kwargs)
     

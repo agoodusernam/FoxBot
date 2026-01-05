@@ -2,6 +2,7 @@ import asyncio
 import gc
 import os
 import sys
+import threading
 from typing import Any
 
 import discord
@@ -14,14 +15,17 @@ from utils import db_stuff
 from command_utils.CContext import CContext, CoolBot
 # added the 'a' to the start of the file so it loads first
 
-async def aexec(code: str) -> Any:
+async def aexec(func_name: str) -> Any:
     locs: dict[str, Any] = {}
     
-    exec(f'async def __ex(): {code}', globals(), locs)
+    exec(f'async def __ex(): await discord.utils.maybe_coroutine({func_name})', globals(), locs)
     return await locs['__ex']()
 
+def run_func(loop: asyncio.AbstractEventLoop, func_name: str) -> Any:
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(aexec(func_name))
+
 async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
-    if bot.dev_task is not None: bot.dev_task.cancel()
     voice_log.leave_all(bot)
     db_stuff.disconnect()
     await bot.close()
@@ -188,7 +192,9 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     async def run_func(self, ctx: CContext, func_name: str):
         await ctx.delete()
         if ctx.author.id != 542798185857286144: return
-        ctx.bot.dev_task = asyncio.create_task(aexec(f'await discord.utils.maybe_coroutine({func_name})'))
+        loop = asyncio.new_event_loop()
+        ctx.bot.dev_func_thread = threading.Thread(target=run_func, args=(loop, func_name))
+        ctx.bot.dev_func_thread.start()
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))
