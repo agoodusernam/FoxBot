@@ -162,7 +162,7 @@ def parse_utciso8601(date_str: str) -> datetime.datetime | None:
 	"""
     try:
         return datetime.datetime.fromisoformat(date_str)
-    except ValueError as e:
+    except TypeError as e:
         print(f'Error parsing date string "{date_str}": {e}')
         return None
 
