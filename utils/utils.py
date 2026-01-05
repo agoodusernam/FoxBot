@@ -173,7 +173,8 @@ def check_valid_utciso8601(date_str: str) -> bool:
     try:
         datetime.datetime.fromisoformat(date_str)
         return True
-    except ValueError:
+    except TypeError:
+        print(f'Invalid date string "{date_str}"')
         return False
 
 
