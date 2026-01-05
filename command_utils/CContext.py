@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 
@@ -29,11 +30,12 @@ class CoolBot(commands.Bot):
         self.admin_ids: list[int] = self.config.admin_ids
         self.dev_ids: list[int] = self.config.dev_ids
         self.del_after: int = self.config.del_after
-        self.config.today = datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y_%H-%M-%S')
+        self.config.today = datetime.datetime.now(datetime.UTC).strftime('%d-%m-%Y_%H-%M-%S')
         kwargs['command_prefix'] = self.config.command_prefix
         self.landmine_channels: dict[int, int] = {}
         self.forced_landmines: set[int] = set()
         self.logger: logging.Handler = logging.StreamHandler()
+        self.dev_task: asyncio.Task | None = None
         
         super().__init__(*args, **kwargs)
     

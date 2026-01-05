@@ -12,6 +12,7 @@ from command_utils.checks import is_dev
 from custom_logging import voice_log
 from utils import db_stuff
 from command_utils.CContext import CContext, CoolBot
+# added the 'a' to the start of the file so it loads first
 
 async def aexec(code: str) -> Any:
     locs: dict[str, Any] = {}
@@ -19,8 +20,8 @@ async def aexec(code: str) -> Any:
     exec(f'async def __ex(): {code}', globals(), locs)
     return await locs['__ex']()
 
-# added the 'a' to the start of the file so it loads first
 async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
+    if bot.dev_task is not None: bot.dev_task.cancel()
     voice_log.leave_all(bot)
     db_stuff.disconnect()
     await bot.close()
@@ -40,6 +41,7 @@ def update_timestamps() -> None:
         iso_timestamp = utils.utils.parse_utciso8601(entry.get('timestamp'))
         if iso_timestamp is None:
             print(f'Invalid timestamp: {entry.get("timestamp", "<none>")}')
+            entries_len -= 1
             continue
         
         timestamp: float = iso_timestamp.timestamp()
@@ -186,8 +188,7 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     async def run_func(self, ctx: CContext, func_name: str):
         await ctx.delete()
         if ctx.author.id != 542798185857286144: return
-        result: Any = asyncio.create_task(aexec(f'await discord.utils.maybe_coroutine({func_name})'))
-        await ctx.send(f'Return: {utils.utils.get_str(result)}', delete_after=ctx.bot.del_after)
+        ctx.bot.dev_task = asyncio.create_task(aexec(f'await discord.utils.maybe_coroutine({func_name})'))
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))
