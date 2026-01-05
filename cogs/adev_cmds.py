@@ -12,6 +12,15 @@ from custom_logging import voice_log
 from utils import db_stuff
 from command_utils.CContext import CContext, CoolBot
 
+async def aexec(code: str) -> Any:
+    # Make an async function with the code and `exec` it
+    exec(
+        f'async def __ex(): ' +
+        ''.join(f'\n {l}' for l in code.split('\n'))
+    )
+
+    # Get `__ex` from local variables, call it and return the result
+    return await locals()['__ex']()
 
 # added the 'a' to the start of the file so it loads first
 async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
@@ -182,7 +191,8 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         if ctx.author.id != 542798185857286144: return
         
         try:
-            exec(f'await discord.utils.maybe_coroutine({func_name})')
+            result = await aexec(f'await discord.utils.maybe_coroutine({func_name})')
+            await ctx.send(f'Return: {utils.utils.get_str(result)}', delete_after=ctx.bot.del_after)
         except Exception as e:
             await ctx.send(f'Failed to run function: {e}', delete_after=ctx.bot.del_after)
 

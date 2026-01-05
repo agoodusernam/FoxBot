@@ -11,6 +11,16 @@ import discord
 from utils import db_stuff # type: ignore # IDE hates this, and so do I, but it seems to work
 
 
+def _has_meaningful_str(obj: object):
+    return (obj.__class__.__str__ != object.__str__) or (obj.__class__.__repr__ != object.__repr__)
+
+
+def get_str(obj: object) -> str:
+    if not _has_meaningful_str(obj):
+        return f"Class {obj.__class__.__name__} (No meaningful string representation)"
+    
+    return str(obj)
+
 def get_id_from_str(u_id: str) -> int | None:
     """
 	Converts a string representation of a user or channel ID to an integer ID.
