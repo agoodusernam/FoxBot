@@ -61,19 +61,19 @@ def make_file() -> TextIOWrapper:
 	Creates a new file with the current date in the 'data' directory.
 	:return: TextIOWrapper: A file object for the newly created file.
 	"""
-    if not os.path.exists('../data'):
-        os.makedirs('../data')
     if not os.path.exists('../data/attachments'):
         os.makedirs('../data/attachments')
     return open(f'data/{formatted_today()}.json', 'a+', encoding='utf-8')
 
 
-def make_empty_file(path: str | Path) -> None:
+def make_empty_file(path: Path) -> None:
     """
 	Creates an empty file at the specified path if it does not already exist.
 	:param path: str | Path: The path where the empty file will be created.
 	:return:
 	"""
+    if not os.path.exists(path.parent):
+        os.makedirs(path.parent, exist_ok=True)
     if not os.path.exists(path):
         with open(path, 'x'):
             pass
