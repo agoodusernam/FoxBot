@@ -1,7 +1,7 @@
 import os
 from typing import Any, Mapping
 
-import cachetools.func
+import cachetools.func  # type: ignore[import-untyped]
 import discord
 import pymongo
 from gridfs import GridFS
@@ -124,9 +124,9 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
         # Store metadata
         metadata = {
             'message_id':         str(message.id),
-            'author_global_name': message.author.global_name,
+            'author_id':          str(message.author.id),
             'content_type':       attachment.content_type,
-            'timestamp':          message.created_at.isoformat()
+            'timestamp':          message.created_at.timestamp()
         }
         
         # Store file in GridFS
@@ -142,8 +142,8 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
         return None
 
 
-@cachetools.func.ttl_cache(maxsize=5, ttl=600)
-def download_all() -> list[dict[str, str]] | None:
+@cachetools.func.ttl_cache(maxsize=2, ttl=600)
+def download_all() -> list[dict[str, Any]] | None:
     """
     Retrieves all messages from the MongoDB database.
     :return: A list of dictionaries containing message data, or None if an error occurs.

@@ -1,7 +1,6 @@
 # pylint: disable=trailing-whitespace, line-too-long
 import atexit
 import datetime
-import json
 import os
 import random
 import re
@@ -276,7 +275,7 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
         print(f"Unexpected error: {error}")
 
 
-async def landmine_explode(message: discord.Message, forced=False) -> bool:
+async def landmine_explode(message: discord.Message, forced=False) -> None:
     assert not isinstance(message.author, discord.User)
     try:
         msgs: list[str] = ["Landmine exploded!", "You stepped in a claymore!", "A grenade exploded next to you!",
@@ -340,14 +339,14 @@ async def on_message(message: discord.Message):
         commands_enabled = False
     if message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids:
         commands_enabled = True
-        
+    
+    assert isinstance(bot.command_prefix, str)
     if bot.config.staging:
         if commands_enabled and message.content.startswith(bot.command_prefix):
             bot.config.today = utils.formatted_today()
             await bot.process_commands(message)
         return
     
-    assert isinstance(bot.command_prefix, str)
     
     if message.content.startswith('\u200B'):  # Zero-width space
         print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
@@ -377,10 +376,11 @@ async def on_message(message: discord.Message):
         await message.channel.send('<@&1352341336459841688>', delete_after=2)
     
     # Log regular messages
-    if (message.author != bot.user) and (
+    if ((message.author != bot.user) and
+            hasattr(message.channel, 'category_id') and (
             message.author.id not in bot.config.no_log.user_ids) and (
             message.channel.id not in bot.config.no_log.channel_ids) and (
-            message.channel.category_id not in bot.config.no_log.category_ids):
+            message.channel.category_id not in bot.config.no_log.category_ids)):
         
         await utils.log_msg(message)
 

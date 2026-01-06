@@ -30,7 +30,6 @@ async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
     db_stuff.disconnect()
     await bot.close()
     
-    # run git pull to update the codebase, then restart the script
     if update:
         os.system('git pull https://github.com/agoodusernam/FoxBot.git')
     
@@ -168,9 +167,9 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     async def maintenance_mode(self, ctx: CContext, mode: bool):
         await ctx.delete()
         
-        ctx.bot.maintenance_mode = mode
+        ctx.bot.config.maintenance_mode = mode
         
-        status: str = 'enabled' if ctx.bot.maintenance_mode else 'disabled'
+        status: str = 'enabled' if ctx.bot.config.maintenance_mode else 'disabled'
         await ctx.send(f'Maintenance mode has been {status}.', delete_after=ctx.bot.del_after)
     
     @commands.command(name='reset_cooldowns',

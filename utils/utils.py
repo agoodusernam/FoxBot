@@ -7,8 +7,9 @@ from pathlib import Path
 from typing import Union
 
 import discord
+from discord import HTTPException
 
-from utils import db_stuff # type: ignore # IDE hates this, and so do I, but it seems to work
+from utils import db_stuff  # type: ignore # IDE hates this, and so do I, but it seems to work
 
 
 def _has_meaningful_str(obj: object):
@@ -20,6 +21,7 @@ def get_str(obj: object) -> str:
         return f"Class {obj.__class__.__name__} (No meaningful string representation)"
     
     return str(obj)
+
 
 def get_id_from_str(u_id: str) -> int | None:
     """
@@ -77,18 +79,40 @@ def make_empty_file(path: str | Path) -> None:
             pass
 
 
-async def save_attachments(message: discord.Message) -> None:
+async def save_attachments(message: discord.Message) -> int:
     """
 	Saves all attachments from a Discord message to a local directory.
 	:param message: discord.Message: The message containing attachments to be saved.
 	:return: None
 	"""
-    for attachment in message.attachments:
-        file_path = Path(os.path.abspath(f'data/attachments/{formatted_time()}_{attachment.filename}'))
+    attach_count: int = len(message.attachments)
+    if attach_count == 0:
+        return 0
+    
+    saved: int = 0
+    
+    for i, attachment in enumerate(message.attachments):
+        file_ext: str = "".join(Path(attachment.filename).suffixes)
+        base_path: Path = Path(os.path.abspath('data/attachments')) / str(message.author.id)
+        file_path: Path
+        if attach_count == 1:
+            file_path = base_path / (str(message.id) + file_ext)
+        else:
+            # message has > 1 attachment
+            file_path = base_path / str(message.id) / (str(i) + file_ext)
         make_empty_file(file_path)
         
-        await attachment.save(file_path)
-        print(f'Saved attachment: {file_path}')
+        try:
+            await attachment.save(file_path)
+            saved += 1
+        except discord.NotFound:
+            print(f'Attachment {i + 1} of {attach_count} for message {message.id} was deleted before it could be saved.')
+        except HTTPException:
+            print(f'HTTP Error while saving attachment {i + 1} of {attach_count} for message {message.id}')
+        except OSError:
+            print(f'Error while writing attachment {i + 1} of {attach_count} for message {message.id}')
+        
+    return saved
 
 
 def download_from_url(path: str | Path, url: str) -> None:
@@ -179,6 +203,7 @@ def parse_utciso8601(date_str: str) -> datetime.datetime | None:
         print(f'Error parsing date string "{date_str}"')
         return None
 
+
 def check_valid_utciso8601(date_str: str) -> bool:
     """
     Checks if a string is a valid UTC ISO 8601 date string.
@@ -215,6 +240,7 @@ discord.PermissionOverwrite]) -> dict[str, dict[str, Union[bool, None]]]:
     
     return formatted
 
+
 async def log_msg(message: discord.Message) -> bool:
     has_attachment: bool = bool(message.attachments)
     
@@ -229,7 +255,7 @@ async def log_msg(message: discord.Message) -> bool:
         'HasAttachments':     has_attachment,
         'timestamp':          message.created_at.timestamp(),
         'id':                 str(message.id),
-        'channel':            message.channel.name, # type: ignore
+        'channel':            message.channel.name if hasattr(message.channel, 'name') else 'Unknown',
         'channel_id':         str(message.channel.id)
     }
     
