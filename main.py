@@ -390,7 +390,7 @@ async def on_message(message: discord.Message):
     
     if message.content.startswith('!f'):
         ctx: CContext = await bot.get_context(message)
-        ctx.invoke(bot.get_command('tts'), message=message.content.replace("!f", "").strip())
+        await ctx.invoke(bot.get_command('tts'), message=message.content.replace("!f", "").strip())
 
 # Reaction role events
 @bot.event
