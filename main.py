@@ -388,17 +388,7 @@ async def on_message(message: discord.Message):
         bot.config.save()
     
     if message.content.startswith('!f'):
-        ctx: CContext = await bot.get_context(message)
-        if not ctx.valid:
-            bot.logger.warning(f'Invalid context for !f command: {ctx}')
-        
-        tts_cmd: discord.ext.commands.Command | None = bot.get_command('tts')
-        if tts_cmd is None:
-            bot.logger.warning('tts command not found')
-            return
-        
-        await ctx.invoke(tts_cmd, message=message.content.replace('!f ', '').strip())
-
+        await utils.tts_direct(bot, message)
 
 # Reaction role events
 @bot.event

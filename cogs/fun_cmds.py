@@ -200,7 +200,7 @@ class FunCommands(commands.Cog, name='Fun'):
             self.check_tts_leave.start()
                 
         discord.opus.load_opus(opus)
-        if hasattr(ctx.bot, 'vc_client'):
+        if ctx.bot.vc_client is not None:
             if not ctx.bot.vc_client.channel.id == state.channel.id:
                 await ctx.bot.vc_client.move_to(state.channel)
             vc_client = ctx.bot.vc_client
