@@ -43,7 +43,7 @@ def eval_count_msg(message: str) -> tuple[decimal.Decimal, CountStatus]:
     old_handler = signal.signal(signal.SIGALRM, timeout_handler)
     signal.alarm(2)
     try:
-        decimal.getcontext().prec = 330
+        decimal.getcontext().prec = 320
         expr: str = re.sub(r"(\d+\.\d*|\.\d+|\d+)", r"decimal.Decimal('\1')", message)
         result: decimal.Decimal = round(eval(expr), 20)
         
