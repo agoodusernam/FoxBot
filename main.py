@@ -386,6 +386,7 @@ async def on_message(message: discord.Message):
     
     if message.channel.id == bot.config.counting_channel:
         await utils.counting_msg(message, bot)
+        bot.config.save()
 
 
 # Reaction role events

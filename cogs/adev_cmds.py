@@ -15,15 +15,16 @@ from utils import db_stuff
 from command_utils.CContext import CContext, CoolBot
 # added the 'a' to the start of the file so it loads first
 
-async def aexec(func_name: str) -> Any:
+async def aexec(func_name: str, context: CContext) -> Any:
     locs: dict[str, Any] = {}
+    ctx = context
     
     exec(f'async def __ex(): await discord.utils.maybe_coroutine({func_name})', globals(), locs)
     return await locs['__ex']()
 
-def run_func(loop: asyncio.AbstractEventLoop, func_name: str) -> Any:
+def run_func(loop: asyncio.AbstractEventLoop, func_name: str, ctx: CContext) -> Any:
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(aexec(func_name))
+    loop.run_until_complete(aexec(func_name, ctx))
 
 async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
     voice_log.leave_all(bot)

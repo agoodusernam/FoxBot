@@ -306,6 +306,7 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         bot.config.highest_count = result
         reaction = "☑️"
     
+    bot.config.last_count_user = message.author.id
     await message.add_reaction(reaction)
     return True
     
