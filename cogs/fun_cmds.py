@@ -182,12 +182,7 @@ class FunCommands(commands.Cog, name='Fun'):
             await ctx.send('You must be in a voice channel to use this command.')
             return
         
-        lock: asyncio.Lock
-        if hasattr(ctx.bot, 'tts_lock'):
-            lock = ctx.bot.tts_lock
-        else:
-            lock = asyncio.Lock()
-            ctx.bot.tts_lock = lock
+        lock: asyncio.Lock = ctx.bot.tts_lock
         
         
         vc_client: discord.VoiceClient
@@ -218,16 +213,16 @@ class FunCommands(commands.Cog, name='Fun'):
     
     @discord.ext.tasks.loop(minutes=1.0)
     async def check_tts_leave(self) -> None:
-        if hasattr(self.bot, 'last_tts_sent_time') and hasattr(self.bot, 'vc_client'):
+        if self.bot.vc_client is not None and hasattr(self.bot, 'last_tts_sent_time'):
             if not self.bot.vc_client.is_connected:
-                del self.bot.vc_client
+                self.bot.vc_client = None
                 del self.bot.last_tts_sent_time
                 self.check_tts_leave.stop()
                 return
             
             if time.time() - self.bot.last_tts_sent_time > 180.0:
                 await self.bot.vc_client.disconnect()
-                del self.bot.vc_client
+                self.bot.vc_client = None
                 del self.bot.last_tts_sent_time
                 self.check_tts_leave.stop()
                 

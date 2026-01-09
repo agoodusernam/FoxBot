@@ -1,8 +1,11 @@
+import asyncio
 import datetime
 import logging
 import threading
+from typing import Any
 
 from discord.ext import commands
+import discord
 
 from config.blacklist_manager import BlacklistManager
 from config.bot_config import BotConfig
@@ -35,6 +38,8 @@ class CoolBot(commands.Bot):
         self.landmine_channels: dict[int, int] = {}
         self.forced_landmines: set[int] = set()
         self.dev_func_thread: threading.Thread | None = None
+        self.vc_client: discord.VoiceClient | None = None
+        self.tts_lock: asyncio.Lock = asyncio.Lock()
         
         super().__init__(*args, **kwargs)
         self.logger: logging.Logger = logging.getLogger('discord')
@@ -42,5 +47,5 @@ class CoolBot(commands.Bot):
     def run(self, *args, **kwargs):
         super().run(*args, **kwargs)
         
-    async def get_context(self, message, *, cls=CContext):
+    async def get_context(self, message, *, cls=CContext) -> Any:
         return await super().get_context(message, cls=cls)

@@ -405,13 +405,15 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         
         
         try:
+            roles: list[discord.Role] = []
             for role_id in ctx.bot.config.verified_roles:
                 role = get(ctx.guild.roles, id=role_id)
                 if role is None:
                     ctx.bot.logger.error(f'Failed to find role with ID {role_id} for verification.')
                     continue
-                if role not in member.roles:
-                    await member.add_roles(role, reason='Verified by admin')
+                roles.append(role)
+                
+            await member.add_roles(*roles, reason='Verified by admin')
                     
             await ctx.send(f'{member.display_name} has been verified.', delete_after=ctx.bot.del_after)
             

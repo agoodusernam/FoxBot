@@ -327,6 +327,7 @@ async def check_landmine(message: discord.Message) -> None:
 async def on_message(message: discord.Message):
     if message.author.bot:
         return
+    
     commands_enabled: bool = True
     if bot.config.staging:
         commands_enabled = False
@@ -356,8 +357,7 @@ async def on_message(message: discord.Message):
                     or message.author.id in bot.config.dev_ids)):
         # If the message contains a URL, delete it and send a warning
         await message.delete()
-        await message.channel.send(
-                'Please do not send links in this channel.',
+        await message.channel.send('Please do not send links in this channel.',
                 delete_after=bot.config.del_after
         )
     
@@ -386,6 +386,18 @@ async def on_message(message: discord.Message):
     if message.channel.id == bot.config.counting_channel and not bot.config.staging:
         await utils.counting_msg(message, bot)
         bot.config.save()
+    
+    if message.content.startswith('!f'):
+        ctx: CContext = await bot.get_context(message)
+        if not ctx.valid:
+            bot.logger.warning(f'Invalid context for !f command: {ctx}')
+            return
+        
+        tts_cmd: discord.ext.commands.Command | None = bot.get_command('tts')
+        if tts_cmd is None:
+            return
+        
+        await ctx.invoke(tts_cmd, message=message.content.replace('!f ', '').strip())
 
 
 # Reaction role events
@@ -498,12 +510,12 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             if before.channel and len(before.channel.members) == 0:
                 await before.channel.delete(reason='Private VC empty after member left')
         
-        if not hasattr(bot, 'vc_client'):
+        if bot.vc_client is None:
             return
         
         if len(before.channel.members) == 1 and bot.vc_client.channel.id == before.channel.id:
             await bot.vc_client.disconnect()
-            del bot.vc_client
+            bot.vc_client = None
     
     # Member moved to another channel
     elif before.channel != after.channel:
@@ -521,12 +533,12 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             if before.channel and len(before.channel.members) == 0:
                 await before.channel.delete(reason='Private VC empty after member left')
         
-        if not hasattr(bot, 'vc_client'):
+        if bot.vc_client is None:
             return
         
         if len(before.channel.members) == 1 and bot.vc_client.channel.id == before.channel.id:
             await bot.vc_client.disconnect()
-            del bot.vc_client
+            bot.vc_client = None
 
 async def load_extensions() -> None:
     for filename in os.listdir('./cogs'):

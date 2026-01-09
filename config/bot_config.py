@@ -98,9 +98,7 @@ class BotConfig:
             },
             "reaction_roles":   {
                 "message_id":    0,
-                "emoji_to_role": {
-                    "🤷‍♂️": 0
-                }
+                "emoji_to_role": {}
             },
             
             "verified_roles":   [],
