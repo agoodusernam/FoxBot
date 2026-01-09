@@ -350,7 +350,8 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         return False
     
     if status == CountStatus.DECIMAL_ERR:
-        await message.reply("Expression resulted in a decimal error.")
+        await message.reply("Expression resulted in a decimal error, likely due to insufficient precision. Try using smaller numbers.")
+        return False
     
     int_result = int(result)
     del result
