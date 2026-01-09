@@ -16,6 +16,7 @@ from typing import Union, Any
 
 import discord
 import discord.ext.commands
+import discord.ext.tasks
 from discord import HTTPException
 from gtts import gTTS
 
@@ -382,56 +383,4 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
     bot.config.last_count_user = message.author.id
     await message.add_reaction(reaction)
     return True
-    
-async def tts_direct(bot: CoolBot, message: discord.Message):
-    if isinstance(message.author, discord.User):
-        return
-    
-    if message.content.strip() == '':
-        await message.channel.send('Please provide a message to convert to speech.')
-        return
-    
-    opus = ctypes.util.find_library('opus')
-    if opus is None:
-        await message.channel.send('Could not find opus library. TTS command is unavailable.')
-        return
-    
-    state = message.author.voice
-    if state is None or state.channel is None:
-        await message.channel.send('You must be in a voice channel to use this command.')
-        return
-    
-    lock: asyncio.Lock = bot.tts_lock
-    
-    vc_client: discord.VoiceClient
-    bot.last_tts_sent_time = time.time()
-    await lock.acquire()
-    gTTS(text=message.content.replace("!f", "").strip()).save('msg.mp3')
-    
-    def done(error: Exception | None) -> None:
-        lock.release()
-        if os.path.exists('msg.mp3'):
-            os.remove('msg.mp3')
-        
-        if error:
-            bot.logger.error(f'TTS playback error: {error}')
-        
-        cog: discord.ext.commands.Cog | None = bot.cogs.get('Fun')
-        if cog is None:
-            bot.logger.error('Could not get "Fun" cog.')
-            return
-        
-        cog.check_tts_leave.start() # type: ignore
-    
-    discord.opus.load_opus(opus)
-    if bot.vc_client is not None:
-        if not bot.vc_client.channel.id == state.channel.id:
-            await bot.vc_client.move_to(state.channel)
-        vc_client = bot.vc_client
-    else:
-        vc_client = await state.channel.connect(timeout=15.0, reconnect=False)
-        bot.vc_client = vc_client
-    
-    audio = discord.FFmpegPCMAudio(source='msg.mp3')
-    vc_client.play(audio, after=done)
     

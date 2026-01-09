@@ -11,6 +11,7 @@ from discord.ext import commands
 from discord.ext.commands import Context
 from dotenv import load_dotenv
 
+import cogs.fun_cmds
 from command_utils.CContext import CoolBot, CContext
 from config.bot_config import load_config
 from custom_logging import voice_log
@@ -388,7 +389,8 @@ async def on_message(message: discord.Message):
         bot.config.save()
     
     if message.content.startswith('!f'):
-        await utils.tts_direct(bot, message)
+        ctx: CContext = await bot.get_context(message)
+        ctx.invoke(bot.get_command('tts'), message=message.content.replace("!f", "").strip())
 
 # Reaction role events
 @bot.event
