@@ -278,13 +278,13 @@ async def log_msg(message: discord.Message) -> bool:
 async def fail_count_number(message: discord.Message, bot: CoolBot) -> None:
     await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.last_count}**!! Next number is **1**. **Wrong number**.")
     bot.config.last_count = 0
-    await message.add_reaction(":x:")
+    await message.add_reaction("❌")
     return None
 
 async def fail_count_user(message: discord.Message, bot: CoolBot) -> None:
     await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.last_count}**!! Next number is **1**. **You can't count two numbers in a row**.")
     bot.config.last_count = 0
-    await message.add_reaction(":x:")
+    await message.add_reaction("❌")
     return None
 
 async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
@@ -299,12 +299,12 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         await message.reply("The next number is **1**.")
         return False
     
-    reaction: str = ":white_check_mark:"
+    reaction: str = "✅"
     
     bot.config.last_count = result
     if result > bot.config.highest_count:
         bot.config.highest_count = result
-        reaction = ":ballot_box_with_check:"
+        reaction = "☑️"
     
     await message.add_reaction(reaction)
     return True
