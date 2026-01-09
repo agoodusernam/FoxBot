@@ -51,6 +51,7 @@ async def dice_roll(del_after: int, message: discord.Message) -> None:
 class FunCommands(commands.Cog, name='Fun'):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
+        self.check_tts_leave.start()
         
     @commands.command(name='dice', aliases=['roll', 'dice_roll'],
                       brief='Roll a dice',
@@ -196,13 +197,8 @@ class FunCommands(commands.Cog, name='Fun'):
                 
             if error:
                 ctx.bot.logger.error(f'TTS playback error: {error}')
-            try:
-                asyncio.get_running_loop()
-            except RuntimeError:
-                asyncio.new_event_loop()
             
-            self.check_tts_leave.start()
-                
+        
         discord.opus.load_opus(opus)
         if ctx.bot.vc_client is not None:
             if not ctx.bot.vc_client.channel.id == state.channel.id:
@@ -217,23 +213,34 @@ class FunCommands(commands.Cog, name='Fun'):
     
     @discord.ext.tasks.loop(minutes=1.0)
     async def check_tts_leave(self) -> None:
-        if self.bot.vc_client is not None and hasattr(self.bot, 'last_tts_sent_time'):
-            if not self.bot.vc_client.is_connected:
-                self.bot.vc_client = None
-                del self.bot.last_tts_sent_time
-                self.check_tts_leave.stop()
-                return
+        if self.bot.vc_client is None and not hasattr(self.bot, 'last_tts_sent_time'):
+            return
             
-            if time.time() - self.bot.last_tts_sent_time > 180.0:
-                await self.bot.vc_client.disconnect()
-                self.bot.vc_client = None
-                del self.bot.last_tts_sent_time
-                self.check_tts_leave.stop()
-                
+        if self.bot.vc_client is None and hasattr(self.bot, 'last_tts_sent_time'):
+            del self.bot.last_tts_sent_time
             return
         
-        self.check_tts_leave.stop()
+        if self.bot.vc_client is not None and not hasattr(self.bot, 'last_tts_sent_time'):
+            await self.bot.vc_client.disconnect()
+            self.bot.vc_client = None
+            return
+        
+        assert self.bot.vc_client is not None
+        assert hasattr(self.bot, 'last_tts_sent_time')
+        assert isinstance(self.bot.last_tts_sent_time, float)
+        
+        if not self.bot.vc_client.is_connected():
+            self.bot.vc_client = None
+            del self.bot.last_tts_sent_time
+            return
+        
+        if time.time() - self.bot.last_tts_sent_time > 180.0:
+            await self.bot.vc_client.disconnect()
+            self.bot.vc_client = None
+            del self.bot.last_tts_sent_time
+            
         return
+        
 
 async def setup(bot: CoolBot) -> None:
     await bot.add_cog(FunCommands(bot))
