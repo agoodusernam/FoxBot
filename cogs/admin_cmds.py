@@ -175,7 +175,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Provides statistics about voice channel usage in the server',
                       usage='f!anavc [user_id/mention]')
     @commands.check(is_admin)
-    @commands.cooldown(1, 30, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 2, commands.BucketType.user)  # type: ignore
     async def analyse_voice(self, ctx: CContext):
         await analysis.format_voice_analysis(ctx, graph=False)
     

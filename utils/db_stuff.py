@@ -229,7 +229,7 @@ def send_voice_session(session_data: Mapping[str, Any]) -> None:
         print(f'Error saving voice session: {e}')
 
 
-@cachetools.func.ttl_cache(maxsize=5, ttl=600)
+@cachetools.func.ttl_cache(maxsize=2, ttl=600)
 def download_voice_sessions() -> list[Mapping[str, str]] | None:
     client = _connect()
     if not client:
