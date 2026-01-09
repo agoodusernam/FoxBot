@@ -1,12 +1,14 @@
 import datetime
 import json
 import os
+import re
+import decimal
 import signal
 import urllib.request
 from enum import IntEnum
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Union
+from typing import Union, Any
 
 import discord
 from discord import HTTPException
@@ -14,37 +16,53 @@ from discord import HTTPException
 from command_utils.CContext import CoolBot
 from utils import db_stuff  # type: ignore # IDE hates this, and so do I, but it seems to work
 
+D = decimal.Decimal
+
 class CountStatus(IntEnum):
     SUCCESS = 0
     TIMEOUT = 1
     INVALID = 2
-    
+    OVERFLOW = 3
+    ZERO_DIV = 4
+    DECIMAL_ERR = 5
 
-def eval_count_msg(message: str) -> tuple[int, CountStatus]:
+def eval_count_msg(message: str) -> tuple[decimal.Decimal, CountStatus]:
     """
     Returns the evaluated result of a counting message.
     :param message: str: The counting message to evaluate.
-    :return: tuple[int, CountStatus]: The evaluated result and the status of the evaluation.
+    :return: tuple[decimal.Decimal, CountStatus]: The evaluated result and the status of the evaluation.
     """
     allowed: str = "0123456789*/-+.()%^&<>|~"
     for char in message:
         if char not in allowed:
-            return 0, CountStatus.INVALID
+            return D(0), CountStatus.INVALID
     
-    def timeout_handler(signum, frame):
+    def timeout_handler(signum: int, frame: Any):
         raise TimeoutError
-
+    
     old_handler = signal.signal(signal.SIGALRM, timeout_handler)
     signal.alarm(2)
-
     try:
-        return round(float(eval(message))), CountStatus.SUCCESS
+        decimal.getcontext().prec = 330
+        expr: str = re.sub(r"(\d+\.\d*|\.\d+|\d+)", r"decimal.Decimal('\1')", message)
+        result: decimal.Decimal = round(eval(expr), 20)
+        
+        return result, CountStatus.SUCCESS
     
     except (SyntaxError, ValueError, TypeError):
-        return 0, CountStatus.INVALID
+        return D(0), CountStatus.INVALID
     
     except TimeoutError:
-        return 0, CountStatus.TIMEOUT
+        return D(0), CountStatus.TIMEOUT
+    
+    except (decimal.DivisionByZero, ZeroDivisionError):
+        return D(0), CountStatus.ZERO_DIV
+    
+    except (OverflowError, decimal.Overflow, MemoryError, decimal.Underflow):
+        return D(0), CountStatus.OVERFLOW
+    
+    except decimal.InvalidOperation:
+        return D(0), CountStatus.DECIMAL_ERR
     
     finally:
         signal.alarm(0)
@@ -314,15 +332,30 @@ async def fail_count_user(message: discord.Message, bot: CoolBot) -> None:
     return None
 
 async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
-    result, status = eval_count_msg(message.content.replace(" ", ""))
-    if result == CountStatus.INVALID:
-        return False
+    result, status = eval_count_msg(message.content)
     
     if status == CountStatus.TIMEOUT:
         await message.reply("Expression took too long to evaluate.")
         return False
     
-    if result != bot.config.last_count + 1:
+    if status == CountStatus.INVALID:
+        return False
+    
+    if status == CountStatus.OVERFLOW:
+        await message.reply("Expression resulted in an under or overflow.")
+        return False
+    
+    if status == CountStatus.ZERO_DIV:
+        await message.reply("Expression resulted in a division by zero.")
+        return False
+    
+    if status == CountStatus.DECIMAL_ERR:
+        await message.reply("Expression resulted in a decimal error.")
+    
+    int_result = int(result)
+    del result
+    
+    if int_result != bot.config.last_count + 1:
         if bot.config.last_count != 0:
             await fail_count_number(message, bot)
             return False
@@ -331,9 +364,9 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
     
     reaction: str = "✅"
     
-    bot.config.last_count = result
-    if result > bot.config.highest_count:
-        bot.config.highest_count = result
+    bot.config.last_count = int_result
+    if int_result > bot.config.highest_count:
+        bot.config.highest_count = int_result
         reaction = "☑️"
     
     bot.config.last_count_user = message.author.id
