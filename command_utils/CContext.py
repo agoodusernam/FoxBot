@@ -34,14 +34,12 @@ class CoolBot(commands.Bot):
         kwargs['command_prefix'] = self.config.command_prefix
         self.landmine_channels: dict[int, int] = {}
         self.forced_landmines: set[int] = set()
-        self.logger: logging.Logger = logging.getLogger('discord')
         self.dev_func_thread: threading.Thread | None = None
         
         super().__init__(*args, **kwargs)
+        self.logger: logging.Logger = logging.getLogger('discord')
     
     def run(self, *args, **kwargs):
-        kwargs['log_handler'] = self.logger
-        kwargs['root_logger'] = True
         super().run(*args, **kwargs)
         
     async def get_context(self, message, *, cls=CContext):
