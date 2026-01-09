@@ -5,6 +5,7 @@ import re
 import decimal
 import signal
 import urllib.request
+import string
 from enum import IntEnum
 from io import TextIOWrapper
 from pathlib import Path
@@ -32,6 +33,9 @@ def eval_count_msg(message: str) -> tuple[decimal.Decimal, CountStatus]:
     :param message: str: The counting message to evaluate.
     :return: tuple[decimal.Decimal, CountStatus]: The evaluated result and the status of the evaluation.
     """
+    for char in string.whitespace:
+        message = message.replace(char, "")
+        
     allowed: str = "0123456789*/-+.()%^&<>|~"
     for char in message:
         if char not in allowed:
