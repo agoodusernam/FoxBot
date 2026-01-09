@@ -354,7 +354,11 @@ async def on_message(message: discord.Message):
     
     await check_landmine(message)
     
-    if message.channel.id == 1352374592034963506 and find_url_in_string(message.content) and not message.author.bot:
+    if (message.channel.id == bot.config.counting_channel
+            and find_url_in_string(message.content)
+            and not message.author.bot
+            and not (message.author.id in bot.config.admin_ids
+                    or message.author.id in bot.config.dev_ids)):
         # If the message contains a URL, delete it and send a warning
         await message.delete()
         await message.channel.send(
