@@ -129,6 +129,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       brief='Unlock the server from hard lockdown',
                       help='Admin only: Remove timeouts and blacklist from all users')
     @commands.check(is_admin)
+    @guild_only()
     async def unhard_lockdown(self, ctx: CContext):
         await ctx.delete()
         guild: discord.Guild = ctx.guild
@@ -253,7 +254,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         
         msg: str = message
         
-        # Send the message content back to the channel
         split_message: list[str] = msg.split()
         try:
             channel_id: int = int(split_message[0].replace('#', '', 1).replace('<', '', 1).replace('>', '', 1))
@@ -266,7 +266,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         
         await channel.send(msg)
         
-        # Delete the original message
         await ctx.delete()
     
     @commands.command(name='edit_message',
@@ -409,6 +408,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             for role_id in ctx.bot.config.verified_roles:
                 role = get(ctx.guild.roles, id=role_id)
                 if role is None:
+                    ctx.bot.logger.error(f'Failed to find role with ID {role_id} for verification.')
                     continue
                 if role not in member.roles:
                     await member.add_roles(role, reason='Verified by admin')
@@ -416,7 +416,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send(f'{member.display_name} has been verified.', delete_after=ctx.bot.del_after)
             
         except Exception as e:
-            await ctx.send(f'Failed to verify {member.display_name}. Error: {e}', delete_after=ctx.bot.del_after)
+            ctx.bot.logger.error(f'Failed to assign verified role to {member.display_name}: {e}')
             return
     
     @commands.command(name='last_messages', aliases=['lastmsgs', 'last_msgs'],

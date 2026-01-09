@@ -12,7 +12,6 @@ from discord.ext.commands import Context
 from dotenv import load_dotenv
 
 from command_utils.CContext import CoolBot, CContext
-from config.blacklist_manager import BlacklistManager
 from config.bot_config import load_config
 from custom_logging import voice_log
 from utils import db_stuff, utils
@@ -24,11 +23,8 @@ load_dotenv()
 def on_exit():
     db_stuff.disconnect()
 
-# Create bot with intents
 bot = CoolBot(intents=discord.Intents.all(), config=load_config())
-bot.blacklist = BlacklistManager()
 
-# Regular Expression to extract URL from the string
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
 url_pattern = re.compile(regex, re.IGNORECASE)
 
@@ -237,7 +233,6 @@ class HelpPaginationView(discord.ui.View):
             await interaction.response.edit_message(embed=self.embeds[self.current_page], view=self)  # type: ignore
 
 
-# Apply custom help command
 bot.help_command = CustomHelpCommand()
 
 
@@ -272,7 +267,7 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
         await ctx.delete()
     
     else:
-        print(f"Unexpected error: {error}")
+        ctx.bot.logger.error(f'Error in command {ctx.command}: {error}', exc_info=error)
 
 
 async def landmine_explode(message: discord.Message, forced=False) -> None:

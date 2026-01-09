@@ -26,7 +26,7 @@ class CContext(commands.Context):
 class CoolBot(commands.Bot):
     def __init__(self, *args, **kwargs) -> None:
         self.config: BotConfig = kwargs.pop('config')
-        self.blacklist: BlacklistManager
+        self.blacklist: BlacklistManager = BlacklistManager()
         self.admin_ids: list[int] = self.config.admin_ids
         self.dev_ids: list[int] = self.config.dev_ids
         self.del_after: int = self.config.del_after
@@ -34,7 +34,7 @@ class CoolBot(commands.Bot):
         kwargs['command_prefix'] = self.config.command_prefix
         self.landmine_channels: dict[int, int] = {}
         self.forced_landmines: set[int] = set()
-        self.logger: logging.Handler = logging.StreamHandler()
+        self.logger: logging.Logger = logging.getLogger('discord')
         self.dev_func_thread: threading.Thread | None = None
         
         super().__init__(*args, **kwargs)

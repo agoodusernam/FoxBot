@@ -199,7 +199,7 @@ class BotConfig:
                 "emoji_to_role": self.reaction_roles.emoji_to_role
             },
             
-            "verified_roles":   [self.verified_roles],
+            "verified_roles":   self.verified_roles,
             "staging":          self.staging,
             "counting_channel": self.counting_channel,
             "highest_count":    self.highest_count,
