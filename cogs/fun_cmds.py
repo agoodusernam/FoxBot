@@ -209,6 +209,10 @@ class FunCommands(commands.Cog, name='Fun'):
             ctx.bot.vc_client = vc_client
         
         audio = discord.FFmpegPCMAudio(source='msg.mp3')
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.new_event_loop()
         vc_client.play(audio, after=done)
     
     @discord.ext.tasks.loop(minutes=1.0)
