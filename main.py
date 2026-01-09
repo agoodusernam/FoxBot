@@ -384,7 +384,7 @@ async def on_message(message: discord.Message):
         
         await utils.log_msg(message)
     
-    if message.channel.id == bot.config.counting_channel:
+    if message.channel.id == bot.config.counting_channel and not bot.config.staging:
         await utils.counting_msg(message, bot)
         bot.config.save()
 

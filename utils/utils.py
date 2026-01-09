@@ -1,7 +1,9 @@
 import datetime
 import json
 import os
+import signal
 import urllib.request
+from enum import IntEnum
 from io import TextIOWrapper
 from pathlib import Path
 from typing import Union
@@ -12,17 +14,41 @@ from discord import HTTPException
 from command_utils.CContext import CoolBot
 from utils import db_stuff  # type: ignore # IDE hates this, and so do I, but it seems to work
 
+class CountStatus(IntEnum):
+    SUCCESS = 0
+    TIMEOUT = 1
+    INVALID = 2
+    
 
-def eval_count_msg(message: str) -> int | None:
+def eval_count_msg(message: str) -> tuple[int, CountStatus]:
+    """
+    Returns the evaluated result of a counting message.
+    :param message: str: The counting message to evaluate.
+    :return: tuple[int, CountStatus]: The evaluated result and the status of the evaluation.
+    """
     allowed: str = "0123456789*/-+.()%^&<>|~"
     for char in message:
         if char not in allowed:
-            return None
+            return 0, CountStatus.INVALID
     
+    def timeout_handler(signum, frame):
+        raise TimeoutError
+
+    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(2)
+
     try:
-        return round(float(eval(message)))
+        return round(float(eval(message))), CountStatus.SUCCESS
+    
     except (SyntaxError, ValueError, TypeError):
-        return None
+        return 0, CountStatus.INVALID
+    
+    except TimeoutError:
+        return 0, CountStatus.TIMEOUT
+    
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 
 def get_id_from_str(u_id: str) -> int | None:
@@ -288,8 +314,12 @@ async def fail_count_user(message: discord.Message, bot: CoolBot) -> None:
     return None
 
 async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
-    result: int | None = eval_count_msg(message.content.replace(" ", ""))
-    if result is None:
+    result, status = eval_count_msg(message.content.replace(" ", ""))
+    if result == CountStatus.INVALID:
+        return False
+    
+    if status == CountStatus.TIMEOUT:
+        await message.reply("Expression took too long to evaluate.")
         return False
     
     if result != bot.config.last_count + 1:
