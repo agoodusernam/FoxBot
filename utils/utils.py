@@ -9,18 +9,20 @@ from typing import Union
 import discord
 from discord import HTTPException
 
+from command_utils.CContext import CoolBot
 from utils import db_stuff  # type: ignore # IDE hates this, and so do I, but it seems to work
 
 
-def _has_meaningful_str(obj: object):
-    return (obj.__class__.__str__ != object.__str__) or (obj.__class__.__repr__ != object.__repr__)
-
-
-def get_str(obj: object) -> str:
-    if not _has_meaningful_str(obj):
-        return f"Class {obj.__class__.__name__} (No meaningful string representation)"
+def eval_count_msg(message: str) -> int | None:
+    allowed: str = "0123456789*/-+.()%^&<>|~"
+    for char in message:
+        if char not in allowed:
+            return None
     
-    return str(obj)
+    try:
+        return round(float(eval(message)))
+    except (SyntaxError, ValueError, TypeError):
+        return None
 
 
 def get_id_from_str(u_id: str) -> int | None:
@@ -272,3 +274,38 @@ async def log_msg(message: discord.Message) -> bool:
                 await db_stuff.send_attachment(message, attachment)
     
     return db_stuff.send_message(json_data)
+
+async def fail_count_number(message: discord.Message, bot: CoolBot) -> None:
+    await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.last_count}**!! Next number is **1**. **Wrong number**.")
+    bot.config.last_count = 0
+    await message.add_reaction(":x:")
+    return None
+
+async def fail_count_user(message: discord.Message, bot: CoolBot) -> None:
+    await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.last_count}**!! Next number is **1**. **You can't count two numbers in a row**.")
+    bot.config.last_count = 0
+    await message.add_reaction(":x:")
+    return None
+
+async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
+    result: int | None = eval_count_msg(message.content.replace(" ", ""))
+    if result is None:
+        return False
+    
+    if result != bot.config.last_count + 1:
+        if bot.config.last_count != 0:
+            await fail_count_number(message, bot)
+            return False
+        await message.reply("The next number is **1**.")
+        return False
+    
+    reaction: str = ":white_check_mark:"
+    
+    bot.config.last_count = result
+    if result > bot.config.highest_count:
+        bot.config.highest_count = result
+        reaction = ":ballot_box_with_check:"
+    
+    await message.add_reaction(reaction)
+    return True
+    

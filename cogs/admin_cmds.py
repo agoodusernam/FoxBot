@@ -8,6 +8,7 @@ from typing import Any
 
 import discord
 from discord.ext import commands, tasks
+from discord.ext.commands import guild_only
 from discord.utils import get
 
 from command_utils import analysis
@@ -442,10 +443,13 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send(f'No messages found for {member.display_name}.', delete_after=ctx.bot.del_after)
             return
         
-        formatted_messages = '\n\n'.join(
-                [f'**Channel:** <#{msg["channel_id"]}>\n**Timestamp:** <t' +
-                 f':{int(msg["timestamp"].timestamp())}>\n**Content:** {discord.utils.escape_mentions(msg["content"])}'
-                 for msg in messages])
+        formatted_messages: str = ""
+        for msg in messages:
+            formatted_messages += f'**Channel:** <#{msg["channel_id"]}>\n'
+            formatted_messages += f'**Timestamp:** <t:{int(msg["timestamp"].timestamp())}>\n'
+            formatted_messages += f'**Content:** {discord.utils.escape_mentions(msg["content"])}'
+            formatted_messages += '\n\n'
+            
         if len(formatted_messages) > 2000:
             formatted_messages = formatted_messages[:1995] + '...'
             
@@ -458,6 +462,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!landmine [channel_id] [amount]'
                       )
     @commands.check(is_admin)
+    @guild_only()
     async def landmine(self, ctx: CContext, channel_or_amount: typing.Union[discord.TextChannel, int], amount: int = 0) -> None:
         if isinstance(channel_or_amount, int):
             channel = ctx.channel
@@ -471,7 +476,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             return
         
         ctx.bot.landmine_channels[channel.id] = amount
-        
+        assert hasattr(channel, 'mention')
         await ctx.send(f'You have set {amount} landmines in {channel.mention}!')
     
     @commands.command(name='force_lm', aliases=['flm'],
@@ -525,8 +530,9 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await self.landmines(ctx)
     
     async def set_some_landmines(self) -> None:
+        existing_mines: dict[int, int]
         if hasattr(self.bot, 'landmine_channels'):
-            existing_mines: dict[int, int] = self.bot.landmine_channels
+            existing_mines = self.bot.landmine_channels
         else:
             existing_mines = {}
             self.bot.landmine_channels = {}

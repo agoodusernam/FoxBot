@@ -383,6 +383,9 @@ async def on_message(message: discord.Message):
             message.channel.category_id not in bot.config.no_log.category_ids)):
         
         await utils.log_msg(message)
+    
+    if message.channel.id == bot.config.counting_channel:
+        await utils.counting_msg(message, bot)
 
 
 # Reaction role events

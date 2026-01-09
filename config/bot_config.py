@@ -51,6 +51,10 @@ class BotConfig:
     guild_id: int = 0
     verified_roles: list[int] = field(default_factory=list)
     staging: bool = False
+    counting_channel: int = 0
+    highest_count: int = 0
+    last_count: int = 0
+    last_count_user: int = 0
     
     # User permissions
     admin_ids: list[int] = field(default_factory=list)
@@ -102,6 +106,10 @@ class BotConfig:
             "verified_roles":   [],
             "staff_role_id":    0,
             "staging":          False,
+            "counting_channel": 0,
+            "highest_count":    0,
+            "last_count":       0,
+            "last_count_user":   0
         }
     
     @classmethod
@@ -116,6 +124,10 @@ class BotConfig:
         config.guild_id = data.get("guild_id", config.guild_id)
         config.verified_roles = data.get("verified_roles", config.verified_roles)
         config.staging = data.get("staging", config.staging)
+        config.counting_channel = data.get("counting_channel", config.counting_channel)
+        config.highest_count = data.get("highest_count", config.highest_count)
+        config.last_count = data.get("last_count", config.last_count)
+        config.last_count_user = data.get("last_count_user", config.last_count_user)
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -189,6 +201,10 @@ class BotConfig:
             
             "verified_roles":   [self.verified_roles],
             "staging":          self.staging,
+            "counting_channel": self.counting_channel,
+            "highest_count":    self.highest_count,
+            "last_count":       self.last_count,
+            "last_count_user":  self.last_count_user
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:
@@ -215,6 +231,10 @@ class BotConfig:
                 # Unicode emoji
                 emoji_dict[discord.PartialEmoji(name=emoji_str)] = role_id
         return emoji_dict
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        """Retrieve a specific configuration option"""
+        return getattr(self, key, default)
 
 
 def load_config(config_path: Path = Path("config.json")) -> BotConfig:
@@ -246,4 +266,4 @@ def get_config_option(option: str, default: Any = None) -> Any:
     :return: Any: The value of the configuration option or the default value.
     """
     config = load_config()
-    return getattr(config, option, default)
+    return config.get(option, default)

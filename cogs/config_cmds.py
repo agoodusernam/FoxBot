@@ -4,15 +4,15 @@ Configuration management commands for bot admins
 import discord
 from discord.ext import commands
 
-from command_utils.CContext import CContext
+from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_admin
 
 
 class ConfigCog(commands.Cog, name="Configuration"):
     """Commands for managing bot configuration"""
     
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: CoolBot) -> None:
+        self.bot: CoolBot = bot
     
     @commands.command(name="config", brief="View or modify bot configuration")
     @commands.check(is_admin)
@@ -57,14 +57,6 @@ class ConfigCog(commands.Cog, name="Configuration"):
             await ctx.send(f"Unknown section: {section}", delete_after=self.bot.config.del_after)
     
     async def _handle_basic_config(self, ctx: CContext, key, value):
-        if key is None:
-            embed = discord.Embed(title="Basic Configuration", color=discord.Color.green())
-            embed.add_field(name="command_prefix", value=f"`{self.bot.config.command_prefix}`", inline=True)
-            embed.add_field(name="del_after", value=f"`{self.bot.config.del_after}`", inline=True)
-            embed.add_field(name="maintenance_mode", value=f"`{self.bot.config.maintenance_mode}`", inline=True)
-            await ctx.send(embed=embed)
-            return
-        
         key = key.lower()
         if value is None:
             # Show specific value
@@ -79,6 +71,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
         if key == "command_prefix":
             self.bot.config.command_prefix = value
             await ctx.send(f"Command prefix set to `{value}`")
+            
         elif key == "del_after":
             try:
                 self.bot.config.del_after = int(value)
@@ -86,9 +79,29 @@ class ConfigCog(commands.Cog, name="Configuration"):
             except ValueError:
                 await ctx.send("Delete after time must be a number", delete_after=self.bot.config.del_after)
                 return
+            
         elif key == "maintenance_mode":
             self.bot.config.maintenance_mode = value.lower() in ('true', '1', 'yes', 'on')
             await ctx.send(f"Maintenance mode set to `{self.bot.config.maintenance_mode}`")
+            
+        elif key == "last_count":
+            try:
+                self.bot.config.last_count = int(value)
+                await ctx.send(f"Last count set to `{self.bot.config.last_count}`")
+                
+            except ValueError:
+                await ctx.send("Last count must be a number", delete_after=self.bot.config.del_after)
+                return
+            
+        elif key == "highest_count":
+            try:
+                self.bot.config.highest_count = int(value)
+                await ctx.send(f"Highest count set to `{self.bot.config.highest_count}`")
+                
+            except ValueError:
+                await ctx.send("Highest count must be a number", delete_after=self.bot.config.del_after)
+                return
+            
         else:
             await ctx.send(f"Unknown or read-only key: {key}", delete_after=self.bot.config.del_after)
             return
