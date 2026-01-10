@@ -1,11 +1,52 @@
 """
 Configuration management commands for bot admins
 """
+import ast
+import dataclasses
+import types
+from typing import Any, Union, get_type_hints
 import discord
 from discord.ext import commands
 
 from command_utils.CContext import CContext, CoolBot
-from command_utils.checks import is_admin
+from command_utils.checks import is_admin, is_dev
+from config.bot_config import ConfigBase
+
+
+def _convert_value(value: str, type_hint: Any) -> Any:
+    # Handle Optional[T] -> T | None
+    origin = getattr(type_hint, '__origin__', None)
+    args = getattr(type_hint, '__args__', ())
+    
+    # Handle Union/Optional
+    if origin is Union or isinstance(type_hint, types.UnionType):
+         # If NoneType is in args, it's optional. find the other type.
+         non_none_types = [t for t in args if t is not type(None)]
+         if len(non_none_types) == 1:
+             type_hint = non_none_types[0]
+    
+    # Handle simple types
+    if type_hint is int:
+        return int(value)
+    elif type_hint is bool:
+        return value.lower() in ('true', '1', 'yes', 'on')
+    elif type_hint is str:
+        return value
+    elif type_hint is float:
+        return float(value)
+    elif type_hint is list[int]:
+        return [int(a.strip()) for a in value.split(",")]
+    elif type_hint is list[str]:
+        return [a.strip() for a in value.split(",")]
+    elif type_hint is list[float]:
+        return [float(a.strip()) for a in value.split(",")]
+    elif type_hint is dict:
+        dict_compliant = value.startswith('{') and value.endswith('}')
+        if not dict_compliant:
+            value = f'{{{value}}}'
+        return ast.literal_eval(value)
+        
+    raise ValueError(f"Unsupported type: {type_hint}")
 
 
 class ConfigCog(commands.Cog, name="Configuration"):
@@ -15,7 +56,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
         self.bot: CoolBot = bot
     
     @commands.command(name="config", brief="View or modify bot configuration")
-    @commands.check(is_admin)
+    @commands.check(is_dev)
     async def config_command(self, ctx: CContext, section: str | None = None, key: str | None = None, *, value: str | None = None):
         """
         View or modify bot configuration
@@ -32,8 +73,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
                           value="• basic - Basic bot settings\n"
                                 "• users - User permission lists\n"
                                 "• logging - Logging configuration\n"
-                                "• reaction_roles - Reaction role settings\n"
-                                "• blacklist - Blacklist management",
+                                "• reaction_roles - Reaction role settings",
                           inline=False)
             embed.add_field(name="Usage",
                           value=f"`{ctx.prefix}config <section>` to view section details",
@@ -44,117 +84,85 @@ class ConfigCog(commands.Cog, name="Configuration"):
         section = section.lower()
         
         if section == "basic":
-            await self._handle_basic_config(ctx, key, value)
+            await self._handle_generic_config(ctx, self.bot.config, key, value, 
+                                            exclude_keys={'no_log', 'send_blacklist', 'logging_channels', 'reaction_roles', 'admin_ids', 'dev_ids', 'blacklist_ids'})
         elif section == "users":
-            await self._handle_users_config(ctx, key, value)
+            await self._handle_users_config(ctx)
         elif section == "logging":
-            await self._handle_logging_config(ctx, key, value)
+             await self._handle_generic_config(ctx, self.bot.config.logging_channels, key, value)
         elif section == "reaction_roles":
-            await self._handle_reaction_roles_config(ctx, key, value)
-        elif section == "blacklist":
-            await self._handle_blacklist_config(ctx, key, value)
+             await self._handle_generic_config(ctx, self.bot.config.reaction_roles, key, value)
+             
         else:
             await ctx.send(f"Unknown section: {section}", delete_after=self.bot.config.del_after)
     
-    async def _handle_basic_config(self, ctx: CContext, key, value):
-        key = key.lower()
-        if value is None:
-            # Show specific value
-            if hasattr(self.bot.config, key):
-                current_value = getattr(self.bot.config, key)
-                await ctx.send(f"`{key}`: `{current_value}`")
+    async def _handle_generic_config(self, ctx: CContext, config_obj: ConfigBase, key: str | None, value: str | None, exclude_keys: set[str] | None = None):
+        if exclude_keys is None:
+            exclude_keys = set()
+
+        if key is None:
+            embed = discord.Embed(title=f"{type(config_obj).__name__} Configuration", color=discord.Color.blue())
+            
+            field_list = []
+            
+            for f in dataclasses.fields(config_obj):
+                if f.name in exclude_keys:
+                    continue
+                    
+                val = getattr(config_obj, f.name)
+                # Format value for display
+                if isinstance(val, list):
+                    val_str = f"[{len(val)} items]"
+                elif isinstance(val, dict):
+                    val_str = f"{{...}} ({len(val)} items)"
+                else:
+                    val_str = f"`{val}`"
+                    
+                field_list.append(f"• **{f.name}**: {val_str}")
+            
+            if not field_list:
+                embed.description = "No configurable fields in this section."
             else:
-                await ctx.send(f"Unknown key: {key}", delete_after=self.bot.config.del_after)
-            return
-        
-        # Set value
-        if key == "command_prefix":
-            self.bot.config.command_prefix = value
-            await ctx.send(f"Command prefix set to `{value}`")
-            
-        elif key == "del_after":
-            try:
-                self.bot.config.del_after = int(value)
-                await ctx.send(f"Delete after time set to `{value}` seconds")
-            except ValueError:
-                await ctx.send("Delete after time must be a number", delete_after=self.bot.config.del_after)
-                return
-            
-        elif key == "maintenance_mode":
-            self.bot.config.maintenance_mode = value.lower() in ('true', '1', 'yes', 'on')
-            await ctx.send(f"Maintenance mode set to `{self.bot.config.maintenance_mode}`")
-            
-        elif key == "last_count":
-            try:
-                self.bot.config.last_count = int(value)
-                await ctx.send(f"Last count set to `{self.bot.config.last_count}`")
+                embed.description = "\n".join(field_list)
                 
-            except ValueError:
-                await ctx.send("Last count must be a number", delete_after=self.bot.config.del_after)
-                return
+            await ctx.send(embed=embed)
+            return
+        
+        key = key.lower()
+        if not hasattr(config_obj, key) or key in exclude_keys:
+             await ctx.send(f"Unknown key: {key}", delete_after=self.bot.config.del_after)
+             return
+        
+        target_field = next((f for f in dataclasses.fields(config_obj) if f.name == key), None)
+        if not target_field:
+             await ctx.send(f"Unknown key (not in fields): {key}", delete_after=self.bot.config.del_after)
+             return
+        
+        if value is None:
+            val = getattr(config_obj, key)
+            await ctx.send(f"`{key}`: `{val}`")
+            return
             
-        elif key == "highest_count":
-            try:
-                self.bot.config.highest_count = int(value)
-                await ctx.send(f"Highest count set to `{self.bot.config.highest_count}`")
-                
-            except ValueError:
-                await ctx.send("Highest count must be a number", delete_after=self.bot.config.del_after)
-                return
-            
-        else:
-            await ctx.send(f"Unknown or read-only key: {key}", delete_after=self.bot.config.del_after)
-            return
+        type_hints = get_type_hints(type(config_obj))
+        type_hint = type_hints.get(key, target_field.type)
         
-        # Save config
-        self.bot.config.save()
+        try:
+            new_value = _convert_value(value, type_hint)
+            setattr(config_obj, key, new_value)
+            await ctx.send(f"Set `{key}` to `{new_value}`")
+            self.bot.config.save()
+        except ValueError as e:
+            await ctx.send(f"Error setting value: {e}", delete_after=self.bot.config.del_after)
     
-    async def _handle_users_config(self, ctx: CContext, key, value):
-        if key is None:
-            embed = discord.Embed(title="User Configuration", color=discord.Color.orange())
-            admin_ids = ", ".join(f"<@{uid}>" for uid in self.bot.config.admin_ids)
-            dev_ids = ", ".join(f"<@{uid}>" for uid in self.bot.config.dev_ids)
-            embed.add_field(name="admin_ids", value=f"{admin_ids}", inline=True)
-            embed.add_field(name="dev_ids", value=f"{dev_ids}", inline=True)
-            await ctx.send(embed=embed)
-            return
+    async def _handle_users_config(self, ctx: CContext):
+        embed = discord.Embed(title="User Configuration", color=discord.Color.orange())
+        admin_ids = ", ".join(f"<@{uid}>" for uid in self.bot.config.admin_ids)
+        dev_ids = ", ".join(f"<@{uid}>" for uid in self.bot.config.dev_ids)
+        embed.add_field(name="admin_ids", value=f"{admin_ids}", inline=True)
+        embed.add_field(name="dev_ids", value=f"{dev_ids}", inline=True)
+        await ctx.send(embed=embed)
+        return
         
-        # User management would require more complex handling
-        await ctx.send("User management commands coming soon!", delete_after=self.bot.config.del_after)
-    
-    async def _handle_logging_config(self, ctx: CContext, key: str, value: str):
-        if key is None:
-            embed = discord.Embed(title="Logging Configuration", color=discord.Color.purple())
-            embed.add_field(name="voice", value=f"<#{self.bot.config.logging_channels.voice}>" if self.bot.config.logging_channels.voice else "Not set", inline=True)
-            embed.add_field(name="moderation", value=f"<#{self.bot.config.logging_channels.moderation}>" if self.bot.config.logging_channels.moderation else "Not set", inline=True)
-            embed.add_field(name="public_logs", value=f"<#{self.bot.config.logging_channels.public_logs}>" if self.bot.config.logging_channels.public_logs else "Not set", inline=True)
-            await ctx.send(embed=embed)
-            return
-        
-        # Channel management would require parsing channel mentions/IDs
-        await ctx.send("Logging channel management commands coming soon!", delete_after=self.bot.config.del_after)
-    
-    async def _handle_reaction_roles_config(self, ctx: CContext, key: str, value: str):
-        if key is None:
-            embed = discord.Embed(title="Reaction Roles Configuration", color=discord.Color.gold())
-            embed.add_field(name="message_id", value=f"`{self.bot.config.reaction_roles.message_id}`" if self.bot.config.reaction_roles.message_id else "Not set", inline=True)
-            embed.add_field(name="emoji_count", value=f"{len(self.bot.config.reaction_roles.emoji_to_role)} emojis", inline=True)
-            await ctx.send(embed=embed)
-            return
-        
-        await ctx.send("Reaction role management commands coming soon!", delete_after=self.bot.config.del_after)
-    
-    async def _handle_blacklist_config(self, ctx: CContext, key: str, value: str):
-        if key is None:
-            blacklist_ids = ", ".join(f"<@{uid}>" for uid in self.bot.blacklist) if self.bot.blacklist else "No users blacklisted"
-            embed = discord.Embed(title="Blacklist Configuration", color=discord.Color.red())
-            embed.add_field(name="blacklisted_users", value=f"{blacklist_ids}", inline=True)
-            await ctx.send(embed=embed)
-            return
-        
-        await ctx.send(f"To add or remove from the blacklist, use {ctx.prefix}blacklist <user> or " +
-                       f"{ctx.prefix}unblacklist <user>", delete_after=self.bot.config.del_after)
-    
     @commands.command(name="reload_config", brief="Reload configuration from file")
     @commands.check(is_admin)
     async def reload_config(self, ctx: CContext):

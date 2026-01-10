@@ -389,9 +389,33 @@ async def on_message(message: discord.Message):
         bot.config.save()
     
     if message.content.startswith('!f'):
+        if not bot.config.tts_requires_role:
+            ctx: CContext = await bot.get_context(message)
+            await ctx.invoke(bot.get_command('tts'), message=message.content.replace("!f", "").strip())
+            return
+        
+        if bot.config.required_tts_role == 0:
+            bot.logger.warning('TTS role requirement is enabled, but no role ID is set in the config.')
+            await message.reply('TTS commands are currently unavailable. Please contact an administrator.')
+            return
+        
+        has_role: bool = False
+        if isinstance(message.author, discord.User):
+            await message.reply('TTS commands are only available in guild channels.')
+            return
+        
+        for role in message.author.roles:
+            if role.id == bot.config.required_tts_role:
+                has_role = True
+                break
+        
+        if not has_role:
+            await message.reply('You do not have the required role to use TTS commands.')
+            return
+        
         ctx: CContext = await bot.get_context(message)
         await ctx.invoke(bot.get_command('tts'), message=message.content.replace("!f", "").strip())
-
+        
 # Reaction role events
 @bot.event
 async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):

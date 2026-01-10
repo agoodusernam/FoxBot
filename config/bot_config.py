@@ -10,9 +10,13 @@ from pathlib import Path
 import json
 import discord
 
+@dataclass
+class ConfigBase:
+    """Base configuration class with common methods"""
+    pass
 
 @dataclass
-class NoLogConfig:
+class NoLogConfig(ConfigBase):
     """Configuration for channels/users to exclude from logging"""
     user_ids: list[int] = field(default_factory=list)
     channel_ids: list[int] = field(default_factory=list)
@@ -20,14 +24,14 @@ class NoLogConfig:
 
 
 @dataclass
-class BlacklistConfig:
+class BlacklistConfig(ConfigBase):
     """Configuration for send blacklist"""
     channel_ids: list[int] = field(default_factory=list)
     category_ids: list[int] = field(default_factory=list)
 
 
 @dataclass
-class LoggingChannelsConfig:
+class LoggingChannelsConfig(ConfigBase):
     """Configuration for logging channels"""
     voice: int | None = None
     moderation: int | None = None
@@ -35,14 +39,14 @@ class LoggingChannelsConfig:
 
 
 @dataclass
-class ReactionRolesConfig:
+class ReactionRolesConfig(ConfigBase):
     """Configuration for reaction roles"""
     message_id: int | None = None
     emoji_to_role: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass
-class BotConfig:
+class BotConfig(ConfigBase):
     """Main bot configuration class"""
     # Basic settings
     command_prefix: str = "f!"
@@ -55,6 +59,8 @@ class BotConfig:
     highest_count: int = 0
     last_count: int = 0
     last_count_user: int = 0
+    tts_requires_role: bool = False
+    required_tts_role: int = 0
     
     # User permissions
     admin_ids: list[int] = field(default_factory=list)
@@ -107,7 +113,9 @@ class BotConfig:
             "counting_channel": 0,
             "highest_count":    0,
             "last_count":       0,
-            "last_count_user":   0
+            "last_count_user":   0,
+            "tts_requires_role": False,
+            "required_tts_role": 0
         }
     
     @classmethod
@@ -126,6 +134,8 @@ class BotConfig:
         config.highest_count = data.get("highest_count", config.highest_count)
         config.last_count = data.get("last_count", config.last_count)
         config.last_count_user = data.get("last_count_user", config.last_count_user)
+        config.tts_requires_role = data.get("tts_requires_role", config.tts_requires_role)
+        config.required_tts_role = data.get("required_tts_role", config.required_tts_role)
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -202,7 +212,9 @@ class BotConfig:
             "counting_channel": self.counting_channel,
             "highest_count":    self.highest_count,
             "last_count":       self.last_count,
-            "last_count_user":  self.last_count_user
+            "last_count_user":  self.last_count_user,
+            "tts_requires_role": self.tts_requires_role,
+            "required_tts_role": self.required_tts_role
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:
