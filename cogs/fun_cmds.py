@@ -191,7 +191,11 @@ class FunCommands(commands.Cog, name='Fun'):
             usage='f!count_fails <user>')
     @commands.cooldown(1, 2, commands.BucketType.user) # type: ignore
     async def count_fails(self, ctx: CContext, member: discord.Member | discord.User):
-        await ctx.send(f'{member.display_name} has failed counting {ctx.bot.config.counting_fails[member.id]} times.')
+        fails: int | None = ctx.bot.config.counting_fails.get(member.id, None)
+        if fails is None:
+            await ctx.send(f'{member.display_name} has not failed counting yet.')
+            return
+        await ctx.send(f'{member.display_name} has failed counting {fails} times.')
     
     @commands.command(name='count_leaderboard', aliases=['clb'],
             help='View the top 5 leaderboard for the most successful counting attempts, and highest number counted',
