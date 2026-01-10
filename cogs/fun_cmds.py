@@ -17,8 +17,8 @@ from command_utils.CContext import CContext, CoolBot
 
 T = TypeVar('T')
 
-def sort_dict_by_value(d: dict[T, int]) -> dict[T, int]:
-    return {k: v for k, v in sorted(d.items(), key=lambda item: item[1])}
+def sort_dict_by_value_h2l(d: dict[T, int]) -> dict[T, int]:
+    return {k: v for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}
 
 async def dice_roll(del_after: int, message: discord.Message) -> None:
     str_nums: list[str] = message.content.replace('f!dice', '').replace('f!roll', '').split()
@@ -173,7 +173,7 @@ class FunCommands(commands.Cog, name='Fun'):
             await ctx.send('No users have failed counting yet.')
             return
         
-        sorted_lb = sort_dict_by_value(lb)
+        sorted_lb = sort_dict_by_value_h2l(lb)
         embed = discord.Embed(title='Counting Fails Leaderboard', color=discord.Color.blue())
         description = ''
         for i in range(number_of_entries):
@@ -210,8 +210,8 @@ class FunCommands(commands.Cog, name='Fun'):
             await ctx.send('No users have counted yet.')
             return
         
-        lb_success: dict[int, int] = sort_dict_by_value(ctx.bot.config.counting_successes)
-        lb_user_number: dict[int, int] = sort_dict_by_value(ctx.bot.config.highest_user_count)
+        lb_success: dict[int, int] = sort_dict_by_value_h2l(ctx.bot.config.counting_successes)
+        lb_user_number: dict[int, int] = sort_dict_by_value_h2l(ctx.bot.config.highest_user_count)
         
         num_successes_embed = discord.Embed(title='Most Successful Counting Attempts Leaderboard', color=discord.Color.blue())
         for i in range(5):
