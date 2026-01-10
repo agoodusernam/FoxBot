@@ -332,14 +332,24 @@ async def log_msg(message: discord.Message) -> bool:
 
 async def fail_count_number(message: discord.Message, bot: CoolBot) -> None:
     await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.last_count}**!! Next number is **1**. **Wrong number**.")
-    bot.config.last_count = 0
-    await message.add_reaction("❌")
+    await fail_count(message, bot)
     return None
 
 async def fail_count_user(message: discord.Message, bot: CoolBot) -> None:
     await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.last_count}**!! Next number is **1**. **You can't count two numbers in a row**.")
+    await fail_count(message, bot)
+    return None
+
+async def fail_count(message: discord.Message, bot: CoolBot) -> None:
+    assert isinstance(message.author, discord.Member)
+    
     bot.config.last_count = 0
     await message.add_reaction("❌")
+    
+    if not user_has_role(message.author, bot.config.counting_fail_role):
+        await message.author.add_roles(discord.Object(id=bot.config.counting_fail_role))
+    
+    bot.config.add_counting_fail(message.author.id)
     return None
 
 async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
@@ -355,6 +365,7 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
     
     if banrole != 0 and user_has_role(message.author, banrole):
         await message.reply("You are banned from counting. Your message was not counted.")
+        await message.delete()
         return False
     
     result, status = eval_count_msg(s)
@@ -385,9 +396,13 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         if bot.config.last_count != 0:
             await fail_count_number(message, bot)
             return False
+        if bot.config.last_count_user == message.author.id:
+            await fail_count_user(message, bot)
+            return False
         await message.reply("The next number is **1**.")
         return False
     
+    bot.config.user_counted(message.author.id, int_result)
     reaction: str = "✅"
     
     bot.config.last_count = int_result

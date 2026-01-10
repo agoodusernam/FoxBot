@@ -62,6 +62,10 @@ class BotConfig(ConfigBase):
     tts_requires_role: bool = False
     required_tts_role: int = 0
     counting_ban_role: int = 0
+    counting_fail_role: int = 0
+    counting_fails: dict[int, int] = field(default_factory=dict)
+    counting_successes: dict[int, int] = field(default_factory=dict)
+    highest_user_count: dict[int, int] = field(default_factory=dict)
     
     # User permissions
     admin_ids: list[int] = field(default_factory=list)
@@ -117,7 +121,11 @@ class BotConfig(ConfigBase):
             "last_count_user":   0,
             "tts_requires_role": False,
             "required_tts_role": 0,
-            "counting_ban_role": 0
+            "counting_ban_role": 0,
+            "counting_fail_role": 0,
+            "counting_fails": {},
+            "counting_successes": {},
+            "highest_user_count": {}
         }
     
     @classmethod
@@ -139,6 +147,10 @@ class BotConfig(ConfigBase):
         config.tts_requires_role = data.get("tts_requires_role", config.tts_requires_role)
         config.required_tts_role = data.get("required_tts_role", config.required_tts_role)
         config.counting_ban_role = data.get("counting_ban_role", config.counting_ban_role)
+        config.counting_fail_role = data.get("counting_fail_role", config.counting_fail_role)
+        config.counting_fails = data.get("counting_fails", config.counting_fails)
+        config.counting_successes = data.get("counting_successes", config.counting_successes)
+        config.highest_user_count = data.get("highest_user_count", config.highest_user_count)
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -218,7 +230,11 @@ class BotConfig(ConfigBase):
             "last_count_user":  self.last_count_user,
             "tts_requires_role": self.tts_requires_role,
             "required_tts_role": self.required_tts_role,
-            "counting_ban_role": self.counting_ban_role
+            "counting_ban_role": self.counting_ban_role,
+            "counting_fail_role": self.counting_fail_role,
+            "counting_fails": self.counting_fails,
+            "counting_successes": self.counting_successes,
+            "highest_user_count": self.highest_user_count
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:
@@ -249,6 +265,32 @@ class BotConfig(ConfigBase):
     def get(self, key: str, default: Any = None) -> Any:
         """Retrieve a specific configuration option"""
         return getattr(self, key, default)
+    
+    def __getitem__(self, key: str) -> Any:
+        item = getattr(self, key, None)
+        if item is None:
+            raise KeyError(f"Key '{key}' not found in config")
+        return item
+    
+    def add_counting_fail(self, user_id: int) -> None:
+        """Add a counting fail to the config"""
+        self.counting_fails[user_id] = self.counting_fails.get(user_id, 0) + 1
+    
+    def reset_counting_fails(self, user_id: int) -> bool:
+        """Reset the number of counting fails for a user"""
+        if user_id not in self.counting_fails:
+            return False
+        self.counting_fails[user_id] = 0
+        return True
+    
+    def user_counted(self, user_id: int, number: int) -> None:
+        """Record that a user has counted a number"""
+        self.counting_successes[user_id] = self.counting_successes.get(user_id, 0) + 1
+        if number > self.highest_user_count.get(user_id, 0):
+            self.highest_user_count[user_id] = number
+        
+        return
+    
 
 
 def move_invalid_config(config_path: Path = Path("config.json")) -> None:
@@ -285,5 +327,5 @@ def get_config_option(option: str, default: Any = None) -> Any:
     :param default: Any: The default value to return if the option is not found.
     :return: Any: The value of the configuration option or the default value.
     """
-    config = load_config()
+    config: BotConfig = load_config()
     return config.get(option, default)

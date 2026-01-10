@@ -71,6 +71,26 @@ def sort_by_timestamp(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     
     return sorted(messages, key=lambda x: x['timestamp'], reverse=True)
 
+
+async def set_some_landmines(bot: CoolBot) -> None:
+    existing_mines: dict[int, int]
+    if hasattr(bot, 'landmine_channels'):
+        existing_mines = bot.landmine_channels
+    else:
+        existing_mines = {}
+        bot.landmine_channels = {}
+    
+    guild = discord.utils.get(bot.guilds, id=1081760248433492140)
+    category = discord.utils.get(guild.categories, id=1081760248433492141)
+    channels: list[discord.TextChannel] = [channel for channel in category.channels if isinstance(channel,
+                                                                                           discord.TextChannel)]
+    chosen_channels: list[discord.TextChannel] = random.choices(channels, k=3)
+    
+    for channel in chosen_channels:
+        if channel.id not in existing_mines.keys():
+            bot.landmine_channels[channel.id] = random.randint(1, 5)
+
+
 class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     """Admin commands for managing the server and users."""
     
@@ -528,27 +548,22 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!random_lm')
     @commands.check(is_admin)
     async def random_landmines(self, ctx: CContext) -> None:
-        await self.set_some_landmines()
+        await set_some_landmines(ctx.bot)
         await self.landmines(ctx)
     
-    async def set_some_landmines(self) -> None:
-        existing_mines: dict[int, int]
-        if hasattr(self.bot, 'landmine_channels'):
-            existing_mines = self.bot.landmine_channels
-        else:
-            existing_mines = {}
-            self.bot.landmine_channels = {}
-        
-        guild = discord.utils.get(self.bot.guilds, id=1081760248433492140)
-        category = discord.utils.get(guild.categories, id=1081760248433492141)
-        channels: list[discord.TextChannel] = [channel for channel in category.channels if isinstance(channel,
-                                                                                               discord.TextChannel)]
-        chosen_channels: list[discord.TextChannel] = random.choices(channels, k=3)
-        
-        for channel in chosen_channels:
-            if channel.id not in existing_mines.keys():
-                self.bot.landmine_channels[channel.id] = random.randint(1, 5)
-        
+    @commands.command(name='reset_counting_fails',
+                      brief='Reset the number of failed counting attempts',
+                      help='Admin only: Reset the number of failed counting attempts by a user',
+                      usage='f!reset_counting_fails <user>')
+    @commands.check(is_admin)
+    async def reset_count_fails(self, ctx: CContext, member: discord.Member):
+        reset: bool = ctx.bot.config.reset_counting_fails(member.id)
+        if reset:
+            await ctx.send(f'Counting fails for {member.display_name} have been reset.')
+            return
+        await ctx.send(f'{member.display_name} does not have any failed counting attempts to reset.')
+        return
+    
 
 async def setup(bot):
     await bot.add_cog(AdminCmds(bot))
