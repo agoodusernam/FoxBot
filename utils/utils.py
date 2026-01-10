@@ -1,12 +1,9 @@
-import asyncio
-import ctypes.util
 import datetime
 import json
 import os
 import re
 import decimal
 import signal
-import time
 import urllib.request
 import string
 from enum import IntEnum
@@ -18,7 +15,6 @@ import discord
 import discord.ext.commands
 import discord.ext.tasks
 from discord import HTTPException
-from gtts import gTTS
 
 from command_utils.CContext import CoolBot
 from utils import db_stuff  # type: ignore # IDE hates this, and so do I, but it seems to work
@@ -33,20 +29,25 @@ class CountStatus(IntEnum):
     ZERO_DIV = 4
     DECIMAL_ERR = 5
 
+def user_has_role(member: discord.Member, role_id: int) -> bool:
+    for role in member.roles:
+        if role.id == role_id:
+            return True
+    return False
+
+def count_only_allowed_chars(s: str) -> bool:
+    allowed: str = "0123456789*/-+.()%^&<>|~"
+    for char in s:
+        if char not in allowed:
+            return False
+    return True
+
 def eval_count_msg(message: str) -> tuple[decimal.Decimal, CountStatus]:
     """
     Returns the evaluated result of a counting message.
     :param message: str: The counting message to evaluate.
     :return: tuple[decimal.Decimal, CountStatus]: The evaluated result and the status of the evaluation.
     """
-    for char in string.whitespace:
-        message = message.replace(char, "")
-        
-    allowed: str = "0123456789*/-+.()%^&<>|~"
-    for char in message:
-        if char not in allowed:
-            return D(0), CountStatus.INVALID
-    
     def timeout_handler(signum: int, frame: Any):
         raise TimeoutError
     
@@ -342,7 +343,21 @@ async def fail_count_user(message: discord.Message, bot: CoolBot) -> None:
     return None
 
 async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
-    result, status = eval_count_msg(message.content)
+    assert isinstance(message.author, discord.Member)
+    s = message.content.lower()
+    for char in string.whitespace:
+        s = s.replace(char, "")
+    
+    if not count_only_allowed_chars(s):
+        return False
+    
+    banrole: int = bot.config.counting_ban_role
+    
+    if banrole != 0 and user_has_role(message.author, banrole):
+        await message.reply("You are banned from counting. Your message was not counted.")
+        return False
+    
+    result, status = eval_count_msg(s)
     
     if status == CountStatus.TIMEOUT:
         await message.reply("Expression took too long to evaluate.")

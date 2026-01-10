@@ -61,6 +61,7 @@ class BotConfig(ConfigBase):
     last_count_user: int = 0
     tts_requires_role: bool = False
     required_tts_role: int = 0
+    counting_ban_role: int = 0
     
     # User permissions
     admin_ids: list[int] = field(default_factory=list)
@@ -115,7 +116,8 @@ class BotConfig(ConfigBase):
             "last_count":       0,
             "last_count_user":   0,
             "tts_requires_role": False,
-            "required_tts_role": 0
+            "required_tts_role": 0,
+            "counting_ban_role": 0
         }
     
     @classmethod
@@ -136,6 +138,7 @@ class BotConfig(ConfigBase):
         config.last_count_user = data.get("last_count_user", config.last_count_user)
         config.tts_requires_role = data.get("tts_requires_role", config.tts_requires_role)
         config.required_tts_role = data.get("required_tts_role", config.required_tts_role)
+        config.counting_ban_role = data.get("counting_ban_role", config.counting_ban_role)
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -214,7 +217,8 @@ class BotConfig(ConfigBase):
             "last_count":       self.last_count,
             "last_count_user":  self.last_count_user,
             "tts_requires_role": self.tts_requires_role,
-            "required_tts_role": self.required_tts_role
+            "required_tts_role": self.required_tts_role,
+            "counting_ban_role": self.counting_ban_role
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:
@@ -247,6 +251,12 @@ class BotConfig(ConfigBase):
         return getattr(self, key, default)
 
 
+def move_invalid_config(config_path: Path = Path("config.json")) -> None:
+    """Move invalid config file to backup"""
+    backup_path = Path("invalid_config.json")
+    if config_path.exists():
+        config_path.rename(backup_path)
+
 def load_config(config_path: Path = Path("config.json")) -> BotConfig:
     """Load configuration from file or create default"""
     if not config_path.exists():
@@ -264,7 +274,7 @@ def load_config(config_path: Path = Path("config.json")) -> BotConfig:
         print(f"Error loading config: {e}")
         print("Creating default configuration")
         config = BotConfig.from_dict(BotConfig.get_default_config())
-        # config.save(config_path)
+        move_invalid_config(config_path)
         return config
 
 
