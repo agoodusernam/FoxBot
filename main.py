@@ -557,30 +557,24 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
 
 @bot.event
 async def on_raw_message_delete(payload: discord.RawMessageDeleteEvent) -> None:
-    bot.logger.info(f'Message deleted in {payload.guild_id}: {payload.message_id}')
     if bot.config.staging:
         return
     
     if payload.channel_id != bot.config.counting_channel:
-        bot.logger.info(f'Message deleted in non-counting channel: {payload.channel_id}')
         return
     
-    if payload.message_id != bot.config.last_counted_id:
-        bot.logger.info(f'Message deleted not in counting channel: {payload.message_id}')
+    if payload.message_id != bot.config.last_counted_message_id:
         return
     
     unknown_author: bool = False
     author_id: int = 0
     if payload.cached_message is not None:
         author_id = payload.cached_message.author.id
-        bot.logger.info(f'Message deleted by {author_id}')
     else:
         msg = db_stuff.get_from_db('messages', {'id': payload.message_id})
         if msg is not None:
             author_id = int(msg['author_id'])
-            bot.logger.info(f'Message deleted by {author_id} (from DB)')
         else:
-            bot.logger.warning(f'Message deleted by unknown user: {payload.message_id}')
             unknown_author = True
     
     channel = bot.get_channel(payload.channel_id)

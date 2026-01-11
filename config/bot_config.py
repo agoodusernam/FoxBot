@@ -66,7 +66,7 @@ class BotConfig(ConfigBase):
     counting_fails: dict[int, int] = field(default_factory=dict)
     counting_successes: dict[int, int] = field(default_factory=dict)
     highest_user_count: dict[int, int] = field(default_factory=dict)
-    last_counted_id: int = 0
+    last_counted_message_id: int = 0
     
     # User permissions
     admin_ids: list[int] = field(default_factory=list)
@@ -127,7 +127,7 @@ class BotConfig(ConfigBase):
             "counting_fails": {},
             "counting_successes": {},
             "highest_user_count": {},
-            "last_counted_id": 0
+            "last_counted_message_id": 0
         }
     
     @classmethod
@@ -153,7 +153,7 @@ class BotConfig(ConfigBase):
         config.counting_fails = data.get("counting_fails", config.counting_fails)
         config.counting_successes = data.get("counting_successes", config.counting_successes)
         config.highest_user_count = data.get("highest_user_count", config.highest_user_count)
-        config.last_counted_id = data.get("last_counted_id", config.last_counted_id)
+        config.last_counted_message_id = data.get("last_counted_id", config.last_counted_message_id)
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -238,7 +238,7 @@ class BotConfig(ConfigBase):
             "counting_fails": self.counting_fails,
             "counting_successes": self.counting_successes,
             "highest_user_count": self.highest_user_count,
-            "last_counted_id": self.last_counted_id
+            "last_counted_message_id": self.last_counted_message_id
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:
@@ -287,15 +287,15 @@ class BotConfig(ConfigBase):
         self.counting_fails[user_id] = 0
         return True
     
-    def user_counted(self, user_id: int, number: int) -> None:
+    def user_counted(self, user_id: int, number: int, message_id: int) -> None:
         """Record that a user has counted a number"""
         self.counting_successes[user_id] = self.counting_successes.get(user_id, 0) + 1
         if number > self.highest_user_count.get(user_id, 0):
             self.highest_user_count[user_id] = number
-        
+            
+        self.last_counted_message_id = message_id
         return
     
-
 
 def move_invalid_config(config_path: Path = Path("config.json")) -> None:
     """Move invalid config file to backup"""
