@@ -158,7 +158,8 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         nolog_channels = [1299640499493273651, 1329366175796432898, 1329366741909770261, 1329366878623236126,
                           1329367139018215444, 1329367314671472682, 1329367677940006952]
         
-        await upload_whole_server(ctx.guild, ctx.author, nolog_channels)"""
+        await upload_whole_server(ctx.guild, ctx.author, nolog_channels)
+    """
     
     
     @commands.command(name='maintenance_mode',

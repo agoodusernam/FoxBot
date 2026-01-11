@@ -60,4 +60,5 @@ class GamblingCmds(commands.Cog, name='Gambling', command_attrs=dict(add_check=i
 
 
 async def setup(bot) -> None:
-    await bot.add_cog(GamblingCmds(bot))
+    pass
+    # await bot.add_cog(GamblingCmds(bot))

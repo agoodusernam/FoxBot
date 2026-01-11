@@ -6,6 +6,7 @@ import functools
 import random
 from collections.abc import Iterator
 from dataclasses import dataclass
+import json
 
 
 @functools.total_ordering
@@ -26,7 +27,7 @@ class SchoolQualif(enum.Enum):
     def __getitem__(self, item):
         return self.value[item]
     
-    def __gt__(self, other: 'SchoolQualif') -> bool:
+    def __gt__(self, other: object) -> bool:
         """
         Compares two SchoolQualif enum members based on their index.
         :param other: The other SchoolQualif member to compare with.
@@ -36,7 +37,7 @@ class SchoolQualif(enum.Enum):
             raise TypeError
         return self.value[0] > other.value[0]
     
-    def __lt__(self, other: 'SchoolQualif') -> bool:
+    def __lt__(self, other: object) -> bool:
         """
         Compares two SchoolQualif enum members based on their index.
         :param other: The other SchoolQualif member to compare with.
@@ -91,7 +92,7 @@ class SecurityClearance(enum.Enum):
     TS_SCI = 4
     SPECIAL = 5
     
-    def __gt__(self, other: 'SecurityClearance') -> bool:
+    def __gt__(self, other: object) -> bool:
         """
         Compares two SecurityClearance enum members based on their index.
         :param other: The other SecurityClearance member to compare with.
@@ -255,8 +256,6 @@ class Job:
         :param json_str: The JSON string representation of the job.
         :return: A Job instance.
         """
-        import json
-        
         try:
             data = json.loads(json_str)
             return cls.from_dict(data)

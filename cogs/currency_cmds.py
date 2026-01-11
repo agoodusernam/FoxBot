@@ -818,4 +818,5 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
 
 
 async def setup(bot: commands.Bot) -> None:
-    await bot.add_cog(CurrencyCmds(bot))
+    pass
+    # await bot.add_cog(CurrencyCmds(bot))

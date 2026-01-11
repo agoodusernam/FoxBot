@@ -555,6 +555,7 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             await bot.vc_client.disconnect()
             bot.vc_client = None
 
+
 @bot.event
 async def on_raw_message_delete(payload: discord.RawMessageDeleteEvent) -> None:
     if bot.config.staging:
@@ -568,6 +569,7 @@ async def on_raw_message_delete(payload: discord.RawMessageDeleteEvent) -> None:
     
     unknown_author: bool = False
     author_id: int = 0
+    
     if payload.cached_message is not None:
         author_id = payload.cached_message.author.id
     else:
@@ -579,11 +581,13 @@ async def on_raw_message_delete(payload: discord.RawMessageDeleteEvent) -> None:
     
     channel = bot.get_channel(payload.channel_id)
     assert isinstance(channel, discord.TextChannel)
+    
     if unknown_author or author_id == 0:
         await channel.send(f'Unknown user deleted their message. The next number is {bot.config.last_count+1}')
         return
-    await channel.send(f'<@{author_id}> deleted their message. The next number is {bot.config.last_count+1}')
     
+    await channel.send(f'<@{author_id}> deleted their message. The next number is `{bot.config.last_count+1}`')
+
 
 async def load_extensions() -> None:
     for filename in os.listdir('./cogs'):
