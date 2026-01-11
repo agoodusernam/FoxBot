@@ -73,7 +73,7 @@ def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> 
     """
     try:
         # Download all messages from database
-        messages = db_stuff.download_all()
+        messages = db_stuff.cached_download_all()
         if messages is None:
             return [], 0
         total_messages = len(messages)

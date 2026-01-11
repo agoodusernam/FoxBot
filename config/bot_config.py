@@ -66,6 +66,7 @@ class BotConfig(ConfigBase):
     counting_fails: dict[int, int] = field(default_factory=dict)
     counting_successes: dict[int, int] = field(default_factory=dict)
     highest_user_count: dict[int, int] = field(default_factory=dict)
+    last_counted_id: int = 0
     
     # User permissions
     admin_ids: list[int] = field(default_factory=list)
@@ -125,7 +126,8 @@ class BotConfig(ConfigBase):
             "counting_fail_role": 0,
             "counting_fails": {},
             "counting_successes": {},
-            "highest_user_count": {}
+            "highest_user_count": {},
+            "last_counted_id": 0
         }
     
     @classmethod
@@ -151,6 +153,7 @@ class BotConfig(ConfigBase):
         config.counting_fails = data.get("counting_fails", config.counting_fails)
         config.counting_successes = data.get("counting_successes", config.counting_successes)
         config.highest_user_count = data.get("highest_user_count", config.highest_user_count)
+        config.last_counted_id = data.get("last_counted_id", config.last_counted_id)
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -234,7 +237,8 @@ class BotConfig(ConfigBase):
             "counting_fail_role": self.counting_fail_role,
             "counting_fails": self.counting_fails,
             "counting_successes": self.counting_successes,
-            "highest_user_count": self.highest_user_count
+            "highest_user_count": self.highest_user_count,
+            "last_counted_id": self.last_counted_id
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:

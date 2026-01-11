@@ -11,7 +11,6 @@ from discord.ext import commands
 from discord.ext.commands import Context
 from dotenv import load_dotenv
 
-import cogs.fun_cmds
 from command_utils.CContext import CoolBot, CContext
 from config.bot_config import load_config
 from custom_logging import voice_log
@@ -555,6 +554,36 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
         if len(before.channel.members) == 1 and bot.vc_client.channel.id == before.channel.id:
             await bot.vc_client.disconnect()
             bot.vc_client = None
+
+@bot.event
+async def on_raw_message_delete(payload: discord.RawMessageDeleteEvent) -> None:
+    if bot.config.staging:
+        return
+    
+    if payload.channel_id != bot.config.counting_channel:
+        return
+    
+    if payload.message_id != bot.config.last_counted_id:
+        return
+    
+    unknown_author: bool = False
+    author_id: int = 0
+    if payload.cached_message is not None:
+        author_id = payload.cached_message.author.id
+    else:
+        msg = db_stuff.get_from_db('messages', {'id': payload.message_id})
+        if msg is not None:
+            author_id = int(msg['author_id'])
+        else:
+            unknown_author = True
+    
+    channel = bot.get_channel(payload.channel_id)
+    assert isinstance(channel, discord.TextChannel)
+    if unknown_author or author_id == 0:
+        await channel.send(f'Unknown user deleted their message. The next number is {bot.config.last_count+1}')
+        return
+    await channel.send(f'<@{author_id}> deleted their message. The next number is {bot.config.last_count+1}')
+    
 
 async def load_extensions() -> None:
     for filename in os.listdir('./cogs'):

@@ -38,7 +38,7 @@ async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
         os.execv(sys.executable, ['python'] + sys.argv)
 
 def update_timestamps() -> None:
-    entries = db_stuff.download_all()
+    entries = db_stuff.cached_download_all()
     entries_len = len(entries)
     edited = 0
     for entry in entries:

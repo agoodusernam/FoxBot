@@ -143,11 +143,15 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
 
 
 @cachetools.func.ttl_cache(maxsize=2, ttl=300)
-def download_all() -> list[dict[str, Any]] | None:
+def cached_download_all() -> list[dict[str, Any]] | None:
     """
     Retrieves all messages from the MongoDB database.
     :return: A list of dictionaries containing message data, or None if an error occurs.
     """
+    return _download_all()
+
+
+def _download_all():
     client = _connect()
     if not client:
         raise ConnectionError('Failed to connect to MongoDB')
