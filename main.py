@@ -18,15 +18,13 @@ from utils import db_stuff, utils
 
 load_dotenv()
 
-discord.utils.setup_logging()
-logger = logging.getLogger('discord')
-
 
 @atexit.register
 def on_exit():
     db_stuff.disconnect()
 
 bot = CoolBot(intents=discord.Intents.all())
+logger = logging.getLogger('discord')
 
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
 url_pattern = re.compile(regex, re.IGNORECASE)
