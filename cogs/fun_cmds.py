@@ -259,11 +259,13 @@ class FunCommands(commands.Cog, name='Fun'):
         loc = utils.utils.loc_total()[0]
         files = utils.utils.loc_total()[1]
         uptime = utils.utils.seconds_to_human_readable(time.time() - ctx.bot.start_time)
+        ping = str(round(self.bot.latency * 1000, 1))
         
         embed = discord.Embed(title='Bot Statistics', colour=discord.Colour.purple())
         embed.add_field(name='Lines of Code', value=loc, inline=True)
         embed.add_field(name='Files', value=files, inline=True)
         embed.add_field(name='Uptime', value=uptime, inline=True)
+        embed.add_field(name='Ping', value=ping + 'ms', inline=True)
         await ctx.send(embed=embed)
         
 
