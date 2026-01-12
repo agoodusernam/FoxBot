@@ -402,7 +402,7 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         await message.delete()
         return False
     
-    if bot.config.last_count_user == message.author.id:
+    if bot.config.last_count_user == message.author.id and bot.config.last_count != 0:
         await fail_count_user(message, bot)
         return False
     
