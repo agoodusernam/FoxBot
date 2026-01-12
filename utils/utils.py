@@ -3,6 +3,7 @@ import json
 import os
 import re
 import decimal
+import shutil
 import signal
 import urllib.request
 import string
@@ -449,4 +450,45 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
     bot.config.last_count_user = message.author.id
     await message.add_reaction(reaction)
     return True
+
+def get_attachment(user_id: int | str, message_id: int | str) -> Path | list[Path] | None:
+    """
+    Returns the path of the attachment, or a list of paths if there are multiple attachments.
+    If no attachments are found, returns None.
+    """
+    base_path: Path = Path(os.path.abspath('data/attachments')) / str(user_id)
+    path: Path = base_path / str(message_id)
+    
+    if not path.exists():
+        return None
+    
+    if path.is_file():
+        return path
+    
+    if path.is_dir():
+        return list(path.iterdir())
+    
+    return None
+
+
+def copy_attach_to_temp(src: list[Path]) -> bool:
+    """
+    Copies an attachment from src to dest.
+    Returns True if successful, False otherwise.
+    """
+    dest: Path = Path(os.path.abspath('temp'))
+    names: list[str] = []
+    for i, file in enumerate(src):
+        names.append(f"{i}{"".join(file.suffixes)}")
+    
+    all_success: bool = True
+    
+    for i, name in enumerate(names):
+        try:
+            shutil.copy(src[i], dest / name)
+        except Exception as e:
+            logger.error(f"Failed to copy attachment {i}: {e}")
+            all_success = False
+    
+    return all_success
     

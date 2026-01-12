@@ -4,6 +4,7 @@ import os
 import random
 import re
 import typing
+from pathlib import Path
 from typing import Any
 import logging
 
@@ -12,6 +13,7 @@ from discord.ext import commands
 from discord.ext.commands import guild_only
 from discord.utils import get
 
+import utils.utils
 from command_utils import analysis
 from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_admin
@@ -435,7 +437,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                     logger.error(f'Failed to find role with ID {role_id} for verification.')
                     continue
                 roles.append(role)
-                
+            
             await member.add_roles(*roles, reason='Verified by admin')
                     
             await ctx.send(f'{member.display_name} has been verified.', delete_after=ctx.bot.del_after)
@@ -468,18 +470,33 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send(f'No messages found for {member.display_name}.', delete_after=ctx.bot.del_after)
             return
         
+        attachments: list[Path] = []
+        
         formatted_messages: str = ""
         for msg in messages:
             formatted_messages += f'**Channel:** <#{msg["channel_id"]}>\n'
             formatted_messages += f'**Timestamp:** <t:{int(msg["timestamp"].timestamp())}>\n'
             formatted_messages += f'**Content:** {discord.utils.escape_mentions(msg["content"])}'
-            formatted_messages += '\n\n'
+            if msg["HasAttachments"]:
+                attachment = utils.utils.get_attachment(msg["author_id"], msg["id"])
+                if attachment is None:
+                    formatted_messages += '\nMessage had attachment(s), but failed to retrieve them.'
+                elif isinstance(attachment, Path):
+                    formatted_messages += f'\nAttachment: {len(attachments)}{"".join(attachment.suffixes)}'
+                    attachments.append(attachment)
+                else:
+                    for path in attachment:
+                        formatted_messages += f'\nAttachment: {len(attachments)}{"".join(path.suffixes)}'
+                        attachments.append(path)
+            formatted_messages += '\n'
             
         if len(formatted_messages) > 2000:
             formatted_messages = formatted_messages[:1995] + '...'
             
         await ctx.send(f"Last {number_of_messages} sent by {member.display_name}:")
         await ctx.send(formatted_messages)
+        if attachments:
+            utils.utils.copy_attach_to_temp(attachments)
     
     @commands.command(name='landmine', aliases=['lm'],
                       brief='Set landmines in a channel',

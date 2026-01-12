@@ -237,7 +237,7 @@ class FunCommands(commands.Cog, name='Fun'):
         
         if hasattr(ctx.bot, "last_sent_tts_time"):
             del ctx.bot.last_sent_tts_time
-        
+    
     
     @discord.ext.tasks.loop(minutes=1.0)
     async def check_tts_leave(self) -> None:
