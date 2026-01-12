@@ -1,5 +1,6 @@
 import asyncio
 import ctypes.util
+import logging
 import math
 import os
 import random
@@ -13,6 +14,8 @@ from gtts import gTTS
 
 from command_utils import suggest
 from command_utils.CContext import CContext, CoolBot
+
+logger = logging.getLogger('discord')
 
 
 async def dice_roll(del_after: int, message: discord.Message) -> None:
@@ -199,7 +202,7 @@ class FunCommands(commands.Cog, name='Fun'):
                 os.remove('msg.mp3')
                 
             if error:
-                ctx.bot.logger.error(f'TTS playback error: {error}')
+                logger.error(f'TTS playback error: {error}')
             
         
         discord.opus.load_opus(opus)

@@ -1,6 +1,7 @@
 # pylint: disable=trailing-whitespace, line-too-long
 import atexit
 import datetime
+import logging
 import os
 import random
 import re
@@ -18,6 +19,7 @@ from utils import db_stuff, utils
 load_dotenv()
 
 discord.utils.setup_logging()
+logger = logging.getLogger('discord')
 
 
 @atexit.register
@@ -66,16 +68,16 @@ async def on_ready() -> None:
     utils.check_env_variables()
     utils.clean_up_APOD()
     
-    bot.logger.info(f"Loaded {len(bot.cogs)} cogs:")
+    logger.info(f"Loaded {len(bot.cogs)} cogs:")
     for cog in bot.cogs:
-        bot.logger.info(f" - {cog}")
+        logger.info(f" - {cog}")
     
-    bot.logger.info(f"Total commands: {len(bot.commands)}")
+    logger.info(f"Total commands: {len(bot.commands)}")
     if bot.config.maintenance_mode:
-        bot.logger.info("Bot is in maintenance mode. Only admins can use commands.")
+        logger.info("Bot is in maintenance mode. Only admins can use commands.")
     
     if bot.config.staging:
-        bot.logger.info("Staging mode is enabled. Most features are disabled.")
+        logger.info("Staging mode is enabled. Most features are disabled.")
     
     # Reconnect voice states
     if not bot.config.staging:
@@ -88,11 +90,11 @@ async def on_ready() -> None:
                     continue
                 
                 voice_log.handle_join(member, channel)
-                bot.logger.info(f'Reconnected voice state for {member.name} in {channel.name}')
+                logger.info(f'Reconnected voice state for {member.name} in {channel.name}')
                 
     assert not bot.user is None
-    bot.logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    bot.logger.info('------')
+    logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
+    logger.info('------')
     
     await bot.change_presence(activity=discord.CustomActivity(name='f!help'))
 
@@ -268,7 +270,7 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
         await ctx.delete()
     
     else:
-        ctx.bot.logger.error(f'Error in command {ctx.command}: {error}', exc_info=error)
+        logger.error(f'Error in command {ctx.command}: {error}', exc_info=error)
 
 
 async def landmine_explode(message: discord.Message, forced=False) -> None:
@@ -346,7 +348,7 @@ async def on_message(message: discord.Message):
     
     
     if message.content.startswith('\u200B'):  # Zero-width space
-        bot.logger.info(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
+        logger.info(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
         return
     
     await check_landmine(message)
@@ -395,7 +397,7 @@ async def on_message(message: discord.Message):
             return
         
         if bot.config.required_tts_role == 0:
-            bot.logger.warning('TTS role requirement is enabled, but no role ID is set in the config.')
+            logger.warning('TTS role requirement is enabled, but no role ID is set in the config.')
             await message.reply('TTS commands are currently unavailable. Please contact an administrator.')
             return
         
@@ -437,12 +439,12 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     try:
         role_id = emoji_to_role[payload.emoji]
     except KeyError:
-        bot.logger.info(f"Emoji {payload.emoji} not found in emoji_to_role mapping.")
+        logger.info(f"Emoji {payload.emoji} not found in emoji_to_role mapping.")
         return
     
     role = guild.get_role(role_id)
     if role is None:
-        bot.logger.info(f"Role with ID {role_id} not found for emoji {payload.emoji}.")
+        logger.info(f"Role with ID {role_id} not found for emoji {payload.emoji}.")
         return
     
     try:
@@ -598,7 +600,7 @@ async def load_extensions() -> None:
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py') and not filename.startswith('_'):
             await bot.load_extension(f'cogs.{filename[:-3]}')
-            bot.logger.info(f'Loaded {filename[:-3]}')
+            logger.info(f'Loaded {filename[:-3]}')
 
 
 @bot.check

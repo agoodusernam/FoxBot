@@ -432,7 +432,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             for role_id in ctx.bot.config.verified_roles:
                 role = get(ctx.guild.roles, id=role_id)
                 if role is None:
-                    ctx.bot.logger.error(f'Failed to find role with ID {role_id} for verification.')
+                    logger.error(f'Failed to find role with ID {role_id} for verification.')
                     continue
                 roles.append(role)
                 
@@ -441,7 +441,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send(f'{member.display_name} has been verified.', delete_after=ctx.bot.del_after)
             
         except Exception as e:
-            ctx.bot.logger.error(f'Failed to assign verified role to {member.display_name}: {e}')
+            logger.error(f'Failed to assign verified role to {member.display_name}: {e}')
             return
     
     @commands.command(name='last_messages', aliases=['lastmsgs', 'last_msgs'],

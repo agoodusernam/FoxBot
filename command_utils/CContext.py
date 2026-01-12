@@ -60,7 +60,6 @@ class CoolBot(commands.Bot):
         self.dev_func_thread: threading.Thread | None = None
         self.vc_client: discord.VoiceClient | None = None
         self.tts_lock: asyncio.Lock = asyncio.Lock()
-        self.logger: logging.Logger = logging.getLogger('discord')
     
     def run(self, *args, **kwargs):
         super().run(*args, **kwargs)
