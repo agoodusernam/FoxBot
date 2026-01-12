@@ -168,7 +168,7 @@ class FunCommands(commands.Cog, name='Fun'):
                       brief='Send a text-to-speech message',
                       help='Send a text-to-speech message in the current channel',
                       usage='f!tts <message>')
-    @commands.cooldown(1, 3, commands.BucketType.guild) # type: ignore
+    @commands.cooldown(1, 1, commands.BucketType.guild) # type: ignore
     @guild_only()
     @commands.has_role(1405824995946532995) # TODO: Make configurable
     async def tts(self, ctx: CContext, *, message: str):
@@ -217,6 +217,28 @@ class FunCommands(commands.Cog, name='Fun'):
         audio = discord.FFmpegPCMAudio(source='msg.mp3')
         vc_client.play(audio, after=done)
     
+    @commands.command(name='tts_leave', aliases=['tts_disconnect', "ttsl"],
+                        brief='Disconnect the bot from voice channel',
+                        help='Disconnect the bot from the voice channel it is currently in',
+                        usage='f!tts_leave')
+    @commands.cooldown(1, 1, commands.BucketType.guild)  # type: ignore
+    @guild_only()
+    async def tts_leave(self, ctx: CContext):
+        if ctx.bot.vc_client is None:
+            await ctx.send('The bot is not connected to a voice channel.')
+            if hasattr(ctx.bot, 'last_tts_sent_time'):
+                del ctx.bot.last_tts_sent_time
+            return
+        
+        if ctx.bot.vc_client.is_connected():
+            await ctx.bot.vc_client.disconnect()
+        
+        ctx.bot.vc_client = None
+        
+        if hasattr(ctx.bot, "last_sent_tts_time"):
+            del ctx.bot.last_sent_tts_time
+        
+    
     @discord.ext.tasks.loop(minutes=1.0)
     async def check_tts_leave(self) -> None:
         if self.bot.vc_client is None and not hasattr(self.bot, 'last_tts_sent_time'):
@@ -227,7 +249,8 @@ class FunCommands(commands.Cog, name='Fun'):
             return
         
         if self.bot.vc_client is not None and not hasattr(self.bot, 'last_tts_sent_time'):
-            await self.bot.vc_client.disconnect()
+            if self.bot.vc_client.is_connected():
+                await self.bot.vc_client.disconnect()
             self.bot.vc_client = None
             return
         
