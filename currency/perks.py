@@ -14,7 +14,7 @@ async def create_private_vc(ctx: Context, member: discord.Member) -> bool:
     # Create the voice channel
     category = discord.utils.get(guild.categories, id=1081760248878071888)
     if category is None:
-        raise discord.ext.commands.CommandError("Something terrible has happened. 0x1")
+        raise discord.ext.commands.CommandError("Something terrible has happened")
     
     try:
         private_vc = await guild.create_voice_channel(vc_name, category=category, position=len(category.channels),

@@ -106,7 +106,7 @@ class FunCommands(commands.Cog, name='Fun'):
         answer = random.choice(responses)
         await ctx.typing()
         await asyncio.sleep(2)  # Simulate thinking time
-        await ctx.reply(f'{answer}')
+        await ctx.safe_reply(f'{answer}')
         
     @commands.command(name='owoify', aliases=['owo', 'uwu'],
                         brief='Convert text to OwO language',

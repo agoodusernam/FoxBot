@@ -4,11 +4,14 @@ Provides type-safe, validated configuration with easy bot.config.* access
 """
 from __future__ import annotations
 
+import logging
 from typing import Any
 from dataclasses import dataclass, field
 from pathlib import Path
 import json
 import discord
+
+logger = logging.getLogger('discord')
 
 @dataclass
 class ConfigBase:
@@ -243,11 +246,13 @@ class BotConfig(ConfigBase):
     
     def save(self, config_path: Path = Path("config.json")) -> None:
         """Save configuration to file"""
+        logger.debug(f"Saving config to {config_path}")
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(self.to_dict(), f, indent=4)
     
     def reload(self, config_path: Path = Path("config.json")) -> None:
         """Reload configuration from file"""
+        logger.debug("Reloading config")
         if config_path.exists():
             with open(config_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -289,6 +294,7 @@ class BotConfig(ConfigBase):
     
     def user_counted(self, user_id: int, number: int, message_id: int) -> None:
         """Record that a user has counted a number"""
+        logger.debug(f"User {user_id}, in message {message_id} counted {number}")
         self.counting_successes[user_id] = self.counting_successes.get(user_id, 0) + 1
         if number > self.highest_user_count.get(user_id, 0):
             self.highest_user_count[user_id] = number
@@ -299,14 +305,16 @@ class BotConfig(ConfigBase):
 
 def move_invalid_config(config_path: Path = Path("config.json")) -> None:
     """Move invalid config file to backup"""
+    logger.debug("Moving invalid config to backup")
     backup_path = Path("invalid_config.json")
     if config_path.exists():
         config_path.rename(backup_path)
 
 def load_config(config_path: Path = Path("config.json")) -> BotConfig:
     """Load configuration from file or create default"""
+    logger.debug("Loading config")
     if not config_path.exists():
-        print("Config file not found, creating default config.json")
+        logger.info("Config file not found, creating default config.json")
         config = BotConfig.from_dict(BotConfig.get_default_config())
         config.save(config_path)
         return config
@@ -314,13 +322,13 @@ def load_config(config_path: Path = Path("config.json")) -> BotConfig:
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        print("Configuration loaded successfully")
+        logger.info("Configuration loaded successfully")
         return BotConfig.from_dict(data)
     except Exception as e:
-        print(f"Error loading config: {e}")
-        print("Creating default configuration")
-        config = BotConfig.from_dict(BotConfig.get_default_config())
+        logger.error(f"Error loading config: {e}")
+        logger.error("Creating default configuration and moving old config to invalid_config.json")
         move_invalid_config(config_path)
+        config = BotConfig.from_dict(BotConfig.get_default_config())
         return config
 
 

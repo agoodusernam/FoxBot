@@ -3,8 +3,11 @@ Handles the suggestion command.
 """
 import discord
 import discord.ext.commands
+import logging
 
 from command_utils.CContext import CContext
+
+logger = logging.getLogger('discord')
 
 HELP_MSG = '''Please post your suggestions for the server or <@1377636535968600135> in here using `f!suggest <suggestion>`.
 If you have any additional comments, please use the thread.
@@ -35,19 +38,17 @@ async def send_suggestion(ctx: CContext, suggestion: str) -> None:
         msg = await channel.send(embed=embed)
         await msg.add_reaction('👍')
         
-        await msg.create_thread(
-                name=f'suggestion-{ctx.author.display_name}',
-        )
+        await msg.create_thread(name=f'suggestion-{ctx.author.display_name}')
         
         await channel.send(HELP_MSG)
-        print(f'Suggestion sent: {suggestion}')
+        logger.info(f'Suggestion sent: {suggestion}')
 
     except discord.Forbidden as exc:
         raise discord.ext.commands.BotMissingPermissions(["manage_channels", "manage_threads",
                                                           "create_public_threads"]) from exc
     
     except discord.NotFound:
-        print('Channel not found for sending suggestion.')
+        logger.error('Channel not found for sending suggestion.')
         
     except discord.HTTPException as e:
-        print(f'Failed to send suggestion: {e}')
+        logger.error(f'Failed to send suggestion: {e}')

@@ -12,18 +12,19 @@ from discord.ext.commands import Context
 from dotenv import load_dotenv
 
 from command_utils.CContext import CoolBot, CContext
-from config.bot_config import load_config
 from custom_logging import voice_log
 from utils import db_stuff, utils
 
 load_dotenv()
+
+discord.utils.setup_logging()
 
 
 @atexit.register
 def on_exit():
     db_stuff.disconnect()
 
-bot = CoolBot(intents=discord.Intents.all(), config=load_config())
+bot = CoolBot(intents=discord.Intents.all())
 
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
 url_pattern = re.compile(regex, re.IGNORECASE)
@@ -65,16 +66,16 @@ async def on_ready() -> None:
     utils.check_env_variables()
     utils.clean_up_APOD()
     
-    print(f"Loaded {len(bot.cogs)} cogs:")
+    bot.logger.info(f"Loaded {len(bot.cogs)} cogs:")
     for cog in bot.cogs:
-        print(f" - {cog}")
+        bot.logger.info(f" - {cog}")
     
-    print(f"Total commands: {len(bot.commands)}")
+    bot.logger.info(f"Total commands: {len(bot.commands)}")
     if bot.config.maintenance_mode:
-        print("Bot is in maintenance mode. Only admins can use commands.")
+        bot.logger.info("Bot is in maintenance mode. Only admins can use commands.")
     
     if bot.config.staging:
-        print("Staging mode is enabled. Most features are disabled.")
+        bot.logger.info("Staging mode is enabled. Most features are disabled.")
     
     # Reconnect voice states
     if not bot.config.staging:
@@ -87,11 +88,11 @@ async def on_ready() -> None:
                     continue
                 
                 voice_log.handle_join(member, channel)
-                print(f'Reconnected voice state for {member.name} in {channel.name}')
+                bot.logger.info(f'Reconnected voice state for {member.name} in {channel.name}')
                 
     assert not bot.user is None
-    print(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    print('------')
+    bot.logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
+    bot.logger.info('------')
     
     await bot.change_presence(activity=discord.CustomActivity(name='f!help'))
 
@@ -345,7 +346,7 @@ async def on_message(message: discord.Message):
     
     
     if message.content.startswith('\u200B'):  # Zero-width space
-        print(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
+        bot.logger.info(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
         return
     
     await check_landmine(message)
@@ -436,12 +437,12 @@ async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
     try:
         role_id = emoji_to_role[payload.emoji]
     except KeyError:
-        print(f"Emoji {payload.emoji} not found in emoji_to_role mapping.")
+        bot.logger.info(f"Emoji {payload.emoji} not found in emoji_to_role mapping.")
         return
     
     role = guild.get_role(role_id)
     if role is None:
-        print(f"Role with ID {role_id} not found for emoji {payload.emoji}.")
+        bot.logger.info(f"Role with ID {role_id} not found for emoji {payload.emoji}.")
         return
     
     try:
@@ -597,7 +598,7 @@ async def load_extensions() -> None:
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py') and not filename.startswith('_'):
             await bot.load_extension(f'cogs.{filename[:-3]}')
-            print(f'Loaded {filename[:-3]}')
+            bot.logger.info(f'Loaded {filename[:-3]}')
 
 
 @bot.check

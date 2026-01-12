@@ -124,6 +124,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
                 # 50% chance of failure
                 await ctx.send(f'You were caught trying to rob {target.display_name} and they ran away!')
                 return None
+            
         elif not curr_utils.user_has_gun(profile) and curr_utils.user_has_gun(target_profile):
             # User has no gun, target has a gun
             # 99% chance of failure
@@ -141,10 +142,12 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
             if random.random() < 0.75:
                 await rob_success(ctx, profile, target, target_profile)
                 return None
+            
             else:
                 # 25% chance of failure
                 await ctx.send(f'You were caught trying to rob {target.display_name} and they ran away!')
                 return None
+            
         else:
             # User has a gun, target has a gun
             # 50% chance of success
@@ -152,6 +155,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
                 
                 await rob_success(ctx, profile, target, target_profile)
                 return None
+            
             else:
                 await got_shot(ctx, profile, target)
                 return None

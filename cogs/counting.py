@@ -89,7 +89,7 @@ class Counting(commands.Cog, name='Counting'):
                       help='Calculate a mathematical expression',
                       usage='f!calculate <expression>')
     @commands.cooldown(1, 1, commands.BucketType.user)  # type: ignore
-    async def calculate(self, ctx: CContext, *, expression: str):
+    async def calculate(self, ctx: CContext, *, expression: str) -> None:
         s = expression.lower()
         for char in string.whitespace:
             s = s.replace(char, "")
@@ -105,32 +105,32 @@ class Counting(commands.Cog, name='Counting'):
             
         
         if not count_only_allowed_chars(s):
-            await ctx.reply('The expression contains invalid characters.')
+            await ctx.safe_reply('The expression contains invalid characters.')
             return
         
         result, status = eval_count_msg(s)
         
         if status == CountStatus.TIMEOUT:
-            await ctx.reply("Expression took too long to evaluate.")
+            await ctx.safe_reply("Expression took too long to evaluate.")
             return
         
         if status == CountStatus.INVALID:
-            await ctx.reply("Expression is invalid.")
+            await ctx.safe_reply("Expression is invalid.")
             return
         
         if status == CountStatus.OVERFLOW:
-            await ctx.reply("Expression resulted in an under or overflow.")
+            await ctx.safe_reply("Expression resulted in an under or overflow.")
             return
         
         if status == CountStatus.ZERO_DIV:
-            await ctx.reply("Expression resulted in a division by zero.")
+            await ctx.safe_reply("Expression resulted in a division by zero.")
             return
         
         if status == CountStatus.DECIMAL_ERR:
-            await ctx.reply("Expression resulted in a decimal error, likely due to insufficient precision. Try using smaller numbers.")
+            await ctx.safe_reply("Expression resulted in a decimal error, likely due to insufficient precision. Try using smaller numbers.")
             return
         
-        await ctx.reply(f"Result: {round(result)}")
+        await ctx.safe_reply(f"Result: {round(result)}")
         
 
 async def setup(bot: CoolBot) -> None:

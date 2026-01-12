@@ -1,8 +1,11 @@
 from typing import Any
+import logging
 
 import discord
 
 from utils import db_stuff
+
+logger = logging.getLogger('discord')
 
 # Store active voice sessions: user_id -> {channel_id, joined_at}
 active_voice_sessions: dict[int, dict[str, Any]] = {}
@@ -12,9 +15,9 @@ def handle_join(member: discord.Member, after: discord.VoiceState | discord.Voic
     """Track when a user joins a voice channel"""
     if isinstance(after, discord.VoiceState):
         if after.channel is None:
-            print(f'{member.name} joined a voice state with no channel')
+            logger.error(f'{member.name} joined a voice state with no channel')
             return
-        print(f'{member.name} joined {after.channel.name}')
+        logger.info(f'{member.name} joined {after.channel.name}')
         
         # Record join time
         active_voice_sessions[member.id] = {
@@ -23,7 +26,7 @@ def handle_join(member: discord.Member, after: discord.VoiceState | discord.Voic
             'joined_at':    discord.utils.utcnow()
         }
     else:
-        print(f'{member.name} joined {after.name}')
+        logger.info(f'{member.name} joined {after.name}')
         
         # Record join time
         active_voice_sessions[member.id] = {
@@ -35,11 +38,11 @@ def handle_join(member: discord.Member, after: discord.VoiceState | discord.Voic
 
 def handle_leave(member: discord.Member) -> None:
     """Track when a user leaves a voice channel and upload session data"""
-    print(f'{member.name} left {active_voice_sessions[member.id]["channel_name"]}')
+    logger.info(f'{member.name} left {active_voice_sessions[member.id]["channel_name"]}')
     
     # Get join data
     if member.id not in active_voice_sessions:
-        print(f"No join record found for {member.name}")
+        logger.error(f"No join record found for {member.name}")
         return
     
     join_data = active_voice_sessions[member.id]
@@ -70,9 +73,9 @@ def handle_leave(member: discord.Member) -> None:
 def handle_move(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState) -> None:
     """Handle a user moving from one channel to another"""
     if before.channel is None or after.channel is None:
-        print(f'{member.name} moved but one of the channels is None')
+        logger.error(f'{member.name} moved but one of the channels is None')
         return
-    print(f'{member.name} moved from {before.channel.name} to {after.channel.name}')
+    logger.info(f'{member.name} moved from {before.channel.name} to {after.channel.name}')
     
     # First record the "leave" from the previous channel
     handle_leave(member)
@@ -88,5 +91,5 @@ def leave_all(bot: discord.Client) -> None:
         if member:
             handle_leave(member)
         else:
-            print(f"Member with ID {member_id} not found, clearing session data")
+            logger.warning(f"Member with ID {member_id} not found, clearing session data")
             del active_voice_sessions[member_id]

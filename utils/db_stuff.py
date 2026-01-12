@@ -1,5 +1,6 @@
+import logging
 import os
-from typing import Any, Mapping
+from typing import Any, Mapping, Literal
 
 import cachetools.func  # type: ignore[import-untyped]
 import discord
@@ -11,6 +12,8 @@ from pymongo.server_api import ServerApi
 # Purely for type hinting
 from pymongo.synchronous.collection import Collection
 from pymongo.synchronous.database import Database
+
+logger = logging.getLogger('discord')
 
 # Global client instance
 _mongo_client: MongoClient | None = None
@@ -33,12 +36,13 @@ def _connect() -> MongoClient | None:
     try:
         client.admin.command('ping')
         _mongo_client = client  # Store the connection
+        logger.info('MongoDB connection established successfully')
         return client
     except ConnectionError:
-        print('Failed to connect to MongoDB')
+        logger.error('Connection error while connecting to MongoDB')
         return None
     except Exception as e:
-        print(e)
+        logger.error(f"An error occurred while connecting to MongoDB: {e}")
         return None
 
 
@@ -51,9 +55,9 @@ def disconnect():
     if _mongo_client is not None:
         try:
             _mongo_client.close()
-            print('MongoDB connection closed')
+            logger.info('MongoDB connection closed')
         except Exception as e:
-            print(f'Error closing MongoDB connection: {e}')
+            logger.error(f'Error closing MongoDB connection: {e}')
         finally:
             _mongo_client = None
 
@@ -66,7 +70,6 @@ def send_message(message: Mapping[str, Any]) -> bool:
     """
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return False
     
     db = client['discord']
@@ -74,10 +77,10 @@ def send_message(message: Mapping[str, Any]) -> bool:
     
     try:
         collection.insert_one(message)
-        print('Message saved successfully')
+        logger.info('Message saved successfully')
         return True
     except Exception as e:
-        print(f'Error saving message: {e}')
+        logger.error(f'Error saving message: {e}')
         return False
 
 
@@ -89,7 +92,6 @@ def bulk_send_messages(messages: list[dict[str, Any]]) -> None:
     """
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return
     
     db: Database[Mapping[str, Any]] = client['discord']
@@ -97,9 +99,9 @@ def bulk_send_messages(messages: list[dict[str, Any]]) -> None:
     
     try:
         collection.insert_many(messages)
-        print(f'{len(messages)} messages saved successfully')
+        logger.info(f'{len(messages)} messages saved successfully')
     except Exception as e:
-        print(f'Error saving messages: {e}')
+        logger.error(f'Error saving messages: {e}')
 
 
 async def send_attachment(message: discord.Message, attachment: discord.Attachment) -> None:
@@ -111,7 +113,6 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
     """
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return None
     
     db = client['discord']
@@ -135,10 +136,10 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
                 filename=attachment.filename,
                 metadata=metadata
         )
-        print(f'Attachment saved successfully: {attachment.filename}')
+        logger.info(f'Attachment saved successfully: {attachment.filename}')
         return None
     except Exception as e:
-        print(f'Error saving attachment: {e}')
+        logger.error(f'Error saving attachment: {e}')
         return None
 
 
@@ -151,10 +152,12 @@ def cached_download_all() -> list[dict[str, Any]] | None:
     return _download_all()
 
 
-def _download_all():
+def _download_all() -> list[dict[str, Any]] | None:
     client = _connect()
     if not client:
-        raise ConnectionError('Failed to connect to MongoDB')
+        return None
+    
+    logger.info('Downloading all messages from MongoDB...')
     
     db = client['discord']
     collection = db['messages']
@@ -164,7 +167,7 @@ def _download_all():
         return list(messages)
     
     except Exception as e:
-        print(f'Error retrieving messages: {e}')
+        logger.error(f'Error retrieving messages: {e}')
         return None
 
 
@@ -176,7 +179,6 @@ def delete_message(ObjId: str) -> None:
     """
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return
     
     db = client['discord']
@@ -184,11 +186,11 @@ def delete_message(ObjId: str) -> None:
     try:
         result = collection.delete_one({'_id': ObjId})
         if result.deleted_count > 0:
-            print('Message deleted successfully')
+            logger.info('Message deleted successfully')
         else:
-            print('No message found with the given ID')
+            logger.warning('No message found with the given ID')
     except Exception as e:
-        print(f'Error deleting message: {e}')
+        logger.error(f'Error deleting message: {e}')
 
 
 def del_channel_from_db(channel: discord.TextChannel) -> None:
@@ -199,7 +201,6 @@ def del_channel_from_db(channel: discord.TextChannel) -> None:
     """
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return
     
     db = client['discord']
@@ -207,9 +208,9 @@ def del_channel_from_db(channel: discord.TextChannel) -> None:
     
     try:
         result: DeleteResult = collection.delete_many({'channel_id': channel.id})
-        print(f'Deleted {result.deleted_count} messages from channel {channel.id}')
+        logger.info(f'Deleted {result.deleted_count} messages from channel {channel.id}')
     except Exception as e:
-        print(f'Error deleting messages from channel {channel.id}: {e}')
+        logger.error(f'Error deleting messages from channel {channel.id}: {e}')
 
 
 def send_voice_session(session_data: Mapping[str, Any]) -> None:
@@ -220,7 +221,6 @@ def send_voice_session(session_data: Mapping[str, Any]) -> None:
     """
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return
     
     db = client['discord']
@@ -228,16 +228,15 @@ def send_voice_session(session_data: Mapping[str, Any]) -> None:
     
     try:
         collection.insert_one(session_data)
-        print(f'Voice session for {session_data["user_name"]} saved successfully')
+        logger.info(f'Voice session for {session_data["user_name"]} saved successfully')
     except Exception as e:
-        print(f'Error saving voice session: {e}')
+        logger.error(f'Error saving voice session: {e}')
 
 
 @cachetools.func.ttl_cache(maxsize=2, ttl=300)
 def download_voice_sessions() -> list[Mapping[str, str]] | None:
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return None
     
     db = client['discord']
@@ -247,7 +246,7 @@ def download_voice_sessions() -> list[Mapping[str, str]] | None:
         sessions = collection.find({})
         return list(sessions)
     except Exception as e:
-        print(f'Error retrieving voice sessions: {e}')
+        logger.error(f'Error retrieving voice sessions: {e}')
         return None
 
 
@@ -257,7 +256,6 @@ def send_to_db(collection_name: str, data: Mapping[str, Any]) -> None:
     """
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return
     
     db = client['discord']
@@ -265,9 +263,9 @@ def send_to_db(collection_name: str, data: Mapping[str, Any]) -> None:
     
     try:
         collection.insert_one(data)
-        print(f'Data sent successfully to {collection_name} collection')
+        logger.info(f'Data sent successfully to {collection_name} collection')
     except Exception as e:
-        print(f'Error sending data to {collection_name} collection: {e}')
+        logger.error(f'Error sending data to {collection_name} collection: {e}')
 
 
 def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_data: Mapping[str, Any]) -> bool:
@@ -276,7 +274,6 @@ def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_data: M
     """
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return False
     
     db = client['discord']
@@ -287,10 +284,10 @@ def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_data: M
         if result.modified_count > 0:
             return True
         else:
-            print(f'No entry matched the query in {collection_name} collection')
+            logger.warning(f'No entry matched the query in {collection_name} collection')
             return False
     except Exception as e:
-        print(f'Error updating entry in {collection_name} collection: {e}')
+        logger.error(f'Error updating entry in {collection_name} collection: {e}')
         return False
 
 
@@ -300,7 +297,6 @@ def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> bool:
     """
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return False
     
     db = client['discord']
@@ -309,13 +305,13 @@ def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> bool:
     try:
         result: DeleteResult = collection.delete_one(query)
         if result.deleted_count > 0:
-            print(f'Entry deleted successfully from {collection_name} collection')
+            logger.info(f'Entry deleted successfully from {collection_name} collection')
             return True
         else:
-            print(f'No entry matched the query in {collection_name} collection')
+            logger.warning(f'No entry matched the query in {collection_name} collection')
             return False
     except Exception as e:
-        print(f'Error deleting entry from {collection_name} collection: {e}')
+        logger.error(f'Error deleting entry from {collection_name} collection: {e}')
         return False
 
 
@@ -325,7 +321,6 @@ def del_many_db_entries(collection_name: str, query: Mapping[str, Any]) -> int |
     """
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return None
     
     db = client['discord']
@@ -333,10 +328,10 @@ def del_many_db_entries(collection_name: str, query: Mapping[str, Any]) -> int |
     
     try:
         result: DeleteResult = collection.delete_many(query)
-        print(f'Deleted {result.deleted_count} entries from {collection_name} collection')
+        logger.info(f'Deleted {result.deleted_count} entries from {collection_name} collection')
         return result.deleted_count
     except Exception as e:
-        print(f'Error deleting entries from {collection_name} collection: {e}')
+        logger.error(f'Error deleting entries from {collection_name} collection: {e}')
         return None
 
 
@@ -346,7 +341,6 @@ def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[s
     """
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return None
     
     db = client['discord']
@@ -358,22 +352,21 @@ def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[s
             return None
         return dict(results)
     except Exception as e:
-        print(f'Error retrieving data from {collection_name} collection: {e}')
+        logger.error(f'Error retrieving data from {collection_name} collection: {e}')
         return None
 
 
-def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by=None, direction: str="a", limit: int = 0) -> list[dict[str, Any]] | None:
+def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by=None, direction: Literal["a", "b"] = "a", limit: int = 0) -> list[dict[str, Any]] | None:
     """
     Generic function to retrieve multiple documents from a specified MongoDB collection.
 
     Direction should be either "a" for ascending or "d" for descending.
     """
     if direction not in ['a', 'd']:
-        print('Invalid sort direction. Use "a" for ascending or "d" for descending.')
-        return None
+        raise ValueError("Direction must be either 'a' for ascending or 'd' for descending.")
+    
     client = _connect()
     if not client:
-        print('Failed to connect to MongoDB')
         return None
     
     db = client['discord']
@@ -394,5 +387,5 @@ def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by=Non
         
         return [dict(result) for result in results]
     except Exception as e:
-        print(f'Error retrieving data from {collection_name} collection: {e}')
+        logger.error(f'Error retrieving data from {collection_name} collection: {e}')
         return None

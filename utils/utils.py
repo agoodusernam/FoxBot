@@ -12,6 +12,7 @@ from io import TextIOWrapper
 from pathlib import Path
 from typing import Union, Any
 from sys import platform
+import logging
 
 import discord
 import discord.ext.commands
@@ -20,6 +21,8 @@ from discord import HTTPException
 
 from command_utils.CContext import CoolBot
 from utils import db_stuff  # type: ignore # IDE hates this, and so do I, but it seems to work
+
+logger = logging.getLogger('discord')
 
 class BitwiseDecimal(decimal.Decimal):
     def __and__(self, other):
@@ -215,11 +218,11 @@ async def save_attachments(message: discord.Message) -> int:
             await attachment.save(file_path)
             saved += 1
         except discord.NotFound:
-            print(f'Attachment {i + 1} of {attach_count} for message {message.id} was deleted before it could be saved.')
+            logger.info(f'Attachment {i + 1} of {attach_count} for message {message.id} was deleted before it could be saved.')
         except HTTPException:
-            print(f'HTTP Error while saving attachment {i + 1} of {attach_count} for message {message.id}')
+            logger.error(f'HTTP Error while saving attachment {i + 1} of {attach_count} for message {message.id}')
         except OSError:
-            print(f'Error while writing attachment {i + 1} of {attach_count} for message {message.id}')
+            logger.error(f'Error while writing attachment {i + 1} of {attach_count} for message {message.id}')
         
     return saved
 
@@ -237,7 +240,7 @@ def download_from_url(path: str | Path, url: str) -> None:
     with open(path, 'wb') as file:
         file.write(pic)
     
-    print(f'Downloaded file from {url} to {path}')
+    logger.info(f'Downloaded file from {url} to {path}')
     return None
 
 
@@ -248,16 +251,16 @@ def clean_up_APOD() -> None:
 	"""
     apod_dir = Path('nasa/')
     if not apod_dir.exists():
-        print('APOD directory does not exist, creating it.')
+        logger.info('APOD directory does not exist, creating it.')
         apod_dir.mkdir(parents=True, exist_ok=True)
     
     for file in apod_dir.iterdir():
         if file.is_file() and file.suffix.lower() in ['.jpg', '.jpeg', '.png']:
             try:
                 file.unlink()
-                print(f'Deleted old APOD image: {file.name}')
+                logger.info(f'Deleted old APOD image: {file.name}')
             except Exception as e:
-                print(f'Failed to delete {file.name}: {e}')
+                logger.info(f'Failed to delete {file.name}: {e}')
 
 
 def check_env_variables() -> bool:
@@ -266,36 +269,36 @@ def check_env_variables() -> bool:
 	:return: True if all required variables are set, False otherwise.
 	"""
     complete = True
-    if not os.getenv('MONGO_URI'):
-        print('No MONGO_URI found in environment variables. Please set it to connect to a database.')
-        os.environ['LOCAL_SAVE'] = 'True'
-        complete = False
-    
     if not os.getenv('NASA_API_KEY'):
-        print('No NASA_API_KEY found in environment variables. Please set it to fetch NASA pictures.')
+        logger.warning('No NASA_API_KEY found in environment variables. Please set it to fetch NASA pictures.')
         complete = False
     
     if not os.getenv('CAT_API_KEY'):
-        print('No CAT_API_KEY found in environment variables. Please set it to fetch cat pictures.')
+        logger.warning('No CAT_API_KEY found in environment variables. Please set it to fetch cat pictures.')
         complete = False
     
     if not os.getenv('LOCAL_SAVE'):
-        print('No LOCAL_SAVE found in environment variables. Defaulting to False.')
+        logger.warning('No LOCAL_SAVE found in environment variables. Defaulting to False.')
         os.environ['LOCAL_SAVE'] = 'False'
         complete = False
     
     if os.getenv('LOCAL_SAVE') not in ['True', 'False']:
-        print('Invalid LOCAL_SAVE value. Please set it to True or False. Defaulting to False.')
+        logger.warning('Invalid LOCAL_SAVE value. Please set it to True or False. Defaulting to False.')
         os.environ['LOCAL_SAVE'] = 'False'
         complete = False
     
+    if not os.getenv('MONGO_URI'):
+        logger.warning('No MONGO_URI found in environment variables. Please set it to connect to a database.')
+        os.environ['LOCAL_SAVE'] = 'True'
+        complete = False
+    
     if os.getenv('LOCAL_IMG_SAVE') is None:
-        print('No LOCAL_IMG_SAVE found in environment variables. Defaulting to False.')
+        logger.warning('No LOCAL_IMG_SAVE found in environment variables. Defaulting to False.')
         os.environ['LOCAL_IMG_SAVE'] = 'False'
         complete = False
     
     if os.getenv('LOCAL_IMG_SAVE') not in ['True', 'False']:
-        print('Invalid LOCAL_IMG_SAVE value. Please set it to True or False. Defaulting to False.')
+        logger.warning('Invalid LOCAL_IMG_SAVE value. Please set it to True or False. Defaulting to False.')
         os.environ['LOCAL_IMG_SAVE'] = 'False'
         complete = False
     
@@ -349,10 +352,11 @@ async def log_msg(message: discord.Message) -> bool:
         with make_file() as file:
             file.write(json.dumps(json_data, ensure_ascii=False) + '\n')
     
-    print(f'Message from {message.author.display_name} [#{message.channel}]: {message.content}')
+    logger.info(f'Message from {message.author.display_name} [#{message.channel}]: {message.content}')
     if has_attachment:
         if os.environ.get('LOCAL_IMG_SAVE') == 'True':
-            await save_attachments(message)
+            saved = await save_attachments(message)
+            logger.debug(f'Saved {saved} attachments for message {message.id}')
         else:
             for attachment in message.attachments:
                 await db_stuff.send_attachment(message, attachment)
@@ -370,6 +374,7 @@ async def fail_count_user(message: discord.Message, bot: CoolBot) -> None:
     return None
 
 async def fail_count(message: discord.Message, bot: CoolBot) -> None:
+    logger.debug(f'Counting fail by user {message.author.id} at message {message.id}')
     assert isinstance(message.author, discord.Member)
     
     bot.config.last_count = 0

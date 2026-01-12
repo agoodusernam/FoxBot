@@ -19,7 +19,7 @@ from utils import db_stuff, utils
 # i really hope it doesnt break because if it does im fucked
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('discord')
 
 # Constants
 EXCLUDED_USER_IDS = ['1107579143140413580']

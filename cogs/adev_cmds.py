@@ -4,20 +4,23 @@ import os
 import sys
 import threading
 from typing import Any
+import logging
 
 import discord
 from discord.ext import commands
 
-import utils.utils
 from command_utils.checks import is_dev
 from custom_logging import voice_log
 from utils import db_stuff
 from command_utils.CContext import CContext, CoolBot
 # added the 'a' to the start of the file so it loads first
 
+logger = logging.getLogger('discord')
+
 async def aexec(func_name: str, context: CContext) -> Any:
     locs: dict[str, Any] = {}
     ctx = context
+    logger.debug(f'Running function: {func_name}')
     
     exec(f'async def __ex(): await discord.utils.maybe_coroutine({func_name})', globals(), locs)
     return await locs['__ex']()
@@ -37,33 +40,16 @@ async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
     if restart:
         os.execv(sys.executable, ['python'] + sys.argv)
 
-def update_timestamps() -> None:
-    entries = db_stuff.cached_download_all()
-    entries_len = len(entries)
-    edited = 0
-    for entry in entries:
-        iso_timestamp = utils.utils.parse_utciso8601(entry.get('timestamp'))
-        if iso_timestamp is None:
-            print(f'Invalid timestamp: {entry.get("timestamp", "<none>")}')
-            entries_len -= 1
-            continue
-        
-        timestamp: float = iso_timestamp.timestamp()
-        success = db_stuff.edit_db_entry('messages', {'_id': entry['_id']}, {'timestamp': timestamp})
-        if success: edited += 1
-        if edited % 1000 == 0: print(f'Updated {edited}/{entries_len} timestamps')
-        
-
 async def upload_all_history(channel: discord.TextChannel) -> None:
-    print(f'Deleting old messages from channel: {channel.name}, ID: {channel.id}')
+    logger.info(f'Deleting old messages from channel: {channel.name}, ID: {channel.id}')
     db_stuff.del_channel_from_db(channel)
-    print(f'Starting to download all messages from channel: {channel.name}, ID: {channel.id}')
+    logger.info(f'Starting to download all messages from channel: {channel.name}, ID: {channel.id}')
     messages = [message async for message in channel.history(limit=None)]
-    print(f'Downloaded {len(messages)} messages from channel: {channel.name}, ID: {channel.id}')
+    logger.info(f'Downloaded {len(messages)} messages from channel: {channel.name}, ID: {channel.id}')
     bulk_data: list[dict[str, Any]] = []
     for i, message in enumerate(messages):
         if not isinstance(message.channel, discord.TextChannel):
-            print("Message channel is not a TextChannel, skipping...")
+            logger.info("Message channel is not a TextChannel, skipping...")
             continue
         
         has_attachment = False
@@ -113,7 +99,7 @@ async def upload_whole_server(guild: discord.Guild, author: discord.User | disco
             await dm.send(f'Skipping channel {channel.name} due to insufficient permissions')
             await dm.send('--------------------------')
     
-    print('Finished uploading all messages from server:', guild.name)
+    logger.info('Finished uploading all messages from server:', guild.name)
     await dm.send(f'Finished uploading all messages from server: {guild.name}')
 
 

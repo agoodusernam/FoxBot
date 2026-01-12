@@ -5,9 +5,10 @@ import random
 import re
 import typing
 from typing import Any
+import logging
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from discord.ext.commands import guild_only
 from discord.utils import get
 
@@ -15,8 +16,9 @@ from command_utils import analysis
 from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_admin
 from config import bot_config
-from utils import db_stuff, utils
+from utils import db_stuff
 
+logger = logging.getLogger('discord')
 
 async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
     mod_log_channel = ctx.bot.get_channel(1329367677940006952)  # Channel where the carlbot logs are sent
@@ -30,6 +32,7 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
     if last_mod_log_message.content == 'Posted':
         await ctx.send('This log has already been sent to the public logs channel.', delete_after=ctx.bot.del_after)
         return
+    
     embed = last_mod_log_message.embeds[0]
     
     offence = embed.title.split(sep='|')[0].title()
@@ -163,7 +166,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             try:
                 await member.timeout(None, reason='Hard lockdown lifted by admin')
             except Exception as e:
-                print(f'Error during unhardlockdown for user {member.id}: {e}')
+                logger.error(f'Error during unhardlockdown for user {member.id}: {e}')
                 continue
         
         if os.path.isfile('blacklist_users.json'):
