@@ -12,6 +12,7 @@ from discord.ext.commands import guild_only
 from discord.ext.tasks import loop
 from gtts import gTTS
 
+import utils.utils
 from command_utils import suggest
 from command_utils.CContext import CContext, CoolBot
 
@@ -139,27 +140,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def lines_of_code(self, ctx: CContext):
         # function that returns the number of lines of code in a given directory recursively, excluding .venv
-        total_lines = 0
-        total_files = 0
-        
-        for root, dirs, files in os.walk(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')):
-            # Skip .venv directory
-            if '.venv' in dirs:
-                dirs.remove('.venv')
-            
-            # Count lines in .py files
-            for file in files:
-                if not file.endswith('.py'):
-                    continue
-                file_path = os.path.join(root, file)
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        line_count = sum(1 for _ in f)
-                    total_lines += line_count
-                    total_files += 1
-                    print(f'{file_path}: {line_count} lines')
-                except Exception as e:
-                    print(f'Error reading {file_path}: {e}')
+        total_lines, total_files = utils.utils.loc_total()
         
         await ctx.send(f'There are {total_lines} lines of code across {total_files} Python files in this bot\'s source code.')
         
@@ -269,6 +250,21 @@ class FunCommands(commands.Cog, name='Fun'):
             del self.bot.last_tts_sent_time
             
         return
+    
+    @commands.command(name='stats',
+                      brief="Get bot statistics",
+                      help="Get statistics about the bot")
+    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    async def stats(self, ctx: CContext):
+        loc = utils.utils.loc_total()[0]
+        files = utils.utils.loc_total()[1]
+        uptime = utils.utils.seconds_to_human_readable(time.time() - ctx.bot.start_time)
+        
+        embed = discord.Embed(title='Bot Statistics', colour=discord.Colour.purple())
+        embed.add_field(name='Lines of Code', value=loc, inline=True)
+        embed.add_field(name='Files', value=files, inline=True)
+        embed.add_field(name='Uptime', value=uptime, inline=True)
+        await ctx.send(embed=embed)
         
 
 async def setup(bot: CoolBot) -> None:

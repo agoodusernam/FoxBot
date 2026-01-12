@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import logging
 import threading
+import time
 from typing import Any, Optional
 
 from discord import Message
@@ -60,6 +61,7 @@ class CoolBot(commands.Bot):
         self.dev_func_thread: threading.Thread | None = None
         self.vc_client: discord.VoiceClient | None = None
         self.tts_lock: asyncio.Lock = asyncio.Lock()
+        self.start_time: float = time.time()
     
     def run(self, *args, **kwargs):
         super().run(*args, **kwargs)

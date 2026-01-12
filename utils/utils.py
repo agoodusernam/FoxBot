@@ -15,6 +15,7 @@ from typing import Union, Any
 from sys import platform
 import logging
 
+import cachetools.func
 import discord
 import discord.ext.commands
 import discord.ext.tasks
@@ -167,6 +168,23 @@ def formatted_today() -> str:
 	:return: str: The current date in 'dd-mm-yyyy' format.
 	"""
     return datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y')
+
+def seconds_to_human_readable(seconds: float) -> str:
+    """
+    Convert seconds to a human-readable format.
+    :param seconds: The number of seconds to convert.
+    :return: A string representing the time in a human-readable format.
+    """
+    if seconds < 60:
+        return f"{seconds:.1f} seconds"
+    seconds: int = int(seconds) # type: ignore
+    if seconds < 3600:
+        return f"{seconds // 60} minutes and {seconds % 60} seconds"
+    if seconds < 86400:
+        return f"{seconds // 3600} hours, {(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
+    return f"{seconds // 86400} days, {(seconds % 86400) // 3600} hours, " \
+           f"{(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
+
 
 
 def make_file() -> TextIOWrapper:
@@ -491,4 +509,30 @@ def copy_attach_to_temp(src: list[Path]) -> bool:
             all_success = False
     
     return all_success
+
+
+@cachetools.func.fifo_cache(maxsize=1)
+def loc_total() -> tuple[int, int]:
+    total_lines: int = 0
+    total_files: int = 0
     
+    for root, dirs, files in os.walk(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')):
+        # Skip .venv directory
+        if '.venv' in dirs:
+            dirs.remove('.venv')
+        
+        # Count lines in .py files
+        for file in files:
+            if not file.endswith('.py'):
+                continue
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    line_count = sum(1 for _ in f)
+                total_lines += line_count
+                total_files += 1
+                logger.debug(f'{file_path}: {line_count} lines')
+            except Exception as e:
+                logger.error(f'Error reading {file_path}: {e}')
+        
+    return total_lines, total_files

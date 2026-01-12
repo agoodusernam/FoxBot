@@ -42,23 +42,6 @@ def find_url_in_string(string: str) -> bool:
     return match is not None
 
 
-def seconds_to_human_readable(seconds: float) -> str:
-    """
-    Convert seconds to a human-readable format.
-    :param seconds: The number of seconds to convert.
-    :return: A string representing the time in a human-readable format.
-    """
-    if seconds < 60:
-        return f"{seconds:.1f} seconds"
-    seconds: int = int(seconds) # type: ignore
-    if seconds < 3600:
-        return f"{seconds // 60} minutes and {seconds % 60} seconds"
-    if seconds < 86400:
-        return f"{seconds // 3600} hours, {(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
-    return f"{seconds // 86400} days, {(seconds % 86400) // 3600} hours, " \
-           f"{(seconds % 3600) // 60} minutes and {seconds % 60} seconds"
-
-
 # Bot configuration
 @bot.event
 async def on_ready() -> None:
@@ -241,7 +224,7 @@ bot.help_command = CustomHelpCommand()
 async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandError):
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.send('This command is on cooldown. Please try again in ' +
-                       f'{seconds_to_human_readable(error.retry_after)}.')
+                       f'{utils.seconds_to_human_readable(error.retry_after)}.')
     elif isinstance(error, commands.NoPrivateMessage):
         await ctx.send('This command cannot be used in private messages.', delete_after=bot.config.del_after)
         await ctx.delete()
