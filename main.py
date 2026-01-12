@@ -525,6 +525,10 @@ async def on_voice_state_update(member: discord.Member, before: discord.VoiceSta
             if before.channel and len(before.channel.members) == 0:
                 await before.channel.delete(reason='Private VC empty after member left')
         
+        if before.channel.name.startswith('temp_'):
+            if before.channel and len(before.channel.members) == 0:
+                await before.channel.delete(reason='Private VC empty after member left')
+        
         if bot.vc_client is None:
             return
         
