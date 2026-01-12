@@ -1,9 +1,11 @@
+import string
 from typing import TypeVar
 
 import discord
 from discord.ext import commands
 
 from command_utils.CContext import CContext, CoolBot
+from utils.utils import eval_count_msg, BitwiseDecimal, CountStatus, count_only_allowed_chars
 
 T = TypeVar('T')
 
@@ -82,6 +84,54 @@ class Counting(commands.Cog, name='Counting'):
         
         await ctx.send(embed=num_successes_embed)
         await ctx.send(embed=num_user_embed)
+    
+    @commands.command(name='calculate', aliases=['calc'],
+                      help='Calculate a mathematical expression',
+                      usage='f!calculate <expression>')
+    @commands.cooldown(1, 1, commands.BucketType.user)  # type: ignore
+    async def calculate(self, ctx: CContext, *, expression: str):
+        s = expression.lower()
+        for char in string.whitespace:
+            s = s.replace(char, "")
+        
+        if s.startswith('<') and s.endswith('>'):
+            await ctx.send('You do not need to surround the expression with <> when using this command.')
+        
+        if s.startswith('<'):
+            s = s[1:]
+        
+        if s.endswith('>'):
+            s = s[:-1]
+            
+        
+        if not count_only_allowed_chars(s):
+            await ctx.reply('The expression contains invalid characters.')
+            return
+        
+        result, status = eval_count_msg(s)
+        
+        if status == CountStatus.TIMEOUT:
+            await ctx.reply("Expression took too long to evaluate.")
+            return
+        
+        if status == CountStatus.INVALID:
+            await ctx.reply("Expression is invalid.")
+            return
+        
+        if status == CountStatus.OVERFLOW:
+            await ctx.reply("Expression resulted in an under or overflow.")
+            return
+        
+        if status == CountStatus.ZERO_DIV:
+            await ctx.reply("Expression resulted in a division by zero.")
+            return
+        
+        if status == CountStatus.DECIMAL_ERR:
+            await ctx.reply("Expression resulted in a decimal error, likely due to insufficient precision. Try using smaller numbers.")
+            return
+        
+        await ctx.reply(f"Result: {round(result)}")
+        
 
 async def setup(bot: CoolBot) -> None:
     await bot.add_cog(Counting(bot))

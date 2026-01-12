@@ -6,10 +6,12 @@ import decimal
 import signal
 import urllib.request
 import string
+import warnings
 from enum import IntEnum
 from io import TextIOWrapper
 from pathlib import Path
 from typing import Union, Any
+from sys import platform
 
 import discord
 import discord.ext.commands
@@ -19,7 +21,18 @@ from discord import HTTPException
 from command_utils.CContext import CoolBot
 from utils import db_stuff  # type: ignore # IDE hates this, and so do I, but it seems to work
 
-D = decimal.Decimal
+class BitwiseDecimal(decimal.Decimal):
+    def __and__(self, other):
+        return BitwiseDecimal(round(self) & round(other))
+    
+    def __or__(self, other):
+        return BitwiseDecimal(round(self) | round(other))
+    
+    def __xor__(self, other):
+        return BitwiseDecimal(round(self) ^ round(other))
+    
+
+D = BitwiseDecimal
 
 class CountStatus(IntEnum):
     SUCCESS = 0
@@ -36,27 +49,63 @@ def user_has_role(member: discord.Member, role_id: int) -> bool:
     return False
 
 def count_only_allowed_chars(s: str) -> bool:
+    """
+    Checks if the counting string only contains allowed characters.
+    Assumes the string is lowercase and has no whitespace.
+    """
     allowed: str = "0123456789*/-+.()%^&<>|~"
-    for char in s:
+    base_definitions: str = "xob"
+    for i, char in enumerate(s):
         if char not in allowed:
-            return False
+            if char not in base_definitions:
+                return False
+            
+            if s[i-1] != "0":
+                return False
+            
+            if i == 0:
+                return False
+            
     return True
 
-def eval_count_msg(message: str) -> tuple[decimal.Decimal, CountStatus]:
+def convert_to_base10(match: re.Match[str]) -> str:
+    num_str: str = match.group(0)
+    if num_str.startswith('0b'):
+        return str(int(num_str[2:], 2))
+    
+    elif num_str.startswith('0o'):
+        return str(int(num_str[2:], 8))
+    
+    elif num_str.startswith('0x'):
+        return str(int(num_str[2:], 16))
+    
+    else:
+        # This shouldn't happen
+        return num_str
+
+def eval_count_msg(message: str) -> tuple[BitwiseDecimal, CountStatus]:
     """
     Returns the evaluated result of a counting message.
     :param message: str: The counting message to evaluate.
-    :return: tuple[decimal.Decimal, CountStatus]: The evaluated result and the status of the evaluation.
+    :return: tuple[BitwiseDecimal, CountStatus]: The evaluated result and the status of the evaluation.
     """
     def timeout_handler(signum: int, frame: Any):
         raise TimeoutError
+    on_linux: bool = platform == "linux" or platform == "linux2"
     
-    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(2)
+    if not on_linux:
+        warnings.warn("Counting timeout is only supported on Linux. Counts may hang indefinitely on other platforms.", RuntimeWarning)
+    
+    if on_linux:
+        old_handler = signal.signal(signal.SIGALRM, timeout_handler) # type: ignore
+        signal.alarm(2) # type: ignore
+    
     try:
+        pattern = r"0b[01]+|0o[0-7]+|0x[0-9a-f]+"
+        base_10_msg = re.sub(pattern, convert_to_base10, message)
         decimal.getcontext().prec = 320
-        expr: str = re.sub(r"(\d+\.\d*|\.\d+|\d+)", r"decimal.Decimal('\1')", message)
-        result: decimal.Decimal = round(eval(expr), 20)
+        expr: str = re.sub(r"(\d+\.\d*|\.\d+|\d+)", r"BitwiseDecimal('\1')", base_10_msg)
+        result: BitwiseDecimal = round(eval(expr), 20)
         
         return result, CountStatus.SUCCESS
     
@@ -76,8 +125,9 @@ def eval_count_msg(message: str) -> tuple[decimal.Decimal, CountStatus]:
         return D(0), CountStatus.DECIMAL_ERR
     
     finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, old_handler)
+        if on_linux:
+            signal.alarm(0) # type: ignore
+            signal.signal(signal.SIGALRM, old_handler) # type: ignore  # noqa
 
 
 def get_id_from_str(u_id: str) -> int | None:
@@ -250,29 +300,6 @@ def check_env_variables() -> bool:
     return complete
 
 
-def parse_utciso8601(date_str: str) -> datetime.datetime | None:
-    """
-	Parses a UTC ISO 8601 date string into a datetime object.
-	"""
-    try:
-        return datetime.datetime.fromisoformat(date_str)
-    except TypeError:
-        print(f'Error parsing date string "{date_str}"')
-        return None
-
-
-def check_valid_utciso8601(date_str: str) -> bool:
-    """
-    Checks if a string is a valid UTC ISO 8601 date string.
-    """
-    try:
-        datetime.datetime.fromisoformat(date_str)
-        return True
-    except TypeError:
-        print(f'Invalid date string "{date_str}"')
-        return False
-
-
 def format_perms_overwrite(overwrite: discord.PermissionOverwrite) -> dict[str, Union[bool, None]]:
     perms: dict[str, Union[bool, None]] = {}
     for permission in overwrite:
@@ -330,8 +357,8 @@ async def log_msg(message: discord.Message) -> bool:
     
     return db_stuff.send_message(json_data)
 
-async def fail_count_number(message: discord.Message, bot: CoolBot) -> None:
-    await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.last_count}**!! Next number is **1**. **Wrong number**.")
+async def fail_count_number(message: discord.Message, bot: CoolBot, actual: int) -> None:
+    await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.last_count}**!! Next number is **1**. Your message evaluated to **{actual}**.")
     await fail_count(message, bot)
     return None
 
@@ -389,12 +416,12 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         await message.reply("Expression resulted in a decimal error, likely due to insufficient precision. Try using smaller numbers.")
         return False
     
-    int_result = int(result)
+    int_result: int = round(result)
     del result
     
     if int_result != bot.config.last_count + 1:
         if bot.config.last_count != 0:
-            await fail_count_number(message, bot)
+            await fail_count_number(message, bot, actual=int_result)
             return False
         if bot.config.last_count_user == message.author.id:
             await fail_count_user(message, bot)
