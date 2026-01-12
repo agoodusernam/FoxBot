@@ -55,6 +55,8 @@ def count_only_allowed_chars(s: str) -> bool:
     """
     allowed: str = "0123456789*/-+.()%^&<>|~"
     base_definitions: str = "xob"
+    s = s.replace(",", ".")
+    s = s.replace("_", "")
     for i, char in enumerate(s):
         if char not in allowed:
             if char not in base_definitions:
@@ -388,6 +390,11 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
     if not count_only_allowed_chars(s):
         return False
     
+    result, status = eval_count_msg(s)
+    
+    if status == CountStatus.INVALID:
+        return False
+    
     banrole: int = bot.config.counting_ban_role
     
     if banrole != 0 and user_has_role(message.author, banrole):
@@ -395,17 +402,16 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         await message.delete()
         return False
     
-    result, status = eval_count_msg(s)
+    if bot.config.last_count_user == message.author.id:
+        await fail_count_user(message, bot)
+        return False
     
     if status == CountStatus.TIMEOUT:
         await message.reply("Expression took too long to evaluate.")
         return False
     
-    if status == CountStatus.INVALID:
-        return False
-    
     if status == CountStatus.OVERFLOW:
-        await message.reply("Expression resulted in an under or overflow.")
+        await message.reply("Expression resulted in an under or overflow, likely due to insufficient precision. Try using numbers closer to 0.")
         return False
     
     if status == CountStatus.ZERO_DIV:
@@ -413,7 +419,7 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         return False
     
     if status == CountStatus.DECIMAL_ERR:
-        await message.reply("Expression resulted in a decimal error, likely due to insufficient precision. Try using smaller numbers.")
+        await message.reply("Expression resulted in a decimal error, likely due to insufficient precision. Try using numbers closer to 0.")
         return False
     
     int_result: int = round(result)
@@ -423,9 +429,7 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         if bot.config.last_count != 0:
             await fail_count_number(message, bot, actual=int_result)
             return False
-        if bot.config.last_count_user == message.author.id:
-            await fail_count_user(message, bot)
-            return False
+        
         await message.reply("The next number is **1**.")
         return False
     
