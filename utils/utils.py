@@ -495,6 +495,17 @@ def copy_attach_to_temp(src: list[Path]) -> bool:
     Returns True if successful, False otherwise.
     """
     dest: Path = Path(os.path.abspath('temp'))
+    if not dest.exists():
+        dest.mkdir(parents=True)
+    
+    if dest.is_file():
+        dest.unlink()
+        dest.mkdir(parents=True)
+    
+    for root, dirs, files in os.walk(dest):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+    
     names: list[str] = []
     for i, file in enumerate(src):
         names.append(f"{i}{"".join(file.suffixes)}")
