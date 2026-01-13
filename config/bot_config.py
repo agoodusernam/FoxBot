@@ -290,7 +290,7 @@ class BotConfig(ConfigBase):
         self.counting_fails[user_id] = 0
         return True
     
-    def user_counted(self, user_id: int, number: int, message_id: int) -> None:
+    def user_counted(self, user_id: str, number: int, message_id: str) -> None:
         """Record that a user has counted a number"""
         logger.debug(f"User {user_id}, in message {message_id} counted {number}")
         self.counting_successes[user_id] = self.counting_successes.get(user_id, 0) + 1
