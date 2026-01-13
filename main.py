@@ -55,6 +55,7 @@ handler.setLevel(logging.INFO)
 discord.utils.setup_logging(level=logging.DEBUG, root=False, handler=handler)
 logging.getLogger('discord.http').setLevel(logging.INFO)
 logging.getLogger('discord.gateway').setLevel(logging.INFO)
+logging.getLogger('discord.client').setLevel(logging.INFO)
 bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True)
 
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
@@ -340,6 +341,7 @@ async def check_landmine(message: discord.Message) -> None:
 # Message event for logging and processing
 @bot.event
 async def on_message(message: discord.Message):
+    logger.debug('Received message from %s: %s', message.author.global_name, message.content)
     if message.author.bot:
         return
     
@@ -404,13 +406,14 @@ async def on_message(message: discord.Message):
     
     if message.content.startswith('!f'):
         if not bot.config.tts_requires_role:
+            logger.debug("Processing TTS command without role requirement.")
             ctx: CContext = await bot.get_context(message)
             await ctx.invoke(bot.get_command('tts'), message=message.content.replace("!f", "").strip())
             return
         
         if bot.config.required_tts_role == 0:
             logger.warning('TTS role requirement is enabled, but no role ID is set in the config.')
-            await message.reply('TTS commands are currently unavailable. Please contact an administrator.')
+            await message.reply('TTS commands are currently unavailable.')
             return
         
         has_role: bool = False
@@ -427,6 +430,7 @@ async def on_message(message: discord.Message):
             await message.reply('You do not have the required role to use TTS commands.')
             return
         
+        logger.debug("Processing TTS command with role requirement.")
         ctx: CContext = await bot.get_context(message)
         await ctx.invoke(bot.get_command('tts'), message=message.content.replace("!f", "").strip())
         

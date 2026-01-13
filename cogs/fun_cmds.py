@@ -71,14 +71,14 @@ class FunCommands(commands.Cog, name='Fun'):
                       help='Flip a coin and get either Heads or Tails')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def flip(self, ctx: CContext):
-        await ctx.message.channel.send(f'You flipped a coin and got: **{random.choice(['Heads', 'Tails'])}**')
+        await ctx.send(f'You flipped a coin and got: **{random.choice(['Heads', 'Tails'])}**')
     
     @commands.command(name='ping', aliases=['latency'],
                       brief="Check the bot's latency",
                       help="Shows the bot's current latency in milliseconds")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def ping(self, ctx: CContext):
-        await ctx.message.channel.send(f'{ctx.bot.latency * 1000:.1f}ms')  # type: ignore
+        await ctx.send(f'{ctx.bot.latency * 1000:.1f}ms')  # type: ignore
     
     @commands.command(name='suggest', aliases=['suggestion'],
                       brief='Submit a suggestion',
@@ -109,6 +109,7 @@ class FunCommands(commands.Cog, name='Fun'):
         ]
         responses = pos_responses + neut_responses + neg_responses
         answer = random.choice(responses)
+        logger.debug(f'Magic 8-ball answer: {answer}')
         await ctx.typing()
         await asyncio.sleep(2)  # Simulate thinking time
         await ctx.safe_reply(f'{answer}')
@@ -163,7 +164,8 @@ class FunCommands(commands.Cog, name='Fun'):
         
         opus = ctypes.util.find_library('opus')
         if opus is None:
-            await ctx.send('Could not find opus library. TTS command is unavailable.')
+            await ctx.send('TTS command is unavailable.')
+            logger.error('Could not find opus library.')
             return
         
         state = ctx.author.voice
@@ -172,7 +174,6 @@ class FunCommands(commands.Cog, name='Fun'):
             return
         
         lock: asyncio.Lock = ctx.bot.tts_lock
-        
         
         vc_client: discord.VoiceClient
         ctx.bot.last_tts_sent_time = time.time()
@@ -223,6 +224,7 @@ class FunCommands(commands.Cog, name='Fun'):
     
     @discord.ext.tasks.loop(minutes=1.0)
     async def check_tts_leave(self) -> None:
+        logger.debug('Checking for TTS disconnect')
         if self.bot.vc_client is None and not hasattr(self.bot, 'last_tts_sent_time'):
             return
             
