@@ -225,6 +225,20 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
             embed.add_field(name='Last 5 Errors', value='\n'.join(last_5_errs), inline=False)
         
         await ctx.send(embed=embed)
+    
+    @commands.command(name='debug_log',
+                      brief='Get the debug log',
+                      help='Dev only: Send the debug log to the channel',
+                      usage='f!debug_log')
+    async def debug_log(self, ctx: CContext):
+        await ctx.send(file=discord.File(ctx.bot.log_path / 'debug.log'))
+    
+    @commands.command(name='err_log',
+                      brief='Get the error log',
+                      help='Dev only: Send the error log to the channel',
+                      usage='f!err_log')
+    async def err_log(self, ctx: CContext):
+        await ctx.send(file=discord.File(ctx.bot.log_path / 'err.log'))
         
 
 async def setup(bot):
