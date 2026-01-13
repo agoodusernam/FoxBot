@@ -459,7 +459,7 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         await message.reply("The next number is **1**.")
         return False
     
-    bot.config.user_counted(message.author.id, int_result, message.id)
+    bot.config.user_counted(str(message.author.id), int_result, str(message.id))
     reaction: str = "✅"
     
     bot.config.last_count = int_result
