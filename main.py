@@ -25,8 +25,8 @@ def on_exit():
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
+discord.utils.setup_logging(handler=handler, level=logging.DEBUG)
 
-bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True, log_level=logging.DEBUG, log_handler=handler)
 logger = logging.getLogger('discord')
 
 if not os.path.exists('logs'):
@@ -55,6 +55,8 @@ err_handler.setLevel(logging.WARNING)
 
 logger.addHandler(debug_handler)
 logger.addHandler(err_handler)
+
+bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True, log_handler=None)
 
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
 url_pattern = re.compile(regex, re.IGNORECASE)
