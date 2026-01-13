@@ -18,6 +18,16 @@ from utils import db_stuff, utils
 
 load_dotenv()
 
+dt_fmt = '%Y-%m-%d %H:%M:%S'
+
+def get_colour_formatter(handler: logging.Handler) -> logging.Formatter:
+    if isinstance(handler, logging.StreamHandler) and discord.utils.stream_supports_colour(handler.stream):
+        # noinspection PyProtectedMember
+        formatter = discord.utils._ColourFormatter()
+    else:
+        formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+        
+    return formatter
 
 @atexit.register
 def on_exit():
@@ -28,17 +38,7 @@ if not os.path.exists('logs'):
 
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
-
-debug_handler = logging.handlers.RotatingFileHandler(
-    filename='logs/debug.log',
-    encoding='utf-8',
-    maxBytes=8 * 1024 * 1024,
-    backupCount=3
-)
-dt_fmt = '%Y-%m-%d %H:%M:%S'
-formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
-debug_handler.setFormatter(formatter)
-logger.addHandler(debug_handler)
+basic_formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
 
 err_handler = logging.handlers.RotatingFileHandler(
     filename='logs/err.log',
@@ -46,22 +46,24 @@ err_handler = logging.handlers.RotatingFileHandler(
     maxBytes=8 * 1024 * 1024,
     backupCount=3
 )
-err_handler.setFormatter(formatter)
+err_handler.setFormatter(basic_formatter)
 err_handler.setLevel(logging.WARNING)
 logger.addHandler(err_handler)
 
-std_out_handler = logging.StreamHandler()
-std_out_handler.setLevel(logging.INFO)
-std_out_formatter: logging.Formatter
-if isinstance(std_out_handler, logging.StreamHandler) and discord.utils.stream_supports_colour(std_out_handler.stream):
-    # noinspection PyProtectedMember
-    std_out_formatter = discord.utils._ColourFormatter()
-else:
-    dt_fmt = '%Y-%m-%d %H:%M:%S'
-    std_out_formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+colour_handler = logging.StreamHandler()
+colour_handler.setLevel(logging.INFO)
+colour_handler.setFormatter(get_colour_formatter(colour_handler))
+logger.addHandler(colour_handler)
 
-std_out_handler.setFormatter(std_out_formatter)
-logger.addHandler(std_out_handler)
+debug_handler = logging.handlers.RotatingFileHandler(
+    filename='logs/debug.log',
+    encoding='utf-8',
+    maxBytes=8 * 1024 * 1024,
+    backupCount=3
+)
+
+debug_handler.setFormatter(basic_formatter)
+logger.addHandler(debug_handler)
 
 bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True, log_handler=None)
 
