@@ -15,6 +15,7 @@ from gtts import gTTS
 import utils.utils
 from command_utils import suggest
 from command_utils.CContext import CContext, CoolBot
+from utils import git_stuff
 
 logger = logging.getLogger('discord')
 
@@ -266,6 +267,16 @@ class FunCommands(commands.Cog, name='Fun'):
         embed.add_field(name='Files', value=files, inline=True)
         embed.add_field(name='Uptime', value=uptime, inline=True)
         embed.add_field(name='Ping', value=ping + 'ms', inline=True)
+        commit = git_stuff.get_last_commit()
+        
+        if commit is None:
+            await ctx.send(embed=embed)
+            return
+        
+        commit_time, commit_message, changes = commit
+        
+        embed.add_field(name='Last Commit', value=f'[<t:{commit_time}>] {commit_message}', inline=False)
+        embed.add_field(name='Total lines changed', value=changes['total'], inline=False)
         await ctx.send(embed=embed)
         
 
