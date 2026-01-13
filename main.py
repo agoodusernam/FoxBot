@@ -26,8 +26,8 @@ def on_exit():
 if not os.path.exists('logs'):
     os.mkdir('logs')
 
-dt_fmt = '%Y-%m-%d %H:%M:%S'
-log_formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
 
 debug_handler = logging.handlers.RotatingFileHandler(
     filename='logs/debug.log',
@@ -35,8 +35,10 @@ debug_handler = logging.handlers.RotatingFileHandler(
     maxBytes=8 * 1024 * 1024,
     backupCount=3
 )
-debug_handler.setFormatter(log_formatter)
-debug_handler.setLevel(logging.DEBUG)
+dt_fmt = '%Y-%m-%d %H:%M:%S'
+formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+debug_handler.setFormatter(formatter)
+logger.addHandler(debug_handler)
 
 err_handler = logging.handlers.RotatingFileHandler(
     filename='logs/err.log',
@@ -44,17 +46,22 @@ err_handler = logging.handlers.RotatingFileHandler(
     maxBytes=8 * 1024 * 1024,
     backupCount=3
 )
-err_handler.setFormatter(log_formatter)
+err_handler.setFormatter(formatter)
 err_handler.setLevel(logging.WARNING)
-
-logger = logging.getLogger('discord')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(debug_handler)
 logger.addHandler(err_handler)
 
-handler = logging.StreamHandler()
-handler.setLevel(logging.INFO)
-discord.utils.setup_logging(handler=handler, level=logging.DEBUG, root=False)
+std_out_handler = logging.StreamHandler()
+std_out_handler.setLevel(logging.INFO)
+std_out_formatter: logging.Formatter
+if isinstance(std_out_handler, logging.StreamHandler) and discord.utils.stream_supports_colour(std_out_handler.stream):
+    # noinspection PyProtectedMember
+    std_out_formatter = discord.utils._ColourFormatter()
+else:
+    dt_fmt = '%Y-%m-%d %H:%M:%S'
+    std_out_formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+
+std_out_handler.setFormatter(std_out_formatter)
+logger.addHandler(std_out_handler)
 
 bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True, log_handler=None)
 
