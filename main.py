@@ -48,12 +48,12 @@ err_handler.setFormatter(log_formatter)
 err_handler.setLevel(logging.WARNING)
 
 logger = logging.getLogger('discord')
+logger.setLevel(logging.DEBUG)
 logger.addHandler(debug_handler)
 logger.addHandler(err_handler)
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
-logger.setLevel(logging.DEBUG)
 discord.utils.setup_logging(handler=handler, level=logging.DEBUG, root=False)
 
 bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True, log_handler=None)
