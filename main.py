@@ -23,12 +23,6 @@ load_dotenv()
 def on_exit():
     db_stuff.disconnect()
 
-handler = logging.StreamHandler()
-handler.setLevel(logging.INFO)
-discord.utils.setup_logging(handler=handler, level=logging.DEBUG, root=False)
-
-logger = logging.getLogger('discord')
-
 if not os.path.exists('logs'):
     os.mkdir('logs')
 
@@ -53,8 +47,14 @@ err_handler = logging.handlers.RotatingFileHandler(
 err_handler.setFormatter(log_formatter)
 err_handler.setLevel(logging.WARNING)
 
+logger = logging.getLogger('discord')
 logger.addHandler(debug_handler)
 logger.addHandler(err_handler)
+
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+discord.utils.setup_logging(handler=handler, level=logging.DEBUG, root=False)
 
 bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True, log_handler=None)
 
