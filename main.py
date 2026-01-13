@@ -23,13 +23,17 @@ load_dotenv()
 def on_exit():
     db_stuff.disconnect()
 
-bot = CoolBot(intents=discord.Intents.all())
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+
+bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True, log_level=logging.DEBUG, log_handler=handler)
 logger = logging.getLogger('discord')
 
 if not os.path.exists('logs'):
     os.mkdir('logs')
 
-log_formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
+dt_fmt = '%Y-%m-%d %H:%M:%S'
+log_formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
 
 debug_handler = logging.handlers.RotatingFileHandler(
     filename='logs/debug.log',
@@ -51,7 +55,6 @@ err_handler.setLevel(logging.WARNING)
 
 logger.addHandler(debug_handler)
 logger.addHandler(err_handler)
-logger.setLevel(logging.DEBUG)
 
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
 url_pattern = re.compile(regex, re.IGNORECASE)

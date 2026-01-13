@@ -11,8 +11,7 @@ import discord
 from discord.ext.commands import Context
 import matplotlib.pyplot as plt
 
-import config.bot_config
-from command_utils.CContext import CContext, CoolBot
+from command_utils.CContext import CContext
 from utils import db_stuff, utils
 
 # omg this code is so ass
@@ -23,7 +22,6 @@ logger = logging.getLogger('discord')
 
 # Constants
 EXCLUDED_USER_IDS = ['1107579143140413580']
-GUILD_ID = config.bot_config.get_config_option('guild_id', 0)
 TIME_FILTERS = {
     'w': ('week', datetime.timedelta(days=7)),
     'd': ('day', datetime.timedelta(days=1)),
@@ -350,7 +348,7 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
         result = analyse_messages(ctx, flag)
         
         if isinstance(result, dict):
-            guild = ctx.bot.get_guild(GUILD_ID)
+            guild = ctx.bot.get_guild(ctx.bot.config.guild_id)
             
             # Get top users and channels
             active_users_lb = copy.deepcopy(result['active_users_lb'])
@@ -724,7 +722,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
     """
     guild: discord.Guild | None = None
     if not include_left:
-        guild = ctx.bot.get_guild(GUILD_ID)
+        guild = ctx.bot.get_guild(ctx.bot.config.guild_id)
         
     stats = get_voice_statistics(include_left, guild)
     

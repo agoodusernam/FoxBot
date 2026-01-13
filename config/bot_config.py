@@ -2,10 +2,8 @@
 Enhanced Bot Configuration System
 Provides type-safe, validated configuration with easy bot.config.* access
 """
-from __future__ import annotations
-
 import logging
-from typing import Any
+from typing import Any, Self
 from dataclasses import dataclass, field
 from pathlib import Path
 import json
@@ -134,7 +132,7 @@ class BotConfig(ConfigBase):
         }
     
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> BotConfig:
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         """Create BotConfig instance from dictionary"""
         config = cls()
         
@@ -313,6 +311,7 @@ def move_invalid_config(config_path: Path = Path("config.json")) -> None:
 def load_config(config_path: Path = Path("config.json")) -> BotConfig:
     """Load configuration from file or create default"""
     logger.debug("Loading config")
+    
     if not config_path.exists():
         logger.info("Config file not found, creating default config.json")
         config = BotConfig.from_dict(BotConfig.get_default_config())
@@ -322,8 +321,10 @@ def load_config(config_path: Path = Path("config.json")) -> BotConfig:
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             data = json.load(f)
+            
         logger.info("Configuration loaded successfully")
         return BotConfig.from_dict(data)
+    
     except Exception as e:
         logger.error(f"Error loading config: {e}")
         logger.error("Creating default configuration and moving old config to invalid_config.json")

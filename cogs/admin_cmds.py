@@ -494,7 +494,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             formatted_messages = formatted_messages[:1995] + '...'
             
         await ctx.send(f"Last {number_of_messages} sent by {member.display_name}:")
-        await ctx.send(formatted_messages)
+        await ctx.send(formatted_messages, suppress_embeds=True)
         if attachments:
             utils.utils.copy_attach_to_temp(attachments)
     
