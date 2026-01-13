@@ -25,7 +25,7 @@ def on_exit():
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
-discord.utils.setup_logging(handler=handler, level=logging.DEBUG)
+discord.utils.setup_logging(handler=handler, level=logging.DEBUG, root=False)
 
 logger = logging.getLogger('discord')
 
