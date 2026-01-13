@@ -294,6 +294,7 @@ class BotConfig(ConfigBase):
         """Record that a user has counted a number"""
         logger.debug(f"User {user_id}, in message {message_id} counted {number}")
         self.counting_successes[user_id] = self.counting_successes.get(user_id, 0) + 1
+        logger.debug(f"User {user_id} now has {self.counting_successes[user_id] counting successes")
         if number > self.highest_user_count.get(user_id, 0):
             self.highest_user_count[user_id] = number
             
