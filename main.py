@@ -1,7 +1,7 @@
 # pylint: disable=trailing-whitespace, line-too-long
 import atexit
 import datetime
-import logging
+import logging.handlers
 import os
 import random
 import re
@@ -25,6 +25,33 @@ def on_exit():
 
 bot = CoolBot(intents=discord.Intents.all())
 logger = logging.getLogger('discord')
+
+if not os.path.exists('logs'):
+    os.mkdir('logs')
+
+log_formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
+
+debug_handler = logging.handlers.RotatingFileHandler(
+    filename='logs/debug.log',
+    encoding='utf-8',
+    maxBytes=8 * 1024 * 1024,
+    backupCount=3
+)
+debug_handler.setFormatter(log_formatter)
+debug_handler.setLevel(logging.DEBUG)
+
+err_handler = logging.handlers.RotatingFileHandler(
+    filename='logs/err.log',
+    encoding='utf-8',
+    maxBytes=8 * 1024 * 1024,
+    backupCount=3
+)
+err_handler.setFormatter(log_formatter)
+err_handler.setLevel(logging.WARNING)
+
+logger.addHandler(debug_handler)
+logger.addHandler(err_handler)
+logger.setLevel(logging.DEBUG)
 
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
 url_pattern = re.compile(regex, re.IGNORECASE)

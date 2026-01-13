@@ -7,8 +7,10 @@ from typing import Any
 import logging
 
 import discord
+import psutil
 from discord.ext import commands
 
+import utils.utils
 from command_utils.checks import is_dev
 from custom_logging import voice_log
 from utils import db_stuff
@@ -182,6 +184,48 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         loop = asyncio.new_event_loop()
         ctx.bot.dev_func_thread = threading.Thread(target=run_func, args=(loop, func_name))
         ctx.bot.dev_func_thread.start()
+    
+    @commands.command(name='debug_status',
+                        brief='Get debug status',
+                        help='Dev only: Get debug info about the bot',
+                        usage='f!debug_status')
+    async def debug_status(self, ctx: CContext):
+        internet: str = 'Available' if utils.utils.internet() else 'Not Available'
+        ping: str = str(round(ctx.bot.latency * 1000, 1))
+        
+        process = psutil.Process(os.getpid())
+        py_cpu_usage: str = str(round(process.cpu_percent(interval=0.5), 2))
+        py_mem_usage: str = str(round(process.memory_info().rss / (1024 * 1024), 2)) + "MiB"
+        
+        tts_lock: str = 'Locked' if ctx.bot.tts_lock.locked() else 'Unlocked'
+        vc_client: str
+        assert isinstance(ctx.bot.vc_client, discord.VoiceClient) or ctx.bot.vc_client is None
+        if ctx.bot.vc_client is None:
+            vc_client = 'No VC client'
+        elif ctx.bot.vc_client.is_connected():
+            vc_client = f'Connected to {ctx.bot.vc_client.channel.name}'
+        else:
+            vc_client = 'Exists, not connected'
+        
+        discord_version = discord.__version__
+        
+        embed = discord.Embed(title='Debug Status', color=discord.Color.blue())
+        embed.add_field(name='Internet', value=internet, inline=True)
+        embed.add_field(name='Ping', value=ping, inline=True)
+        embed.add_field(name='Python CPU Usage', value=py_cpu_usage, inline=True)
+        embed.add_field(name='Python Memory Usage', value=py_mem_usage, inline=True)
+        embed.add_field(name='TTS Lock', value=tts_lock, inline=True)
+        embed.add_field(name='Voice Client', value=vc_client, inline=True)
+        embed.add_field(name='Discord.py Version', value=discord_version, inline=True)
+        
+        err_log_file = ctx.bot.log_path / 'err.log'
+        err_log = err_log_file.read_text()
+        if err_log.strip() != '':
+            last_5_errs = err_log.split('\n')[-5:]
+            embed.add_field(name='Last 5 Errors', value='\n'.join(last_5_errs), inline=False)
+        
+        await ctx.send(embed=embed)
+        
 
 async def setup(bot):
     await bot.add_cog(DevCommands(bot))

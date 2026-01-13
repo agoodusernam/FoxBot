@@ -3,6 +3,7 @@ import datetime
 import logging
 import threading
 import time
+from pathlib import Path
 from typing import Any, Optional
 
 from discord import Message
@@ -27,11 +28,15 @@ class CContext(commands.Context):
         
         except Exception as e:
             # We don't care if we can't delete the message
-            logger.info(f"Failed to delete message: {e}")
+            logger.error(f"Failed to delete message: {e}")
             return False
         return True
     
     async def safe_reply(self, content: Optional[str] = None, **kwargs: Any) -> Message | None:
+        """
+        Reply to a message safely, handling exceptions.
+        Returns the sent message if successful, None otherwise.
+        """
         try:
             return await super().reply(content, **kwargs)
         except discord.Forbidden as e:
@@ -62,6 +67,7 @@ class CoolBot(commands.Bot):
         self.vc_client: discord.VoiceClient | None = None
         self.tts_lock: asyncio.Lock = asyncio.Lock()
         self.start_time: float = time.time()
+        self.log_path: Path = Path('logs').absolute()
     
     def run(self, *args, **kwargs):
         super().run(*args, **kwargs)

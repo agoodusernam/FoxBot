@@ -275,7 +275,8 @@ class FunCommands(commands.Cog, name='Fun'):
         
         commit_time, commit_message, changes = commit
         
-        embed.add_field(name='Last Commit', value=f'[<t:{commit_time}>] {commit_message}', inline=False)
+        embed.add_field(name='Last Commit at', value=f'<t:{commit_time}>', inline=False)
+        embed.add_field(name='Commit Message', value=commit_message, inline=False)
         embed.add_field(name='Total lines changed', value=changes['total'], inline=False)
         await ctx.send(embed=embed)
         

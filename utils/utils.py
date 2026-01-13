@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import os
@@ -5,6 +6,7 @@ import re
 import decimal
 import shutil
 import signal
+import socket
 import urllib.request
 import string
 import warnings
@@ -466,6 +468,7 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         reaction = "☑️"
     
     bot.config.last_count_user = message.author.id
+    await asyncio.sleep(0.2)
     await message.add_reaction(reaction)
     return True
 
@@ -547,3 +550,12 @@ def loc_total() -> tuple[int, int]:
                 logger.error(f'Error reading {file_path}: {e}')
         
     return total_lines, total_files
+
+def internet(host="1.1.1.1", port=53, timeout=3):
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        return True
+    except socket.error as ex:
+        print(ex)
+        return False
