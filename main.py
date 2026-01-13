@@ -53,6 +53,8 @@ logger.addHandler(debug_handler)
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
 discord.utils.setup_logging(level=logging.DEBUG, root=False, handler=handler)
+logging.getLogger('discord.http').setLevel(logging.INFO)
+logging.getLogger('discord.gateway').setLevel(logging.INFO)
 bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True)
 
 regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
