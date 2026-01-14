@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Mapping, Literal
+from typing import Any, Literal
 
 import cachetools  # type: ignore[import-untyped]
 import discord
@@ -17,8 +17,8 @@ logger = logging.getLogger('discord')
 # Global client instance
 _mongo_client: AsyncMongoClient | None = None
 _DB_connect_enabled: bool = False
-message_download_cache: cachetools.TTLCache[None, list[Mapping[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
-voice_download_cache: cachetools.TTLCache[None, list[Mapping[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
+message_download_cache: cachetools.TTLCache[None, list[dict[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
+voice_download_cache: cachetools.TTLCache[None, list[dict[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 
 def disable_connection() -> None:
     global _DB_connect_enabled
@@ -76,7 +76,7 @@ async def disconnect():
             _mongo_client = None
 
 
-async def send_message(message: Mapping[str, Any]) -> bool:
+async def send_message(message: dict[str, Any]) -> bool:
     """
     Saves a single message to MongoDB.
     :param message: A dictionary representing the message to be saved.
@@ -87,7 +87,7 @@ async def send_message(message: Mapping[str, Any]) -> bool:
         return False
     
     db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db['messages']
+    collection: AsyncCollection[dict[str, Any]] = db['messages']
     
     try:
         await collection.insert_one(message)
@@ -108,8 +108,8 @@ async def bulk_send_messages(messages: list[dict[str, Any]]) -> None:
     if not client:
         return
     
-    db: AsyncDatabase[Mapping[str, Any]] = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db['messages']
+    db: AsyncDatabase[dict[str, Any]] = client['discord']
+    collection: AsyncCollection[dict[str, Any]] = db['messages']
     
     try:
         await collection.insert_many(messages)
@@ -157,7 +157,7 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
         return None
 
 
-async def cached_download_all() -> list[Mapping[Any, Any]] | None:
+async def cached_download_all() -> list[dict[Any, Any]] | None:
     global message_download_cache
     if message_download_cache.get(None) is not None:
         return message_download_cache[None]
@@ -165,7 +165,7 @@ async def cached_download_all() -> list[Mapping[Any, Any]] | None:
     message_download_cache[None] = stuff
     return stuff
     
-async def _download_all() -> list[Mapping[str, Any]] | None:
+async def _download_all() -> list[dict[str, Any]] | None:
     client = await _connect()
     if not client:
         return None
@@ -226,7 +226,7 @@ async def del_channel_from_db(channel: discord.TextChannel) -> None:
         logger.error(f'Error deleting messages from channel {channel.id}: {e}')
 
 
-async def send_voice_session(session_data: Mapping[str, Any]) -> None:
+async def send_voice_session(session_data: dict[str, Any]) -> None:
     """
     Saves a voice session to the MongoDB database.
     :param session_data: A dictionary containing the voice session data.
@@ -237,7 +237,7 @@ async def send_voice_session(session_data: Mapping[str, Any]) -> None:
         return
     
     db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db['voice_sessions']
+    collection: AsyncCollection[dict[str, Any]] = db['voice_sessions']
     
     try:
         await collection.insert_one(session_data)
@@ -246,7 +246,7 @@ async def send_voice_session(session_data: Mapping[str, Any]) -> None:
         logger.error(f'Error saving voice session: {e}')
 
 
-async def cached_download_voice_sessions() -> list[Mapping[Any, Any]] | None:
+async def cached_download_voice_sessions() -> list[dict[Any, Any]] | None:
     if voice_download_cache.get(None) is not None:
         return voice_download_cache[None]
     
@@ -255,13 +255,13 @@ async def cached_download_voice_sessions() -> list[Mapping[Any, Any]] | None:
     return stuff
 
 
-async def _download_voice_sessions() -> list[Mapping[str, str]] | None:
+async def _download_voice_sessions() -> list[dict[str, str]] | None:
     client = await _connect()
     if not client:
         return None
     
     db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db['voice_sessions']
+    collection: AsyncCollection[dict[str, Any]] = db['voice_sessions']
     
     try:
         sessions = collection.find({})
@@ -271,7 +271,7 @@ async def _download_voice_sessions() -> list[Mapping[str, str]] | None:
         return None
 
 
-async def send_to_db(collection_name: str, data: Mapping[str, Any]) -> None:
+async def send_to_db(collection_name: str, data: dict[str, Any]) -> None:
     """
     Generic function to send data to a specified MongoDB await collection.
     """
@@ -280,7 +280,7 @@ async def send_to_db(collection_name: str, data: Mapping[str, Any]) -> None:
         return
     
     db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
+    collection: AsyncCollection[dict[str, Any]] = db[collection_name]
     
     try:
         await collection.insert_one(data)
@@ -289,7 +289,7 @@ async def send_to_db(collection_name: str, data: Mapping[str, Any]) -> None:
         logger.error(f'Error sending data to {collection_name} collection: {e}')
 
 
-async def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_data: Mapping[str, Any]) -> bool:
+async def edit_db_entry(collection_name: str, query: dict[str, Any], update_data: dict[str, Any]) -> bool:
     """
     Generic function to edit an entry in a specified MongoDB await collection.
     """
@@ -298,7 +298,7 @@ async def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_d
         return False
     
     db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
+    collection: AsyncCollection[dict[str, Any]] = db[collection_name]
     
     try:
         result = await collection.update_one(query, {'$set': update_data})
@@ -312,7 +312,7 @@ async def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_d
         return False
 
 
-async def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> bool:
+async def del_db_entry(collection_name: str, query: dict[str, Any]) -> bool:
     """
     Generic function to delete an entry from a specified MongoDB await collection.
     """
@@ -321,7 +321,7 @@ async def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> bool:
         return False
     
     db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
+    collection: AsyncCollection[dict[str, Any]] = db[collection_name]
     
     try:
         result: DeleteResult = await collection.delete_one(query)
@@ -336,7 +336,7 @@ async def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> bool:
         return False
 
 
-async def del_many_db_entries(collection_name: str, query: Mapping[str, Any]) -> int | None:
+async def del_many_db_entries(collection_name: str, query: dict[str, Any]) -> int | None:
     """
     Generic function to delete multiple entries from a specified MongoDB await collection.
     """
@@ -345,7 +345,7 @@ async def del_many_db_entries(collection_name: str, query: Mapping[str, Any]) ->
         return None
     
     db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
+    collection: AsyncCollection[dict[str, Any]] = db[collection_name]
     
     try:
         result: DeleteResult = await collection.delete_many(query)
@@ -356,7 +356,7 @@ async def del_many_db_entries(collection_name: str, query: Mapping[str, Any]) ->
         return None
 
 
-async def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[str, Any]:
+async def get_from_db(collection_name: str, query: dict[str, Any]) -> None | dict[str, Any]:
     """
     Generic function to retrieve data from a specified MongoDB await collection.
     """
@@ -365,7 +365,7 @@ async def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | 
         return None
     
     db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
+    collection: AsyncCollection[dict[str, Any]] = db[collection_name]
     
     try:
         results = await collection.find_one(query)
@@ -377,7 +377,7 @@ async def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | 
         return None
 
 
-async def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by=None, direction: Literal["a", "d"] = "a", limit: int = 0) -> list[dict[str, Any]] | None:
+async def get_many_from_db(collection_name: str, query: dict[str, Any], sort_by=None, direction: Literal["a", "d"] = "a", limit: int = 0) -> list[dict[str, Any]] | None:
     """
     Generic function to retrieve multiple documents from a specified MongoDB await collection.
 
@@ -391,7 +391,7 @@ async def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_
         return None
     
     db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
+    collection: AsyncCollection[dict[str, Any]] = db[collection_name]
     if direction.lower() == 'a':
         mongo_direction = pymongo.ASCENDING
     else:

@@ -5,7 +5,7 @@ import datetime
 import logging
 import os
 import string
-from typing import Any
+from typing import Any, Mapping
 
 import discord
 from discord.ext.commands import Context
@@ -29,7 +29,7 @@ TIME_FILTERS = {
 }
 
 
-def check_required_keys(message: dict[str, Any]) -> bool:
+def check_required_keys(message: Mapping[str, Any]) -> bool:
     """
     Validate that a message contains all required keys.
 
@@ -48,7 +48,7 @@ def check_required_keys(message: dict[str, Any]) -> bool:
 
 
 async def remove_invalid_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    valid_messages = []
+    valid_messages: list[dict[str, Any]] = []
     for message in messages:
         if check_required_keys(message):
             valid_messages.append(message)
@@ -87,7 +87,7 @@ async def get_valid_messages(flag: str | None = None, ctx: CContext | None = Non
     all_messages = [msg for msg in messages if msg['author_id'] not in EXCLUDED_USER_IDS]
     
     # Validate messages and remove invalid ones
-    valid_messages = await remove_invalid_messages(all_messages)
+    valid_messages: list[dict[str, Any]] = await remove_invalid_messages(all_messages)
     
     # Apply time filter if specified
     if flag in TIME_FILTERS:
