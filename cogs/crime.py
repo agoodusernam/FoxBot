@@ -17,8 +17,8 @@ async def rob_success(ctx: CContext, profile: Profile, target: discord.Member, t
         await ctx.send(f'You successfully robbed {target.display_name} and stole some money!')
         target_profile['wallet'] -= amount
         profile['wallet'] += amount
-        curr_utils.set_profile(target, target_profile)
-        curr_utils.set_profile(ctx.author, profile)
+        await curr_utils.set_profile(target, target_profile)
+        await curr_utils.set_profile(ctx.author, profile)
         await ctx.send(f'You stole {amount} {curr_config.currency_name} from {target.display_name}!')
         return
     else:
@@ -34,8 +34,8 @@ async def rob_success_og(ctx: CContext, profile: Profile, target: discord.Member
     if amount > 0:
         target_profile['wallet'] -= amount
         profile['wallet'] += amount
-        curr_utils.set_wallet(target, target_profile['wallet'])
-        curr_utils.set_wallet(ctx.author, profile['wallet'])
+        await curr_utils.set_wallet(target, target_profile['wallet'])
+        await curr_utils.set_wallet(ctx.author, profile['wallet'])
         await ctx.send(f'You stole {amount} {curr_config.currency_name} from {target.display_name}!')
         return
     else:
@@ -51,28 +51,28 @@ async def got_shot(ctx: CContext, profile: Profile, target: discord.Member):
     added_to_debt = False
     if profile['wallet'] >= amount:
         profile['wallet'] -= amount
-        curr_utils.set_wallet(ctx.author, profile['wallet'])
+        await curr_utils.set_wallet(ctx.author, profile['wallet'])
     elif profile['bank'] >= amount:
         profile['bank'] -= amount
-        curr_utils.set_bank(ctx.author, profile['bank'])
+        await curr_utils.set_bank(ctx.author, profile['bank'])
     elif profile['wallet'] + profile['bank'] >= amount:
         # If the user has enough in total, deduct from wallet first, then bank
         remaining_amount = amount - profile['wallet']
         profile['wallet'] = 0
-        curr_utils.set_wallet(ctx.author, profile['wallet'])
+        await curr_utils.set_wallet(ctx.author, profile['wallet'])
         
         if remaining_amount > 0:
             profile['bank'] -= remaining_amount
-            curr_utils.set_bank(ctx.author, profile['bank'])
+            await curr_utils.set_bank(ctx.author, profile['bank'])
     elif profile['wallet'] + profile['bank'] < amount:
         # If the user has less than the amount in total, deduct everything and add the rest to debt
         payable = profile['wallet'] + profile['bank']
         profile['wallet'] = 0
         profile['bank'] = 0
-        curr_utils.set_wallet(ctx.author, profile['wallet'])
-        curr_utils.set_bank(ctx.author, profile['bank'])
+        await curr_utils.set_wallet(ctx.author, profile['wallet'])
+        await curr_utils.set_bank(ctx.author, profile['bank'])
         profile['debt'] += (amount - payable)
-        curr_utils.set_debt(ctx.author, profile['debt'])
+        await curr_utils.set_debt(ctx.author, profile['debt'])
         added_to_debt = True
     
     await ctx.send(f'You had to pay {amount} {curr_config.currency_name} in medical bills.')
@@ -111,10 +111,10 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
             return None
         
         # target is valid
-        profile = curr_utils.get_profile(ctx.author)
-        target_profile = curr_utils.get_profile(target)
+        profile = await curr_utils.get_profile(ctx.author)
+        target_profile = await curr_utils.get_profile(target)
         
-        if not curr_utils.user_has_gun(profile) and not curr_utils.user_has_gun(target_profile):
+        if not await curr_utils.user_has_gun(profile) and not await curr_utils.user_has_gun(target_profile):
             # Neither user has a gun
             winner = random.choice(['user', 'target'])
             if winner == 'user':
@@ -125,7 +125,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
                 await ctx.send(f'You were caught trying to rob {target.display_name} and they ran away!')
                 return None
             
-        elif not curr_utils.user_has_gun(profile) and curr_utils.user_has_gun(target_profile):
+        elif not await curr_utils.user_has_gun(profile) and await curr_utils.user_has_gun(target_profile):
             # User has no gun, target has a gun
             # 99% chance of failure
             if random.random() < 0.99:
@@ -136,7 +136,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
                 await rob_success_og(ctx, profile, target, target_profile)
                 return None
         
-        elif curr_utils.user_has_gun(profile) and not curr_utils.user_has_gun(target_profile):
+        elif await curr_utils.user_has_gun(profile) and not await curr_utils.user_has_gun(target_profile):
             # User has a gun, target has no gun
             # 75% chance of success
             if random.random() < 0.75:

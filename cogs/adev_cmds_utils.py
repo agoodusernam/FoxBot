@@ -32,8 +32,8 @@ def run_func(loop: asyncio.AbstractEventLoop, func_name: str, ctx: CContext) -> 
 
 async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
     logger.info('Shutting down')
-    voice_events_utils.leave_all(bot)
-    db_stuff.disconnect()
+    await voice_events_utils.leave_all(bot)
+    await db_stuff.disconnect()
     await bot.close()
     
     if update:
@@ -47,7 +47,7 @@ async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
 
 async def upload_all_history(channel: discord.TextChannel) -> None:
     logger.info(f'Deleting old messages from channel: {channel.name}, ID: {channel.id}')
-    db_stuff.del_channel_from_db(channel)
+    await db_stuff.del_channel_from_db(channel)
     logger.info(f'Starting to download all messages from channel: {channel.name}, ID: {channel.id}')
     messages = [message async for message in channel.history(limit=None)]
     logger.info(f'Downloaded {len(messages)} messages from channel: {channel.name}, ID: {channel.id}')
@@ -81,7 +81,7 @@ async def upload_all_history(channel: discord.TextChannel) -> None:
         }
         bulk_data.append(json_data)
     
-    db_stuff.bulk_send_messages(bulk_data)
+    await db_stuff.bulk_send_messages(bulk_data)
     del bulk_data
     gc.collect()
 

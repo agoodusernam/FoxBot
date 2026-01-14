@@ -120,6 +120,8 @@ async def load_extensions() -> None:
             
             except discord.ext.commands.ExtensionFailed as e:
                 logger.error(f'Extension {filename[:-3]} encountered an error:\n{e}')
+        else:
+            logger.debug(f'Skipping {filename}')
 
 
 @bot.check
@@ -128,6 +130,7 @@ async def not_blacklisted(ctx: CContext):
     Check if the user is blacklisted from using commands.
     """
     if bot.blacklist.is_blacklisted(ctx.author.id):
+        logger.debug(f'{ctx.author} is blacklisted.')
         return False
     return True
 

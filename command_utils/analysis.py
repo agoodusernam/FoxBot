@@ -5,7 +5,7 @@ import datetime
 import logging
 import os
 import string
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 import discord
 from discord.ext.commands import Context
@@ -47,17 +47,18 @@ def check_required_keys(message: dict[str, Any]) -> bool:
     return all(key in message for key in required_keys)
 
 
-def remove_invalid_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+async def remove_invalid_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     valid_messages = []
     for message in messages:
         if check_required_keys(message):
             valid_messages.append(message)
         else:
-            db_stuff.delete_message(message['_id'])
+            logger.warning(f'Removing invalid message with ID {message.get("_id", "unknown")}')
+            await db_stuff.delete_message(message['_id'])
     
     return valid_messages
 
-def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> tuple[list[dict[str, str | float]], int]:
+async def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> tuple[list[dict[str, str | float]], int]:
     """
     Download and validate messages from the database.
 
@@ -71,7 +72,7 @@ def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> 
     """
     try:
         # Download all messages from database
-        messages = db_stuff.cached_download_all()
+        messages = await db_stuff.cached_download_all()
         if messages is None:
             return [], 0
         total_messages = len(messages)
@@ -87,7 +88,7 @@ def get_valid_messages(flag: str | None = None, ctx: CContext | None = None) -> 
         all_messages = [msg for msg in messages if msg['author_id'] not in EXCLUDED_USER_IDS]
         
         # Validate messages and remove invalid ones
-        valid_messages = remove_invalid_messages(all_messages)
+        valid_messages = await remove_invalid_messages(all_messages)
 
         
         # Apply time filter if specified
@@ -170,7 +171,7 @@ def get_channel_stats(messages: list[dict[str, str | float]]) -> list[dict[str, 
     ]
 
 
-def analyse_messages(ctx: CContext, time_filter: str | None = None) -> dict[str, int | str | float | list[dict[str,
+async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> dict[str, int | str | float | list[dict[str,
                                                                      str | int]]] | str:
     """
     analyse all messages in the database.
@@ -184,7 +185,7 @@ def analyse_messages(ctx: CContext, time_filter: str | None = None) -> dict[str,
         Dictionary containing analysis results or error message
     """
     try:
-        valid_messages, total_messages = get_valid_messages(time_filter, ctx=ctx)
+        valid_messages, total_messages = await get_valid_messages(time_filter, ctx=ctx)
         if not valid_messages:
             return 'No valid messages found to analyse.'
         
@@ -222,7 +223,7 @@ def analyse_messages(ctx: CContext, time_filter: str | None = None) -> dict[str,
         return f'Error during analysis: {str(e)}'
 
 
-def analyse_user_messages(member: discord.User, time_filter: str | None = None) -> dict[str, int | str | float | list[
+async def analyse_user_messages(member: discord.User, time_filter: str | None = None) -> dict[str, int | str | float | list[
                                                                             dict[str, str | int]]] | str | None:
     """
     analyse messages from a specific user.
@@ -236,7 +237,7 @@ def analyse_user_messages(member: discord.User, time_filter: str | None = None) 
         Dictionary containing analysis results, error message, or None
     """
     try:
-        valid_messages, _ = get_valid_messages(time_filter)
+        valid_messages, _ = await get_valid_messages(time_filter)
         if not valid_messages:
             return None
         
@@ -345,7 +346,7 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
     
     # analyse all messages
     try:
-        result = analyse_messages(ctx, flag)
+        result = await analyse_messages(ctx, flag)
         
         if isinstance(result, dict):
             guild = ctx.bot.get_guild(ctx.bot.config.guild_id)
@@ -366,7 +367,7 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
             
             # Replace user IDs with display names
             for user in top_5_users:
-                user: dict = user  # type hinting
+                user: dict
                 user_id = int(user['user'].strip())
                 
                 # Try to get member from guild first
@@ -508,7 +509,7 @@ async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
         member: Discord user to analyse
         time_filter: Optional time filter
     """
-    result = analyse_user_messages(member, time_filter)
+    result = await analyse_user_messages(member, time_filter)
     
     if isinstance(result, dict):
         # Sort channels by message count
@@ -570,7 +571,7 @@ def format_duration(seconds: int) -> str:
     return f"{int(seconds)}s"
 
 
-def get_voice_statistics(include_left: bool = False, guild: discord.Guild = None) -> dict[str, list[dict[str, str | int]]] | None:
+async def get_voice_statistics(include_left: bool = False, guild: discord.Guild = None) -> dict[str, list[dict[str, str | int]]] | None:
     """
     Retrieve voice statistics from MongoDB and calculate user and channel totals.
     
@@ -582,7 +583,7 @@ def get_voice_statistics(include_left: bool = False, guild: discord.Guild = None
         Dictionary containing voice statistics or None if no data
     """
     try:
-        sessions = db_stuff.cached_download_voice_sessions()
+        sessions = await db_stuff.cached_download_voice_sessions()
         
         if not sessions:
             return None
@@ -648,7 +649,7 @@ def get_voice_statistics(include_left: bool = False, guild: discord.Guild = None
         return None
 
 
-def get_user_voice_statistics(user_id: str) -> dict[str, str | None | int | list[dict[str, Any]]] | None:
+async def get_user_voice_statistics(user_id: str) -> dict[str, str | None | int | list[dict[str, Any]]] | None:
     """
     Retrieve voice statistics for a specific user.
 
@@ -659,7 +660,7 @@ def get_user_voice_statistics(user_id: str) -> dict[str, str | None | int | list
         Dictionary containing user voice statistics or None if no data
     """
     try:
-        sessions = db_stuff.cached_download_voice_sessions()
+        sessions = await db_stuff.cached_download_voice_sessions()
         
         if not sessions:
             return None
@@ -724,7 +725,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
     if not include_left:
         guild = ctx.bot.get_guild(ctx.bot.config.guild_id)
         
-    stats = get_voice_statistics(include_left, guild)
+    stats = await get_voice_statistics(include_left, guild)
     
     if not stats:
         await ctx.send("No voice activity data available.")
@@ -763,7 +764,7 @@ async def add_voice_analysis_for_user(ctx: CContext, member: discord.User) -> No
         ctx: The Discord command context
         member: Discord user to analyse
     """
-    stats = get_user_voice_statistics(str(member.id))
+    stats = await get_user_voice_statistics(str(member.id))
     
     if not stats:
         await ctx.send(f"No voice activity data available for {member.display_name}.")
@@ -776,8 +777,6 @@ async def add_voice_analysis_for_user(ctx: CContext, member: discord.User) -> No
     
     result += f"**Top {len(stats['channels'])} Most Used Voice Channels**\n"
     for i, channel in enumerate(stats['channels'], 1):
-        if TYPE_CHECKING:
-            channel: dict
         formatted_time = format_duration(channel['total_seconds'])
         try:
             channelobj = await ctx.bot.fetch_channel(channel['id'])

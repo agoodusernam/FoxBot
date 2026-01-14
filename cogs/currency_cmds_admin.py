@@ -5,7 +5,6 @@ from command_utils.CContext import CContext
 from command_utils.checks import is_dev
 from currency import curr_utils
 from currency.curr_config import currency_name
-from currency.curr_utils import get_shop_item
 
 
 class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
@@ -27,7 +26,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
             await ctx.send("You cannot set a negative balance!")
             return
         
-        curr_utils.set_wallet(user, amount)
+        await curr_utils.set_wallet(user, amount)
         await ctx.send(f"Set {user.display_name}'s wallet balance to {amount} {currency_name}!")
     
     @commands.command(name="set_bank",
@@ -44,7 +43,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
             await ctx.send("You cannot set a negative bank balance!")
             return
         
-        curr_utils.set_bank(user, amount)
+        await curr_utils.set_bank(user, amount)
         await ctx.send(f"Set {user.display_name}'s bank balance to {amount} {currency_name}!")
     
     @commands.command(name="set_debt",
@@ -61,7 +60,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
             await ctx.send("You cannot set a negative debt!")
             return
         
-        curr_utils.set_debt(user, amount)
+        await curr_utils.set_debt(user, amount)
         await ctx.send(f"Set {user.display_name}'s debt to {amount} {currency_name}!")
     
     @commands.command(name="set_income",
@@ -78,7 +77,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
             await ctx.send("You cannot set a negative income!")
             return
         
-        curr_utils.set_income(user, amount)
+        await curr_utils.set_income(user, amount)
         await ctx.send(f"Set {user.display_name}'s income to {amount} {currency_name} per work session!")
     
     @commands.command(name="set_stock",
@@ -87,7 +86,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
                       usage="f!set_stock <item_name> <amount>")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def set_stock_cmd(self, ctx: CContext, item_name: str, amount: int):
-        item = get_shop_item(item_name)
+        item = await curr_utils.get_shop_item(item_name)
         if item is None:
             await ctx.send(f"Item '{item_name}' not found in the shop!")
             return
@@ -96,7 +95,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
             await ctx.send("You cannot set a negative stock!")
             return
         
-        curr_utils.set_stock(item, amount)
+        await curr_utils.set_stock(item, amount)
         await ctx.send(f"Set stock for {item.name} to {amount} units!")
     
     @commands.command(name="reset_profile",
@@ -109,8 +108,8 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
             await ctx.send("Invalid user ID or mention!")
             return
         
-        curr_utils.delete_profile(user)
-        curr_utils.create_new_profile(user)
+        await curr_utils.delete_profile(user)
+        await curr_utils.create_new_profile(user)
         await ctx.send(f"Reset {user.display_name}'s currency profile to default values!")
         
     @commands.command(name="reset_job",
@@ -123,7 +122,7 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
             await ctx.send("Invalid user ID or mention!")
             return
         
-        curr_utils.reset_job(user)
+        await curr_utils.reset_job(user)
         await ctx.send(f"Reset {user.display_name}'s job profile to default values!")
 
 

@@ -298,7 +298,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             'issuer_id': ctx.author.id,
         }
         
-        db_stuff.send_to_db("warns", data)
+        await db_stuff.send_to_db("warns", data)
         await ctx.send(f'{member.display_name} has been warned for: {reason}', delete_after=ctx.bot.del_after)
     
     @commands.command(name='warns',
@@ -313,7 +313,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send('User not found.', delete_after=ctx.bot.del_after)
             return
         
-        warns = db_stuff.get_many_from_db("warns", {"user_id": member.id})
+        warns = await db_stuff.get_many_from_db("warns", {"user_id": member.id})
         if not warns:
             await ctx.send(f'{member.display_name} has no warns.', delete_after=ctx.bot.del_after)
             return
@@ -376,7 +376,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                            delete_after=ctx.bot.del_after)
             return
         
-        messages = analysis.remove_invalid_messages(db_stuff.cached_download_all())
+        messages = await analysis.remove_invalid_messages(await db_stuff.cached_download_all())
         messages = [msg for msg in messages if msg['author_id'] == str(member.id)]
         messages = sort_by_timestamp(messages)[:number_of_messages]
         if not messages:
@@ -474,15 +474,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         ctx.bot.landmine_channels = {}
         
         await ctx.send('All landmines have been cleared.')
-        
-    @commands.command(name='random_lm', aliases=['rlm'],
-                      brief='Randomly set landmines',
-                      help='Admin only: Randomly set landmines in all channels',
-                      usage='f!random_lm')
-    @commands.check(is_admin)
-    async def random_landmines(self, ctx: CContext) -> None:
-        await set_some_landmines(ctx.bot)
-        await self.landmines(ctx)
     
     @commands.command(name='reset_counting_fails',
                       brief='Reset the number of failed counting attempts',

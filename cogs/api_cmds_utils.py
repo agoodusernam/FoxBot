@@ -1,18 +1,20 @@
 import os
 import random
+from typing import Final
 
 import cachetools.func
 import discord.ext.commands
 import requests
 from discord.ext.commands import Context
 
+TIMEOUT: Final[float] = 5
 
 @cachetools.func.ttl_cache(maxsize=2, ttl=3600)  # Cache for 1 hour
 def get_nasa_apod() -> dict[str, str]:
     api_key = os.getenv('NASA_API_KEY')
     
     url = f'https://api.nasa.gov/planetary/apod?api_key={api_key}'
-    response = requests.get(url, timeout=5)
+    response = requests.get(url, timeout=TIMEOUT)
     
     if response.status_code != 200:
         raise discord.ext.commands.CommandError(f'Failed to fetch data from NASA API: {response.status_code}')
@@ -22,7 +24,7 @@ def get_nasa_apod() -> dict[str, str]:
 
 async def get_dog_pic(ctx: Context) -> None:
     url = 'https://dog.ceo/api/breeds/image/random'
-    response = requests.get(url, timeout=5)
+    response = requests.get(url, timeout=TIMEOUT)
     
     if response.status_code != 200:
         raise discord.ext.commands.CommandError(f'Failed to fetch dog picture: {response.status_code}')
@@ -37,7 +39,7 @@ async def get_dog_pic(ctx: Context) -> None:
 async def get_fox_pic(ctx: Context) -> None:
     urls = ['https://randomfox.ca/floof/', 'https://api.sefinek.net/api/v2/random/animal/fox']
     url = random.choice(urls)
-    response = requests.get(url, timeout=5)
+    response = requests.get(url, timeout=TIMEOUT)
     
     if response.status_code != 200:
         raise discord.ext.commands.CommandError(f'Failed to fetch fox picture: {response.status_code}')
@@ -58,7 +60,7 @@ async def get_cat_pic(ctx: Context) -> None:
     url = 'https://api.thecatapi.com/v1/images/search'
     
     header = {'x-api-key': os.getenv('CAT_API_KEY'), 'Content-Type': 'application/json'}
-    response = requests.get(url, headers=header, timeout=5)
+    response = requests.get(url, headers=header, timeout=TIMEOUT)
     
     if response.status_code != 200:
         raise discord.ext.commands.CommandError(f'Failed to fetch cat picture: {response.status_code}')
@@ -72,7 +74,7 @@ async def get_cat_pic(ctx: Context) -> None:
 
 async def get_insult(ctx: Context) -> None:
     url = 'https://evilinsult.com/generate_insult.php?lang=en&type=json'
-    response = requests.get(url, timeout=5)
+    response = requests.get(url, timeout=TIMEOUT)
     
     if response.status_code != 200:
         raise discord.ext.commands.CommandError(f'Failed to fetch insult: {response.status_code}')
@@ -86,7 +88,7 @@ async def get_insult(ctx: Context) -> None:
 
 async def get_advice(ctx: Context) -> None:
     url = 'https://api.adviceslip.com/advice'
-    response = requests.get(url, timeout=5)
+    response = requests.get(url, timeout=TIMEOUT)
     
     if response.status_code != 200:
         raise discord.ext.commands.CommandError(f'Failed to fetch advice: {response.status_code}')
@@ -100,7 +102,7 @@ async def get_advice(ctx: Context) -> None:
 
 async def get_joke(ctx: Context) -> None:
     url = 'https://v2.jokeapi.dev/joke/Any?blacklistFlags=racist,sexist'
-    response = requests.get(url, timeout=5)
+    response = requests.get(url, timeout=TIMEOUT)
     
     if response.status_code != 200:
         raise discord.ext.commands.CommandError(f'Failed to fetch joke: {response.status_code}')
@@ -124,7 +126,7 @@ async def get_joke(ctx: Context) -> None:
 
 async def get_wyr(ctx: Context) -> None:
     url = 'https://api.truthordarebot.xyz/api/wyr'
-    response = requests.get(url, timeout=5)
+    response = requests.get(url, timeout=TIMEOUT)
     
     if response.status_code != 200:
         raise discord.ext.commands.CommandError(f'Failed to fetch Would You Rather question: {response.status_code}')
@@ -150,7 +152,7 @@ def get_karma_pic() -> tuple[str, str] | None:
 
 async def get_no(ctx: Context) -> None:
     url = "https://naas.isalman.dev/no"
-    response = requests.get(url, timeout=5)
+    response = requests.get(url, timeout=TIMEOUT)
     
     if response.status_code != 200:
         raise discord.ext.commands.CommandError(f'Failed to fetch no: {response.status_code}')

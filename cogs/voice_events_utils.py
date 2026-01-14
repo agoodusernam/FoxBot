@@ -41,7 +41,7 @@ def handle_join(member: discord.Member, after: discord.VoiceState | discord.Voic
         }
 
 
-def handle_leave(member: discord.Member) -> None:
+async def handle_leave(member: discord.Member) -> None:
     """Track when a user leaves a voice channel and upload session data"""
     logger.info(f'{member.name} left {active_voice_sessions[member.id]["channel_name"]}')
     
@@ -69,13 +69,13 @@ def handle_leave(member: discord.Member) -> None:
         'duration_seconds': duration_seconds
     }
     
-    db_stuff.send_voice_session(voice_session)
+    await db_stuff.send_voice_session(voice_session)
     
     # Clear session data
     del active_voice_sessions[member.id]
 
 
-def handle_move(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState) -> None:
+async def handle_move(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState) -> None:
     """Handle a user moving from one channel to another"""
     if before.channel is None or after.channel is None:
         logger.error(f'{member.name} moved but one of the channels is None')
@@ -83,18 +83,18 @@ def handle_move(member: discord.Member, before: discord.VoiceState, after: disco
     logger.info(f'{member.name} moved from {before.channel.name} to {after.channel.name}')
     
     # First record the "leave" from the previous channel
-    handle_leave(member)
+    await handle_leave(member)
     
     # Then record the "join" to the new channel
     handle_join(member, after)
 
 
-def leave_all(bot: CoolBot) -> None:
+async def leave_all(bot: CoolBot) -> None:
     """Force leave all active voice sessions"""
     for member_id in list(active_voice_sessions.keys()):
         member = discord.utils.get(bot.get_all_members(), id=member_id)
         if member:
-            handle_leave(member)
+            await handle_leave(member)
         else:
             logger.warning(f"Member with ID {member_id} not found, clearing session data")
             del active_voice_sessions[member_id]

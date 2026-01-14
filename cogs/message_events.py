@@ -148,7 +148,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         if payload.cached_message is not None:
             author_id = payload.cached_message.author.id
         else:
-            msg = db_stuff.get_from_db('messages', {'id': payload.message_id})
+            msg = await db_stuff.get_from_db('messages', {'id': payload.message_id})
             if msg is not None:
                 author_id = int(msg['author_id'])
             else:

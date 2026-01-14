@@ -111,4 +111,4 @@ async def log_msg(message: discord.Message) -> bool:
             for attachment in message.attachments:
                 await db_stuff.send_attachment(message, attachment)
     
-    return db_stuff.send_message(json_data)
+    return await db_stuff.send_message(json_data)

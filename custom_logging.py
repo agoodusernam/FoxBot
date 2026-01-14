@@ -43,7 +43,7 @@ def setup_colour_logging(path: Path | str):
     handler = logging.StreamHandler()
     
     handler.setLevel(logging.INFO)
-    handler.setFormatter(discord.utils._ColourFormatter())
+    discord.utils.setup_logging(handler=handler, root=False, level=logging.DEBUG)
     logger.addHandler(handler)
     
     logging.getLogger('discord.http').setLevel(logging.INFO)

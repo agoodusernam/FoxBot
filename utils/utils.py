@@ -14,8 +14,6 @@ import discord.ext.commands
 import discord.ext.tasks
 from discord import HTTPException
 
-from utils import db_stuff  # type: ignore # IDE hates this, and so do I, but it seems to work
-
 logger = logging.getLogger('discord')
 
 

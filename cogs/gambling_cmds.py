@@ -22,16 +22,16 @@ class GamblingCmds(commands.Cog, name='Gambling', command_attrs=dict(add_check=i
         if bet_amount < gambling_config.slots_min_bet:
             await ctx.send(f'The minimum bet is {gambling_config.slots_min_bet} {curr_config.currency_name}!')
             return
-        profile = curr_utils.get_profile(ctx.author)
+        profile = await curr_utils.get_profile(ctx.author)
         if profile['wallet'] < bet_amount:
             await ctx.send('You do not have enough money in your wallet!')
             return
-        curr_utils.set_wallet(ctx.author, profile['wallet'] - bet_amount)
+        await curr_utils.set_wallet(ctx.author, profile['wallet'] - bet_amount)
         
         payout = gambling_utils.slots_select_payout(gambling_config.slots_payouts, gambling_config.slots_probabilities)
         payout *= bet_amount
         if payout > 0:
-            curr_utils.set_wallet(ctx.author, profile['wallet'] + payout)
+            await curr_utils.set_wallet(ctx.author, profile['wallet'] + payout)
             await ctx.send(f'You won {payout} {curr_config.currency_name}! 🎉')
         
         else:
@@ -48,12 +48,12 @@ class GamblingCmds(commands.Cog, name='Gambling', command_attrs=dict(add_check=i
             await ctx.send('You must buy at least one ticket!')
             return None
         cost = tickets * gambling_config.lottery_ticket_price
-        profile = curr_utils.get_profile(ctx.author)
+        profile = await curr_utils.get_profile(ctx.author)
         if profile['wallet'] < cost:
             await ctx.send('You do not have enough money in your wallet!')
             return None
-        curr_utils.set_wallet(ctx.author, profile['wallet'] - cost)
-        curr_utils.set_lottery_tickets(ctx.author, tickets + curr_utils.get_lottery_tickets(ctx.author))
+        await curr_utils.set_wallet(ctx.author, profile['wallet'] - cost)
+        await curr_utils.set_lottery_tickets(ctx.author, tickets + await curr_utils.get_lottery_tickets(ctx.author))
         await ctx.send(f'You bought {tickets} lottery ticket(s) for {cost} {curr_config.currency_name}.')
         await ctx.send('Winners are drawn every monday! Good luck!')
         return None

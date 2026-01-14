@@ -39,7 +39,7 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
         
         # Member left channel
         elif before.channel is not None and after.channel is None:
-            handle_leave(member)
+            await handle_leave(member)
             if logging_channel:
                 embed = discord.Embed(title=f'{member.display_name} left #{before.channel.name}',
                         color=discord.Color.red())
@@ -66,7 +66,7 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
         elif before.channel != after.channel:
             if before.channel is None or after.channel is None:
                 return
-            handle_move(member, before, after)
+            await handle_move(member, before, after)
             embed = discord.Embed(title=f'{member.display_name} moved from #{before.channel.name} to'
                                         f' #{after.channel.name}', color=discord.Color.blue())
             embed.set_author(name=member.name, icon_url=url)
