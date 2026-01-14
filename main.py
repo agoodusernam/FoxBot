@@ -131,6 +131,9 @@ async def not_blacklisted(ctx: CContext):
         return False
     return True
 
+@bot.event
+async def on_message(message: discord.Message):
+    pass
 
 # Run the bot
 token = os.getenv('TOKEN')
