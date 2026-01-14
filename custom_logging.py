@@ -8,9 +8,13 @@ import discord
 def setup_colour_logging(path: Path | str):
     if isinstance(path, str):
         path = Path(path)
-    logs_path = path.resolve().absolute()
+        
+    logs_path = path.resolve()
+    
     ensure_logs_path(logs_path)
+    
     logger = logging.getLogger('discord')
+    logger.setLevel(logging.DEBUG)
     dt_fmt = '%Y-%m-%d %H:%M:%S'
     basic_formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
     
@@ -36,8 +40,11 @@ def setup_colour_logging(path: Path | str):
     logger.addHandler(debug_handler)
     
     handler = logging.StreamHandler()
+    
     handler.setLevel(logging.INFO)
-    discord.utils.setup_logging(level=logging.DEBUG, root=False, handler=handler)
+    handler.setFormatter(discord.utils._ColourFormatter())
+    logger.addHandler(handler)
+    
     logging.getLogger('discord.http').setLevel(logging.INFO)
     logging.getLogger('discord.gateway').setLevel(logging.INFO)
     logging.getLogger('discord.client').setLevel(logging.INFO)

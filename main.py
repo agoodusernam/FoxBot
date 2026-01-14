@@ -139,5 +139,6 @@ async def on_message(message: discord.Message):
 token = os.getenv('TOKEN')
 if not isinstance(token, str):
     raise TypeError('TOKEN environment variable not set.')
+
 bot.help_command = help_cmd.CustomHelpCommand()
 bot.run(token=token, reconnect=True, log_handler=None)
