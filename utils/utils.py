@@ -62,10 +62,21 @@ def count_only_allowed_chars(s: str) -> bool:
     """
     allowed: str = "0123456789*/-+.()%^&<>|~"
     base_definitions: str = "xob"
+    hex_allowed: str = "0123456789abcdef"
+    in_hex_str: bool = False
+    
     s = s.replace(",", ".")
     s = s.replace("_", "")
+    
     for i, char in enumerate(s):
         if char not in allowed:
+            
+            if in_hex_str and char in hex_allowed:
+                continue
+                
+            if in_hex_str and char not in hex_allowed:
+                in_hex_str = False
+                
             if char not in base_definitions:
                 return False
             
@@ -74,6 +85,10 @@ def count_only_allowed_chars(s: str) -> bool:
             
             if i == 0:
                 return False
+            
+            if char == "x":
+                in_hex_str = True
+                continue
             
     return True
 
