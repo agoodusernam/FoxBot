@@ -70,52 +70,44 @@ async def get_valid_messages(flag: str | None = None, ctx: CContext | None = Non
     Returns:
         Tuple containing a list of valid messages and the total message count
     """
-    try:
-        # Download all messages from database
-        messages = await db_stuff.cached_download_all()
-        if messages is None:
-            return [], 0
-        total_messages = len(messages)
-        guild = None
-        if ctx is not None:
-            guild = ctx.bot.get_guild(1081760248433492140)
-        
-        if not messages:
-            logger.warning('No messages found or failed to connect to the database.')
-            return [], 0
-        
-        # Filter out excluded users
-        all_messages = [msg for msg in messages if msg['author_id'] not in EXCLUDED_USER_IDS]
-        
-        # Validate messages and remove invalid ones
-        valid_messages = await remove_invalid_messages(all_messages)
-
-        
-        # Apply time filter if specified
-        if flag in TIME_FILTERS:
-            filter_name, time_delta = TIME_FILTERS[flag]
-            time_ago = discord.utils.utcnow() - time_delta
-            
-            # I can't decide if I hate that you can do this purely with list comprehensions or not
-            valid_messages = [
-                msg for msg in valid_messages
-                if datetime.datetime.fromtimestamp(msg['timestamp'], datetime.UTC) >= time_ago
-            ]
-            logger.info(f'Applied {filter_name} filter: {len(valid_messages)} messages')
-        
-        if flag != "il" and guild is not None:
-            # don't include messages from users no longer in the guild
-            valid_messages = [msg for msg in valid_messages if guild.get_member(int(msg['author_id']))]
-        
-        logger.info('Total valid messages: %s', len(valid_messages))
-        logger.info('Total messages in database: %s', total_messages)
-        return valid_messages, total_messages
-    
-    except Exception as e:
-        logger.error("Analysis Error retrieving messages: %s", e)
-        logger.error(f"{e.__context__}")
-        logger.error(f"{e.__cause__}")
+    # Download all messages from database
+    messages = await db_stuff.cached_download_all()
+    if messages is None:
         return [], 0
+    total_messages = len(messages)
+    guild = None
+    if ctx is not None:
+        guild = ctx.bot.get_guild(1081760248433492140)
+    
+    if not messages:
+        logger.warning('No messages found or failed to connect to the database.')
+        return [], 0
+    
+    # Filter out excluded users
+    all_messages = [msg for msg in messages if msg['author_id'] not in EXCLUDED_USER_IDS]
+    
+    # Validate messages and remove invalid ones
+    valid_messages = await remove_invalid_messages(all_messages)
+    
+    # Apply time filter if specified
+    if flag in TIME_FILTERS:
+        filter_name, time_delta = TIME_FILTERS[flag]
+        time_ago = discord.utils.utcnow() - time_delta
+        
+        # I can't decide if I hate that you can do this purely with list comprehensions or not
+        valid_messages = [
+            msg for msg in valid_messages
+            if datetime.datetime.fromtimestamp(msg['timestamp'], datetime.UTC) >= time_ago
+        ]
+        logger.info(f'Applied {filter_name} filter: {len(valid_messages)} messages')
+    
+    if flag != "il" and guild is not None:
+        # don't include messages from users no longer in the guild
+        valid_messages = [msg for msg in valid_messages if guild.get_member(int(msg['author_id']))]
+    
+    logger.info('Total valid messages: %s', len(valid_messages))
+    logger.info('Total messages in database: %s', total_messages)
+    return valid_messages, total_messages
 
 
 def analyse_word_stats(content_list: list[str]) -> dict[str, str | int | float]:
