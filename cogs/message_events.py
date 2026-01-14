@@ -59,7 +59,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
     
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        logger.debug('Received message from %s: %s', message.author.global_name, message.content)
+        logger.debug('Received message from %s: %s', message.author.display_name, message.content)
         if message.author.bot:
             return
         
@@ -75,6 +75,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         if self.bot.config.staging:
             if commands_enabled and message.content.startswith(self.bot.command_prefix):
                 self.bot.config.today = utils.formatted_today()
+                logging.debug('Processing command in staging bot.')
                 await self.bot.process_commands(message)
                 
             elif not commands_enabled and message.content.startswith(self.bot.command_prefix):
@@ -99,6 +100,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         if commands_enabled and message.content.startswith(self.bot.command_prefix):
             self.bot.config.today = utils.formatted_today()
+            logging.debug('Processing command.')
             await self.bot.process_commands(message)
         
         
