@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any, Mapping, Literal
 
-import cachetools.func  # type: ignore[import-untyped]
+import cachetools  # type: ignore[import-untyped]
 import discord
 import pymongo
 from gridfs import AsyncGridFS
@@ -17,6 +17,8 @@ logger = logging.getLogger('discord')
 # Global client instance
 _mongo_client: AsyncMongoClient | None = None
 _DB_connect_enabled: bool = False
+message_download_cache: cachetools.TTLCache[None, list[Mapping[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
+voice_download_cache: cachetools.TTLCache[None, list[Mapping[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 
 def disable_connection() -> None:
     global _DB_connect_enabled
@@ -155,8 +157,15 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
         return None
 
 
-@cachetools.func.ttl_cache(maxsize=2, ttl=300)
-async def cached_download_all() -> list[dict[str, Any]] | None:
+async def cached_download_all() -> list[Mapping[Any, Any]] | None:
+    global message_download_cache
+    if message_download_cache.get(None) is not None:
+        return message_download_cache[None]
+    stuff = await _download_all()
+    message_download_cache[None] = stuff
+    return stuff
+    
+async def _download_all() -> list[Mapping[str, Any]] | None:
     client = await _connect()
     if not client:
         return None
@@ -237,9 +246,13 @@ async def send_voice_session(session_data: Mapping[str, Any]) -> None:
         logger.error(f'Error saving voice session: {e}')
 
 
-@cachetools.func.ttl_cache(maxsize=1, ttl=300)
 async def cached_download_voice_sessions() -> list[Mapping[Any, Any]] | None:
-    return await _download_voice_sessions()
+    if voice_download_cache.get(None) is not None:
+        return voice_download_cache[None]
+    
+    stuff = await _download_voice_sessions()
+    voice_download_cache[None] = stuff
+    return stuff
 
 
 async def _download_voice_sessions() -> list[Mapping[str, str]] | None:

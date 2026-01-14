@@ -213,7 +213,6 @@ async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> dic
         }
     
     except Exception as e:
-        raise
         logger.error('Error during message analysis: %s', e)
         return f'Error during analysis: {str(e)}'
 
@@ -408,7 +407,6 @@ async def format_analysis(ctx: CContext, graph: bool = False) -> None:
             await new_msg.edit(content=result)
     
     except Exception as e:
-        raise
         logger.error('Error formatting analysis: %s', e)
         await ctx.send(f'Error during analysis: {e}')
 

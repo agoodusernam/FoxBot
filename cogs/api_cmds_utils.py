@@ -9,7 +9,7 @@ from discord.ext.commands import Context
 
 TIMEOUT: Final[float] = 5
 
-@cachetools.func.ttl_cache(maxsize=2, ttl=3600)  # Cache for 1 hour
+@cachetools.func.ttl_cache(maxsize=2, ttl=60*60)
 def get_nasa_apod() -> dict[str, str]:
     api_key = os.getenv('NASA_API_KEY')
     
