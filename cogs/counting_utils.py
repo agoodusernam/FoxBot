@@ -4,6 +4,7 @@ import logging
 import re
 import string
 import warnings
+import signal
 from enum import IntEnum
 from sys import platform
 from typing import Any
