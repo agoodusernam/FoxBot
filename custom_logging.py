@@ -15,6 +15,7 @@ def setup_colour_logging(path: Path | str):
     
     logger = logging.getLogger('discord')
     logger.setLevel(logging.DEBUG)
+    logger.propagate = False
     dt_fmt = '%Y-%m-%d %H:%M:%S'
     basic_formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
     
