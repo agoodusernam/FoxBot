@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from command_utils.CContext import CoolBot
-from voice_events_utils import handle_join, handle_move, handle_leave
+from cogs.voice_events_utils import handle_join, handle_move, handle_leave
 
 logger = logging.getLogger('discord')
 

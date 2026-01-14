@@ -12,7 +12,7 @@ from discord.ext.commands import guild_only
 from discord.ext.tasks import loop
 from gtts import gTTS  # type: ignore[import-untyped]
 
-import fun_cmds_utils
+import cogs.fun_cmds_utils as fun_cmds_utils
 import utils.utils
 from command_utils.CContext import CContext, CoolBot
 

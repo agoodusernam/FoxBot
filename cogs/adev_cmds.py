@@ -7,7 +7,7 @@ import discord
 import psutil
 from discord.ext import commands
 
-import adev_cmds_utils
+import cogs.adev_cmds_utils as adev_cmds_utils
 import utils.utils
 from command_utils.CContext import CContext
 from command_utils.checks import is_dev

@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 from command_utils.CContext import CContext, CoolBot
-from counting_utils import *
+from cogs.counting_utils import *
 
 T = TypeVar('T')
 

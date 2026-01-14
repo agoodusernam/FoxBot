@@ -10,7 +10,7 @@ from discord.ext import commands
 from discord.ext.commands import guild_only
 
 import utils.utils
-from admin_cmds_utils import sort_by_timestamp, last_log
+from cogs.admin_cmds_utils import sort_by_timestamp, last_log
 from command_utils import analysis
 from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_admin

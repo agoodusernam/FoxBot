@@ -3,8 +3,8 @@ import logging
 import discord
 from discord.ext import commands
 
-import counting_utils
-import message_events_utils
+import cogs.counting_utils as counting_utils
+import cogs.message_events_utils as message_events_utils
 from command_utils.CContext import CContext, CoolBot
 from utils import utils, db_stuff
 

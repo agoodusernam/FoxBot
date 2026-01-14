@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import BucketType
 
-import api_cmds_utils as api_utils
+import cogs.api_cmds_utils as api_utils
 from command_utils.CContext import CContext, CoolBot
 from utils import utils
 
