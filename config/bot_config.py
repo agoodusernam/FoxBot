@@ -65,9 +65,10 @@ class BotConfig(ConfigBase):
     counting_ban_role: int = 0
     counting_fail_role: int = 0
     counting_fails: dict[int, int] = field(default_factory=dict)
-    counting_successes: dict[int, int] = field(default_factory=dict)
-    highest_user_count: dict[int, int] = field(default_factory=dict)
-    last_counted_message_id: int = 0
+    counting_successes: dict[str, int] = field(default_factory=dict)
+    highest_user_count: dict[str, int] = field(default_factory=dict)
+    last_counted_message_id: str = "0"
+    logs_path: Path = Path("logs").resolve()
     
     # User permissions
     admin_ids: list[int] = field(default_factory=list)
@@ -128,7 +129,8 @@ class BotConfig(ConfigBase):
             "counting_fails": {},
             "counting_successes": {},
             "highest_user_count": {},
-            "last_counted_message_id": 0
+            "last_counted_message_id": 0,
+            "logs_path": Path("logs")
         }
     
     @classmethod
@@ -155,6 +157,7 @@ class BotConfig(ConfigBase):
         config.counting_successes = data.get("counting_successes", config.counting_successes)
         config.highest_user_count = data.get("highest_user_count", config.highest_user_count)
         config.last_counted_message_id = data.get("last_counted_id", config.last_counted_message_id)
+        config.logs_path = Path(data.get("logs_path", config.logs_path)).resolve()
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -239,7 +242,8 @@ class BotConfig(ConfigBase):
             "counting_fails": self.counting_fails,
             "counting_successes": self.counting_successes,
             "highest_user_count": self.highest_user_count,
-            "last_counted_message_id": self.last_counted_message_id
+            "last_counted_message_id": self.last_counted_message_id,
+            "logs_path": str(self.logs_path)
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:

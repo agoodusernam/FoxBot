@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 from command_utils.CContext import CContext, CoolBot
-from utils.utils import eval_count_msg, BitwiseDecimal, CountStatus, count_only_allowed_chars
+from counting_utils import *
 
 T = TypeVar('T')
 

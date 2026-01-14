@@ -1,13 +1,44 @@
-from typing import Any
 import datetime
-import cachetools.func
 import logging
+import math
+import random
+from typing import Any
 
+import cachetools.func
+import discord
+import discord.ext.commands
 import requests
+
+from command_utils.CContext import CContext
 
 logger = logging.getLogger('discord')
 
-@cachetools.func.ttl_cache(maxsize=1, ttl=60*60)
+
+async def dice_roll(message: discord.Message) -> None:
+    str_nums: list[str] = message.content.replace('f!dice', '').replace('f!roll', '').split()
+    if len(str_nums) < 2:
+        await message.delete()
+        await message.channel.send('Please choose 2 numbers to roll the dice, e.g. `dice 1 6`')
+        return
+    try:
+        nums: list[int] = list(map(int, str_nums))
+    except ValueError:
+        await message.delete()
+        await message.channel.send('Please provide valid numbers for the dice roll, e.g. `dice 1 6`')
+        return
+    if nums[0] > nums[1]:
+        num: int = random.randint(nums[1], nums[0])
+    else:
+        num = random.randint(nums[0], nums[1])
+    if math.log10(num) > 1984:
+        await message.channel.send('The output number would be too large to send in discord')
+        return
+    
+    await message.channel.send(f'You rolled a {num}')
+    return
+
+
+@cachetools.func.ttl_cache(maxsize=1, ttl=60 * 60)
 def get_last_commit() -> None | tuple[int, str, dict[str, int]]:
     """
     Get the latest commit info from the FoxBot GitHub repository.
@@ -28,4 +59,3 @@ def get_last_commit() -> None | tuple[int, str, dict[str, int]]:
     stats = body['stats']
     change_stats: dict[str, int] = {'additions': stats['additions'], 'deletions': stats['deletions'], 'total': stats['total']}
     return round(datetime.datetime.fromisoformat(date).timestamp()), message, change_stats
-

@@ -1,19 +1,16 @@
 import datetime
-import json
-import os
-import random
-import re
+import logging
 import typing
 from pathlib import Path
 from typing import Any
-import logging
 
 import discord
+import discord.utils
 from discord.ext import commands
 from discord.ext.commands import guild_only
-from discord.utils import get
 
 import utils.utils
+from admin_cmds_utils import sort_by_timestamp, last_log
 from command_utils import analysis
 from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_admin
@@ -22,79 +19,7 @@ from utils import db_stuff
 
 logger = logging.getLogger('discord')
 
-async def last_log(ctx: discord.ext.commands.Context, anonymous=False) -> None:
-    mod_log_channel = ctx.bot.get_channel(1329367677940006952)  # Channel where the carlbot logs are sent
-    pub_logs_channel = ctx.bot.get_channel(1345300442376310885)  # Public logs channel (#guillotine)
-    
-    if mod_log_channel is None or pub_logs_channel is None:
-        await ctx.send('Mod log channel or public logs channel not found.', delete_after=ctx.bot.del_after)
-        return
-    
-    last_mod_log_message = [msg async for msg in mod_log_channel.history(limit=1)][0]
-    if last_mod_log_message.content == 'Posted':
-        await ctx.send('This log has already been sent to the public logs channel.', delete_after=ctx.bot.del_after)
-        return
-    
-    embed = last_mod_log_message.embeds[0]
-    
-    offence = embed.title.split(sep='|')[0].title()
-    if offence.strip() == 'Warn':
-        offence = 'Warning'
-    description = embed.description.split(sep='\n')
-    offender = re.sub(r'^.*?<', '<', description[0])  # Extract offender mention
-    description.pop(0)
-    duration = None
-    if description[0].startswith('**Duration'):
-        duration = description[0].replace('**Duration:**', '')
-        description.pop(0)
-    
-    reason = description[0].replace('**Reason:** ', '')
-    description.pop(0)
-    new_description = f'**Offender**: {offender}\n**Reason**: {reason}'
-    if not anonymous:
-        moderator = description[0].replace('**Responsible moderator:** ', '')
-        moderator_user = await commands.UserConverter().convert(ctx, moderator)
-        new_description += f'\n**Responsible moderator**: {moderator_user.mention}'
-    
-    to_send_embed = discord.Embed(
-            title=f'{offence}',
-            description=new_description,
-            color=discord.Color.red(),
-            timestamp=discord.utils.utcnow()
-    )
-    if duration:
-        to_send_embed.add_field(name='Duration', value=duration, inline=False)
-    
-    await pub_logs_channel.send(embed=to_send_embed)
-    await mod_log_channel.send('Posted')
-
 staff_role_id = bot_config.get_config_option('staff_role_id', 0)
-
-def sort_by_timestamp(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    for message in messages:
-        message['timestamp'] = datetime.datetime.fromtimestamp(message['timestamp'], tz=datetime.timezone.utc)
-    
-    return sorted(messages, key=lambda x: x['timestamp'], reverse=True)
-
-
-async def set_some_landmines(bot: CoolBot) -> None:
-    existing_mines: dict[int, int]
-    if hasattr(bot, 'landmine_channels'):
-        existing_mines = bot.landmine_channels
-    else:
-        existing_mines = {}
-        bot.landmine_channels = {}
-    
-    guild = discord.utils.get(bot.guilds, id=1081760248433492140)
-    category = discord.utils.get(guild.categories, id=1081760248433492141)
-    channels: list[discord.TextChannel] = [channel for channel in category.channels if isinstance(channel,
-                                                                                           discord.TextChannel)]
-    chosen_channels: list[discord.TextChannel] = random.choices(channels, k=3)
-    
-    for channel in chosen_channels:
-        if channel.id not in existing_mines.keys():
-            bot.landmine_channels[channel.id] = random.randint(1, 5)
-
 
 class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     """Admin commands for managing the server and users."""
@@ -137,18 +62,21 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='hardlockdown',
                       brief='Lock down the entire server',
                       help='Admin only: Timeout all non-admin users for 28 days')
+    @commands.guild_only()
     @commands.check(is_admin)
     async def hard_lockdown(self, ctx: CContext):
+        assert ctx.guild is not None
         await ctx.delete()
         for member in ctx.guild.members:
             if member.id in ctx.bot.admin_ids:
                 continue
-            
-            await member.timeout(datetime.timedelta(days=28), reason='Hard lockdown initiated by admin')
+            try:
+                await member.timeout(datetime.timedelta(hours=1), reason='Hard lockdown initiated by admin')
+            except Exception as e:
+                logger.error(f'Error during hardlockdown for user {member.id}: {e}')
+                continue
         
-        await ctx.message.channel.send(
-                'Hard lockdown initiated. All non-admin users have been timed out for 28 days.',
-                delete_after=ctx.bot.del_after)
+        await ctx.message.channel.send('Hard lockdown initiated. All non-admin users have been timed out for 28 days.')
     
     @commands.command(name='unhardlockdown',
                       brief='Unlock the server from hard lockdown',
@@ -156,24 +84,18 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.check(is_admin)
     @guild_only()
     async def unhard_lockdown(self, ctx: CContext):
+        assert ctx.guild is not None
         await ctx.delete()
         guild: discord.Guild = ctx.guild
         for member in guild.members:
             if member.id in ctx.bot.admin_ids:
                 continue
             
-            if member.id in ctx.bot.blacklist_ids['ids']:
-                ctx.bot.blacklist_ids['ids'].remove(member.id)
-            
             try:
                 await member.timeout(None, reason='Hard lockdown lifted by admin')
             except Exception as e:
                 logger.error(f'Error during unhardlockdown for user {member.id}: {e}')
                 continue
-        
-        if os.path.isfile('blacklist_users.json'):
-            with open('blacklist_users.json', 'r') as f:
-                ctx.bot.blacklist_ids = json.load(f)
         
         await ctx.message.channel.send('Hard lockdown lifted. All users have been removed from timeout.',
                                        delete_after=ctx.bot.del_after)
@@ -220,8 +142,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!blacklist <user_id/mention>')
     @commands.check(is_admin)
     async def blacklist_id(self, ctx: CContext, user: discord.User):
-        await ctx.delete()
-        
         if user is None:
             await ctx.send('User not found.', delete_after=ctx.bot.del_after)
             return
@@ -233,10 +153,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             return
         
         if ctx.bot.blacklist.add_user(u_id):
-            await ctx.send(f'User **{user.display_name}** has been blacklisted.', delete_after=ctx.bot.del_after)
+            await ctx.send(f'User **{user.display_name}** has been blacklisted.')
             
-            channel = ctx.bot.get_channel(1379193761791213618)
-            await channel.set_permissions(get(ctx.bot.get_all_members(), id=u_id), send_messages=False)
         else:
             await ctx.message.channel.send(f'User **{user.display_name}** is already blacklisted.', delete_after=ctx.bot.del_after)
             return
@@ -248,8 +166,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!unblacklist <user_id/mention>')
     @commands.check(is_admin)
     async def unblacklist_id(self, ctx: CContext, user: discord.User):
-        await ctx.delete()
-        
         if user is None:
             await ctx.send('User not found.', delete_after=ctx.bot.del_after)
             return
@@ -257,11 +173,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         u_id = user.id
         
         if ctx.bot.blacklist.remove_user(u_id):
-            await ctx.send(f'User **{user.display_name}** has been removed from the blacklist.',
-                           delete_after=ctx.bot.del_after)
+            await ctx.send(f'User **{user.display_name}** has been removed from the blacklist.')
             
-            channel = ctx.bot.get_channel(1379193761791213618)
-            await channel.set_permissions(get(ctx.bot.get_all_members(), id=u_id), send_messages=True)
         else:
             await ctx.send(f'User **{user.display_name}** was not blacklisted.', delete_after=ctx.bot.del_after)
             return
@@ -282,7 +195,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         split_message: list[str] = msg.split()
         try:
             channel_id: int = int(split_message[0].replace('#', '', 1).replace('<', '', 1).replace('>', '', 1))
-            channel: discord.abc.MessageableChannel = ctx.bot.get_channel(channel_id)
+            channel: Any = ctx.bot.get_channel(channel_id) # I wanted to type this but i gave up
             if channel is None:
                 raise ValueError
             msg = msg.replace(str(channel_id), '', 1)
@@ -432,7 +345,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         try:
             roles: list[discord.Role] = []
             for role_id in ctx.bot.config.verified_roles:
-                role = get(ctx.guild.roles, id=role_id)
+                role = discord.utils.get(ctx.guild.roles, id=role_id)
                 if role is None:
                     logger.error(f'Failed to find role with ID {role_id} for verification.')
                     continue

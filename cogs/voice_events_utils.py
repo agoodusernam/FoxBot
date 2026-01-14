@@ -1,14 +1,20 @@
-from typing import Any
+import datetime
 import logging
+from typing import TypedDict
 
 import discord
 
+from command_utils.CContext import CoolBot
 from utils import db_stuff
 
 logger = logging.getLogger('discord')
 
-# Store active voice sessions: user_id -> {channel_id, joined_at}
-active_voice_sessions: dict[int, dict[str, Any]] = {}
+class VoiceSession(TypedDict):
+    channel_id: str
+    channel_name: str
+    joined_at: datetime.datetime
+
+active_voice_sessions: dict[int, VoiceSession] = {}
 
 
 def handle_join(member: discord.Member, after: discord.VoiceState | discord.VoiceChannel) -> None:
@@ -19,7 +25,6 @@ def handle_join(member: discord.Member, after: discord.VoiceState | discord.Voic
             return
         logger.info(f'{member.name} joined {after.channel.name}')
         
-        # Record join time
         active_voice_sessions[member.id] = {
             'channel_id':   str(after.channel.id),
             'channel_name': after.channel.name,
@@ -84,7 +89,7 @@ def handle_move(member: discord.Member, before: discord.VoiceState, after: disco
     handle_join(member, after)
 
 
-def leave_all(bot: discord.Client) -> None:
+def leave_all(bot: CoolBot) -> None:
     """Force leave all active voice sessions"""
     for member_id in list(active_voice_sessions.keys()):
         member = discord.utils.get(bot.get_all_members(), id=member_id)

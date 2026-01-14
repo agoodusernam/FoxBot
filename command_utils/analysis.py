@@ -582,7 +582,7 @@ def get_voice_statistics(include_left: bool = False, guild: discord.Guild = None
         Dictionary containing voice statistics or None if no data
     """
     try:
-        sessions = db_stuff.download_voice_sessions()
+        sessions = db_stuff.cached_download_voice_sessions()
         
         if not sessions:
             return None
@@ -659,7 +659,7 @@ def get_user_voice_statistics(user_id: str) -> dict[str, str | None | int | list
         Dictionary containing user voice statistics or None if no data
     """
     try:
-        sessions = db_stuff.download_voice_sessions()
+        sessions = db_stuff.cached_download_voice_sessions()
         
         if not sessions:
             return None

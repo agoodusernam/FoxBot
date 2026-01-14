@@ -1,10 +1,10 @@
 import os
 import random
+
 import cachetools.func
 import discord.ext.commands
-
-from discord.ext.commands import Context
 import requests
+from discord.ext.commands import Context
 
 
 @cachetools.func.ttl_cache(maxsize=2, ttl=3600)  # Cache for 1 hour

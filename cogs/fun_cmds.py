@@ -1,56 +1,22 @@
 import asyncio
 import ctypes.util
 import logging
-import math
 import os
 import random
 import time
+from typing import Any
 
 import discord
 from discord.ext import commands
 from discord.ext.commands import guild_only
 from discord.ext.tasks import loop
-from gtts import gTTS
+from gtts import gTTS  # type: ignore[import-untyped]
 
+import fun_cmds_utils
 import utils.utils
-from command_utils import suggest
 from command_utils.CContext import CContext, CoolBot
-from utils import git_stuff
 
 logger = logging.getLogger('discord')
-
-
-async def dice_roll(del_after: int, message: discord.Message) -> None:
-    str_nums: list[str] = message.content.replace('f!dice', '').replace('f!roll', '').split()
-    if len(str_nums) < 2:
-        await message.delete()
-        await message.channel.send('Please choose 2 numbers to roll the dice, e.g. `dice 1 6`',
-                                   delete_after=del_after)
-        return
-    try:
-        nums: list[int] = list(map(int, str_nums))
-    except ValueError:
-        await message.delete()
-        await message.channel.send('Please provide valid numbers for the dice roll, e.g. `dice 1 6`',
-                                   delete_after=del_after)
-        return
-    if nums[0] > nums[1]:
-        num: int = random.randint(nums[1], nums[0])
-    else:
-        num = random.randint(nums[0], nums[1])
-    oversize = False
-    if math.log10(num) > 1984:
-        oversize = True
-        str_num = hex(num)
-        if len(str_num) > 1984:
-            await message.channel.send('The output number would be too large to send in discord')
-            return
-    
-    await message.channel.send(f'You rolled a {num}')
-    if oversize:
-        await message.channel.send(
-                'The number is too large to display in decimal format, so it has been converted to hex.')
-    return
 
 
 class FunCommands(commands.Cog, name='Fun'):
@@ -64,7 +30,7 @@ class FunCommands(commands.Cog, name='Fun'):
                       usage='f!dice <min> <max>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
     async def dice(self, ctx: CContext):
-        await dice_roll(ctx.bot.del_after, ctx.message)
+        await fun_cmds_utils.dice_roll(ctx.message)
     
     @commands.command(name='flip', aliases=['coin_flip', 'coinflip'],
                       brief='Flip a coin',
@@ -85,8 +51,51 @@ class FunCommands(commands.Cog, name='Fun'):
                       help='Submit a suggestion for the bot',
                       usage='f!suggest <suggestion>')
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def suggest_cmd(self, ctx: CContext, *, args: str):
-        await suggest.send_suggestion(ctx, args)
+    async def suggest_cmd(self, ctx: CContext, *, suggestion: str):
+        """
+        Sends a suggestion to the designated channel and creates a thread for discussion.
+        """
+        HELP_MSG = '''Please post your suggestions for the server or <@1377636535968600135> in here using `f!suggest <suggestion>`.
+        If you have any additional comments, please use the thread.
+        ✅: Implemented
+        💻: Working on it
+        ❌: Will not add
+
+        👍: Vote for suggestion
+        '''
+        
+        await ctx.delete()
+        
+        channel: Any = ctx.bot.get_channel(1379193761791213618)
+        if not isinstance(channel, discord.TextChannel):
+            logger.error('Channel not found for sending suggestion.')
+            return
+        
+        last_msgs = [message async for message in channel.history(limit=3)]
+        for message in last_msgs:
+            if message.content.startswith(HELP_MSG[:20]):
+                await message.delete()
+        
+        try:
+            embed = discord.Embed(title='Suggestion', description=suggestion, color=discord.Color.blue())
+            embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
+            embed.timestamp = discord.utils.utcnow()
+            msg = await channel.send(embed=embed)
+            await msg.add_reaction('👍')
+            
+            await msg.create_thread(name=f'suggestion-{ctx.author.display_name}')
+            
+            await channel.send(HELP_MSG)
+            logger.info(f'Suggestion sent: {suggestion}')
+        
+        except discord.Forbidden as exc:
+            raise discord.ext.commands.BotMissingPermissions(["manage_channels", "manage_threads", "create_public_threads"]) from exc
+        
+        except discord.NotFound:
+            logger.error('Channel not found for sending suggestion.')
+        
+        except discord.HTTPException as e:
+            logger.error(f'Failed to send suggestion: {e}')
         
     @commands.command(name='8ball', aliases=['eight_ball', 'magic_8_ball'],
                         brief='Ask the magic 8-ball a question',
@@ -269,7 +278,7 @@ class FunCommands(commands.Cog, name='Fun'):
         embed.add_field(name='Files', value=files, inline=True)
         embed.add_field(name='Uptime', value=uptime, inline=True)
         embed.add_field(name='Ping', value=ping + 'ms', inline=True)
-        commit = git_stuff.get_last_commit()
+        commit = fun_cmds_utils.get_last_commit()
         
         if commit is None:
             await ctx.send(embed=embed)

@@ -17,6 +17,15 @@ logger = logging.getLogger('discord')
 
 # Global client instance
 _mongo_client: MongoClient | None = None
+_DB_connect_enabled: bool = False
+
+def disable_connection() -> None:
+    global _DB_connect_enabled
+    _DB_connect_enabled = False
+
+def enable_connection() -> None:
+    global _DB_connect_enabled
+    _DB_connect_enabled = True
 
 
 def _connect() -> MongoClient | None:
@@ -24,8 +33,12 @@ def _connect() -> MongoClient | None:
     Establishes a connection to the MongoDB database using the URI from environment variables.
     :return: MongoClient instance if successful, None otherwise.
     """
+    if _DB_connect_enabled:
+        logger.warning("Attempted to connect to MongoDB, but connection has been disabled.")
+        return None
+    
     global _mongo_client
-    # Return the existing connection if available
+    
     if _mongo_client is not None:
         return _mongo_client
     
@@ -233,8 +246,12 @@ def send_voice_session(session_data: Mapping[str, Any]) -> None:
         logger.error(f'Error saving voice session: {e}')
 
 
-@cachetools.func.ttl_cache(maxsize=2, ttl=300)
-def download_voice_sessions() -> list[Mapping[str, str]] | None:
+@cachetools.func.ttl_cache(maxsize=1, ttl=300)
+def cached_download_voice_sessions() -> list[Mapping[str, str]] | None:
+    return _download_voice_sessions()
+
+
+def _download_voice_sessions() -> list[Mapping[str, str]] | None:
     client = _connect()
     if not client:
         return None
