@@ -112,7 +112,7 @@ async def get_valid_messages(flag: str | None = None, ctx: CContext | None = Non
         return valid_messages, total_messages
     
     except Exception as e:
-        logger.error("Analysis Error retrieving messages: %s", e)
+        logger.error("Analysis Error retrieving messages: %s", str(e.__traceback__))
         return [], 0
 
 
