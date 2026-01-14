@@ -171,7 +171,7 @@ async def cached_download_all() -> list[dict[str, Any]] | None:
         return [doc async for doc in messages]
     
     except Exception as e:
-        logger.error(f'Error retrieving messages: {e}')
+        logger.error(f'DB Error retrieving messages: {e}')
         return None
 
 
