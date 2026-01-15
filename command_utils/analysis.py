@@ -448,11 +448,6 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
                 reverse=True,
         )[:5]
         
-        # Replace user IDs with display names
-        for user in top_5_users:
-            user_id = int(user['user_id'])
-            user['display_name'] = await try_resolve_uid(user_id, ctx.bot)
-        
         # Format message
         msg = (
             f"{result['total_messages']} total messages analysed\n"
@@ -464,7 +459,7 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
         
         # Add top users
         for i, user in enumerate(top_5_users, start=1):
-            msg += f"**{i}. {user['user_id']}** {user['num_messages']} messages\n"
+            msg += f"**{i}. {await try_resolve_uid(int(user['user_id']), ctx.bot)}** {user['num_messages']} messages\n"
         
         # Add top channels
         msg += '\nTop 5 most active channels:\n'
