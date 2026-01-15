@@ -60,12 +60,7 @@ async def handle_leave(member: discord.Member) -> None:
     # Create voice session document
     voice_session = {
         'user_id':          str(member.id),
-        'user_name':        member.name,
-        'user_global_name': member.global_name,
         'channel_id':       join_data['channel_id'],
-        'channel_name':     join_data['channel_name'],
-        'join_time':        join_time.isoformat(),
-        'leave_time':       leave_time.isoformat(),
         'duration_seconds': duration_seconds
     }
     

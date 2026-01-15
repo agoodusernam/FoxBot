@@ -9,7 +9,7 @@ from gridfs import AsyncGridFS
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.asynchronous.mongo_client import AsyncMongoClient
-from pymongo.results import DeleteResult
+from pymongo.results import DeleteResult, InsertManyResult
 from pymongo.server_api import ServerApi
 
 logger = logging.getLogger('discord')
@@ -255,7 +255,7 @@ async def cached_download_voice_sessions() -> list[dict[Any, Any]] | None:
     return stuff
 
 
-async def _download_voice_sessions() -> list[dict[str, str]] | None:
+async def _download_voice_sessions() -> list[dict[str, str | int]] | None:
     client = await _connect()
     if not client:
         return None
@@ -349,10 +349,33 @@ async def del_many_db_entries(collection_name: str, query: dict[str, Any]) -> in
     
     try:
         result: DeleteResult = await collection.delete_many(query)
+        if not result.acknowledged:
+            logger.error('Delete operation not acknowledged')
+            return None
         logger.info(f'Deleted {result.deleted_count} entries from {collection_name} collection')
         return result.deleted_count
     except Exception as e:
         logger.error(f'Error deleting entries from {collection_name} collection: {e}')
+        return None
+
+
+async def insert_many_db_entries(collection_name: str, query: list[dict[str, Any]]) -> int | None:
+    """
+    Generic function to delete multiple entries from a specified MongoDB await collection.
+    """
+    client = await _connect()
+    if not client:
+        return None
+    
+    db = client['discord']
+    collection: AsyncCollection[dict[str, Any]] = db[collection_name]
+    
+    try:
+        result: InsertManyResult = await collection.insert_many(query)
+        logger.info(f'Inserted {len(result.inserted_ids)} entries into {collection_name} collection')
+        return len(result.inserted_ids)
+    except Exception as e:
+        logger.error(f'Error inserting entries to {collection_name} collection: {e}')
         return None
 
 

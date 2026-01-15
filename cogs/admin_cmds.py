@@ -106,8 +106,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!ana [user_id/mention]')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
-    async def analyse(self, ctx: CContext):
-        await analysis.format_analysis(ctx, graph=False)
+    async def analyse(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
+        await analysis.format_analysis(ctx, graph=False, to_analyse=user, flag=args)
     
     @commands.command(name='analyse_graph', aliases=['anag'],
                       brief='Analyze server message data with graphs',
@@ -115,8 +115,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!anag')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
-    async def analyse_graph(self, ctx: CContext):
-        await analysis.format_analysis(ctx, graph=True)
+    async def analyse_graph(self, ctx: CContext,user: typing.Optional[discord.Object] = None, *, args: str = ''):
+        await analysis.format_analysis(ctx, graph=True, to_analyse=user, flag=args)
     
     @commands.command(name='analyse_voice', aliases=['anavc'],
                       brief='Analyze voice channel usage',
@@ -124,8 +124,12 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!anavc [user_id/mention]')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.user)  # type: ignore
-    async def analyse_voice(self, ctx: CContext):
-        await analysis.format_voice_analysis(ctx, graph=False)
+    async def analyse_voice(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
+        include_left = False
+        if args.strip() == '-il':
+            include_left = True
+            
+        await analysis.format_voice_analysis(ctx, graph=False, user=user, include_left=include_left)
     
     @commands.command(name='analyse_vc_graph', aliases=['anavcg'],
                       brief='Analyze server message data with graphs',
@@ -133,8 +137,12 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!anavcg')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  # type: ignore
-    async def analyse_vc_graph(self, ctx: CContext):
-        await analysis.format_voice_analysis(ctx, graph=True)
+    async def analyse_vc_graph(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
+        include_left = False
+        if args.strip() == '-il':
+            include_left = True
+        
+        await analysis.format_voice_analysis(ctx, graph=True, user=user, include_left=include_left)
     
     @commands.command(name='blacklist',
                       brief='Blacklist a user',
