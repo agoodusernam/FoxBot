@@ -15,53 +15,6 @@ from utils import db_stuff
 logger = logging.getLogger('discord')
 
 
-async def update_timestamps() -> None:
-    entries = await db_stuff._download_voice_sessions()
-    if entries is None:
-        print('Failed to download voice sessions')
-        return
-    
-    saved: int = 0
-    try:
-        with open("session_backup.json", "wt") as f:
-            json.dump(entries, f, indent=4)
-            saved = len(entries)
-    except Exception as e:
-        logger.error(f'Failed to backup voice sessions: {e}')
-        with open("session_backup.txt", "wt") as f:
-            for entry in entries:
-                try:
-                    f.write(str(entry))
-                    saved += 1
-                except:
-                    pass
-    
-    print(f'Backed up {saved}/{len(entries)} voice sessions to session_backup.json')
-    
-    if saved < len(entries) * 0.999:
-        print('Could not save all voice sessions, skipping...')
-        return
-    
-    amount = await db_stuff.del_many_db_entries('voice_sessions', {})
-    if amount is None:
-        print('Failed to delete all voice sessions')
-        return
-    else:
-        print(f'Deleted {amount} voice sessions')
-
-    
-    new_entries: list[dict[str, str | int]] = []
-    for entry in entries:
-        new_entry = {"user_id": entry['user_id'], "channel_id": entry['channel_id'], "duration_seconds": entry['duration_seconds']}
-        new_entries.append(new_entry)
-    
-    successes = await db_stuff.insert_many_db_entries('voice_sessions', new_entries)
-    if successes is None:
-        print('Failed to insert voice sessions')
-    else:
-        print(f'Inserted {successes} voice sessions')
-
-
 async def aexec(func_name: str, context: CContext) -> Any:
     locs: dict[str, Any] = {}
     # noinspection PyUnusedLocal
