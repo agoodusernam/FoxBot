@@ -4,7 +4,7 @@ import math
 import random
 from typing import Any, Generator
 
-import cachetools
+import cachetools  # type: ignore[import-untyped]
 import discord
 import discord.ext.commands
 
@@ -67,13 +67,13 @@ async def _get_last_commit() -> None | tuple[int, str, dict[str, int]]:
     """
     logger.debug('Getting latest commit info from GitHub...')
     
-    response = await api_cmds_utils.fetch('https://api.github.com/repos/agoodusernam/FoxBot/commits/master')
-    logger.debug(f'GitHub status code: {response.status}')
-    logger.debug(f'GitHub response: {await response.text()}')
-    if not response.ok:
+    status, response = await api_cmds_utils.fetch_json('https://api.github.com/repos/agoodusernam/FoxBot/commits/master')
+    logger.debug(f'GitHub status code: {status}')
+    logger.debug(f'GitHub response: {response}')
+    if status != 200:
         return None
     
-    body: dict[str, Any] = await response.json()
+    body: dict[str, Any] = response
     commit = body['commit']
     message = commit['message']
     date = commit['author']['date']

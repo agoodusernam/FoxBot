@@ -1,8 +1,7 @@
 import os
 import random
-from typing import Final
+from typing import Final, Any
 
-import cachetools.func
 import discord.ext.commands
 import aiohttp
 from aiohttp import ClientTimeout
@@ -12,32 +11,30 @@ TIMEOUT: Final[float] = 5
 
 session = aiohttp.ClientSession(timeout=ClientTimeout(total=TIMEOUT))
 
-async def fetch(url: str, headers: dict[str, str] | None = None) -> aiohttp.ClientResponse:
+async def fetch_json(url: str, headers: dict[str, str] | None = None) -> tuple[int, dict[Any, Any]]:
     async with session.get(url, headers=headers) as response:
-        return response
+        return response.status, await response.json()
 
 
-@cachetools.func.ttl_cache(maxsize=2, ttl=60*60)
 async def get_nasa_apod() -> dict[str, str]:
     api_key = os.getenv('NASA_API_KEY')
     
     url = f'https://api.nasa.gov/planetary/apod?api_key={api_key}'
-    response = await fetch(url)
+    status, data = await fetch_json(url)
     
-    if response.status != 200:
-        raise discord.ext.commands.CommandError(f'Failed to fetch data from NASA API: {response.status}')
+    if status != 200:
+        raise discord.ext.commands.CommandError(f'Failed to fetch data from NASA API: {status}')
     
-    return await response.json()
+    return data
 
 
 async def get_dog_pic(ctx: Context) -> None:
     url = 'https://dog.ceo/api/breeds/image/random'
-    response = await fetch(url)
+    status, data = await fetch_json(url)
     
-    if response.status != 200:
-        raise discord.ext.commands.CommandError(f'Failed to fetch dog picture: {response.status}')
+    if status != 200:
+        raise discord.ext.commands.CommandError(f'Failed to fetch dog picture: {status}')
     
-    data = await response.json()
     if 'message' not in data:
         raise discord.ext.commands.CommandError('Unexpected response format from dog API')
     
@@ -47,12 +44,11 @@ async def get_dog_pic(ctx: Context) -> None:
 async def get_fox_pic(ctx: Context) -> None:
     urls = ['https://randomfox.ca/floof/', 'https://api.sefinek.net/api/v2/random/animal/fox']
     url = random.choice(urls)
-    response = await fetch(url)
+    status, data = await fetch_json(url)
     
-    if response.status != 200:
-        raise discord.ext.commands.CommandError(f'Failed to fetch fox picture: {response.status}')
+    if status != 200:
+        raise discord.ext.commands.CommandError(f'Failed to fetch fox picture: {status}')
     
-    data = await response.json()
     if 'image' in data:
         await ctx.send(data['image'])
         return
@@ -72,12 +68,11 @@ async def get_cat_pic(ctx: Context) -> None:
         raise discord.ext.commands.CommandError('CAT_API_KEY environment variable not set')
     
     header: dict[str, str] = {'x-api-key': api_key, 'Content-Type': 'application/json'}
-    response = await fetch(url, headers=header)
+    status, data = await fetch_json(url, headers=header)
     
-    if response.status != 200:
-        raise discord.ext.commands.CommandError(f'Failed to fetch cat picture: {response.status}')
+    if status != 200:
+        raise discord.ext.commands.CommandError(f'Failed to fetch cat picture: {status}')
     
-    data = await response.json()
     if not data or 'url' not in data[0]:
         raise discord.ext.commands.CommandError('Unexpected response format from cat API')
     
@@ -86,12 +81,11 @@ async def get_cat_pic(ctx: Context) -> None:
 
 async def get_insult(ctx: Context) -> None:
     url = 'https://evilinsult.com/generate_insult.php?lang=en&type=json'
-    response = await fetch(url)
+    status, data = await fetch_json(url)
     
-    if response.status != 200:
-        raise discord.ext.commands.CommandError(f'Failed to fetch insult: {response.status}')
+    if status != 200:
+        raise discord.ext.commands.CommandError(f'Failed to fetch insult: {status}')
     
-    data = await response.json()
     if 'insult' not in data:
         raise discord.ext.commands.CommandError('Unexpected response format from insult API')
     
@@ -100,12 +94,11 @@ async def get_insult(ctx: Context) -> None:
 
 async def get_advice(ctx: Context) -> None:
     url = 'https://api.adviceslip.com/advice'
-    response = await fetch(url)
+    status, data = await fetch_json(url)
     
-    if response.status != 200:
-        raise discord.ext.commands.CommandError(f'Failed to fetch advice: {response.status}')
+    if status != 200:
+        raise discord.ext.commands.CommandError(f'Failed to fetch advice: {status}')
     
-    data = await response.json()
     if 'slip' not in data or 'advice' not in data['slip']:
         raise discord.ext.commands.CommandError('Unexpected response format from advice API')
     
@@ -114,12 +107,11 @@ async def get_advice(ctx: Context) -> None:
 
 async def get_joke(ctx: Context) -> None:
     url = 'https://v2.jokeapi.dev/joke/Any?blacklistFlags=racist,sexist'
-    response = await fetch(url)
+    status, data = await fetch_json(url)
     
-    if response.status != 200:
-        raise discord.ext.commands.CommandError(f'Failed to fetch joke: {response.status}')
+    if status != 200:
+        raise discord.ext.commands.CommandError(f'Failed to fetch joke: {status}')
     
-    data = await response.json()
     if 'joke' not in data and ('setup' not in data or 'delivery' not in data):
         raise discord.ext.commands.CommandError('Unexpected response format from joke API')
     
@@ -138,12 +130,11 @@ async def get_joke(ctx: Context) -> None:
 
 async def get_wyr(ctx: Context) -> None:
     url = 'https://api.truthordarebot.xyz/api/wyr'
-    response = await fetch(url)
+    status, data = await fetch_json(url)
     
-    if response.status != 200:
-        raise discord.ext.commands.CommandError(f'Failed to fetch Would You Rather question: {response.status}')
+    if status != 200:
+        raise discord.ext.commands.CommandError(f'Failed to fetch Would You Rather question: {status}')
     
-    data = await response.json()
     if 'question' not in data:
         raise discord.ext.commands.CommandError('Unexpected response format from Would You Rather API')
     
@@ -152,12 +143,10 @@ async def get_wyr(ctx: Context) -> None:
 
 async def get_no(ctx: Context) -> None:
     url = "https://naas.isalman.dev/no"
-    response = await fetch(url)
+    status, data = await fetch_json(url)
     
-    if response.status != 200:
-        raise discord.ext.commands.CommandError(f'Failed to fetch no: {response.status}')
-    
-    data = await response.json()
+    if status != 200:
+        raise discord.ext.commands.CommandError(f'Failed to fetch no: {status}')
     
     if "reason" not in data:
         raise discord.ext.commands.CommandError(f'Unexpected reason format from no API: {data}')
