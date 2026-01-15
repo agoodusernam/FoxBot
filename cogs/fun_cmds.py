@@ -254,7 +254,7 @@ class FunCommands(commands.Cog, name='Fun'):
         embed.add_field(name='Files', value=files, inline=True)
         embed.add_field(name='Uptime', value=uptime, inline=True)
         embed.add_field(name='Ping', value=ping + 'ms', inline=True)
-        embed.add_field(name='Avg Ping', value=f"{self.bot.avg_latency}:1f", inline=True)
+        embed.add_field(name='Avg Ping', value=f"{self.bot.avg_latency:.2f}", inline=True)
         commit = await fun_cmds_utils.cached_get_last_commit()
         
         if commit is None:
