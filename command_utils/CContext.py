@@ -74,7 +74,7 @@ class CoolBot(commands.Bot):
         self.tts_lock: asyncio.Lock = asyncio.Lock()
         self.start_time: float = time.time()
         self.log_path: Path = self.config.logs_path
-        self._pings: deque[float] = deque(maxlen=10)
+        self._pings: deque[float] = deque(maxlen=30)
         
     
     @property
