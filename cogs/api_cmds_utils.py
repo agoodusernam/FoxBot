@@ -1,15 +1,12 @@
 import os
 import random
-from typing import Final, Any
+from typing import Any
 
 import discord.ext.commands
 import aiohttp
-from aiohttp import ClientTimeout
 from discord.ext.commands import Context
 
-TIMEOUT: Final[float] = 5
-
-session = aiohttp.ClientSession(timeout=ClientTimeout(total=TIMEOUT))
+session = aiohttp.ClientSession()
 
 async def fetch_json(url: str, headers: dict[str, str] | None = None) -> tuple[int, dict[Any, Any]]:
     async with session.get(url, headers=headers) as response:

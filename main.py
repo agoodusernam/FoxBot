@@ -1,5 +1,4 @@
 # pylint: disable=trailing-whitespace, line-too-long
-import asyncio
 import atexit
 import logging.handlers
 import os
