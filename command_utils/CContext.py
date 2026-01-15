@@ -5,6 +5,7 @@ import threading
 import time
 from pathlib import Path
 from typing import Any, Optional
+from collections import deque
 
 from discord import Message
 from discord.ext import commands
@@ -73,6 +74,19 @@ class CoolBot(commands.Bot):
         self.tts_lock: asyncio.Lock = asyncio.Lock()
         self.start_time: float = time.time()
         self.log_path: Path = self.config.logs_path
+        self._pings: deque[float] = deque(maxlen=10)
+        self._pings.append(self.latency)
+    
+    @property
+    def avg_latency(self) -> float:
+        return sum(self._pings) / len(self._pings)
+    
+    @avg_latency.setter
+    def avg_latency(self, value) -> None:
+        raise AttributeError("avg_latency is a read-only property")
+    
+    def add_ping(self) -> None:
+        self._pings.append(self.latency)
     
     def run(self, *args, **kwargs):
         super().run(*args, **kwargs)

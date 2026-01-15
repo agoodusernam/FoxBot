@@ -30,6 +30,7 @@ class FunCommands(commands.Cog, name='Fun'):
         self.bot: CoolBot = bot
         self.check_tts_leave.start()
         self.send_vc_lb.start()
+        self.add_ping.start()
         
     @commands.command(name='dice', aliases=['roll', 'dice_roll'],
                       brief='Roll a dice',
@@ -253,6 +254,7 @@ class FunCommands(commands.Cog, name='Fun'):
         embed.add_field(name='Files', value=files, inline=True)
         embed.add_field(name='Uptime', value=uptime, inline=True)
         embed.add_field(name='Ping', value=ping + 'ms', inline=True)
+        embed.add_field(name='Avg Ping', value=self.bot.avg_latency, inline=True)
         commit = await fun_cmds_utils.cached_get_last_commit()
         
         if commit is None:
@@ -319,7 +321,14 @@ class FunCommands(commands.Cog, name='Fun'):
         
         await channel.send(msg)
         await command_utils.analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False) # type: ignore
-        
+    
+    @discord.ext.tasks.loop(minutes=1)
+    async def add_ping(self):
+        self.bot.add_ping()
+    
+    @add_ping.before_loop
+    async def before_add_ping(self):
+        await self.bot.wait_until_ready()
 
 async def setup(bot: CoolBot) -> None:
     await bot.add_cog(FunCommands(bot))
