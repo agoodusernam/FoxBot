@@ -278,7 +278,7 @@ class FunCommands(commands.Cog, name='Fun'):
         embed.add_field(name='Files', value=files, inline=True)
         embed.add_field(name='Uptime', value=uptime, inline=True)
         embed.add_field(name='Ping', value=ping + 'ms', inline=True)
-        commit = fun_cmds_utils.get_last_commit()
+        commit = await fun_cmds_utils.get_last_commit()
         
         if commit is None:
             await ctx.send(embed=embed)
