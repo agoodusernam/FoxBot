@@ -5,11 +5,12 @@ from typing import Final
 import cachetools.func
 import discord.ext.commands
 import aiohttp
+from aiohttp import ClientTimeout
 from discord.ext.commands import Context
 
 TIMEOUT: Final[float] = 5
 
-session = aiohttp.ClientSession(timeout=TIMEOUT)
+session = aiohttp.ClientSession(timeout=ClientTimeout(total=TIMEOUT))
 
 async def fetch(url: str, headers: dict[str, str] | None = None) -> aiohttp.ClientResponse:
     async with session.get(url, headers=headers) as response:
