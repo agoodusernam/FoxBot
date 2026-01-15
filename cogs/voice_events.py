@@ -88,4 +88,4 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
 
 async def setup(bot):
     pass
-    # await bot.add_cog(VoiceLogging(bot))
+    await bot.add_cog(VoiceLogging(bot))

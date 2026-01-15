@@ -717,8 +717,8 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
         if not DB_sessions:
             return None
         
-        sessions, total_seconds = DB_sessions
-        
+        sessions, total_seconds_including_left = DB_sessions
+        total_seconds: int = 0
         # Calculate user statistics
         user_stats: dict[str, UserVoiceStats] = {}
         channel_stats: dict[str, ChannelVoiceStats] = {}
@@ -730,6 +730,7 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
             
             user_stat: UserVoiceStats = user_stats.get(user_id, {'user_id': user_id, 'total_seconds': 0})
             user_stats[user_id] = add_time_stats(user_stat, session['duration_seconds'])
+            total_seconds += session['duration_seconds']
             
             channel_id = session['channel_id']
             if guild is not None:
@@ -756,7 +757,7 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
         )
         
         return VoiceAnalysisResult(
-                total_seconds=total_seconds,
+                total_seconds=total_seconds_including_left if include_left else total_seconds,
                 total_users=len(user_stats),
                 active_users_lb=top_users,
                 active_channels_lb=top_channels,
@@ -852,6 +853,12 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
     for i, channel in enumerate(stats['active_channels_lb'][:5], 1):
         formatted_time = format_duration(channel['total_seconds'])
         result += f"{i}. {await try_resolve_channel_id(channel["channel_id"], guild)}: {formatted_time}\n"
+    
+    total_time_formatted = format_duration(stats['total_seconds'])
+    if include_left:
+        result += f"\n**Total time in voice channels, all time:** {total_time_formatted}"
+    else:
+        result += f"\n**Total time in voice channels:** {total_time_formatted}"
     
     await ctx.send(result)
     if graph:
