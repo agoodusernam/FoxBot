@@ -2,11 +2,11 @@ import datetime
 import os
 import shutil
 import socket
-import urllib.request
 from io import TextIOWrapper
 from pathlib import Path
 from typing import Union
 import logging
+import aiohttp
 
 import cachetools.func
 import discord
@@ -134,18 +134,20 @@ async def save_attachments(message: discord.Message) -> int:
     return saved
 
 
-def download_from_url(path: str | Path, url: str) -> None:
+async def download_from_url(path: str | Path, url: str) -> None:
     """
 	Downloads a file from a given URL and saves it to the specified path.
 	:param path: str | Path: The path where the file will be saved.
 	:param url: str: The URL from which the file will be downloaded.
 	:return: None
 	"""
-    with urllib.request.urlopen(url) as f:
-        pic = f.read()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            response = await resp.read()
+            
     
     with open(path, 'wb') as file:
-        file.write(pic)
+        file.write(response)
     
     logger.info(f'Downloaded file from {url} to {path}')
     return None

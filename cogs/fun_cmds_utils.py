@@ -7,8 +7,8 @@ from typing import Any
 import cachetools.func
 import discord
 import discord.ext.commands
-import requests
 
+from cogs import api_cmds_utils
 
 logger = logging.getLogger('discord')
 
@@ -38,20 +38,21 @@ async def dice_roll(message: discord.Message) -> None:
 
 
 @cachetools.func.ttl_cache(maxsize=1, ttl=60 * 60)
-def get_last_commit() -> None | tuple[int, str, dict[str, int]]:
+async def get_last_commit() -> None | tuple[int, str, dict[str, int]]:
     """
     Get the latest commit info from the FoxBot GitHub repository.
     Returns None if an error occurs.
     Else, it returns a tuple containing the commit timestamp, commit message, and change stats.
     """
     logger.debug('Getting latest commit info from GitHub...')
-    response: requests.Response = requests.get('https://api.github.com/repos/agoodusernam/FoxBot/commits/master', allow_redirects=True)
-    logger.debug(f'GitHub status code: {response.status_code}')
-    logger.debug(f'GitHub response: {response.text}')
+    
+    response = await api_cmds_utils.fetch('https://api.github.com/repos/agoodusernam/FoxBot/commits/master')
+    logger.debug(f'GitHub status code: {response.status}')
+    logger.debug(f'GitHub response: {await response.text()}')
     if not response.ok:
         return None
     
-    body: dict[str, Any] = response.json()
+    body: dict[str, Any] = await response.json()
     commit = body['commit']
     message = commit['message']
     date = commit['author']['date']

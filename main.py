@@ -1,4 +1,5 @@
 # pylint: disable=trailing-whitespace, line-too-long
+import asyncio
 import atexit
 import logging.handlers
 import os
@@ -59,10 +60,10 @@ async def on_ready() -> None:
                 if member.bot:
                     continue
                 
-                voice_events_utils.handle_join(member, channel)
+                await voice_events_utils.handle_join(member, channel)
                 logger.info(f'Reconnected voice state for {member.name} in {channel.name}')
     
-    assert not bot.user is None
+    assert bot.user is not None
     logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
     logger.info('------')
     
@@ -136,12 +137,17 @@ async def not_blacklisted(ctx: CContext):
 
 @bot.event
 async def on_message(message: discord.Message):
-    pass
+    # Suppressed because we are listening for messages in cogs/message_events.py
+    _ = message
 
 # Run the bot
-token = os.getenv('TOKEN')
-if not isinstance(token, str):
-    raise TypeError('TOKEN environment variable not set.')
+async def main():
+    token = os.getenv('TOKEN')
+    if not isinstance(token, str):
+        raise TypeError('TOKEN environment variable not set.')
+    
+    bot.help_command = help_cmd.CustomHelpCommand()
+    bot.run(token=token, reconnect=True, log_handler=None)
 
-bot.help_command = help_cmd.CustomHelpCommand()
-bot.run(token=token, reconnect=True, log_handler=None)
+if __name__ == '__main__':
+    asyncio.run(main())

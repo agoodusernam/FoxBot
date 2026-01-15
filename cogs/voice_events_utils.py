@@ -17,7 +17,7 @@ class VoiceSession(TypedDict):
 active_voice_sessions: dict[int, VoiceSession] = {}
 
 
-def handle_join(member: discord.Member, after: discord.VoiceState | discord.VoiceChannel) -> None:
+async def handle_join(member: discord.Member, after: discord.VoiceState | discord.VoiceChannel) -> None:
     """Track when a user joins a voice channel"""
     if isinstance(after, discord.VoiceState):
         if after.channel is None:
@@ -81,7 +81,7 @@ async def handle_move(member: discord.Member, before: discord.VoiceState, after:
     await handle_leave(member)
     
     # Then record the "join" to the new channel
-    handle_join(member, after)
+    await handle_join(member, after)
 
 
 async def leave_all(bot: CoolBot) -> None:

@@ -22,6 +22,9 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
     @commands.cooldown(1, 5, BucketType.guild)  # type: ignore
     async def nasa_pic(self, ctx: CContext):
         # TODO: This is kind of cursed, fix it later
+        # You may be wondering why I can't post the URL directly,
+        # Well, discord doesn't feel like embedding images from this source apparently.
+        # So instead, we download and re-upload the image because fuck me I suppose.
         if os.path.exists(f'nasa/nasa_pic_{ctx.bot.config.today}.jpg'):
             await ctx.send(f'**{ctx.bot.nasa_data['title']}**\n')
             await ctx.send(
@@ -32,10 +35,10 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
         
         try:
             fetch_msg = await ctx.message.channel.send('Fetching NASA picture of the day...')
-            nasa_data = api_utils.get_nasa_apod()
+            nasa_data = await api_utils.get_nasa_apod()
             ctx.bot.nasa_data = deepcopy(nasa_data)
             
-            utils.download_from_url(f'nasa/nasa_pic_{ctx.bot.config.today}.jpg', nasa_data['url'])
+            await utils.download_from_url(f'nasa/nasa_pic_{ctx.bot.config.today}.jpg', nasa_data['url'])
             
             await ctx.send(f'**{nasa_data['title']}**\n')
             await ctx.send(
@@ -95,21 +98,6 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
     @commands.cooldown(1, 5, commands.BucketType.guild)  # type: ignore
     async def wyr(self, ctx: CContext):
         await api_utils.get_wyr(ctx)
-    
-    @commands.command(name='karma', aliases=['karmapic', 'karma_pic'],
-                      brief='Get a random karma picture',
-                      help='Shows a random karma picture from the local collection')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  # type: ignore
-    async def karma(self, ctx: CContext):
-        await ctx.send('This command is currently disabled.')
-        return
-        
-        karma_pic = api_utils.get_karma_pic()
-        if karma_pic is None:
-            await ctx.send('No karma pictures found.')
-            return
-        file_path, file_name = karma_pic
-        await ctx.send(file=discord.File(file_path, filename=file_name))
     
     @commands.command(name='no',
                       brief="Get a random 'no' response",

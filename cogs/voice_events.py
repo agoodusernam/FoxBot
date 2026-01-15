@@ -28,7 +28,7 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
         
         # Member joined channel
         if before.channel is None and after.channel is not None:
-            handle_join(member, after)
+            await handle_join(member, after)
             embed = discord.Embed(title=f'{member.display_name} joined #{after.channel.name}',
                     color=discord.Color.green())
             embed.set_author(name=member.name, icon_url=url)

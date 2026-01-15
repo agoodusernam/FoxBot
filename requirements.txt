@@ -1,8 +1,8 @@
 cachetools~=6.2.4
-pymongo~=4.15.4
-requests~=2.32.4
+pymongo~=4.16.0
 python-dotenv~=1.2.1
 matplotlib~=3.10.3
 discord.py~=2.6.4
 gtts~=2.5.4
 psutil~=7.2.1
+aiohttp~=3.13.3
