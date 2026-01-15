@@ -75,7 +75,7 @@ class CoolBot(commands.Bot):
         self.start_time: float = time.time()
         self.log_path: Path = self.config.logs_path
         self._pings: deque[float] = deque(maxlen=10)
-        self._pings.append(self.latency)
+        
     
     @property
     def avg_latency(self) -> float:
@@ -86,7 +86,7 @@ class CoolBot(commands.Bot):
         raise AttributeError("avg_latency is a read-only property")
     
     def add_ping(self) -> None:
-        self._pings.append(self.latency)
+        self._pings.append(self.latency * 1000)
     
     def run(self, *args, **kwargs):
         super().run(*args, **kwargs)
