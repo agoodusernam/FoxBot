@@ -2,7 +2,7 @@ import datetime
 import logging
 import math
 import random
-from typing import Any
+from typing import Any, Generator
 
 import cachetools.func
 import discord
@@ -11,6 +11,18 @@ import discord.ext.commands
 from cogs import api_cmds_utils
 
 logger = logging.getLogger('discord')
+
+
+def monday_generator() -> Generator[datetime.datetime, None, None]:
+    now: datetime.datetime = datetime.datetime.now(datetime.UTC)
+    days_until_monday: int = (7 - now.weekday()) % 7
+    if days_until_monday == 0 and now.time() > datetime.time(0, 0):
+        days_until_monday = 7
+    next_monday: datetime.datetime = datetime.datetime.combine(now.date() + datetime.timedelta(days=days_until_monday), datetime.time(0, 0))
+    
+    while True:
+        yield next_monday
+        next_monday += datetime.timedelta(days=7)
 
 
 async def dice_roll(message: discord.Message) -> None:

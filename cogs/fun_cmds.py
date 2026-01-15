@@ -1,5 +1,6 @@
 import asyncio
 import ctypes.util
+import datetime
 import logging
 import os
 import random
@@ -13,16 +14,22 @@ from discord.ext.tasks import loop
 from gtts import gTTS  # type: ignore[import-untyped]
 
 import cogs.fun_cmds_utils as fun_cmds_utils
+import command_utils.analysis
+from command_utils.analysis import try_resolve_uid
 import utils.utils
 from command_utils.CContext import CContext, CoolBot
 
 logger = logging.getLogger('discord')
+
+monday_gen = fun_cmds_utils.monday_generator()
+current_monday = next(monday_gen)
 
 
 class FunCommands(commands.Cog, name='Fun'):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
         self.check_tts_leave.start()
+        self.send_vc_lb.start()
         
     @commands.command(name='dice', aliases=['roll', 'dice_roll'],
                       brief='Roll a dice',
@@ -231,38 +238,6 @@ class FunCommands(commands.Cog, name='Fun'):
             del ctx.bot.last_sent_tts_time
     
     
-    @discord.ext.tasks.loop(minutes=1.0)
-    async def check_tts_leave(self) -> None:
-        logger.debug('Checking for TTS disconnect')
-        if self.bot.vc_client is None and not hasattr(self.bot, 'last_tts_sent_time'):
-            return
-            
-        if self.bot.vc_client is None and hasattr(self.bot, 'last_tts_sent_time'):
-            del self.bot.last_tts_sent_time
-            return
-        
-        if self.bot.vc_client is not None and not hasattr(self.bot, 'last_tts_sent_time'):
-            if self.bot.vc_client.is_connected():
-                await self.bot.vc_client.disconnect()
-            self.bot.vc_client = None
-            return
-        
-        assert self.bot.vc_client is not None
-        assert hasattr(self.bot, 'last_tts_sent_time')
-        assert isinstance(self.bot.last_tts_sent_time, float)
-        
-        if not self.bot.vc_client.is_connected():
-            self.bot.vc_client = None
-            del self.bot.last_tts_sent_time
-            return
-        
-        if time.time() - self.bot.last_tts_sent_time > 180.0:
-            await self.bot.vc_client.disconnect()
-            self.bot.vc_client = None
-            del self.bot.last_tts_sent_time
-            
-        return
-    
     @commands.command(name='stats',
                       brief="Get bot statistics",
                       help="Get statistics about the bot")
@@ -290,6 +265,60 @@ class FunCommands(commands.Cog, name='Fun'):
         embed.add_field(name='Commit Message', value=commit_message, inline=False)
         embed.add_field(name='Total lines changed', value=changes['total'], inline=False)
         await ctx.send(embed=embed)
+    
+    @discord.ext.tasks.loop(seconds=59)
+    async def check_tts_leave(self) -> None:
+        logger.debug('Checking for TTS disconnect')
+        if self.bot.vc_client is None and not hasattr(self.bot, 'last_tts_sent_time'):
+            return
+        
+        if self.bot.vc_client is None and hasattr(self.bot, 'last_tts_sent_time'):
+            del self.bot.last_tts_sent_time
+            return
+        
+        if self.bot.vc_client is not None and not hasattr(self.bot, 'last_tts_sent_time'):
+            if self.bot.vc_client.is_connected():
+                await self.bot.vc_client.disconnect()
+            self.bot.vc_client = None
+            return
+        
+        assert self.bot.vc_client is not None
+        assert hasattr(self.bot, 'last_tts_sent_time')
+        assert isinstance(self.bot.last_tts_sent_time, float)
+        
+        if not self.bot.vc_client.is_connected():
+            self.bot.vc_client = None
+            del self.bot.last_tts_sent_time
+            return
+        
+        if time.time() - self.bot.last_tts_sent_time > 180.0:
+            await self.bot.vc_client.disconnect()
+            self.bot.vc_client = None
+            del self.bot.last_tts_sent_time
+        
+        return
+    
+    @discord.ext.tasks.loop(seconds=59)
+    async def send_vc_lb(self) -> None:
+        global current_monday
+        now: datetime.datetime = datetime.datetime.now(datetime.UTC)
+        if now < current_monday:
+            return
+        
+        current_monday = next(monday_gen)
+        channel = self.bot.get_channel(self.bot.config.vc_lb_channel_id)
+        if not hasattr(channel, 'send') or channel is None:
+            logger.error('VC leaderboard channel not found.')
+            return
+        
+        lb = await command_utils.analysis.voice_activity_this_week()
+        msg: str = 'Time spent in VCs leaderboard for last week:\n'
+        for i, stat in enumerate(lb):
+            formatted_time = utils.utils.seconds_to_human_readable(stat["total_seconds"])
+            msg += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
+        
+        await channel.send(msg)
+        await command_utils.analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False) # type: ignore
         
 
 async def setup(bot: CoolBot) -> None:

@@ -61,7 +61,8 @@ async def handle_leave(member: discord.Member) -> None:
     voice_session = {
         'user_id':          str(member.id),
         'channel_id':       join_data['channel_id'],
-        'duration_seconds': duration_seconds
+        'duration_seconds': duration_seconds,
+        'timestamp':        int(leave_time.timestamp())
     }
     
     await db_stuff.send_voice_session(voice_session)

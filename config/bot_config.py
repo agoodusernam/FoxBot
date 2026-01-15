@@ -69,6 +69,7 @@ class BotConfig(ConfigBase):
     highest_user_count: dict[str, int] = field(default_factory=dict)
     last_counted_message_id: str = "0"
     logs_path: Path = Path("logs").resolve()
+    vc_lb_channel_id: int = 0
     
     # User permissions
     admin_ids: list[int] = field(default_factory=list)
@@ -130,7 +131,8 @@ class BotConfig(ConfigBase):
             "counting_successes": {},
             "highest_user_count": {},
             "last_counted_message_id": 0,
-            "logs_path": Path("logs")
+            "logs_path": Path("logs"),
+            "vc_lb_channel_id": 0
         }
     
     @classmethod
@@ -158,6 +160,7 @@ class BotConfig(ConfigBase):
         config.highest_user_count = data.get("highest_user_count", config.highest_user_count)
         config.last_counted_message_id = data.get("last_counted_id", config.last_counted_message_id)
         config.logs_path = Path(data.get("logs_path", config.logs_path)).resolve()
+        config.vc_lb_channel_id = data.get("vc_lb_channel_id", config.vc_lb_channel_id)
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -243,7 +246,8 @@ class BotConfig(ConfigBase):
             "counting_successes": self.counting_successes,
             "highest_user_count": self.highest_user_count,
             "last_counted_message_id": self.last_counted_message_id,
-            "logs_path": str(self.logs_path)
+            "logs_path": str(self.logs_path),
+            "vc_lb_channel_id": self.vc_lb_channel_id
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:

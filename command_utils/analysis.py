@@ -90,7 +90,7 @@ async def try_resolve_uid(uid: int, bot: CoolBot) -> str:
     If the user's display name can't be found, return their ID as a string.
     """
     guild: discord.Guild | None = bot.get_guild(bot.config.guild_id)
-        
+    
     guild_member: discord.Member | None
     
     if guild is not None:
@@ -261,7 +261,7 @@ async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> Mes
     analyse all messages in the database.
 
     Args:
-        time_filter: Optional time filter - 'w' for last week, 'd' for last day, 
+        time_filter: Optional time filter - 'w' for last week, 'd' for last day,
                     'h' for last hour, or None for all messages
         ctx: Discord command context, used to get the guild for user validation
 
@@ -313,7 +313,7 @@ async def analyse_user_messages(member: discord.User, time_filter: str | None = 
 
     Args:
         member: Discord user to analyse
-        time_filter: Optional time filter - 'w' for last week, 'd' for last day, 
+        time_filter: Optional time filter - 'w' for last week, 'd' for last day,
                     'h' for last hour, or None for all messages
 
     Returns:
@@ -614,6 +614,7 @@ class DBVoiceSession(TypedDict):
     channel_id: str
     duration_seconds: int
     _id: Any  # The database internal ID, type depends on the database
+    timestamp: NotRequired[int]
 
 
 class UserVoiceStats(TypedDict):
@@ -858,7 +859,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
     await ctx.send(result)
     if graph:
         try:
-            await generate_voice_activity_graph(ctx, stats)
+            await generate_voice_activity_graph(ctx.channel, ctx.bot, stats, 15) # type: ignore
         except Exception as e:
             logger.error('Error generating voice activity graph: %s', e)
             await ctx.send(f'Error generating graph: {e}')
@@ -926,37 +927,43 @@ async def format_voice_analysis(ctx: CContext, graph: bool = False,
         await ctx.send(f'Error during voice analysis: {e}')
 
 
-async def generate_voice_activity_graph(ctx: CContext, stats: VoiceAnalysisResult):
+async def generate_voice_activity_graph(channel: discord.PartialMessageable, bot: CoolBot,
+        stats: VoiceAnalysisResult | list[UserVoiceStats], count: int, send_errors: bool = True):
     """ Generate and
     send a graph of voice activity.
     Args:
-        ctx: Discord command context
+        channel: The channel where to send the graph
+        bot: The bot instance
         stats: Voice analysis statistics
+        count: The amount of users to show on the graph
+        send_errors: Whether to send an error message if no data is available
     """
     try:
-        guild = ctx.guild
-        if not guild:
-            await ctx.send("Could not retrieve guild information.")
-            return
-        
-        top_users = stats["active_users_lb"][:15]
+        if isinstance(stats, list):
+            top_users = stats[:count]
+        else:
+            top_users = stats["active_users_lb"][:count]
         if not top_users:
-            await ctx.send("No user voice activity data to graph.")
+            logger.error("No user voice activity data to graph.")
+            if send_errors:
+                await channel.send("No user voice activity data to graph.")
             return
         
         usernames: list[str] = []
         voice_time_hours = []
         
         for user_data in top_users:
-            total_seconds = user_data.get('total_seconds', 0)
+            total_seconds = user_data['total_seconds']
             
-            name = await try_resolve_uid(int(user_data['user_id']), ctx.bot)
+            name = await try_resolve_uid(int(user_data['user_id']), bot)
             
             usernames.append(name if name is not None else f"ID:{user_data['user_id']}")
             voice_time_hours.append(int(total_seconds) / 3600)
         
         if not usernames:
-            await ctx.send("No valid user data to generate a graph.")
+            logger.error("No user voice activity data to graph.")
+            if send_errors:
+                await channel.send("No valid user data to generate a graph.")
             return
         
         # Reverse for horizontal bar chart
@@ -980,7 +987,7 @@ async def generate_voice_activity_graph(ctx: CContext, stats: VoiceAnalysisResul
         plt.savefig(graph_file)
         plt.close()
         
-        await ctx.send(file=discord.File(graph_file))
+        await channel.send(file=discord.File(graph_file))
         
         try:
             os.remove(graph_file)
@@ -989,7 +996,8 @@ async def generate_voice_activity_graph(ctx: CContext, stats: VoiceAnalysisResul
     
     except Exception as e:
         logger.error('Error generating voice activity graph: %s', e)
-        await ctx.send(f'Error generating graph: {e}')
+        if send_errors:
+            await channel.send(f'Error generating graph: {e}')
 
 async def user_time_in_channel(ctx: CContext, user: discord.User, channel: discord.VoiceChannel) -> None:
     sessions = await get_valid_voice_sessions()
@@ -1006,4 +1014,44 @@ async def user_time_in_channel(ctx: CContext, user: discord.User, channel: disco
             total_seconds += session['duration_seconds']
     
     await ctx.send(f"{user.display_name} has been in {channel.mention} for {format_duration(total_seconds)}")
+
+async def all_sessions_this_week() -> list[DBVoiceSession]:
+    """
+    Retrieve all voice sessions from the past week.
+
+    Returns:
+        List of voice session dictionaries
+    """
+    sessions = await get_valid_voice_sessions()
+    
+    if not sessions:
+        return []
+    
+    sessions_list, _ = sessions
+    one_week_ago = discord.utils.utcnow() - datetime.timedelta(weeks=1)
+    
+    valid_sessions: list[DBVoiceSession] = []
+    for session in sessions_list:
+        if session.get('timestamp', None) is None:
+            continue
+        session_time = datetime.datetime.fromtimestamp(session['timestamp'], datetime.UTC)
+        if session_time >= one_week_ago:
+            valid_sessions.append(DBVoiceSession(
+                    user_id=session['user_id'],
+                    channel_id=session['channel_id'],
+                    duration_seconds=session['duration_seconds'],
+                    _id=session['_id']
+            ))
+    
+    return valid_sessions
+
+async def voice_activity_this_week() -> list[UserVoiceStats]:
+    sessions = await all_sessions_this_week()
+    stats: dict[str, UserVoiceStats] = {}
+    for session in sessions:
+        user_id = session['user_id']
+        user_stat: UserVoiceStats = stats.get(user_id, {'user_id': user_id, 'total_seconds': 0})
+        stats[user_id] = add_time_stats(user_stat, session['duration_seconds'])
+    
+    return sorted(stats.values(), key=lambda x: x['total_seconds'], reverse=True)[:5]
     
