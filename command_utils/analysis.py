@@ -995,3 +995,20 @@ async def generate_voice_activity_graph(ctx: CContext, stats: VoiceAnalysisResul
     except Exception as e:
         logger.error('Error generating voice activity graph: %s', e)
         await ctx.send(f'Error generating graph: {e}')
+
+async def user_time_in_channel(ctx: CContext, user: discord.User, channel: discord.VoiceChannel) -> None:
+    sessions = await get_valid_voice_sessions()
+    
+    if not sessions:
+        await ctx.send("No voice activity data available.")
+        return
+    
+    sessions_list, _ = sessions
+    
+    total_seconds: int = 0
+    for session in sessions_list:
+        if session['user_id'] == str(user.id) and session['channel_id'] == str(channel.id):
+            total_seconds += session['duration_seconds']
+    
+    await ctx.send(f"{user.display_name} has been in {channel.mention} for {format_duration(total_seconds)}")
+    

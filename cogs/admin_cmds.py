@@ -144,6 +144,16 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         
         await analysis.format_voice_analysis(ctx, graph=True, user=user, include_left=include_left)
     
+    @commands.command(name='time_in_vc', aliases=["tiv"],
+            brief="Get the time spent in a voice channel",
+            help="Get the time a specific user has spent in a specific channel",
+            usage="f!tiv <user> <channel>")
+    @commands.check(is_admin)
+    @commands.cooldown(1, 2, commands.BucketType.user) # type: ignore
+    async def time_in_vc(self, ctx: CContext, user: discord.User, channel: discord.VoiceChannel):
+        await analysis.user_time_in_channel(ctx, user, channel)
+        
+    
     @commands.command(name='blacklist',
                       brief='Blacklist a user',
                       help='Admin only: Prevent a user from using bot commands',
