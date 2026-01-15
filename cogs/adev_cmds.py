@@ -94,7 +94,7 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         await ctx.delete()
         if ctx.author.id != 542798185857286144: return
         loop = asyncio.new_event_loop()
-        ctx.bot.dev_func_thread = threading.Thread(target=adev_cmds_utils.run_func, args=(loop, func_name))
+        ctx.bot.dev_func_thread = threading.Thread(target=adev_cmds_utils.run_func, args=(loop, func_name, ctx))
         ctx.bot.dev_func_thread.start()
     
     @commands.command(name='debug_status',
