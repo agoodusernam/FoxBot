@@ -4,7 +4,7 @@ import math
 import random
 from typing import Any, Generator
 
-import cachetools.func
+import cachetools
 import discord
 import discord.ext.commands
 
@@ -12,6 +12,7 @@ from cogs import api_cmds_utils
 
 logger = logging.getLogger('discord')
 
+last_commit_cache: cachetools.TTLCache[None, tuple[int, str, dict[str, int]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 
 def monday_generator() -> Generator[datetime.datetime, None, None]:
     now: datetime.datetime = datetime.datetime.now(datetime.UTC)
@@ -49,8 +50,16 @@ async def dice_roll(message: discord.Message) -> None:
     return
 
 
-@cachetools.func.ttl_cache(maxsize=1, ttl=60 * 60)
-async def get_last_commit() -> None | tuple[int, str, dict[str, int]]:
+async def cached_get_last_commit() -> None | tuple[int, str, dict[str, int]]:
+    global last_commit_cache
+    if last_commit_cache.get(None) is not None:
+        return last_commit_cache[None]
+    stuff = await _get_last_commit()
+    last_commit_cache[None] = stuff
+    return stuff
+    
+async def _get_last_commit() -> None | tuple[int, str, dict[str, int]]:
+    
     """
     Get the latest commit info from the FoxBot GitHub repository.
     Returns None if an error occurs.
