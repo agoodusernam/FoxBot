@@ -19,7 +19,7 @@ def monday_generator() -> Generator[datetime.datetime, None, None]:
     days_until_monday: int = (7 - now.weekday()) % 7
     if days_until_monday == 0 and now.time() > datetime.time(0, 0):
         days_until_monday = 7
-    next_monday: datetime.datetime = datetime.datetime.combine(now.date() + datetime.timedelta(days=days_until_monday), datetime.time(0, 0))
+    next_monday: datetime.datetime = datetime.datetime.combine(now.date() + datetime.timedelta(days=days_until_monday), datetime.time(0, 0), tzinfo=datetime.UTC)
     
     while True:
         yield next_monday
