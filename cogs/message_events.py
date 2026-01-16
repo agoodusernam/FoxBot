@@ -170,6 +170,8 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         db_msg = await db_stuff.get_from_db('messages', {'id': str(payload.message_id)})
         if db_msg is None:
             logger.error(f'Message {payload.message_id} not found in database.')
+            if payload.cached_message is not None:
+                await self.post_deleted_to_log(payload.cached_message, payload.channel_id, payload.message_id)
         else:
             await self.post_deleted_to_log(db_msg, payload.channel_id, payload.message_id)
         
@@ -213,11 +215,13 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         if isinstance(message, discord.Message):
             content = message.content
             if content.strip() == 'f!update': return
+            if content.strip().startswith('f!v'): return
             author_obj = message.author
             
         else:
             content = message['content']
             if content.strip() == 'f!update': return
+            if content.strip().startswith('f!v'): return
             author_obj = await try_uid_to_discord_obj(int(message['author_id']), self.bot)
         
         if content.strip() == '':
@@ -266,7 +270,6 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             logger.error(f'Message {payload.message_id} not found in database.')
             return
         
-        author_obj: discord.Member | discord.User = payload.message.author
         after_content = payload.message.content
         
         if payload.cached_message is not None:
@@ -274,7 +277,8 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         else:
             before_content = db_msg['content']
         
-        await self.post_edit_to_log(before_content, after_content, author_obj, payload.channel_id, payload.message_id)
+        await self.post_edit_to_log(before_content, after_content,
+                payload.message.author, payload.channel_id, payload.message_id)
     
     
     async def post_edit_to_log(self, before_content: str, after_content: str,
