@@ -6,7 +6,6 @@ from discord.ext import commands
 
 import cogs.counting_utils as counting_utils
 import cogs.message_events_utils as message_events_utils
-import command_utils.analysis
 from command_utils.CContext import CContext, CoolBot
 from utils import utils, db_stuff
 
@@ -80,7 +79,7 @@ class TTS(commands.Cog, name='TTS'):
             logger.error('TTS command not found in bot commands.')
             return
         
-        await ctx.invoke(cmd, message=message.content.replace("!f", "").strip())  # type: ignore
+        await ctx.invoke(command, message=message.content.replace("!f", "").strip())  # type: ignore
 
 
 class MessageLogging(commands.Cog, name='Message Logging'):
