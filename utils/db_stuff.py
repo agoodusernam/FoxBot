@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Any, Literal
+import datetime
 
 import cachetools  # type: ignore[import-untyped]
 import discord
@@ -433,3 +434,13 @@ async def get_many_from_db(collection_name: str, query: dict[str, Any], sort_by=
     except Exception as e:
         logger.error(f'Error retrieving data from {collection_name} collection: {e}')
         return None
+
+async def message_edited(message_id: str, content: str):
+    current = await get_from_db('messages', {'id': message_id})
+    if current is None:
+        logger.error(f'failed to edit message {message_id}. Message not found in DB')
+    edits = current.get('edits', [])
+    edits.append({'timestamp': datetime.datetime.now(timezone.utc).timestamp(), 'content': content})
+    await update_db_entry('messages', {'id': message_id}, {'edits': edits})
+    
+    
