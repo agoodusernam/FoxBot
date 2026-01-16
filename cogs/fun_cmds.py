@@ -211,7 +211,7 @@ class FunCommands(commands.Cog, name='Fun'):
                 await ctx.bot.vc_client.move_to(state.channel)
             vc_client = ctx.bot.vc_client
         else:
-            vc_client = await state.channel.connect(timeout=15.0, reconnect=False)
+            vc_client = await state.channel.connect(timeout=15.0, reconnect=False, self_deaf=True)
             ctx.bot.vc_client = vc_client
         
         audio = discord.FFmpegPCMAudio(source='msg.mp3')
