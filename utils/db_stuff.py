@@ -241,7 +241,7 @@ async def send_voice_session(session_data: dict[str, Any]) -> None:
     
     try:
         await collection.insert_one(session_data)
-        logger.info(f'Voice session for {session_data["user_name"]} saved successfully')
+        logger.info(f'Voice session for {session_data["user_id"]} saved successfully')
     except Exception as e:
         logger.error(f'Error saving voice session: {e}')
 
