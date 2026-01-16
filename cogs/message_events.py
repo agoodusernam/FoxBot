@@ -264,6 +264,10 @@ class MessageLogging(commands.Cog, name='Message Logging'):
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent) -> None:
         logger.debug(f'Message {payload.message_id} edited in {payload.channel_id}')
+        
+        if self.bot.config.staging:
+            return
+        
         assert self.bot.user is not None
         
         if payload.message.author.id == self.bot.user.id:
@@ -285,14 +289,12 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             if not self.bot.config.last_highest_count_edited:
                 await payload.message.channel.send(f'<@{payload.message.author.id}> edited their message. The next number is `{self.bot.config.last_count + 1}`')
         
-        await db_stuff.edit_db_message(str(payload.message_id), payload.message.content)
-        if self.bot.config.staging:
-            return
-        
         before_content: str
         after_content: str
         
         db_msg = await db_stuff.get_from_db('messages', {'id': str(payload.message_id)})
+        await db_stuff.edit_db_message(str(payload.message_id), payload.message.content)
+        
         if db_msg is None:
             logger.error(f'Message {payload.message_id} not found in database.')
             return
