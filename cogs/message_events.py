@@ -1,14 +1,44 @@
 import logging
+from typing import Any
 
 import discord
 from discord.ext import commands
 
 import cogs.counting_utils as counting_utils
 import cogs.message_events_utils as message_events_utils
+import command_utils.analysis
 from command_utils.CContext import CContext, CoolBot
 from utils import utils, db_stuff
 
 logger = logging.getLogger('discord')
+
+
+async def try_uid_to_discord_obj(uid: int, bot: CoolBot) -> discord.User | discord.Member | None:
+    """
+    Attempt to resolve a user ID to a display name.
+    If the user's display name can't be found, return their ID as a string.
+    """
+    guild: discord.Guild | None = bot.get_guild(bot.config.guild_id)
+    
+    guild_member: discord.Member | None
+    
+    if guild is not None:
+        guild_member = guild.get_member(uid)
+    else:
+        guild_member = None
+    
+    if isinstance(guild_member, discord.Member):
+        return guild_member
+    
+    try:
+        fetched = await bot.fetch_user(uid)
+        if isinstance(fetched, discord.User):
+            return fetched
+    
+    except (discord.NotFound, discord.HTTPException):
+        pass
+    
+    return None
 
 class TTS(commands.Cog, name='TTS'):
     def __init__(self, bot: CoolBot):
@@ -56,6 +86,7 @@ class TTS(commands.Cog, name='TTS'):
 class MessageLogging(commands.Cog, name='Message Logging'):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
+        self.logs_channel: discord.TextChannel | None = None
     
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -136,6 +167,12 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         if self.bot.config.staging:
             return
         
+        db_msg = await db_stuff.get_from_db('messages', {'id': payload.message_id})
+        if db_msg is None:
+            logger.error(f'Message {payload.message_id} not found in database.')
+        else:
+            await self.post_deleted_to_log(db_msg, payload.channel_id, payload.message_id)
+        
         if payload.channel_id != self.bot.config.counting_channel:
             return
         
@@ -148,9 +185,8 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         if payload.cached_message is not None:
             author_id = payload.cached_message.author.id
         else:
-            msg = await db_stuff.get_from_db('messages', {'id': payload.message_id})
-            if msg is not None:
-                author_id = int(msg['author_id'])
+            if db_msg is not None:
+                author_id = int(db_msg['author_id'])
             else:
                 unknown_author = True
         
@@ -162,6 +198,125 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             return
         
         await channel.send(f'<@{author_id}> deleted their message. The next number is `{self.bot.config.last_count + 1}`')
+    
+    async def post_deleted_to_log(self, message: discord.Message | dict[str, Any], channel_id: int, message_id: int):
+        """
+        Post the deleted message to the log channel.
+        """
+        assert self.bot.user is not None
+        
+        author_obj: discord.Member | discord.User | None
+        display_name: str
+        name: str
+        content: str
+        
+        if isinstance(message, discord.Message):
+            content = message.content
+            if content.strip() == 'f!update': return
+            author_obj = message.author
+            
+        else:
+            content = message['content']
+            if content.strip() == 'f!update': return
+            author_obj = await try_uid_to_discord_obj(int(message['author_id']), self.bot)
+        
+        if content.strip() == '':
+            content = 'Message had no content, it may have been an embed or was just an attachment.'
+        
+        
+        if author_obj is None:
+            display_name = 'Unknown user'
+            name = 'Unknown user'
+        else:
+            if author_obj.id == self.bot.user.id:
+                return
+            
+            display_name = author_obj.display_name
+            name = author_obj.name
+        
+        
+        embed = discord.Embed(title=f'{display_name} deleted a message in <#{channel_id}>', color=discord.Color.red())
+        url = author_obj.display_avatar.url if author_obj is not None else self.bot.user.display_avatar.url
+        embed.set_author(name=name, icon_url=url)
+        embed.timestamp = discord.utils.utcnow()
+        embed.footer.text = f'ID: {message_id}'
+        embed.description = content
+        
+        if not isinstance(self.logs_channel, discord.TextChannel):
+            logs_channel = self.bot.get_channel(self.bot.config.msg_log_channel_id)
+            
+            if not isinstance(logs_channel, discord.TextChannel):
+                logger.error(f'Message log channel not found or not of correct type. Type: {type(logs_channel)}.')
+                return
+            
+            self.logs_channel = logs_channel
+        
+        await self.logs_channel.send(embed=embed)
+    
+    @commands.Cog.listener()
+    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent) -> None:
+        if self.bot.config.staging:
+            return
+        
+        before_content: str
+        after_content: str
+        
+        db_msg = await db_stuff.get_from_db('messages', {'id': payload.message_id})
+        if db_msg is None:
+            logger.error(f'Message {payload.message_id} not found in database.')
+            return
+        
+        author_obj: discord.Member | discord.User = payload.message.author
+        after_content = payload.message.content
+        
+        if payload.cached_message is not None:
+            before_content = payload.cached_message.content
+        else:
+            before_content = db_msg['content']
+        
+        await self.post_edit_to_log(before_content, after_content, author_obj, payload.channel_id, payload.message_id)
+    
+    
+    async def post_edit_to_log(self, before_content: str, after_content: str,
+                              author: discord.Member | discord.User,
+                              channel_id: int, message_id: int) -> None:
+        """
+        Post the edited message to the log channel.
+        """
+        assert self.bot.user is not None
+        display_name: str
+        name: str
+        description: str
+        
+        
+        if author.id == self.bot.user.id:
+            return
+        
+        
+        if before_content.strip() == '':
+            before_content = '[No message content. Perhaps an embed or attachment?]'
+        if after_content.strip() == '':
+            after_content = '[No message content. Perhaps an embed or attachment?]'
+        
+        description = '**Before:** ' + before_content + '\n**After:** ' + after_content
+        
+        embed = discord.Embed(title=f'{author.display_name} edited a message in <#{channel_id}>', color=discord.Color.blurple())
+        embed.set_author(name=author.name, icon_url=author.display_avatar.url)
+        embed.timestamp = discord.utils.utcnow()
+        embed.footer.text = f'ID: {message_id}'
+        embed.description = description
+        
+        if not isinstance(self.logs_channel, discord.TextChannel):
+            logs_channel = self.bot.get_channel(self.bot.config.msg_log_channel_id)
+            
+            if not isinstance(logs_channel, discord.TextChannel):
+                logger.error(f'Message log channel not found or not of correct type. Type: {type(logs_channel)}.')
+                return
+            
+            self.logs_channel = logs_channel
+        
+        await self.logs_channel.send(embed=embed)
+        
 
 
 class ReactionEvents(commands.Cog, name='Reaction Logging'):
