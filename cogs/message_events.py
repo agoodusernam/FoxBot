@@ -299,7 +299,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         after_content = payload.message.content
         
-        if db_msg.get('edits', []):
+        if not db_msg.get('edits'):
             before_content = db_msg['content']
         else:
             before_content = db_msg['edits'][-1]['content']
