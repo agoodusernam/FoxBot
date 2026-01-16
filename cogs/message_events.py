@@ -163,6 +163,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
     
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent) -> None:
+        logger.debug(f'Message {payload.message_id} deleted in {payload.channel_id}.')
         if self.bot.config.staging:
             return
         
@@ -258,6 +259,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
     
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent) -> None:
+        logger.debug(f'Message {payload.message_id} edited in {payload.channel_id}')
         if self.bot.config.staging:
             return
         
