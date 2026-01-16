@@ -21,9 +21,11 @@ _DB_connect_enabled: bool = False
 message_download_cache: cachetools.TTLCache[None, list[dict[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 voice_download_cache: cachetools.TTLCache[None, list[dict[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 
+
 def disable_connection() -> None:
     global _DB_connect_enabled
     _DB_connect_enabled = False
+
 
 def enable_connection() -> None:
     global _DB_connect_enabled
@@ -47,7 +49,7 @@ async def _connect() -> AsyncMongoClient | None:
     uri = os.getenv('MONGO_URI')
     
     client: AsyncMongoClient = AsyncMongoClient(uri, server_api=ServerApi('1'), serverSelectionTimeoutMS=5000, tls=True,
-                         tlsCertificateKeyFile="mongo_cert.pem")
+            tlsCertificateKeyFile="mongo_cert.pem")
     try:
         await client.admin.command('ping')
         _mongo_client = client  # Store the connection
@@ -139,17 +141,17 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
         
         # Store metadata
         metadata = {
-            'message_id':         str(message.id),
-            'author_id':          str(message.author.id),
-            'content_type':       attachment.content_type,
-            'timestamp':          message.created_at.timestamp()
+            'message_id':   str(message.id),
+            'author_id':    str(message.author.id),
+            'content_type': attachment.content_type,
+            'timestamp':    message.created_at.timestamp()
         }
         
         # Store file in GridFS
         await fs.put(
                 attachment_bytes,
                 filename=attachment.filename,
-                metadata=metadata
+                metadata=metadata,
         )
         logger.info(f'Attachment saved successfully: {attachment.filename}')
         return None
@@ -165,7 +167,8 @@ async def cached_download_all() -> list[dict[Any, Any]] | None:
     stuff = await _download_all()
     message_download_cache[None] = stuff
     return stuff
-    
+
+
 async def _download_all() -> list[dict[str, Any]] | None:
     client = await _connect()
     if not client:
@@ -303,6 +306,10 @@ async def edit_db_entry(collection_name: str, query: dict[str, Any], update_data
     
     try:
         result = await collection.update_one(query, {'$set': update_data})
+        if not result.acknowledged:
+            logger.error('Update operation not acknowledged')
+            return False
+        
         if result.modified_count > 0:
             return True
         else:
@@ -420,7 +427,7 @@ async def get_many_from_db(collection_name: str, query: dict[str, Any], sort_by=
         mongo_direction = pymongo.ASCENDING
     else:
         mongo_direction = pymongo.DESCENDING
-        
+    
     if sort_by is None:
         results = collection.find(query)
         return [dict(result) async for result in results]
@@ -435,12 +442,15 @@ async def get_many_from_db(collection_name: str, query: dict[str, Any], sort_by=
         logger.error(f'Error retrieving data from {collection_name} collection: {e}')
         return None
 
-async def message_edited(message_id: str, content: str):
+
+async def edit_db_message(message_id: str, content: str):
+    logger.debug(f"Editing message {message_id}")
     current = await get_from_db('messages', {'id': message_id})
+    
     if current is None:
         logger.error(f'failed to edit message {message_id}. Message not found in DB')
+        return
+    
     edits = current.get('edits', [])
-    edits.append({'timestamp': datetime.datetime.now(timezone.utc).timestamp(), 'content': content})
-    await update_db_entry('messages', {'id': message_id}, {'edits': edits})
-    
-    
+    edits.append({'timestamp': datetime.datetime.now(datetime.UTC).timestamp(), 'content': content})
+    await edit_db_entry('messages', {'id': message_id}, {'edits': edits})

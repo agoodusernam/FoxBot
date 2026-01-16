@@ -169,7 +169,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         db_msg = await db_stuff.get_from_db('messages', {'id': str(payload.message_id)})
         if db_msg is None:
-            logger.error(f'Message {payload.message_id} not found in database.')
+            logger.warning(f'Message {payload.message_id} not found in database.')
             if payload.cached_message is not None:
                 await self.post_deleted_to_log(payload.cached_message, payload.channel_id, payload.message_id)
         else:
@@ -219,7 +219,11 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             author_obj = message.author
             
         else:
-            content = message['content']
+            if message.get('edits', []):
+                content = message['content']
+            else:
+                content = message['edits'][-1]['content']
+                
             if content.strip() == 'f!update': return
             if content.strip().startswith('f!v'): return
             author_obj = await try_uid_to_discord_obj(int(message['author_id']), self.bot)
@@ -260,6 +264,28 @@ class MessageLogging(commands.Cog, name='Message Logging'):
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent) -> None:
         logger.debug(f'Message {payload.message_id} edited in {payload.channel_id}')
+        assert self.bot.user is not None
+        
+        if payload.message.author.id == self.bot.user.id:
+            return
+        
+        if payload.message.author.id in self.bot.config.no_log.user_ids:
+            return
+        
+        if payload.channel_id in self.bot.config.no_log.channel_ids:
+            return
+        
+        if (hasattr(payload.message.channel, 'category_id')
+                and payload.channel_id in self.bot.config.no_log.category_ids):
+            return
+        
+        if (payload.channel_id == self.bot.config.counting_channel
+                and payload.message_id == self.bot.config.last_counted_message_id):
+            
+            if not self.bot.config.last_highest_count_edited:
+                await payload.message.channel.send(f'<@{payload.message.author.id}> edited their message. The next number is `{self.bot.config.last_count + 1}`')
+        
+        await db_stuff.edit_db_message(str(payload.message_id), payload.message.content)
         if self.bot.config.staging:
             return
         
@@ -273,10 +299,10 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         after_content = payload.message.content
         
-        if payload.cached_message is not None:
-            before_content = payload.cached_message.content
-        else:
+        if db_msg.get('edits', []):
             before_content = db_msg['content']
+        else:
+            before_content = db_msg['edits'][-1]['content']
         
         await self.post_edit_to_log(before_content, after_content,
                 payload.message.author, payload.channel_id, payload.message_id)

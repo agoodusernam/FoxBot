@@ -22,6 +22,9 @@ class NoLogConfig(ConfigBase):
     user_ids: list[int] = field(default_factory=list)
     channel_ids: list[int] = field(default_factory=list)
     category_ids: list[int] = field(default_factory=list)
+    
+    def __contains__(self, item: int) -> bool:
+        return item in self.user_ids or item in self.channel_ids or item in self.category_ids
 
 
 @dataclass
@@ -71,6 +74,7 @@ class BotConfig(ConfigBase):
     logs_path: Path = Path("logs").resolve()
     vc_lb_channel_id: int = 0
     msg_log_channel_id: int = 0
+    last_highest_count_edited: bool = False
     
     # User permissions
     admin_ids: list[int] = field(default_factory=list)
@@ -134,7 +138,8 @@ class BotConfig(ConfigBase):
             "last_counted_message_id": 0,
             "logs_path": Path("logs"),
             "vc_lb_channel_id": 0,
-            "msg_log_channel_id": 0
+            "msg_log_channel_id": 0,
+            "last_highest_count_edited": False
         }
     
     @classmethod
@@ -164,6 +169,7 @@ class BotConfig(ConfigBase):
         config.logs_path = Path(data.get("logs_path", config.logs_path)).resolve()
         config.vc_lb_channel_id = data.get("vc_lb_channel_id", config.vc_lb_channel_id)
         config.msg_log_channel_id = data.get("msg_log_channel_id", config.msg_log_channel_id)
+        config.last_highest_count_edited = data.get("last_highest_count_edited", config.last_highest_count_edited)
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -251,7 +257,8 @@ class BotConfig(ConfigBase):
             "last_counted_message_id": self.last_counted_message_id,
             "logs_path": str(self.logs_path),
             "vc_lb_channel_id": self.vc_lb_channel_id,
-            "msg_log_channel_id": self.msg_log_channel_id
+            "msg_log_channel_id": self.msg_log_channel_id,
+            "last_highest_count_edited": self.last_highest_count_edited
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:
