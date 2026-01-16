@@ -167,7 +167,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         if self.bot.config.staging:
             return
         
-        db_msg = await db_stuff.get_from_db('messages', {'id': payload.message_id})
+        db_msg = await db_stuff.get_from_db('messages', {'id': str(payload.message_id)})
         if db_msg is None:
             logger.error(f'Message {payload.message_id} not found in database.')
         else:
@@ -261,7 +261,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         before_content: str
         after_content: str
         
-        db_msg = await db_stuff.get_from_db('messages', {'id': payload.message_id})
+        db_msg = await db_stuff.get_from_db('messages', {'id': str(payload.message_id)})
         if db_msg is None:
             logger.error(f'Message {payload.message_id} not found in database.')
             return
