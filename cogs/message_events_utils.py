@@ -95,7 +95,8 @@ async def log_msg(message: discord.Message) -> bool:
         'timestamp':          message.created_at.timestamp(),
         'id':                 str(message.id),
         'channel':            message.channel.name if hasattr(message.channel, 'name') else 'Unknown',
-        'channel_id':         str(message.channel.id)
+        'channel_id':         str(message.channel.id),
+        'edits': []
     }
     
     if os.getenv('LOCAL_SAVE') == 'True':
