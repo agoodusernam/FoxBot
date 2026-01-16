@@ -219,7 +219,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             author_obj = message.author
             
         else:
-            if message.get('edits', []):
+            if not message.get('edits'):
                 content = message['content']
             else:
                 content = message['edits'][-1]['content']
