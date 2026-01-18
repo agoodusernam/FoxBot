@@ -22,7 +22,7 @@ from command_utils.CContext import CContext, CoolBot
 logger = logging.getLogger('discord')
 
 monday_gen = fun_cmds_utils.monday_generator()
-current_monday = next(monday_gen)
+current_monday: datetime.datetime = next(monday_gen)
 
 
 class FunCommands(commands.Cog, name='Fun'):
@@ -267,6 +267,25 @@ class FunCommands(commands.Cog, name='Fun'):
         embed.add_field(name='Commit Message', value=commit_message, inline=False)
         embed.add_field(name='Total lines changed', value=changes['total'], inline=False)
         await ctx.send(embed=embed)
+    
+    @commands.command(name='vc_lb',
+                      brief="Send the voice call leaderboard",
+                      help="Send the voice call leaderboard to the current channel")
+    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    async def manual_send_vc_lb(self, ctx: CContext) -> None:
+        channel = ctx.channel
+        if not hasattr(channel, 'send') or channel is None:
+            logger.error('VC leaderboard channel not found.')
+            return
+        
+        lb = await command_utils.analysis.voice_activity_this_week()
+        msg: str = 'Time spent in VCs leaderboard for last week:\n'
+        for i, stat in enumerate(lb):
+            formatted_time = utils.utils.seconds_to_human_readable(stat["total_seconds"])
+            msg += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
+        
+        await channel.send(msg)
+        await command_utils.analysis.generate_voice_activity_graph(channel, self.bot, lb, 5)  # type: ignore
     
     @discord.ext.tasks.loop(seconds=59)
     async def check_tts_leave(self) -> None:
