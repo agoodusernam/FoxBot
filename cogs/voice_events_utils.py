@@ -94,3 +94,17 @@ async def leave_all(bot: CoolBot) -> None:
         else:
             logger.warning(f"Member with ID {member_id} not found, clearing session data")
             del active_voice_sessions[member_id]
+
+async def reconnect_all(bot: CoolBot) -> None:
+    """Force reconnect all active voice sessions"""
+    await leave_all(bot)
+    for channel in bot.get_all_channels():
+        if not isinstance(channel, discord.VoiceChannel):
+            continue
+        
+        for member in channel.members:
+            if member.bot:
+                continue
+            
+            await handle_join(member, channel)
+            logger.info(f'Reconnected voice state for {member.name} in {channel.name}')

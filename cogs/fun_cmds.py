@@ -13,9 +13,9 @@ from discord.ext.commands import guild_only
 from discord.ext.tasks import loop
 from gtts import gTTS  # type: ignore[import-untyped]
 
-import cogs.fun_cmds_utils as fun_cmds_utils
-import command_utils.analysis
-from command_utils.analysis import try_resolve_uid
+from cogs import fun_cmds_utils
+from command_utils import analysis
+from cogs import voice_events_utils
 import utils.utils
 from command_utils.CContext import CContext, CoolBot
 
@@ -278,14 +278,14 @@ class FunCommands(commands.Cog, name='Fun'):
             logger.error('VC leaderboard channel not found.')
             return
         
-        lb = await command_utils.analysis.voice_activity_this_week()
+        lb = await analysis.voice_activity_this_week()
         msg: str = 'Time spent in VCs leaderboard for last week:\n'
         for i, stat in enumerate(lb):
             formatted_time = utils.utils.seconds_to_human_readable(stat["total_seconds"])
             msg += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
         
         await channel.send(msg)
-        await command_utils.analysis.generate_voice_activity_graph(channel, self.bot, lb, 5)  # type: ignore
+        await analysis.generate_voice_activity_graph(channel, self.bot, lb, 5)  # type: ignore
     
     @discord.ext.tasks.loop(seconds=59)
     async def check_tts_leave(self) -> None:
@@ -327,19 +327,21 @@ class FunCommands(commands.Cog, name='Fun'):
             return
         
         current_monday = next(monday_gen)
+        await voice_events_utils.reconnect_all(self.bot)
+        await asyncio.sleep(2)
         channel = self.bot.get_channel(self.bot.config.vc_lb_channel_id)
         if not hasattr(channel, 'send') or channel is None:
             logger.error('VC leaderboard channel not found.')
             return
         
-        lb = await command_utils.analysis.voice_activity_this_week()
+        lb = await analysis.voice_activity_this_week(skip_cache=True)
         msg: str = 'Time spent in VCs leaderboard for last week:\n'
         for i, stat in enumerate(lb):
-            formatted_time = utils.utils.seconds_to_human_readable(stat["total_seconds"])
+            formatted_time = analysis.format_duration(stat["total_seconds"])
             msg += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
         
         await channel.send(msg)
-        await command_utils.analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False) # type: ignore
+        await analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False) # type: ignore
     
     @discord.ext.tasks.loop(minutes=1)
     async def add_ping(self):
