@@ -673,15 +673,24 @@ async def remove_invalid_voice_sessions(sessions: list[dict[str, Any]]) -> tuple
     required_keys = {'user_id', 'channel_id', 'duration_seconds'}
     valid_sessions: list[DBVoiceSession] = []
     total_seconds: int = 0
+    
     for session in sessions:
+        
         valid = all(key in session for key in required_keys)
+        
         if not valid:
             logger.warning('deleting invalid voice session: %s', session)
             await db_stuff.del_db_entry('voice_sessions', session['_id'])
             continue
+            
         total_seconds += session['duration_seconds']
-        valid_sessions.append(DBVoiceSession(user_id=session['user_id'], channel_id=session['channel_id'], duration_seconds=session['duration_seconds'], _id=session['_id']))
-    
+        valid_session = DBVoiceSession(user_id=session['user_id'], channel_id=session['channel_id'], duration_seconds=session['duration_seconds'], _id=session['_id'])
+        
+        if 'timestamp' in session:
+            valid_session['timestamp'] = session['timestamp']
+            
+        valid_sessions.append(valid_session)
+        
     if not valid_sessions:
         return None
     return valid_sessions, total_seconds
@@ -1030,8 +1039,9 @@ async def all_sessions_this_week() -> list[DBVoiceSession]:
     
     valid_sessions: list[DBVoiceSession] = []
     for session in sessions_list:
-        if session.get('timestamp', None) is None:
+        if 'timestamp' not in session:
             continue
+            
         logger.debug('session timestamp: %s', session['timestamp'])
         session_time = datetime.datetime.fromtimestamp(session['timestamp'], datetime.UTC)
         difference = discord.utils.utcnow() - session_time
