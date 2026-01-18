@@ -281,7 +281,7 @@ class FunCommands(commands.Cog, name='Fun'):
         lb = await analysis.voice_activity_this_week()
         msg: str = 'Time spent in VCs leaderboard for last week:\n'
         for i, stat in enumerate(lb):
-            formatted_time = utils.utils.seconds_to_human_readable(stat["total_seconds"])
+            formatted_time = analysis.format_duration(stat["total_seconds"])
             msg += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
         
         await channel.send(msg)
