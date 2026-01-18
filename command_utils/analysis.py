@@ -929,8 +929,7 @@ async def format_voice_analysis(ctx: CContext, graph: bool = False,
 
 async def generate_voice_activity_graph(channel: discord.PartialMessageable, bot: CoolBot,
         stats: VoiceAnalysisResult | list[UserVoiceStats], count: int, send_errors: bool = True):
-    """ Generate and
-    send a graph of voice activity.
+    """ Generate and send a graph of voice activity.
     Args:
         channel: The channel where to send the graph
         bot: The bot instance
@@ -1028,14 +1027,15 @@ async def all_sessions_this_week() -> list[DBVoiceSession]:
         return []
     
     sessions_list, _ = sessions
-    one_week_ago = discord.utils.utcnow() - datetime.timedelta(weeks=1)
     
     valid_sessions: list[DBVoiceSession] = []
     for session in sessions_list:
         if session.get('timestamp', None) is None:
             continue
+        logger.debug('session timestamp: %s', session['timestamp'])
         session_time = datetime.datetime.fromtimestamp(session['timestamp'], datetime.UTC)
-        if session_time >= one_week_ago:
+        difference = discord.utils.utcnow() - session_time
+        if difference <= datetime.timedelta(days=7):
             valid_sessions.append(DBVoiceSession(
                     user_id=session['user_id'],
                     channel_id=session['channel_id'],
