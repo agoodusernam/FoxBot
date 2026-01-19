@@ -306,6 +306,9 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         else:
             before_content = db_msg['edits'][-1]['content']
         
+        if before_content.strip() == after_content.strip():
+            return
+        
         await self.post_edit_to_log(before_content, after_content,
                 payload.message.author, payload.channel_id, payload.message_id)
     
