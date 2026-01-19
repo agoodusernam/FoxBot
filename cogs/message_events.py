@@ -247,7 +247,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         url = author_obj.display_avatar.url if author_obj is not None else self.bot.user.display_avatar.url
         embed.set_author(name=name, icon_url=url)
         embed.timestamp = discord.utils.utcnow()
-        embed.footer.text = f'ID: {message_id}'
+        embed.set_footer(text=f'ID: {message_id}')
         embed.description = content
         
         if not isinstance(self.logs_channel, discord.TextChannel):
@@ -307,15 +307,16 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             before_content = db_msg['edits'][-1]['content']
         
         if before_content.strip() == after_content.strip():
+            logger.debug('Received edit event for message with no content change.')
             return
         
         await self.post_edit_to_log(before_content, after_content,
-                payload.message.author, payload.channel_id, payload.message_id)
+                payload.message.author, payload.channel_id, payload.message_id, payload.message.jump_url)
     
     
     async def post_edit_to_log(self, before_content: str, after_content: str,
                               author: discord.Member | discord.User,
-                              channel_id: int, message_id: int) -> None:
+                              channel_id: int, message_id: int, jump_url: str) -> None:
         """
         Post the edited message to the log channel.
         """
@@ -335,11 +336,12 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             after_content = '[No message content. Perhaps an embed or attachment?]'
         
         description = '**Before:** ' + before_content + '\n**After:** ' + after_content
+        description += f'\n\n[Jump to message]({jump_url})'
         
         embed = discord.Embed(title=f'{author.display_name} edited a message in <#{channel_id}>', color=discord.Color.blurple())
         embed.set_author(name=author.name, icon_url=author.display_avatar.url)
         embed.timestamp = discord.utils.utcnow()
-        embed.footer.text = f'ID: {message_id}'
+        embed.set_footer(text=f'ID: {message_id}')
         embed.description = description
         
         if not isinstance(self.logs_channel, discord.TextChannel):
