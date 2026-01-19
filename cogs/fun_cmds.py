@@ -5,6 +5,7 @@ import logging
 import os
 import random
 import time
+import typing
 from typing import Any
 
 import discord
@@ -272,8 +273,9 @@ class FunCommands(commands.Cog, name='Fun'):
                       brief="Send the voice call leaderboard",
                       help="Send the voice call leaderboard to the current channel")
     @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
-    async def manual_send_vc_lb(self, ctx: CContext) -> None:
-        channel = ctx.channel
+    async def manual_send_vc_lb(self, ctx: CContext, channel: typing.Optional[discord.TextChannel]) -> None:
+        if channel is None:
+            channel = ctx.channel # type: ignore
         if not hasattr(channel, 'send') or channel is None:
             logger.error('VC leaderboard channel not found.')
             return
