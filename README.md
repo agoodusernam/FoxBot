@@ -6,6 +6,7 @@ fun commands.
 If you want to use this bot on your own server, follow this guide:
 
 Don't
+
 Jokes aside, you probably shouldn't use this bot on your own server. It's not made to run for other servers and is 
 specifically designed for the foxeshaven server. I have done my best to make it customisable, but if doing that would
 have taken more time or added complexity, I didn't. There are still quite a few magic numbers and other server specific 
