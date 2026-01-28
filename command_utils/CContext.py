@@ -93,3 +93,23 @@ class CoolBot(commands.Bot):
         
     async def get_context(self, message, *, cls=CContext) -> Any:
         return await super().get_context(message, cls=cls)
+    
+    @staticmethod
+    async def safe_delete(message: discord.Message) -> bool:
+        try:
+            await message.delete()
+            
+        except discord.Forbidden:
+            logger.warning(f"Failed to delete message {message.id} in {message.channel.id}. Insufficient permissions.")
+            return False
+        
+        except discord.NotFound:
+            logger.warning(f"Message {message.id} not found in {message.channel.id}")
+            return False
+        
+        except discord.HTTPException as e:
+            logger.error(f"Failed to delete message {message.id} in {message.channel.id}:" +
+            f"Status: {e.status}, Code: {e.code}, Text: {e.text}")
+            return False
+        
+        return True
