@@ -165,7 +165,14 @@ async def fail_count(message: discord.Message, bot: CoolBot) -> None:
     await message.add_reaction("❌")
     
     if not utils.user_has_role(message.author, bot.config.counting_fail_role):
-        await message.author.add_roles(discord.Object(id=bot.config.counting_fail_role))
+        try:
+            await message.author.add_roles(discord.Object(id=bot.config.counting_fail_role))
+        except discord.Forbidden:
+            logger.error(f"Failed to add counting fail role to user {message.author.display_name}, missing permissions")
+        except discord.NotFound:
+            logger.error(f"Counting fail role {bot.config.counting_fail_role} not found")
+        except discord.HTTPException as e:
+            logger.error(f"Failed to add counting fail role to user {message.author.display_name}: {e}")
     
     bot.config.add_counting_fail(message.author.id)
     return None
