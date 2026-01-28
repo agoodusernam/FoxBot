@@ -404,20 +404,21 @@ class ReactionEvents(commands.Cog, name='Reaction Logging'):
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent) -> None:
         if payload.message_id != self.bot.config.reaction_roles.message_id:
             return
+        
         if self.bot.config.staging:
             return
         
         if payload.guild_id is None:
             return
-        if payload.member is None:
-            return
         
         guild = self.bot.get_guild(payload.guild_id)
+        
         if guild is None:
             logger.warning(f"Guild with ID {payload.guild_id} not found.")
             return
         
         emoji_to_role = self.bot.config.get_emoji_to_role_discord_objects()
+        
         try:
             role_id = emoji_to_role[payload.emoji]
         except KeyError:
@@ -425,11 +426,13 @@ class ReactionEvents(commands.Cog, name='Reaction Logging'):
             return
         
         role = guild.get_role(role_id)
+        
         if role is None:
             logger.warning(f"Role with ID {role_id} not found for emoji {payload.emoji}.")
             return
         
         member = guild.get_member(payload.user_id)
+        
         if member is None:
             logger.warning(f"Member with ID {payload.user_id} not found in guild {guild.name}.")
             return
