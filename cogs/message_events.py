@@ -7,6 +7,7 @@ from discord.ext import commands
 import cogs.counting_utils as counting_utils
 import cogs.message_events_utils as message_events_utils
 from command_utils.CContext import CContext, CoolBot
+from command_utils.embed_util import create_log_embed
 from utils import utils, db_stuff
 
 logger = logging.getLogger('discord')
@@ -242,13 +243,15 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             display_name = author_obj.display_name
             name = author_obj.name
         
-        
-        embed = discord.Embed(title=f'{display_name} deleted a message in <#{channel_id}>', color=discord.Color.red())
         url = author_obj.display_avatar.url if author_obj is not None else self.bot.user.display_avatar.url
-        embed.set_author(name=name, icon_url=url)
-        embed.timestamp = discord.utils.utcnow()
-        embed.set_footer(text=f'ID: {message_id}')
-        embed.description = content
+        embed = create_log_embed(
+                name,
+                url,
+                content,
+                discord.Color.red(),
+                f'Message by {display_name} was deleted in <#{channel_id}>',
+                f'ID: {message_id}'
+        )
         
         if not isinstance(self.logs_channel, discord.TextChannel):
             logs_channel = self.bot.get_channel(self.bot.config.msg_log_channel_id)
@@ -325,10 +328,8 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         name: str
         description: str
         
-        
         if author.id == self.bot.user.id:
             return
-        
         
         if before_content.strip() == '':
             before_content = '[No message content. Perhaps an embed or attachment?]'
@@ -338,11 +339,14 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         description = '**Before:** ' + before_content + '\n**After:** ' + after_content
         description += f'\n\n[Jump to message]({jump_url})'
         
-        embed = discord.Embed(title=f'{author.display_name} edited a message in <#{channel_id}>', color=discord.Color.blurple())
-        embed.set_author(name=author.name, icon_url=author.display_avatar.url)
-        embed.timestamp = discord.utils.utcnow()
-        embed.set_footer(text=f'ID: {message_id}')
-        embed.description = description
+        embed = create_log_embed(
+                author.name,
+                author.display_avatar.url,
+                description,
+                discord.Color.blurple(),
+                f'{author.display_name} edited a message in <#{channel_id}>',
+                f'ID: {message_id}'
+        )
         
         if not isinstance(self.logs_channel, discord.TextChannel):
             logs_channel = self.bot.get_channel(self.bot.config.msg_log_channel_id)
@@ -375,23 +379,25 @@ class ReactionEvents(commands.Cog, name='Reaction Logging'):
         
         guild = self.bot.get_guild(payload.guild_id)
         if guild is None:
+            logger.warning(f"Guild with ID {payload.guild_id} not found.")
             return
         
         emoji_to_role = self.bot.config.get_emoji_to_role_discord_objects()
         try:
             role_id = emoji_to_role[payload.emoji]
         except KeyError:
-            logger.info(f"Emoji {payload.emoji} not found in emoji_to_role mapping.")
+            logger.warning(f"Emoji {payload.emoji} not found in emoji_to_role mapping.")
             return
         
         role = guild.get_role(role_id)
         if role is None:
-            logger.info(f"Role with ID {role_id} not found for emoji {payload.emoji}.")
+            logger.warning(f"Role with ID {role_id} not found for emoji {payload.emoji}.")
             return
         
         try:
             await payload.member.add_roles(role)
         except discord.HTTPException:
+            logger.error(f"Failed to add role {role.name} to user {payload.member.display_name}.")
             pass
     
     @commands.Cog.listener()
@@ -408,25 +414,30 @@ class ReactionEvents(commands.Cog, name='Reaction Logging'):
         
         guild = self.bot.get_guild(payload.guild_id)
         if guild is None:
+            logger.warning(f"Guild with ID {payload.guild_id} not found.")
             return
         
         emoji_to_role = self.bot.config.get_emoji_to_role_discord_objects()
         try:
             role_id = emoji_to_role[payload.emoji]
         except KeyError:
+            logger.warning(f"Emoji {payload.emoji} not found in emoji_to_role mapping.")
             return
         
         role = guild.get_role(role_id)
         if role is None:
+            logger.warning(f"Role with ID {role_id} not found for emoji {payload.emoji}.")
             return
         
         member = guild.get_member(payload.user_id)
         if member is None:
+            logger.warning(f"Member with ID {payload.user_id} not found in guild {guild.name}.")
             return
         
         try:
             await member.remove_roles(role)
-        except discord.HTTPException:
+        except discord.HTTPException as e:
+            logger.error(f"Failed to remove role {role.name} from user {member.display_name}: {e}")
             pass
 
 
