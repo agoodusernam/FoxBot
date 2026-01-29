@@ -192,7 +192,6 @@ def convert_to_base10(match: re.Match[str]) -> str:
         # This shouldn't happen
         return num_str
 
-
 def eval_count_msg(message: str) -> tuple[BitwiseDecimal, CountStatus]:
     """
     Returns the evaluated result of a counting message.
@@ -215,9 +214,9 @@ def eval_count_msg(message: str) -> tuple[BitwiseDecimal, CountStatus]:
     try:
         pattern = r"0b[01]+|0o[0-7]+|0x[0-9a-f]+"
         base_10_msg = re.sub(pattern, convert_to_base10, message)
-        decimal.getcontext().prec = 320
+        decimal.getcontext().prec = 2**20 - 1
         expr: str = re.sub(r"(\d+\.\d*|\.\d+|\d+)", r"BitwiseDecimal('\1')", base_10_msg)
-        result: BitwiseDecimal = round(eval(expr), 20)
+        result: BitwiseDecimal = round(eval(expr), 20).normalize()
         
         return result, CountStatus.SUCCESS
     
@@ -285,8 +284,7 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
     if not count_only_allowed_chars(s):
         return False
     
-    r = eval_count_msg(s)
-    result, status = BitwiseDecimal(r[0]).normalize(), r[1]
+    result, status = eval_count_msg(s)
     
     if status == CountStatus.INVALID:
         return False
