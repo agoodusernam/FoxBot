@@ -130,7 +130,7 @@ class Counting(commands.Cog, name='Counting'):
             await ctx.safe_reply("Expression resulted in a decimal error, likely due to insufficient precision. Try using smaller numbers.")
             return
         
-        await ctx.safe_reply(f"Result: {round(result)}")
+        await ctx.safe_reply(f"Result: {result}")
         
 
 async def setup(bot: CoolBot) -> None:

@@ -7,7 +7,7 @@ import warnings
 import signal
 from enum import IntEnum
 from sys import platform
-from typing import Any
+from typing import Any, overload
 
 import discord
 
@@ -20,14 +20,111 @@ logger = logging.getLogger('discord')
 
 
 class BitwiseDecimal(decimal.Decimal):
-    def __and__(self, other):
+    # why can't subclasses just return the subclass...
+    def __abs__(self) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__abs__())
+    
+    def __add__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__add__(other))
+    
+    def __divmod__(self, other) -> tuple["BitwiseDecimal", "BitwiseDecimal"]:
+        r = super().__divmod__(other)
+        return BitwiseDecimal(r[0]), BitwiseDecimal(r[1])
+    
+    def __floordiv__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__floordiv__(other))
+    
+    def __mod__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__mod__(other))
+    
+    def __mul__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__mul__(other))
+    
+    def __pow__(self, value, mod=None) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__pow__(value, mod))
+    
+    def __sub__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__sub__(other))
+    
+    def __truediv__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__truediv__(other))
+    
+    def __radd__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__radd__(other))
+    
+    def __rdivmod__(self, other) -> tuple["BitwiseDecimal", "BitwiseDecimal"]:
+        r = super().__rdivmod__(other)
+        return BitwiseDecimal(r[0]), BitwiseDecimal(r[1])
+    
+    def __rfloordiv__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__rfloordiv__(other))
+    
+    def __rmod__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__rmod__(other))
+    
+    def __rmul__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__rmul__(other))
+    
+    def __rpow__(self, value, mod=None) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__rpow__(value, mod))
+    
+    def __rsub__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__rsub__(other))
+    
+    def __rtruediv__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__rtruediv__(other))
+    
+    def __pos__(self) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__pos__())
+    
+    def __neg__(self) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().__neg__())
+    
+    def remainder_near(self, other, context=None) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().remainder_near(other, context))
+    
+    @property
+    def real(self) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().real)
+    
+    @property
+    def imag(self) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().imag)
+    
+    def conjugate(self) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().conjugate())
+    
+    @overload
+    def __round__(self) -> int: ...
+    
+    @overload
+    def __round__(self, ndigits: int | None = None) -> "BitwiseDecimal": ...
+    
+    def __round__(self, ndigits=None) -> "int | BitwiseDecimal":
+        if ndigits is None:
+            return BitwiseDecimal(super().__round__())
+        return BitwiseDecimal(super().__round__(ndigits))
+    
+    def __and__(self, other) -> "BitwiseDecimal":
         return BitwiseDecimal(round(self) & round(other))
     
-    def __or__(self, other):
+    def __or__(self, other) -> "BitwiseDecimal":
         return BitwiseDecimal(round(self) | round(other))
     
-    def __xor__(self, other):
+    def __xor__(self, other) -> "BitwiseDecimal":
         return BitwiseDecimal(round(self) ^ round(other))
+    
+    def __invert__(self):
+        return BitwiseDecimal(~round(self))
+    
+    def __lshift__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(round(self) << round(other))
+    
+    def __rshift__(self, other) -> "BitwiseDecimal":
+        return BitwiseDecimal(round(self) >> round(other))
+    
+    def normalize(self, context: decimal.Context | None = None) -> "BitwiseDecimal":
+        return BitwiseDecimal(super().normalize(context))
 
 
 D = BitwiseDecimal
@@ -145,7 +242,8 @@ def eval_count_msg(message: str) -> tuple[BitwiseDecimal, CountStatus]:
             signal.signal(signal.SIGALRM, old_handler)  # type: ignore  # noqa
 
 
-async def fail_count_number(message: discord.Message, bot: CoolBot, actual: int) -> None:
+async def fail_count_number(message: discord.Message, bot: CoolBot, actual: BitwiseDecimal) -> None:
+    actual = round(actual, 5)
     await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.last_count}**!! Next number is **1**. Your message evaluated to **{actual}**.")
     await fail_count(message, bot)
     return None
@@ -187,7 +285,8 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
     if not count_only_allowed_chars(s):
         return False
     
-    result, status = eval_count_msg(s)
+    r = eval_count_msg(s)
+    result, status = BitwiseDecimal(r[0]).normalize(), r[1]
     
     if status == CountStatus.INVALID:
         return False
@@ -220,11 +319,10 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
         return False
     
     int_result: int = round(result)
-    del result
     
-    if int_result != bot.config.last_count + 1:
+    if result != BitwiseDecimal(bot.config.last_count + 1).normalize():
         if bot.config.last_count != 0:
-            await fail_count_number(message, bot, actual=int_result)
+            await fail_count_number(message, bot, actual=result)
             return False
         
         await message.reply("The next number is **1**.")
