@@ -33,6 +33,7 @@ def run_func(loop: asyncio.AbstractEventLoop, func_name: str, ctx: CContext) -> 
 async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
     logger.info('Shutting down')
     await voice_events_utils.leave_all(bot)
+    db_stuff.disable_connection()
     await db_stuff.disconnect()
     await bot.close()
     

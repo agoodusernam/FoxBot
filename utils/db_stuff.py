@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from typing import Any, Literal
@@ -62,6 +63,8 @@ async def _connect() -> AsyncMongoClient | None:
         logger.error(f"An error occurred while connecting to MongoDB: {e}")
         return None
 
+def synchronous_disconnect():
+    asyncio.run(disconnect())
 
 async def disconnect():
     """

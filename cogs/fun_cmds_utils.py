@@ -7,6 +7,7 @@ from typing import Any, Generator
 import cachetools  # type: ignore[import-untyped]
 import discord
 import discord.ext.commands
+from dateutil.relativedelta import relativedelta, MO  # type: ignore[import-untyped]
 
 from cogs import api_cmds_utils
 
@@ -15,15 +16,10 @@ logger = logging.getLogger('discord')
 last_commit_cache: cachetools.TTLCache[None, tuple[int, str, dict[str, int]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 
 def monday_generator() -> Generator[datetime.datetime, None, None]:
-    now: datetime.datetime = datetime.datetime.now(datetime.UTC)
-    days_until_monday: int = (7 - now.weekday()) % 7
-    if days_until_monday == 0 and now.time() > datetime.time(0, 0):
-        days_until_monday = 7
-    next_monday: datetime.datetime = datetime.datetime.combine(now.date() + datetime.timedelta(days=days_until_monday), datetime.time(0, 0), tzinfo=datetime.UTC)
-    
+    next_monday = datetime.datetime.now(tz=datetime.UTC) + relativedelta(days=+1, weekday=MO(+1))
     while True:
         yield next_monday
-        next_monday += datetime.timedelta(days=7)
+        next_monday = datetime.datetime.now(tz=datetime.UTC) + relativedelta(days=+1, weekday=MO(+1))
 
 
 async def dice_roll(message: discord.Message) -> None:
@@ -59,7 +55,6 @@ async def cached_get_last_commit() -> None | tuple[int, str, dict[str, int]]:
     return stuff
     
 async def _get_last_commit() -> None | tuple[int, str, dict[str, int]]:
-    
     """
     Get the latest commit info from the FoxBot GitHub repository.
     Returns None if an error occurs.

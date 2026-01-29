@@ -59,11 +59,13 @@ class BotConfig(ConfigBase):
     guild_id: int = 0
     verified_roles: list[int] = field(default_factory=list)
     staging: bool = False
+    tts_requires_role: bool = False
+    
+    # Counting stuff
     counting_channel: int = 0
     highest_count: int = 0
     last_count: int = 0
     last_count_user: int = 0
-    tts_requires_role: bool = False
     required_tts_role: int = 0
     counting_ban_role: int = 0
     counting_fail_role: int = 0
@@ -71,10 +73,17 @@ class BotConfig(ConfigBase):
     counting_successes: dict[str, int] = field(default_factory=dict)
     highest_user_count: dict[str, int] = field(default_factory=dict)
     last_counted_message_id: str = "0"
+    last_highest_count_edited: bool = False
+    
+    # misc
     logs_path: Path = Path("logs").resolve()
     vc_lb_channel_id: int = 0
+    
+    # logging
     msg_log_channel_id: int = 0
-    last_highest_count_edited: bool = False
+    join_leave_log_channel_id: int = 0
+    member_logs_channel_id: int = 0
+    
     
     # User permissions
     admin_ids: list[int] = field(default_factory=list)
@@ -139,7 +148,9 @@ class BotConfig(ConfigBase):
             "logs_path": Path("logs"),
             "vc_lb_channel_id": 0,
             "msg_log_channel_id": 0,
-            "last_highest_count_edited": False
+            "last_highest_count_edited": False,
+            "join_leave_log_channel_id": 0,
+            "member_logs_channel_id": 0
         }
     
     @classmethod
@@ -170,6 +181,8 @@ class BotConfig(ConfigBase):
         config.vc_lb_channel_id = data.get("vc_lb_channel_id", config.vc_lb_channel_id)
         config.msg_log_channel_id = data.get("msg_log_channel_id", config.msg_log_channel_id)
         config.last_highest_count_edited = data.get("last_highest_count_edited", config.last_highest_count_edited)
+        config.join_leave_log_channel_id = data.get("join_leave_log_channel_id", config.join_leave_log_channel_id)
+        config.member_logs_channel_id = data.get("member_logs_channel_id", config.member_logs_channel_id)
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -258,7 +271,9 @@ class BotConfig(ConfigBase):
             "logs_path": str(self.logs_path),
             "vc_lb_channel_id": self.vc_lb_channel_id,
             "msg_log_channel_id": self.msg_log_channel_id,
-            "last_highest_count_edited": self.last_highest_count_edited
+            "last_highest_count_edited": self.last_highest_count_edited,
+            "join_leave_log_channel_id": self.join_leave_log_channel_id,
+            "member_logs_channel_id": self.member_logs_channel_id
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None:

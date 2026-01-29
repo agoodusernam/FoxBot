@@ -54,11 +54,7 @@ class CContext(commands.Context):
 
 class CoolBot(commands.Bot):
     def __init__(self, *args, **kwargs) -> None:
-        self.config: BotConfig
-        if 'config' in kwargs:
-            self.config = kwargs.pop('config')
-        else:
-            self.config = load_config()
+        self.config: BotConfig = load_config()
             
         kwargs['command_prefix'] = self.config.command_prefix
         super().__init__(*args, **kwargs)

@@ -21,7 +21,7 @@ load_dotenv()
 @atexit.register
 def on_exit():
     db_stuff.disable_connection()
-    db_stuff.disconnect()
+    db_stuff.synchronous_disconnect()
 
 
 configs = bot_config.load_config()
