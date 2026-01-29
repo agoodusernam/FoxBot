@@ -5,7 +5,7 @@ from pathlib import Path
 import discord
 
 
-def setup_colour_logging(path: Path | str):
+def setup_colour_logging(path: Path | str) -> None:
     if isinstance(path, str):
         path = Path(path)
         

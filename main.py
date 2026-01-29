@@ -1,6 +1,6 @@
 # pylint: disable=trailing-whitespace, line-too-long
 import atexit
-import logging.handlers
+import logging
 import os
 
 import discord
@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 import help_cmd
 from cogs import voice_events_utils
 from command_utils.CContext import CoolBot, CContext
-from config import bot_config
 from utils import db_stuff, utils
 
 load_dotenv()

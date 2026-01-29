@@ -4,7 +4,7 @@ import os
 from typing import Any, Literal
 import datetime
 
-import cachetools  # type: ignore[import-untyped]
+import cachetools
 import discord
 import pymongo
 from gridfs import AsyncGridFS

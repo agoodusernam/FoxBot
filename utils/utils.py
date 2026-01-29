@@ -319,7 +319,7 @@ def loc_total() -> tuple[int, int]:
     return total_lines, total_files
 
 
-def internet(host="1.1.1.1", port=53, timeout=3):
+def internet(host: str = "1.1.1.1", port: int = 53, timeout: int = 3) -> bool:
     try:
         socket.setdefaulttimeout(timeout)
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
