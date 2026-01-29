@@ -11,6 +11,7 @@ from discord import Message
 from discord.ext import commands
 import discord
 
+import cool_logging
 from config.blacklist_manager import BlacklistManager
 from config.bot_config import BotConfig, load_config
 
@@ -55,7 +56,8 @@ class CContext(commands.Context):
 class CoolBot(commands.Bot):
     def __init__(self, *args, **kwargs) -> None:
         self.config: BotConfig = load_config()
-            
+        cool_logging.setup_colour_logging(self.config.logs_path)
+        
         kwargs['command_prefix'] = self.config.command_prefix
         super().__init__(*args, **kwargs)
         self.blacklist: BlacklistManager = BlacklistManager()
@@ -77,15 +79,9 @@ class CoolBot(commands.Bot):
     def avg_latency(self) -> float:
         return sum(self._pings) / len(self._pings)
     
-    @avg_latency.setter
-    def avg_latency(self, value) -> None:
-        raise AttributeError("avg_latency is a read-only property")
-    
     def add_ping(self) -> None:
         self._pings.append(self.latency * 1000)
     
-    def run(self, *args, **kwargs):
-        super().run(*args, **kwargs)
         
     async def get_context(self, message, *, cls=CContext) -> Any:
         return await super().get_context(message, cls=cls)

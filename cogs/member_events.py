@@ -112,35 +112,35 @@ class MemberEvents(commands.Cog, name="Member Events"):
         if not self.ensure_member_logs_channel():
             return
         
-        assert self.jl_logs_channel is not None
+        assert self.member_logs_channel is not None
         
         if changes['nick'] is not MISSING:
             logger.debug(f'{before.name} changed nickname: {changes["nick"]}')
             embed = nick_update_embed(before.nick, after)
-            await self.jl_logs_channel.send(embed=embed)
+            await self.member_logs_channel.send(embed=embed)
         
         if changes['roles_added'] is not MISSING:
             assert not isinstance(changes['roles_added'], MissingType)
             logger.debug(f'{before.name} added roles: {", ".join([c.name for c in changes["roles_added"]])}')
             embed = roles_changed_embed(changes["roles_added"], after, 'Roles added', 'added to')
-            await self.jl_logs_channel.send(embed=embed)
+            await self.member_logs_channel.send(embed=embed)
         
         if changes['roles_removed'] is not MISSING:
             assert not isinstance(changes['roles_removed'], MissingType)
             logger.debug(f'{before.name} removed roles: {", ".join([c.name for c in changes["roles_removed"]])}')
             embed = roles_changed_embed(changes["roles_removed"], after, 'Roles removed', 'removed from')
-            await self.jl_logs_channel.send(embed=embed)
+            await self.member_logs_channel.send(embed=embed)
         
         if changes['timed_out_until'] is not MISSING:
             assert not isinstance(changes['timed_out_until'], MissingType)
             logger.debug(f'{before.name} timeout changed')
             embed = timeout_embed(after, changes["timed_out_until"])
-            await self.jl_logs_channel.send(embed=embed)
+            await self.member_logs_channel.send(embed=embed)
         
         if changes['avatar'] is not MISSING:
             logger.debug(f'{before.name} changed avatar')
             embed = avatar_update_embed(after)
-            await self.jl_logs_channel.send(embed=embed)
+            await self.member_logs_channel.send(embed=embed)
     
     @commands.Cog.listener()
     async def on_member_ban(self, guild: discord.Guild, user: discord.User | discord.Member):

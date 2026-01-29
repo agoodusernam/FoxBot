@@ -8,7 +8,6 @@ import discord.utils
 from discord.ext import commands
 from dotenv import load_dotenv
 
-import custom_logging
 import help_cmd
 from cogs import voice_events_utils
 from command_utils.CContext import CoolBot, CContext
@@ -24,13 +23,8 @@ def on_exit():
     db_stuff.synchronous_disconnect()
 
 
-configs = bot_config.load_config()
-
-custom_logging.setup_colour_logging(configs.logs_path)
-
-logger = logging.getLogger('discord')
 bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True)
-
+logger = logging.getLogger('discord')
 
 @bot.event
 async def on_ready() -> None:

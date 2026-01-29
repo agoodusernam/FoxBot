@@ -18,4 +18,5 @@ class Backup(commands.Cog):
     
     
 async def setup(bot: CoolBot):
-    await bot.add_cog(Backup(bot))
+    pass
+    # await bot.add_cog(Backup(bot))
