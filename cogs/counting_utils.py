@@ -144,7 +144,7 @@ def count_only_allowed_chars(s: str) -> bool:
     Checks if the counting string only contains allowed characters.
     Assumes the string is lowercase and has no whitespace.
     """
-    allowed: str = "0123456789*/-+.()%^&<>|~"
+    allowed: str = "0123456789*/-+.()%^&<>|~#"
     base_definitions: str = "xob"
     hex_allowed: str = "0123456789abcdef"
     in_hex_str: bool = False
@@ -198,6 +198,9 @@ def eval_count_msg(message: str) -> tuple[BitwiseDecimal, CountStatus]:
     :param message: str: The counting message to evaluate.
     :return: tuple[BitwiseDecimal, CountStatus]: The evaluated result and the status of the evaluation.
     """
+    message = message.replace("^", "[POWER_REPLACEMENT\u200B]")
+    message = message.replace('#', '^')
+    message = message.replace('[POWER_REPLACEMENT\u200B]', '**')
     
     def timeout_handler(signum: int, frame: Any):
         raise TimeoutError

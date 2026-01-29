@@ -114,7 +114,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             
             return
         
-        if message.content.startswith('\u200B'):  # Zero-width space
+        if message.content.startswith('\u200B'):
             logger.info(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
             return
         
