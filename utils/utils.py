@@ -1,10 +1,11 @@
 import datetime
+import json
 import os
 import shutil
 import socket
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Union
+from typing import Union, Any
 import logging
 import aiohttp
 
@@ -327,3 +328,173 @@ def internet(host: str = "1.1.1.1", port: int = 53, timeout: int = 3) -> bool:
     except socket.error as ex:
         print(ex)
         return False
+
+
+def has_meaningful_str(obj: Any) -> str | None:
+    obj_type: type = type(obj)
+    if obj_type.__str__ is not object.__str__:
+        print(f'obj of type: {type(obj)} has meaningful string representation')
+        return str(obj)
+    
+    if obj_type.__repr__ is not object.__repr__:
+        return repr(obj)
+    
+    return None
+
+
+class SkipMarker:
+    """Sentinel value to indicate an item should be skipped."""
+    pass
+
+
+SKIP = SkipMarker()
+
+json_types = (None | int | float | str | bool
+              | list['json_types']
+              | dict['json_types', 'json_types']
+              | tuple['json_types', ...])
+
+
+def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_types | SkipMarker:
+    """Iteratively preprocess data structure, converting or removing unserializable items."""
+    
+    # Handle primitive types immediately
+    if obj is None or isinstance(obj, (bool, int, float, str)):
+        return obj
+    
+    # For complex structures, use a stack-based approach
+    # Stack items: (current_obj, parent_container, key_or_index)
+    # We build the result by modifying containers in place
+    
+    if isinstance(obj, dict):
+        root: dict | list = {}
+    elif isinstance(obj, (list, tuple)):
+        root = []
+    else:
+        # Single non-primitive, non-container object
+        meaningful = has_meaningful_str(obj)
+        if meaningful is not None:
+            return meaningful
+        if skip_unserializable:
+            return SKIP
+        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+    
+    was_tuple = isinstance(obj, tuple)
+    
+    # Stack: (value_to_process, parent_container, key_or_index)
+    stack: list[tuple[Any, dict | list | None, Any]] = []
+    
+    # Initialize stack with items from the root object
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            stack.append((v, root, k))
+    else:  # list or tuple
+        for i, item in enumerate(obj):
+            stack.append((item, root, i))
+        # Pre-fill list with placeholders
+        root.extend([SKIP] * len(obj))
+    
+    while stack:
+        current, parent, key = stack.pop()
+        
+        # Handle primitives
+        if current is None or isinstance(current, (bool, int, float, str)):
+            if isinstance(parent, dict):
+                parent[key] = current
+            else:  # list
+                parent[key] = current
+            continue
+        
+        # Handle containers
+        if isinstance(current, dict):
+            new_container: dict | list = {}
+            if isinstance(parent, dict):
+                parent[key] = new_container
+            else:
+                parent[key] = new_container
+            for k, v in current.items():
+                stack.append((v, new_container, k))
+            continue
+        
+        if isinstance(current, (list, tuple)):
+            new_list: list = [SKIP] * len(current)
+            if isinstance(parent, dict):
+                parent[key] = new_list
+            else:
+                parent[key] = new_list
+            for i, item in enumerate(current):
+                stack.append((item, new_list, i))
+            continue
+        
+        # Handle other objects - try to convert to string
+        meaningful = has_meaningful_str(current)
+        if meaningful is not None:
+            if isinstance(parent, dict):
+                parent[key] = meaningful
+            else:
+                parent[key] = meaningful
+            continue
+        
+        # Not serializable
+        if skip_unserializable:
+            if isinstance(parent, dict):
+                # Don't add to dict (will be filtered later if somehow added)
+                pass  # Key simply won't be added
+            else:
+                parent[key] = SKIP  # Mark for removal
+        else:
+            raise TypeError(f"Object of type {type(current).__name__} is not JSON serializable")
+    
+    # Clean up SKIP markers from lists and dicts
+    def remove_skip_markers(container: dict | list) -> None:
+        work_stack: list[dict | list] = [container]
+        while work_stack:
+            c = work_stack.pop()
+            if isinstance(c, dict):
+                keys_to_remove = [k for k, v in c.items() if isinstance(v, SkipMarker)]
+                for k in keys_to_remove:
+                    del c[k]
+                for v in c.values():
+                    if isinstance(v, (dict, list)):
+                        work_stack.append(v)
+            else:  # list
+                c[:] = [item for item in c if not isinstance(item, SkipMarker)]
+                for item in c:
+                    if isinstance(item, (dict, list)):
+                        work_stack.append(item)
+    
+    remove_skip_markers(root)
+    
+    return tuple(root) if was_tuple and isinstance(root, list) else root
+
+
+def flexible_dumps(obj: Any, skip_unserializable: bool = False, **kwargs) -> str:
+    """JSON dumps with flexible handling of unserializable objects."""
+    processed = _preprocess_for_json(obj, skip_unserializable)
+    return json.dumps(processed, **kwargs)
+
+
+def num_in_list(obj: list[Any]) -> int:
+    total: int = 0
+    for item in obj:
+        if isinstance(item, list):
+            total += num_in_list(item)
+        elif isinstance(item, dict):
+            total += num_k_v_total(item)
+        else:
+            total += 1
+    return total
+
+
+def num_k_v_total(obj: dict[Any, Any]) -> int:
+    total: int = 0
+    for k, v in obj.items():
+        if isinstance(v, dict):
+            total += 1 + num_k_v_total(v)
+        elif isinstance(v, list):
+            total += 1 + num_in_list(v)
+        else:
+            total += 2
+    
+    return total
+

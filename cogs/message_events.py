@@ -153,7 +153,9 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         if message.channel.id == self.bot.config.counting_channel and not self.bot.config.staging:
             await counting_utils.counting_msg(message, self.bot)
-            self.bot.config.save()
+            success = self.bot.config.save()
+            if success is not None:
+                await self.bot.log_error(success)
         
         if message.content.startswith('!f'):
             tts_cog = self.bot.get_cog('TTS')

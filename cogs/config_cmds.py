@@ -114,7 +114,9 @@ class ConfigCog(commands.Cog, name="Configuration"):
             new_value = config_cmds_utils.convert_value(value, type_hint)
             setattr(config_obj, key, new_value)
             await ctx.send(f"Set `{key}` to `{new_value}`")
-            self.bot.config.save()
+            success = ctx.bot.config.save()
+            if success is not None:
+                await ctx.bot.log_error(success)
         except ValueError as e:
             await ctx.send(f"Error setting value: {e}", delete_after=self.bot.config.del_after)
     
@@ -141,11 +143,11 @@ class ConfigCog(commands.Cog, name="Configuration"):
     @commands.check(is_admin)
     async def save_config(self, ctx: CContext):
         """Save current bot configuration to config.json"""
-        try:
-            self.bot.config.save()
+        success = self.bot.config.save()
+        if success is not None:
+            await self.bot.log_error(success, ctx.channel)
+        else:
             await ctx.send("Configuration saved successfully!")
-        except Exception as e:
-            await ctx.send(f"Failed to save config: {e}", delete_after=self.bot.config.del_after)
 
 
 async def setup(bot):

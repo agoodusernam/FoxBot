@@ -17,6 +17,12 @@ from config.bot_config import BotConfig, load_config
 
 logger = logging.getLogger('discord')
 
+class NoChannel:
+    async def send(self, *args, **kwargs):
+        _ = args
+        _ = kwargs
+        _ = self
+
 
 class CContext(commands.Context):
     bot: "CoolBot"
@@ -73,6 +79,7 @@ class CoolBot(commands.Bot):
         self.start_time: float = time.time()
         self.log_path: Path = self.config.logs_path
         self._pings: deque[float] = deque(maxlen=30)
+        self.logs_channel: discord.TextChannel | NoChannel = NoChannel()
         
     
     @property
@@ -105,3 +112,10 @@ class CoolBot(commands.Bot):
             return False
         
         return True
+    
+    async def log_error(self, err: str, channel: discord.TextChannel | None = None):
+        if channel is None:
+            await self.logs_channel.send(f'<@{self.config.dev_ids[0]}> The bot encountered an error!\n{err}')
+            return
+        else:
+            await channel.send(f'<@{self.config.dev_ids[0]}> The bot encountered an error!\n{err}')

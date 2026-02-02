@@ -2,6 +2,7 @@
 import atexit
 import logging
 import os
+from typing import Any
 
 import discord
 import discord.utils
@@ -56,6 +57,12 @@ async def on_ready() -> None:
                 logger.info(f'Reconnected voice state for {member.name} in {channel.name}')
     
     assert bot.user is not None
+    logging_channel: Any = bot.get_channel(bot.config.bot_logs_channel_id)
+    if not isinstance(logging_channel, discord.TextChannel):
+        logger.warning(f'No logging channel! ID: {bot.config.bot_logs_channel_id}')
+    else:
+        bot.logs_channel = logging_channel
+        
     logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
     logger.info('------')
     

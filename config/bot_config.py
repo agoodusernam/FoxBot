@@ -9,6 +9,8 @@ from pathlib import Path
 import json
 import discord
 
+import utils.utils
+
 logger = logging.getLogger('discord')
 
 @dataclass
@@ -83,6 +85,7 @@ class BotConfig(ConfigBase):
     msg_log_channel_id: int = 0
     join_leave_log_channel_id: int = 0
     member_logs_channel_id: int = 0
+    bot_logs_channel_id: int = 0
     
     
     # User permissions
@@ -150,7 +153,8 @@ class BotConfig(ConfigBase):
             "msg_log_channel_id": 0,
             "last_highest_count_edited": False,
             "join_leave_log_channel_id": 0,
-            "member_logs_channel_id": 0
+            "member_logs_channel_id": 0,
+            "bot_logs_channel_id": 0,
         }
     
     @classmethod
@@ -183,6 +187,7 @@ class BotConfig(ConfigBase):
         config.last_highest_count_edited = data.get("last_highest_count_edited", config.last_highest_count_edited)
         config.join_leave_log_channel_id = data.get("join_leave_log_channel_id", config.join_leave_log_channel_id)
         config.member_logs_channel_id = data.get("member_logs_channel_id", config.member_logs_channel_id)
+        config.bot_logs_channel_id = data.get("bot_logs_channel_id", config.bot_logs_channel_id)
         
         # User permissions
         config.admin_ids = data.get("admin_ids", config.admin_ids)
@@ -273,14 +278,44 @@ class BotConfig(ConfigBase):
             "msg_log_channel_id": self.msg_log_channel_id,
             "last_highest_count_edited": self.last_highest_count_edited,
             "join_leave_log_channel_id": self.join_leave_log_channel_id,
-            "member_logs_channel_id": self.member_logs_channel_id
+            "member_logs_channel_id": self.member_logs_channel_id,
+            "bot_logs_channel_id": self.bot_logs_channel_id,
         }
     
-    def save(self, config_path: Path = Path("config.json")) -> None:
+    def save(self, config_path: Path = Path("config.json")) -> None | str:
         """Save configuration to file"""
+        json_str: str
         logger.debug(f"Saving config to {config_path}")
-        with open(config_path, "w", encoding="utf-8") as f:
-            json.dump(self.to_dict(), f, indent=4)
+        try:
+            json_str = json.dumps(self.to_dict())
+            with open(config_path, "w", encoding="utf-8") as f:
+                f.write(json_str)
+            return None
+        
+        except OSError as e:
+            logger.error(f'Failed to write config: {e}')
+            return str(e)
+            
+        except TypeError as e:
+            logger.warning(f'Failed to serialise config: {e}')
+        
+        json_str = utils.utils.flexible_dumps(self.to_dict(), skip_unserializable=True)
+        converted: dict[Any, Any] = json.loads(json_str)
+        if utils.utils.num_k_v_total(converted) == utils.utils.num_k_v_total(self.to_dict()):
+            try:
+                with open(config_path, "w", encoding="utf-8") as f:
+                    json.dump(json_str, f)
+                logger.warning('Successfully wrote modified serialised config')
+                return None
+            
+            except OSError as e:
+                logger.error(f'Failed to write modified serialised config {e}')
+                return str(e)
+        
+        logger.error(f'Could not serialise config. Not saving. Before: {self.to_dict()}, after: {json_str}')
+        return "Could not serialise config. Check logs."
+        
+        
     
     def reload(self, config_path: Path = Path("config.json")) -> None:
         """Reload configuration from file"""
@@ -350,7 +385,9 @@ def load_config(config_path: Path = Path("config.json")) -> BotConfig:
     if not config_path.exists():
         logger.info("Config file not found, creating default config.json")
         config = BotConfig.from_dict(BotConfig.get_default_config())
-        config.save(config_path)
+        success = config.save()
+        if success is not None:
+            logger.error(f'Failed to save config!\n{success}')
         return config
     
     try:

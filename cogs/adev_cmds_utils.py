@@ -35,6 +35,9 @@ async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
     await voice_events_utils.leave_all(bot)
     db_stuff.disable_connection()
     await db_stuff.disconnect()
+    success = bot.config.save()
+    if success is not None:
+        logger.error(f'Bot encountered an error saving config while shutting down!\n{success}')
     await bot.close()
     
     if update:

@@ -4,7 +4,7 @@ import os
 import threading
 
 import discord
-import psutil
+import psutil  # type: ignore[import-untyped]
 from discord.ext import commands
 
 from cogs import adev_cmds_utils
