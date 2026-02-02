@@ -102,7 +102,7 @@ class BitwiseDecimal(decimal.Decimal):
     
     def __round__(self, ndigits=None) -> "int | BitwiseDecimal":
         if ndigits is None:
-            return BitwiseDecimal(super().__round__())
+            return int(super().__round__())
         return BitwiseDecimal(super().__round__(ndigits))
     
     def __and__(self, other) -> "BitwiseDecimal":
