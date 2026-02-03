@@ -8,6 +8,7 @@ import string
 from typing import Any, Mapping, TypedDict, Literal, NotRequired, TypeVar
 
 import discord
+from bson import ObjectId
 from discord.ext.commands import Context
 import matplotlib.pyplot as plt
 
@@ -20,20 +21,25 @@ from utils import db_stuff
 # Configure logging
 logger = logging.getLogger('discord')
 
-
-class DBMessage(TypedDict):
+class DBMessageBase(TypedDict):
     author: str
     author_id: str  # Will always be a number
     author_global_name: str
     content: str
     reply_to: str | None  # Will be the id of the message this is replying to, or None if not replying
     HasAttachments: bool
-    timestamp: float
-    id: str  # The message ID, will always be a number
+    id: str  # The message ID will ideally always be a number
     channel: str
     channel_id: str  # Will always be a number
-    _id: Any  # The database internal ID, type depends on the database
+    edits: NotRequired[list[str]]
+    _id: NotRequired[ObjectId]  # The database internal ID
+    
 
+class DBMessage(DBMessageBase):
+    timestamp: float
+
+class DatetimeDBMessage(DBMessageBase):
+    timestamp: datetime.datetime
 
 class WordStats(TypedDict):
     most_common_word: str
@@ -137,8 +143,11 @@ def check_required_message_keys(message: Mapping[str, Any]) -> bool:
     return all(key in message for key in required_keys)
 
 
-async def remove_invalid_messages(messages: list[DBMessage]) -> list[DBMessage]:
+async def remove_invalid_messages(messages: list[DBMessage | dict[str, Any]] | None) -> list[DBMessage]:
     valid_messages: list[DBMessage] = []
+    if messages is None:
+        return valid_messages
+    
     for message in messages:
         if check_required_message_keys(message):
             valid_messages.append(message)

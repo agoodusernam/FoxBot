@@ -2,7 +2,7 @@
 import atexit
 import logging
 import os
-from typing import Any
+from typing import Any, Collection
 
 import discord
 import discord.utils
@@ -63,6 +63,10 @@ async def on_ready() -> None:
     else:
         bot.logs_channel = logging_channel
         logger.info(f'Registered logging channel {logging_channel.name}, ID: {logging_channel.id}')
+    
+    if not bot.config.dev_ids:
+        owner_ids: Collection[int] | None = bot.owner_ids
+        bot.config.dev_ids = set(owner_ids) if owner_ids is not None else {0}
         
     logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
     logger.info('------')
@@ -75,6 +79,7 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.send('This command is on cooldown. Please try again in ' +
                        f'{utils.seconds_to_human_readable(error.retry_after)}.')
+        
     elif isinstance(error, commands.NoPrivateMessage):
         await ctx.send('This command cannot be used in private messages.')
         await ctx.delete()
@@ -101,6 +106,7 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
     
     else:
         logger.error(f'Error in command {ctx.command}: {error}', exc_info=error)
+        await bot.log_error(f'Error in command {ctx.command}: {error}')
 
 
 async def load_extensions() -> None:

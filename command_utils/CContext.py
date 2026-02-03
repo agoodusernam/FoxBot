@@ -67,8 +67,8 @@ class CoolBot(commands.Bot):
         kwargs['command_prefix'] = self.config.command_prefix
         super().__init__(*args, **kwargs)
         self.blacklist: BlacklistManager = BlacklistManager()
-        self.admin_ids: list[int] = self.config.admin_ids
-        self.dev_ids: list[int] = self.config.dev_ids
+        self.admin_ids: set[int] = self.config.admin_ids
+        self.dev_ids: set[int] = self.config.dev_ids
         self.del_after: int = self.config.del_after
         self.config.today = datetime.datetime.now(datetime.UTC).strftime('%d-%m-%Y_%H-%M-%S')
         self.landmine_channels: dict[int, int] = {}
@@ -114,8 +114,20 @@ class CoolBot(commands.Bot):
         return True
     
     async def log_error(self, err: str, channel: discord.TextChannel | None = None):
+        pings: str = ", ".join(f"<@{uid}>" for uid in self.config.dev_ids)
         if channel is None:
-            await self.logs_channel.send(f'<@{self.config.dev_ids[0]}> The bot encountered an error!\n{err}')
+            try:
+                await self.logs_channel.send(f'{pings} The bot encountered an error!\n{err}')
+            except discord.HTTPException as e:
+                logger.error(f'Failed to post error message to channel: {e}')
+                
             return
         else:
-            await channel.send(f'<@{self.config.dev_ids[0]}> The bot encountered an error!\n{err}')
+            try:
+                await channel.send(f'{pings} The bot encountered an error!\n{err}')
+            except discord.HTTPException as e:
+                logger.error(f'Failed to post error message to channel {channel.name}: {e}')
+        
+    async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
+        await super().on_error(event_method, args, kwargs)
+        await self.log_error(event_method)

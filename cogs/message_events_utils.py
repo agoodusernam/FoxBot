@@ -8,6 +8,7 @@ import re
 import discord
 
 from command_utils.CContext import CoolBot
+from command_utils.analysis import DBMessage
 from utils import utils, db_stuff
 
 logger = logging.getLogger('discord')
@@ -76,7 +77,7 @@ async def check_landmine(message: discord.Message, bot: CoolBot) -> None:
             message.author.guild_permissions.administrator):
         return
     
-    if random.random() < 0.05:  # 5% chance for a landmine to explode
+    if random.random() < 0.05:
         await landmine_explode(message, bot)
 
 
@@ -85,16 +86,16 @@ async def log_msg(message: discord.Message) -> bool:
     
     reply: str | None = None if message.reference is None else str(message.reference.message_id)
     
-    json_data = {
+    json_data: DBMessage = {
         'author':             message.author.name,
         'author_id':          str(message.author.id),
-        'author_global_name': message.author.global_name,
+        'author_global_name': message.author.global_name if message.author.global_name is not None else message.author.name,
         'content':            message.content,
         'reply_to':           reply,
         'HasAttachments':     has_attachment,
         'timestamp':          message.created_at.timestamp(),
         'id':                 str(message.id),
-        'channel':            message.channel.name if hasattr(message.channel, 'name') else 'Unknown',
+        'channel':            message.channel.name if hasattr(message.channel, 'name') and isinstance(message.channel.name, str) else 'Unknown',
         'channel_id':         str(message.channel.id),
         'edits': []
     }

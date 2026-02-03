@@ -1,16 +1,21 @@
 import datetime
 import re
-from typing import Any
 
 import discord
 from discord.ext import commands
 
+from command_utils.analysis import DBMessage, DatetimeDBMessage
 
-def sort_by_timestamp(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    for message in messages:
-        message['timestamp'] = datetime.datetime.fromtimestamp(message['timestamp'], tz=datetime.timezone.utc)
+
+def dt_from_timestamp(timestamp: float) -> datetime.datetime:
+    return datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
+
+def sort_by_timestamp(messages: list[DBMessage]) -> list[DatetimeDBMessage]:
+    new_msgs: list[DatetimeDBMessage]
     
-    return sorted(messages, key=lambda x: x['timestamp'], reverse=True)
+    new_msgs = [DatetimeDBMessage(**message, timestamp = dt_from_timestamp(message['timestamp'])) for message in messages]
+    
+    return sorted(new_msgs, key=lambda x: x['timestamp'], reverse=True)
 
 
 async def last_log(ctx: discord.ext.commands.Context, anonymous: bool = False) -> None:

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from typing import Any, Literal
+from typing import Any, Literal, cast
 import datetime
 
 import cachetools
@@ -13,6 +13,8 @@ from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.asynchronous.mongo_client import AsyncMongoClient
 from pymongo.results import DeleteResult, InsertManyResult
 from pymongo.server_api import ServerApi
+
+from command_utils.analysis import DBMessage
 
 logger = logging.getLogger('discord')
 
@@ -82,7 +84,7 @@ async def disconnect():
             _mongo_client = None
 
 
-async def send_message(message: dict[str, Any]) -> bool:
+async def send_message(message: DBMessage) -> bool:
     """
     Saves a single message to MongoDB.
     :param message: A dictionary representing the message to be saved.
@@ -96,7 +98,7 @@ async def send_message(message: dict[str, Any]) -> bool:
     collection: AsyncCollection[dict[str, Any]] = db['messages']
     
     try:
-        await collection.insert_one(message)
+        await collection.insert_one(dict(message))
         logger.info('Message saved successfully')
         return True
     except Exception as e:

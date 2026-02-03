@@ -131,7 +131,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         if commands_enabled and message.content.startswith(self.bot.command_prefix):
             self.bot.config.today = utils.formatted_today()
-            logging.debug('Processing command.')
+            logging.debug(f'Processing command "{message.content}"')
             await self.bot.process_commands(message)
         
         
@@ -208,6 +208,8 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         """
         Post the deleted message to the log channel.
         """
+        no_post: list[str] = ['update', 'shutdown', 'restart']
+        no_post = ['f!' + i for i in no_post]
         assert self.bot.user is not None
         
         author_obj: discord.Member | discord.User | None
@@ -217,7 +219,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         if isinstance(message, discord.Message):
             content = message.content
-            if content.strip() == 'f!update': return
+            if content.strip() in no_post: return
             if content.strip().startswith('f!v'): return
             author_obj = message.author
             

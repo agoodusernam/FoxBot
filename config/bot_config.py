@@ -89,9 +89,9 @@ class BotConfig(ConfigBase):
     
     
     # User permissions
-    admin_ids: list[int] = field(default_factory=list)
-    dev_ids: list[int] = field(default_factory=list)
-    blacklist_ids: list[int] = field(default_factory=list)
+    admin_ids: set[int] = field(default_factory=set)
+    dev_ids: set[int] = field(default_factory=set)
+    blacklist_ids: set[int] = field(default_factory=set)
     staff_role_id: int = 0
     
     # Nested configurations
@@ -190,9 +190,9 @@ class BotConfig(ConfigBase):
         config.bot_logs_channel_id = data.get("bot_logs_channel_id", config.bot_logs_channel_id)
         
         # User permissions
-        config.admin_ids = data.get("admin_ids", config.admin_ids)
-        config.dev_ids = data.get("dev_ids", config.dev_ids)
-        config.blacklist_ids = data.get("blacklist_ids", config.blacklist_ids)
+        config.admin_ids = set(data.get("admin_ids", config.admin_ids))
+        config.dev_ids = set(data.get("dev_ids", config.dev_ids))
+        config.blacklist_ids = set(data.get("blacklist_ids", config.blacklist_ids))
         config.staff_role_id = data.get("staff_role_id", config.staff_role_id)
         
         # Nested configurations
