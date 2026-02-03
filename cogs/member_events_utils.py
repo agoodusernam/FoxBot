@@ -31,7 +31,7 @@ class MemberChange(TypedDict):
     roles_removed: list[discord.Role] | MissingType
     timed_out_until: datetime.datetime | None | MissingType
     pending: bool | MissingType
-    avatar: discord.Asset | MissingType
+    avatar: discord.Asset | MissingType | None
     flags: discord.MemberFlags | MissingType
 
 
@@ -114,7 +114,7 @@ def get_changes(before: discord.Member, after: discord.Member) -> MemberChange:
         'roles_removed':   removed if removed else MISSING,
         'timed_out_until': after.timed_out_until if after.timed_out_until != before.timed_out_until else MISSING,
         'pending':         after.pending if after.pending != before.pending else MISSING,
-        'avatar':          after.display_avatar if after.display_avatar.url != before.display_avatar.url else MISSING,
+        'avatar':          after.guild_avatar if after.guild_avatar != before.guild_avatar else MISSING,
         'flags':           after.flags if after.flags != before.flags else MISSING
         }
     return changes
@@ -125,9 +125,9 @@ def nick_update_embed(before_nick: str | None, after: discord.Member) -> discord
     if before_nick is None:
         title = 'Nickname added'
         name = after.global_name if after.global_name is not None else after.name
-        description = f'{after.mention} ({name}) has been given the nickname `{after.nick}`'
+        description = f'{after.mention} ({name}) has been given the nickname:\n`{after.nick}`'
     else:
-        description = f"{after.mention}'s nickname was changed from `{before_nick}` to `{after.nick}`"
+        description = f"{after.mention}'s nickname was changed.\nBefore: `{before_nick}`\nAfter: `{after.nick}`"
     
     return create_log_embed(after.name, after.display_avatar.url, description, discord.Color.blurple(), title)
 

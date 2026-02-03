@@ -62,6 +62,7 @@ async def on_ready() -> None:
         logger.warning(f'No logging channel! ID: {bot.config.bot_logs_channel_id}')
     else:
         bot.logs_channel = logging_channel
+        logger.info(f'Registered logging channel {logging_channel.name}, ID: {logging_channel.id}')
         
     logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
     logger.info('------')
