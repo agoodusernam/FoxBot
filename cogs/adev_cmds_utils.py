@@ -30,7 +30,19 @@ def run_func(loop: asyncio.AbstractEventLoop, func_name: str, ctx: CContext) -> 
     loop.run_until_complete(aexec(func_name, ctx))
 
 
-async def shutdown(bot: CoolBot, update=False, restart=False) -> None:
+async def shutdown(bot: CoolBot, update=False, restart=False, time: int = 0) -> None:
+    action: str
+    if not update and not restart:
+        action = 'shutting down'
+    elif restart and not update:
+        action = 'restarting'
+    else:
+        action = 'updating'
+        
+    if time != 0:
+        logger.info(f'Waiting {time} seconds before {action}')
+        await asyncio.sleep(time)
+    
     logger.info('Shutting down')
     await voice_events_utils.leave_all(bot)
     db_stuff.disable_connection()

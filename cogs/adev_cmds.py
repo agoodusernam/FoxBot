@@ -26,24 +26,24 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     @commands.command(name='restart',
                       brief='Restart the bot',
                       help='Dev only: restart the bot instance')
-    async def restart_cmd(self, ctx: CContext):
+    async def restart_cmd(self, ctx: CContext, time: int = 0):
         await ctx.delete()
-        await adev_cmds_utils.shutdown(ctx.bot, update=False, restart=True)
+        await adev_cmds_utils.shutdown(ctx.bot, update=False, restart=True, time=time)
     
     @commands.command(name='shutdown',
                       brief='Shutdown the bot',
                       help='Dev only: Shutdown the bot instance')
-    async def shutdown(self, ctx: CContext):
+    async def shutdown(self, ctx: CContext, time: int = 0):
         await ctx.delete()
-        await adev_cmds_utils.shutdown(ctx.bot, update=False, restart=False)
+        await adev_cmds_utils.shutdown(ctx.bot, update=False, restart=False, time=time)
     
     @commands.command(name='update',
                       brief='Update the bot code',
                       help='Dev only: Update the bot code from the repository',
                       usage='f!update')
-    async def update(self, ctx: CContext):
+    async def update(self, ctx: CContext, time: int = 0):
         await ctx.delete()
-        await adev_cmds_utils.shutdown(ctx.bot, update=True, restart=True)
+        await adev_cmds_utils.shutdown(ctx.bot, update=True, restart=True, time=time)
         
     """
     @commands.command(name='upload_all_history',
