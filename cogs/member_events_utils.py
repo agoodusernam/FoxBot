@@ -114,7 +114,7 @@ def get_changes(before: discord.Member, after: discord.Member) -> MemberChange:
         'roles_removed':   removed if removed else MISSING,
         'timed_out_until': after.timed_out_until if after.timed_out_until != before.timed_out_until else MISSING,
         'pending':         after.pending if after.pending != before.pending else MISSING,
-        'avatar':          after.display_avatar if after.display_avatar != before.display_avatar else MISSING,
+        'avatar':          after.display_avatar if after.display_avatar.url != before.display_avatar.url else MISSING,
         'flags':           after.flags if after.flags != before.flags else MISSING
         }
     return changes
