@@ -82,7 +82,7 @@ async def on_ready() -> None:
         bot.logs_channel = logging_channel
         logger.info(f'Registered logging channel {logging_channel.name}, ID: {logging_channel.id}')
     
-    if not check_devs_reset(bot.config.dev_ids):
+    if check_devs_reset(bot.config.dev_ids):
         owner_ids: Collection[int] | None = bot.owner_ids
         bot.config.dev_ids = set(owner_ids) if owner_ids is not None else {0}
         bot.config.save()
