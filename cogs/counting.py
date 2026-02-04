@@ -63,15 +63,15 @@ class Counting(commands.Cog, name='Counting'):
             await ctx.send('No users have counted yet.')
             return
         
-        lb_success: dict[int, int] = sort_dict_by_value_h2l(ctx.bot.config.counting_successes)
-        lb_user_number: dict[int, int] = sort_dict_by_value_h2l(ctx.bot.config.highest_user_count)
+        lb_success: dict[str, int] = sort_dict_by_value_h2l(ctx.bot.config.counting_successes)
+        lb_user_number: dict[str, int] = sort_dict_by_value_h2l(ctx.bot.config.highest_user_count)
         
         num_successes_embed = discord.Embed(title='Most Successful Counting Attempts Leaderboard', color=discord.Color.blue())
         for i in range(5):
             if i >= len(lb_success):
                 break
             user_id, count = list(lb_success.items())[i]
-            user = await ctx.bot.fetch_user(user_id)
+            user = await ctx.bot.fetch_user(int(user_id))
             num_successes_embed.add_field(name=f'{i + 1}. {user.display_name}', value=count, inline=False)
         
         num_user_embed = discord.Embed(title='Highest Number Counted Leaderboard', color=discord.Color.blue())
@@ -79,7 +79,7 @@ class Counting(commands.Cog, name='Counting'):
             if i >= len(lb_user_number):
                 break
             user_id, count = list(lb_user_number.items())[i]
-            user = await ctx.bot.fetch_user(user_id)
+            user = await ctx.bot.fetch_user(int(user_id))
             num_user_embed.add_field(name=f'{i + 1}. {user.display_name}', value=count, inline=False)
         
         await ctx.send(embed=num_successes_embed)

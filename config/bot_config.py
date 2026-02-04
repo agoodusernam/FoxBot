@@ -287,9 +287,9 @@ class BotConfig(ConfigBase):
         json_str: str
         logger.debug(f"Saving config to {config_path}")
         try:
-            json_str = json.dumps(self.to_dict())
+            _ = json.dumps(self.to_dict()) # make sure it's valid json first
             with open(config_path, "w", encoding="utf-8") as f:
-                f.write(json_str)
+                json.dump(self.to_dict(), f, indent=4)
             return None
         
         except OSError as e:
@@ -304,7 +304,7 @@ class BotConfig(ConfigBase):
         if utils.utils.num_k_v_total(converted) == utils.utils.num_k_v_total(self.to_dict()):
             try:
                 with open(config_path, "w", encoding="utf-8") as f:
-                    json.dump(json_str, f)
+                    json.dump(converted, f, indent=4)
                 logger.warning('Successfully wrote modified serialised config')
                 return None
             

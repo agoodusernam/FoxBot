@@ -279,6 +279,7 @@ async def fail_count(message: discord.Message, bot: CoolBot) -> None:
 
 
 async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
+    logger.debug(f'Received counting message in channel {message.channel.id} with content: {message.content}')
     assert isinstance(message.author, discord.Member)
     s = message.content.lower()
     for char in string.whitespace:
