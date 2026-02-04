@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from typing import Any, Literal, cast
+from typing import Any, Literal
 import datetime
 
 import cachetools
@@ -165,7 +165,7 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
         return None
 
 
-async def cached_download_all() -> list[dict[Any, Any]] | None:
+async def cached_download_all() -> list[dict[str, Any]] | None:
     global message_download_cache
     if message_download_cache.get(None) is not None:
         return message_download_cache[None]

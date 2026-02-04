@@ -109,9 +109,9 @@ class BotConfig(ConfigBase):
         return {
             "command_prefix":   "f!",
             "del_after":        3,
-            "admin_ids":        [],
-            "dev_ids":          [],
-            "blacklist_ids":    [],
+            "admin_ids":        {},
+            "dev_ids":          {},
+            "blacklist_ids":    {},
             "maintenance_mode": False,
             "guild_id":         0,
             "no_log":           {
@@ -190,9 +190,9 @@ class BotConfig(ConfigBase):
         config.bot_logs_channel_id = data.get("bot_logs_channel_id", config.bot_logs_channel_id)
         
         # User permissions
-        config.admin_ids = set(data.get("admin_ids", config.admin_ids))
-        config.dev_ids = set(data.get("dev_ids", config.dev_ids))
-        config.blacklist_ids = set(data.get("blacklist_ids", config.blacklist_ids))
+        config.admin_ids = data.get("admin_ids", config.admin_ids)
+        config.dev_ids = data.get("dev_ids", config.dev_ids)
+        config.blacklist_ids = data.get("blacklist_ids", config.blacklist_ids)
         config.staff_role_id = data.get("staff_role_id", config.staff_role_id)
         
         # Nested configurations

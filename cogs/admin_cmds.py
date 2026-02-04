@@ -13,6 +13,7 @@ import utils.utils
 from cogs.admin_cmds_utils import sort_by_timestamp, last_log
 from command_utils import analysis
 from command_utils.CContext import CContext, CoolBot
+from command_utils.analysis import DBMessage, DatetimeDBMessage
 from command_utils.checks import is_admin
 from config import bot_config
 from utils import db_stuff
@@ -394,9 +395,9 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                            delete_after=ctx.bot.del_after)
             return
         
-        messages = await analysis.remove_invalid_messages(await db_stuff.cached_download_all())
-        messages = [msg for msg in messages if msg['author_id'] == str(member.id)]
-        messages = sort_by_timestamp(messages)[:number_of_messages]
+        t_messages: list[DBMessage] = await analysis.remove_invalid_messages(await db_stuff.cached_download_all())
+        t_messages = [msg for msg in t_messages if msg['author_id'] == str(member.id)]
+        messages: list[DatetimeDBMessage] = sort_by_timestamp(t_messages)[:number_of_messages]
         if not messages:
             await ctx.send(f'No messages found for {member.display_name}.', delete_after=ctx.bot.del_after)
             return

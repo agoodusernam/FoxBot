@@ -108,3 +108,6 @@ async def reconnect_all(bot: CoolBot) -> None:
             
             await handle_join(member, channel)
             logger.info(f'Reconnected voice state for {member.name} in {channel.name}')
+
+def get_voice_sessions() -> dict[int, VoiceSession]:
+    return active_voice_sessions

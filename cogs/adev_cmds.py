@@ -2,14 +2,16 @@ import asyncio
 import logging
 import os
 import threading
+from datetime import timedelta
 
 import discord
 import psutil  # type: ignore[import-untyped]
 from discord.ext import commands
+from discord.ext import tasks
 
-from cogs import adev_cmds_utils
+from cogs import adev_cmds_utils, voice_events_utils
 import utils.utils
-from command_utils.CContext import CContext
+from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_dev
 
 # added the 'a' to the start of the file so it loads first
@@ -20,8 +22,9 @@ logger = logging.getLogger('discord')
 class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_check=is_dev)):
     """Developer commands for bot maintenance and management."""
     
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: CoolBot):
+        self.bot: CoolBot = bot
+        self.check_update.start()
     
     @commands.command(name='restart',
                       brief='Restart the bot',
@@ -151,7 +154,45 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
                       usage='f!err_log')
     async def err_log(self, ctx: CContext):
         await ctx.send(file=discord.File(ctx.bot.log_path / 'err.log'))
+    
+    @commands.command(name='add_admin')
+    async def add_admin(self, ctx: CContext, user: discord.User | discord.Member):
+        ctx.bot.config.admin_ids.add(user.id)
+        ctx.bot.config.save()
+        await ctx.send(f'Added {user.display_name} as admin')
+        
+    
+    @commands.command(name='remove_admin', aliases=['rm_admin'])
+    async def remove_admin(self, ctx: CContext, user: discord.User | discord.Member):
+        try:
+            ctx.bot.config.admin_ids.remove(user.id)
+            ctx.bot.config.save()
+            await ctx.send(f'Successfully removed {user.display_name} as admin')
+        except KeyError:
+            await ctx.send('User was not an admin.')
+    
+    @commands.command(name='queue_update', aliases=['qupdate', 'qu'])
+    async def queue_update(self, ctx: CContext):
+        ctx.bot.update_queued = True
+        await ctx.send('Bot will update soon:tm:')
+    
+    @discord.ext.tasks.loop(minutes=1)
+    async def check_update(self):
+        if not self.bot.update_queued:
+            return
+        
+        if (discord.utils.utcnow() - self.bot.last_sent_dt) <= timedelta(hours=1):
+            return
+        
+        if voice_events_utils.get_voice_sessions():
+            return
+        
+        await adev_cmds_utils.shutdown(self.bot, update=True, restart=True)
+    
+    @check_update.before_loop
+    async def before_check_update(self):
+        await self.bot.wait_until_ready()
         
 
-async def setup(bot):
+async def setup(bot: CoolBot):
     await bot.add_cog(DevCommands(bot))

@@ -80,6 +80,8 @@ class CoolBot(commands.Bot):
         self.log_path: Path = self.config.logs_path
         self._pings: deque[float] = deque(maxlen=30)
         self.logs_channel: discord.TextChannel | NoChannel = NoChannel()
+        self.update_queued: bool = False
+        self.last_sent_dt: datetime.datetime = discord.utils.utcnow()
         
     
     @property

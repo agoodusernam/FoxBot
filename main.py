@@ -26,6 +26,24 @@ def on_exit():
 bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True)
 logger = logging.getLogger('discord')
 
+def check_devs_reset(obj: Any) -> bool:
+    if not obj:
+        return True
+    
+    if not isinstance(obj, set):
+        return True
+    
+    for i in obj:
+        if not isinstance(i, int):
+            return True
+    
+    
+    if list(obj)[0] == 0 and len(obj) == 1:
+        return True
+    
+    return False
+    
+
 @bot.event
 async def on_ready() -> None:
     await load_extensions()
@@ -64,9 +82,10 @@ async def on_ready() -> None:
         bot.logs_channel = logging_channel
         logger.info(f'Registered logging channel {logging_channel.name}, ID: {logging_channel.id}')
     
-    if not bot.config.dev_ids:
+    if not check_devs_reset(bot.config.dev_ids):
         owner_ids: Collection[int] | None = bot.owner_ids
         bot.config.dev_ids = set(owner_ids) if owner_ids is not None else {0}
+        bot.config.save()
         
     logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
     logger.info('------')

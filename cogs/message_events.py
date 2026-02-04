@@ -149,6 +149,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
                 and (message.channel.id not in self.bot.config.no_log.channel_ids)
                 and (message.channel.category_id not in self.bot.config.no_log.category_ids)):
             
+            self.bot.last_sent_dt = discord.utils.utcnow()
             await message_events_utils.log_msg(message)
         
         if message.channel.id == self.bot.config.counting_channel and not self.bot.config.staging:

@@ -13,20 +13,20 @@ class BlacklistManager:
     """Manages user blacklist with automatic file sync"""
     
     def __init__(self, blacklist_path: Path = Path("blacklist_users.json")):
-        self.blacklist_path = blacklist_path
+        self._blacklist_path = blacklist_path
         self._blacklist_ids: list[int] = []
         self.load()
     
     def load(self) -> None:
         """Load blacklist from file"""
-        logger.debug(f"Loading blacklist from {self.blacklist_path}")
-        if not self.blacklist_path.exists():
+        logger.debug(f"Loading blacklist from {self._blacklist_path}")
+        if not self._blacklist_path.exists():
             self._blacklist_ids = []
             self.save()
             return
         
         try:
-            with open(self.blacklist_path, "r", encoding="utf-8") as f:
+            with open(self._blacklist_path, "r", encoding="utf-8") as f:
                 self._blacklist_ids = json.load(f)['ids']
         except Exception as e:
             logger.error(f"Error loading blacklist: {e}")
@@ -34,8 +34,8 @@ class BlacklistManager:
     
     def save(self) -> None:
         """Save blacklist to file"""
-        logger.debug(f"Saving blacklist to {self.blacklist_path}")
-        with open(self.blacklist_path, "w", encoding="utf-8") as f:
+        logger.debug(f"Saving blacklist to {self._blacklist_path}")
+        with open(self._blacklist_path, "w", encoding="utf-8") as f:
             to_save: dict[str, list[int]] = {'ids': self._blacklist_ids}
             json.dump(to_save, f, indent=4)
     
