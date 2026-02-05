@@ -40,7 +40,7 @@ def _serialise_perm_overwrite_channel(channel: discord.abc.GuildChannel) -> dict
     for k, v in channel.overwrites.items():
         if isinstance(k, discord.Role) or (isinstance(k, discord.Object) and k.type == discord.Role):
             roles[k.id] = v
-    return {k: _serialise_perm_overwrite(v) for k, v in roles}  # type: ignore
+    return {k: _serialise_perm_overwrite(v) for k, v in roles.items()}  # type: ignore[has-type]
 
 
 async def save_guild(guild: discord.Guild) -> None | str:
