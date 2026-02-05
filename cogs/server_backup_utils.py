@@ -121,7 +121,8 @@ async def save_icon(icon: discord.Asset) -> str:
     timestamp: int = round(discord.utils.utcnow().timestamp())
     
     path_addition: str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=12))
-    icon_path: Path = Path('icons').absolute() / str(timestamp) / path_addition
+    icon_path: Path = Path('icons').absolute() / str(timestamp)
+    icon_path.mkdir(exist_ok=True, parents=True)
     file_name = icon.key + '.png'
     file_path = icon_path / file_name
     with open(file_name, 'wb') as f:
