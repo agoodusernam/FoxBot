@@ -47,7 +47,8 @@ async def save_guild(guild: discord.Guild) -> None | str:
     try:
         guild_data: Guild = await serialise_guild(guild)
     except Exception as e:
-        return f'Failed serialising guild: {e}'
+        # return f'Failed serialising guild: {e}'
+        raise
     
     backups_path = Path('backups').absolute()
     guild_path = backups_path / f'{guild.id}.json'
@@ -120,12 +121,11 @@ async def serialise_guild(guild: discord.Guild) -> Guild:
 async def save_icon(icon: discord.Asset) -> str:
     timestamp: int = round(discord.utils.utcnow().timestamp())
     
-    path_addition: str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=12))
     icon_path: Path = Path('icons').absolute() / str(timestamp)
     icon_path.mkdir(exist_ok=True, parents=True)
     file_name = icon.key + '.png'
     file_path = icon_path / file_name
-    with open(file_name, 'wb') as f:
+    with open(file_path, 'wb') as f:
         f.write(await icon.with_format('webp').read())
     
     return str(file_path)
