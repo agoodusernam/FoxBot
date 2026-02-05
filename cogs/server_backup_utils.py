@@ -1,7 +1,5 @@
 import sys
 from pathlib import Path
-import random
-import string
 import json
 from typing import overload
 import shutil
@@ -51,6 +49,8 @@ async def save_guild(guild: discord.Guild) -> None | str:
         raise
     
     backups_path = Path('backups').absolute()
+    if not backups_path.exists():
+        backups_path.mkdir(exist_ok=True, parents=True)
     guild_path = backups_path / f'{guild.id}.json'
     
     if guild_path.exists():
