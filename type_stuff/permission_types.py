@@ -69,9 +69,12 @@ class SerialisedRole(TypedDict):
     icon: tuple[bool, str] | None
     # if icon[0] is True, icon[1] is the unicode emoji as a str.
     # else, icon[1] is the absolute file path to the role icon image as a str.
+    id: int
 
+class ChannelBase(TypedDict):
+    id: int
 
-class SerialisedChannel(TypedDict):
+class SerialisedChannel(ChannelBase):
     channel_type: Literal["text", "voice", "category", "stage", "forum"]
     name: str
     category: int | None
@@ -93,12 +96,12 @@ class VoiceChannel(SerialisedChannel):
     slowmode_delay: int
 
 class CategoryChannel(SerialisedChannel):
-    channels: list[int]
+    channels: list[SerialisedChannel]
 
 class Guild(TypedDict):
     name: str
     description: str | None
-    icon: bytes | None
+    icon: str | None
     afk_channel_id: int | None
     afk_timeout: int
     verification_level: int
@@ -109,3 +112,6 @@ class Guild(TypedDict):
     nsfw_level: int
     premium_progress_bar_enabled: bool
     widget_enabled: bool
+    roles: dict[int, SerialisedRole]
+    categories: list[CategoryChannel]
+    no_category_channels: list[SerialisedChannel]
