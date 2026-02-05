@@ -32,7 +32,7 @@ def get_file_creation_time(path: Path) -> int:
 
 
 def _serialise_perm_overwrite(overwrite: discord.PermissionOverwrite) -> PermissionOverwriteDict:
-    return {k: v for k, v in overwrite}  # type: ignore
+    return {k: v for k, v in overwrite}  # type: ignore[return-value]
 
 
 def _serialise_perm_overwrite_channel(channel: discord.abc.GuildChannel) -> dict[int, PermissionOverwriteDict]:
@@ -71,7 +71,7 @@ async def save_guild(guild: discord.Guild) -> None | str:
         guild_path = guild_folder / f'{guild.id}_{round(discord.utils.utcnow().timestamp())}.json'
     
     try:
-        with open(guild_path, 'wt') as f:
+        with open(guild_path, 'wt+') as f:
             json.dump(guild_data, f, indent=4)
     except OSError as e:
         return f'Failed writing json to {guild_path}: {e}'
