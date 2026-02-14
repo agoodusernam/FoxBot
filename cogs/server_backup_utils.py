@@ -6,6 +6,7 @@ from typing import overload, Any
 import shutil
 # noinspection PyPackageRequirements
 import statx  # type: ignore[import-untyped]
+import logging
 
 from type_stuff.permission_types import (
     PermissionOverwriteDict,
@@ -18,6 +19,8 @@ from type_stuff.permission_types import (
 )
 
 import discord
+
+logger = logging.getLogger('discord')
 
 
 def get_file_creation_time(path: Path) -> int:
@@ -303,9 +306,11 @@ async def load_roles(roles: Reversible[SerialisedRole], server: discord.Guild) -
     """
     id_map: dict[int, discord.Role] = {}
     for role in reversed(roles):
+        logger.debug(f'Loading role "{role["name"]}", ID: {role["id"]}')
         permissions: discord.Permissions = discord.Permissions(role['permissions'])
         if role['name'] == '@everyone':
             await server.default_role.edit(permissions=permissions)
+            logger.debug(f'Adding everyone role "{role["name"]}", ID: {role["id"]} to role map')
             id_map[role['id']] = server.default_role
             continue
         
@@ -333,6 +338,7 @@ async def load_roles(roles: Reversible[SerialisedRole], server: discord.Guild) -
             kwargs['tertiary_colour'] = discord.Colour.from_rgb(*role['tertiary_colour'])
         """
         created_role: discord.Role = await server.create_role(**kwargs)
+        logger.debug(f'Adding everyone role "{role["name"]}", ID: {role["id"]} to role map')
         id_map[role['id']] = created_role
     
     return id_map
@@ -347,6 +353,7 @@ def _perm_overwrite(perms: PermissionOverwriteDict) -> discord.PermissionOverwri
 def _overwrites_for_discord(ows: dict[int, PermissionOverwriteDict], role_map: dict[int, discord.Role]) -> dict[discord.Role, discord.PermissionOverwrite]:
     disc_ows: dict[discord.Role, discord.PermissionOverwrite] = {}
     for role_id, ow in ows.items():
+        logger.debug(f'Getting role ID: {role_id} for perm overwrite')
         disc_ows[role_map[role_id]] = _perm_overwrite(ow)
     return disc_ows
 
@@ -354,18 +361,20 @@ def _overwrites_for_discord(ows: dict[int, PermissionOverwriteDict], role_map: d
 async def load_channel(channel: SerialisedChannel, role_map: dict[int, discord.Role], server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None], category: discord.CategoryChannel | None = None) -> discord.CategoryChannel | None:
     match channel['channel_type']:
         case 'text':
-            await load_text_channel(channel, role_map, server, category)  # type: ignore[arg-type]
+            await load_text_channel(channel, role_map, server, add_to_map, category)  # type: ignore[arg-type]
         case 'voice':
-            await load_voice_channel(channel, role_map, server, category)  # type: ignore[arg-type]
+            await load_voice_channel(channel, role_map, server, add_to_map, category)  # type: ignore[arg-type]
         case 'category':
             return await load_category(channel, role_map, server, add_to_map)  # type: ignore[arg-type]
-    
+        case _:
+            logger.warning('Channel had invalid type')
     return None
 
 
 async def load_text_channel(channel: TextChannel, role_map: dict[int, discord.Role], server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None], category: discord.CategoryChannel | None = None):
     kwargs: dict[str, Any] = {}
     kwargs['name'] = channel['name']
+    logger.debug(f'Loading text channel {channel['name']}')
     if not channel['permissions_synced']:
         kwargs['overwrites'] = _overwrites_for_discord(channel['overwrites'], role_map)
     
@@ -384,6 +393,7 @@ async def load_text_channel(channel: TextChannel, role_map: dict[int, discord.Ro
 async def load_voice_channel(channel: VoiceChannel, role_map: dict[int, discord.Role], server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None], category: discord.CategoryChannel | None = None):
     kwargs: dict[str, Any] = {}
     kwargs['name'] = channel['name']
+    logger.debug(f'Loading voice channel {channel['name']}')
     if not channel['permissions_synced']:
         kwargs['overwrites'] = _overwrites_for_discord(channel['overwrites'], role_map)
     
@@ -405,11 +415,13 @@ async def load_category(category: CategoryChannel, role_map: dict[int, discord.R
             name=category['name'],
             overwrites=ows,  # type: ignore[arg-type]
     )
+    logger.debug(f'Loading category {category['name']}')
     add_to_map(category['id'], cat)
     return cat
 
 
 async def load_categories(categories: list[CategoryChannel], role_map: dict[int, discord.Role], server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None]):
+    logger.debug('Loading all categories')
     for category in reversed(categories):
         category_obj = await load_channel(category, role_map, server, add_to_map)
         for channel in reversed(category['channels']):
@@ -424,6 +436,8 @@ async def load_backup(dict_backup: dict[Any, Any], server: discord.Guild) -> str
         return f'Backup data missing field: {e}'
     
     role_map: dict[int, discord.Role] = await load_roles(backup['roles'].values(), server)
+    
+    logger.debug(f'Role map: {role_map}')
     
     channel_map: dict[int, discord.abc.GuildChannel] = {}
     
