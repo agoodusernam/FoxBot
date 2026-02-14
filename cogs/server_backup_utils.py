@@ -54,7 +54,7 @@ async def save_guild(guild: discord.Guild) -> None | str:
     guild_path = backups_path / f'{guild.id}.json'
     
     if guild_path.exists():
-        guild_folder = guild_path / f'{guild.id}'
+        guild_folder = backups_path / f'{guild.id}'
         try:
             guild_folder.mkdir(exist_ok=True, parents=True)
         except OSError as e:

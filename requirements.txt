@@ -1,4 +1,4 @@
-cachetools~=6.2.4
+cachetools~=7.0.1
 pymongo~=4.16.0
 python-dotenv~=1.2.1
 matplotlib~=3.10.3
