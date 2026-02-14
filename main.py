@@ -78,6 +78,7 @@ async def on_ready() -> None:
     logging_channel: Any = bot.get_channel(bot.config.bot_logs_channel_id)
     if not isinstance(logging_channel, discord.TextChannel):
         logger.warning(f'No logging channel! ID: {bot.config.bot_logs_channel_id}')
+    
     else:
         bot.logs_channel = logging_channel
         logger.info(f'Registered logging channel {logging_channel.name}, ID: {logging_channel.id}')
@@ -86,7 +87,7 @@ async def on_ready() -> None:
         owner_ids: Collection[int] | None = bot.owner_ids
         bot.config.dev_ids = set(owner_ids) if owner_ids is not None else {0}
         bot.config.save()
-        
+    
     logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
     logger.info('------')
     

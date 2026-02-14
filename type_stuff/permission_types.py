@@ -78,9 +78,9 @@ class SerialisedChannel(ChannelBase):
     channel_type: Literal["text", "voice", "category", "stage", "forum"]
     name: str
     category: int | None
-    # the internal ID of the category this channel belongs to, or None if it's not in a category
+    # the ID of the category this channel belongs to, or None if it's not in a category
     overwrites: dict[int, PermissionOverwriteDict]
-    # overwrites[internal_id] is the permission overwrites for that role
+    # overwrites[id] is the permission overwrites for that role
     permissions_synced: bool
     nsfw: bool
 
@@ -98,18 +98,17 @@ class VoiceChannel(SerialisedChannel):
 class CategoryChannel(SerialisedChannel):
     channels: list[SerialisedChannel]
 
-class Guild(TypedDict):
+class SerialisedGuild(TypedDict):
     name: str
     description: str | None
     icon: str | None
     afk_channel_id: int | None
-    afk_timeout: int
+    afk_timeout: int#
     verification_level: int
     default_notifications: int
     explicit_content_filter: int
     system_channel_id: int | None
     system_channel_flags: int
-    nsfw_level: int
     premium_progress_bar_enabled: bool
     widget_enabled: bool
     roles: dict[int, SerialisedRole]

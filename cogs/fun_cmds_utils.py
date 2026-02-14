@@ -4,7 +4,7 @@ import math
 import random
 from typing import Any, Generator
 
-import cachetools  # type: ignore[import-untyped]
+import cachetools
 import discord
 import discord.ext.commands
 from dateutil.relativedelta import relativedelta, MO  # type: ignore[import-untyped]
@@ -16,10 +16,12 @@ logger = logging.getLogger('discord')
 last_commit_cache: cachetools.TTLCache[None, tuple[int, str, dict[str, int]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 
 def monday_generator() -> Generator[datetime.datetime, None, None]:
-    next_monday = datetime.datetime.now(tz=datetime.UTC) + relativedelta(days=+1, weekday=MO(+1))
+    dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time())
+    next_monday = dt + relativedelta(days=+1, weekday=MO(+1))
     while True:
         yield next_monday
-        next_monday = datetime.datetime.now(tz=datetime.UTC) + relativedelta(days=+1, weekday=MO(+1))
+        dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time())
+        next_monday = dt + relativedelta(days=+1, weekday=MO(+1))
 
 
 async def dice_roll(message: discord.Message) -> None:
