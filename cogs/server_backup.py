@@ -41,6 +41,17 @@ class Backup(commands.Cog):
             await ctx.send(backup)
             return
         
+        for channel in ctx.guild.channels:
+            try:
+                await channel.delete()
+            except discord.NotFound:
+                pass
+        
+        for role in ctx.guild.roles:
+            if role.name == '@everyone':
+                continue
+            await role.delete()
+        
         success = await load_backup(backup, ctx.guild)
         
         if isinstance(success, str):
