@@ -1,5 +1,5 @@
 import sys
-from collections.abc import Iterable, Callable
+from collections.abc import Callable, Reversible
 from pathlib import Path
 import json
 from typing import overload, Any
@@ -295,12 +295,12 @@ def get_most_recent_backup(g_id: str | int) -> str | dict[Any, Any]:
         return f'Failed to read file. Path: {most_recent_backup} \n Error: {e}'
 
 
-async def load_roles(roles: Iterable[SerialisedRole], server: discord.Guild) -> dict[int, discord.Role]:
+async def load_roles(roles: Reversible[SerialisedRole], server: discord.Guild) -> dict[int, discord.Role]:
     """
     Returns a dict of [old_id: role]
     """
     id_map: dict[int, discord.Role] = {}
-    for role in roles:
+    for role in reversed(roles):
         permissions: discord.Permissions = discord.Permissions(role['permissions'])
         if role['name'] == '@everyone':
             await server.default_role.edit(permissions=permissions)
@@ -318,10 +318,10 @@ async def load_roles(roles: Iterable[SerialisedRole], server: discord.Guild) -> 
         if role['icon'] is None:
             pass
         elif role['icon'][0]:
-            kwargs['icon'] = role['icon'][1]
+            kwargs['display_icon'] = role['icon'][1]
         else:
             with open(role['icon'][1], "rb") as f:
-                kwargs['icon'] = f.read()
+                kwargs['display_icon'] = f.read()
         
         if role['secondary_colour'] is not None:
             kwargs['secondary_colour'] = discord.Colour.from_rgb(*role['secondary_colour'])
@@ -436,7 +436,7 @@ async def load_backup(dict_backup: dict[Any, Any], server: discord.Guild) -> str
     if isinstance(backup['icon'], Path):
         with open(backup['icon'], 'rb') as f:
             icon = f.read()
-    # channel_map[backup['afk_channel_id']]
+    
     kwargs: dict[str, Any] = {}
     kwargs['name'] = backup['name']
     kwargs['icon'] = icon
