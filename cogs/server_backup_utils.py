@@ -324,14 +324,14 @@ async def load_roles(roles: Reversible[SerialisedRole], server: discord.Guild) -
             kwargs['display_icon'] = role['icon'][1]
         else:
             with open(role['icon'][1], "rb") as f:
-                kwargs['display_icon'] = f.read()"""
+                kwargs['display_icon'] = f.read()
         
         if role['secondary_colour'] is not None:
             kwargs['secondary_colour'] = discord.Colour.from_rgb(*role['secondary_colour'])
         
         if role['tertiary_colour'] is not None:
             kwargs['tertiary_colour'] = discord.Colour.from_rgb(*role['tertiary_colour'])
-        
+        """
         created_role: discord.Role = await server.create_role(**kwargs)
         id_map[role['id']] = created_role
     
