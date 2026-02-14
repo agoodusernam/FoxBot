@@ -49,7 +49,7 @@ class Backup(commands.Cog):
                 pass
         
         for role in ctx.guild.roles:
-            if role.name == '@everyone':
+            if role.name == '@everyone' or role.id == ctx.guild.self_role.id:
                 continue
             await role.delete()
         
