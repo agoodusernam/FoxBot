@@ -24,7 +24,7 @@ def get_file_creation_time(path: Path) -> int:
     on_linux: bool = sys.platform == "linux" or sys.platform == "linux2"
     creation_time: int
     if on_linux:
-        creation_time = round(statx.statx(path).btime)
+        creation_time = round(statx.statx(str(path)).btime)
     else:
         creation_time = round(path.stat().st_birthtime) # type: ignore
     return creation_time
