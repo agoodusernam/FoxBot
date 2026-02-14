@@ -82,6 +82,8 @@ async def save_guild(guild: discord.Guild) -> None | str:
 async def serialise_guild(guild: discord.Guild) -> SerialisedGuild:
     roles: dict[int, SerialisedRole] = {}
     for role in guild.roles:
+        if role.id == guild.self_role:
+            continue
         roles[role.id] = await serialise_role(role)
     
     categories_list: list[CategoryChannel] = []
@@ -315,13 +317,14 @@ async def load_roles(roles: Reversible[SerialisedRole], server: discord.Guild) -
             'hoist':       role['hoist'],
             'mentionable': role['mentionable']
         }
+        """
         if role['icon'] is None:
             pass
         elif role['icon'][0]:
             kwargs['display_icon'] = role['icon'][1]
         else:
             with open(role['icon'][1], "rb") as f:
-                kwargs['display_icon'] = f.read()
+                kwargs['display_icon'] = f.read()"""
         
         if role['secondary_colour'] is not None:
             kwargs['secondary_colour'] = discord.Colour.from_rgb(*role['secondary_colour'])
