@@ -16,11 +16,11 @@ logger = logging.getLogger('discord')
 last_commit_cache: cachetools.TTLCache[None, tuple[int, str, dict[str, int]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 
 def monday_generator() -> Generator[datetime.datetime, None, None]:
-    dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time())
+    dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time(), tzinfo=datetime.UTC)
     next_monday = dt + relativedelta(days=+1, weekday=MO(+1))
     while True:
         yield next_monday
-        dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time())
+        dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time(), tzinfo=datetime.UTC)
         next_monday = dt + relativedelta(days=+1, weekday=MO(+1))
 
 

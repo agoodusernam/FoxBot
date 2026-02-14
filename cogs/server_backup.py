@@ -1,5 +1,6 @@
 from typing import Any
 
+import discord
 from discord.ext import commands
 
 from command_utils.CContext import CoolBot, CContext
