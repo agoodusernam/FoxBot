@@ -311,7 +311,7 @@ async def load_roles(roles: Reversible[SerialisedRole], server: discord.Guild) -
         if role['name'] == '@everyone':
             await server.default_role.edit(permissions=permissions)
             logger.debug(f'Adding everyone role "{role["name"]}", ID: {role["id"]} to role map')
-            id_map[role['id']] = server.default_role
+            id_map[int(role['id'])] = server.default_role
             continue
         
         colour: discord.Colour = discord.Colour.from_rgb(*role['colour'])
@@ -339,7 +339,7 @@ async def load_roles(roles: Reversible[SerialisedRole], server: discord.Guild) -
         """
         created_role: discord.Role = await server.create_role(**kwargs)
         logger.debug(f'Adding everyone role "{role["name"]}", ID: {role["id"]} to role map')
-        id_map[role['id']] = created_role
+        id_map[int(role['id'])] = created_role
     
     return id_map
 
@@ -442,7 +442,7 @@ async def load_backup(dict_backup: dict[Any, Any], server: discord.Guild) -> str
     channel_map: dict[int, discord.abc.GuildChannel] = {}
     
     def add_to_map(o_id: int, c: discord.abc.GuildChannel):
-        channel_map[o_id] = c
+        channel_map[int(o_id)] = c
     
     for channel in backup['no_category_channels']:
         await load_channel(channel, role_map, server, add_to_map)
@@ -464,9 +464,9 @@ async def load_backup(dict_backup: dict[Any, Any], server: discord.Guild) -> str
     kwargs['widget_enabled'] = backup['widget_enabled']
     kwargs['afk_timeout'] = backup['afk_timeout']
     if backup['afk_channel_id'] is not None:
-        kwargs['afk_channel'] = channel_map[backup['afk_channel_id']]
+        kwargs['afk_channel'] = channel_map[int(backup['afk_channel_id'])]
     if backup['system_channel_id'] is not None:
-        kwargs['system_channel'] = channel_map[backup['system_channel_id']]
+        kwargs['system_channel'] = channel_map[int(backup['system_channel_id'])]
         # noinspection PyProtectedMember
         kwargs['system_channel_flags'] = discord.SystemChannelFlags()._from_value(backup['system_channel_flags'])
     
