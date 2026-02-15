@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 
 import discord
@@ -43,6 +44,7 @@ class Backup(commands.Cog):
             return
         
         for channel in ctx.guild.channels:
+            await asyncio.sleep(0.2)
             try:
                 await channel.delete()
             except discord.NotFound:
@@ -51,6 +53,7 @@ class Backup(commands.Cog):
         for role in ctx.guild.roles:
             if role.name == '@everyone' or role.id == ctx.guild.self_role.id:
                 continue
+            await asyncio.sleep(0.2)
             await role.delete()
         
         success = await load_backup(backup, ctx.guild)

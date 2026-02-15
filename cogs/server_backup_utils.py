@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from collections.abc import Callable, Reversible
 from pathlib import Path
@@ -306,6 +307,7 @@ async def load_roles(roles: Reversible[SerialisedRole], server: discord.Guild) -
     """
     id_map: dict[int, discord.Role] = {}
     for role in reversed(roles):
+        await asyncio.sleep(0.5)
         logger.debug(f'Loading role "{role["name"]}", ID: {role["id"]}')
         permissions: discord.Permissions = discord.Permissions(role['permissions'])
         if role['name'] == '@everyone':
@@ -359,6 +361,7 @@ def _overwrites_for_discord(ows: dict[int, PermissionOverwriteDict], role_map: d
 
 
 async def load_channel(channel: SerialisedChannel, role_map: dict[int, discord.Role], server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None], category: discord.CategoryChannel | None = None) -> discord.CategoryChannel | None:
+    await asyncio.sleep(0.5)
     match channel['channel_type']:
         case 'text':
             await load_text_channel(channel, role_map, server, add_to_map, category)  # type: ignore[arg-type]
