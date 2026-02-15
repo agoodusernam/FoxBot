@@ -338,7 +338,7 @@ async def load_roles(roles: Reversible[SerialisedRole], server: discord.Guild) -
             kwargs['tertiary_colour'] = discord.Colour.from_rgb(*role['tertiary_colour'])
         """
         created_role: discord.Role = await server.create_role(**kwargs)
-        logger.debug(f'Adding everyone role "{role["name"]}", ID: {role["id"]} to role map')
+        logger.debug(f'Adding role "{role["name"]}", ID: {role["id"]} to role map')
         id_map[int(role['id'])] = created_role
     
     return id_map
@@ -354,7 +354,7 @@ def _overwrites_for_discord(ows: dict[int, PermissionOverwriteDict], role_map: d
     disc_ows: dict[discord.Role, discord.PermissionOverwrite] = {}
     for role_id, ow in ows.items():
         logger.debug(f'Getting role ID: {role_id} for perm overwrite')
-        disc_ows[role_map[role_id]] = _perm_overwrite(ow)
+        disc_ows[role_map[int(role_id)]] = _perm_overwrite(ow)
     return disc_ows
 
 
