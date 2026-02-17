@@ -425,7 +425,7 @@ async def load_category(category: CategoryChannel, role_map: dict[int, discord.R
 
 async def load_categories(categories: list[CategoryChannel], role_map: dict[int, discord.Role], server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None]):
     logger.debug('Loading all categories')
-    for category in reversed(categories):
+    for category in categories:
         category_obj = await load_channel(category, role_map, server, add_to_map)
         for channel in reversed(category['channels']):
             await load_channel(channel, role_map, server, add_to_map, category_obj)
