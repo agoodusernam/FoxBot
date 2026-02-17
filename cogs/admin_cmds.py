@@ -378,6 +378,37 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             logger.error(f'Failed to assign verified role to {member.display_name}: {e}')
             return
     
+    @commands.command(name='unverify', aliases=['uver', 'uv'],
+            brief='Verify a user',
+            help='Admin only: Assign the verified role to a user',
+            usage='f!unverify <user_id/mention>')
+    @commands.guild_only()
+    @commands.has_role(staff_role_id)
+    async def unverify(self, ctx: CContext, member: discord.Member):
+        await ctx.delete()
+        assert ctx.guild is not None
+        
+        if member is None:
+            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
+            return
+        
+        try:
+            roles: list[discord.Role] = []
+            for role_id in ctx.bot.config.verified_roles:
+                role = discord.utils.get(ctx.guild.roles, id=role_id)
+                if role is None:
+                    logger.error(f'Failed to find role with ID {role_id} for verification.')
+                    continue
+                roles.append(role)
+            
+            await member.remove_roles(*roles, reason='Unverified by admin', atomic=True)
+            
+            await ctx.send(f'{member.display_name} has been unverified.', delete_after=ctx.bot.del_after)
+        
+        except Exception as e:
+            logger.error(f'Failed to assign verified role to {member.display_name}: {e}')
+            return
+    
     @commands.command(name='last_messages', aliases=['lastmsgs', 'last_msgs'],
                       brief='Fetch last messages from a user',
                       help='Admin only: Fetch the last messages sent by a user in the server',
