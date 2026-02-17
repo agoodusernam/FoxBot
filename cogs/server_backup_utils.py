@@ -427,7 +427,7 @@ async def load_categories(categories: list[CategoryChannel], role_map: dict[int,
     logger.debug('Loading all categories')
     for category in categories:
         category_obj = await load_channel(category, role_map, server, add_to_map)
-        for channel in reversed(category['channels']):
+        for channel in category['channels']:
             await load_channel(channel, role_map, server, add_to_map, category_obj)
 
 
