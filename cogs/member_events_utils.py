@@ -26,13 +26,17 @@ MISSING: MissingType = MissingType()
 
 
 class MemberChange(TypedDict):
-    nick: str | None | MissingType
+    nick: str | MissingType | None
     roles_added: list[discord.Role] | MissingType
     roles_removed: list[discord.Role] | MissingType
-    timed_out_until: datetime.datetime | None | MissingType
+    timed_out_until: datetime.datetime | MissingType | None
     pending: bool | MissingType
     avatar: discord.Asset | MissingType | None
     flags: discord.MemberFlags | MissingType
+    
+class UserChange(TypedDict):
+    avatar: discord.Asset | MissingType | None
+    username: str | MissingType
 
 
 def time_ago(dt: datetime.datetime | int | float):
@@ -106,7 +110,7 @@ def get_changed_roles(before: list[discord.Role], after: list[discord.Role]) -> 
     return added, removed
 
 
-def get_changes(before: discord.Member, after: discord.Member) -> MemberChange:
+def get_member_changes(before: discord.Member, after: discord.Member) -> MemberChange:
     added, removed = get_changed_roles(before.roles[1:], after.roles[1:])
     changes: MemberChange = {
         'nick':            after.nick if after.nick != before.nick else MISSING,
@@ -116,6 +120,13 @@ def get_changes(before: discord.Member, after: discord.Member) -> MemberChange:
         'pending':         after.pending if after.pending != before.pending else MISSING,
         'avatar':          after.guild_avatar if after.guild_avatar != before.guild_avatar else MISSING,
         'flags':           after.flags if after.flags != before.flags else MISSING
+        }
+    return changes
+
+def get_user_changes(before: discord.User, after: discord.User) -> UserChange:
+    changes: UserChange = {
+        'username': after.name if after.name != before.name else MISSING,
+        'avatar':   after.display_avatar if after.display_avatar != before.display_avatar else MISSING
         }
     return changes
 
@@ -129,21 +140,45 @@ def nick_update_embed(before_nick: str | None, after: discord.Member) -> discord
     else:
         description = f"{after.mention}'s nickname was changed.\nBefore: `{before_nick}`\nAfter: `{after.nick}`"
     
-    return create_log_embed(after.name, after.display_avatar.url, description, discord.Color.blurple(), title)
+    return create_log_embed(
+            after.name,
+            after.display_avatar.url,
+            description,
+            discord.Color.blurple(),
+            title
+            )
 
 def roles_changed_embed(changed: list[discord.Role], member: discord.Member, title: str, desc: str) -> discord.Embed:
     roles: str = ", ".join([r.mention for r in changed])
-    return create_log_embed(member.name, member.display_avatar.url, f'Roles {desc} {member.mention}:\n{roles}', discord.Color.blurple(), title)
+    return create_log_embed(
+            member.name,
+            member.display_avatar.url,
+            f'Roles {desc} {member.mention}:\n{roles}',
+            discord.Color.blurple(),
+            title
+            )
 
 def timeout_embed(member: discord.Member, until: datetime.datetime | None) -> discord.Embed:
     if until is None:
-        return create_log_embed(member.name, member.display_avatar.url, f'Timeout removed from {member.mention}', discord.Color.green(), 'Timeout removed')
+        return create_log_embed(
+                member.name,
+                member.display_avatar.url,
+                f'Timeout removed from {member.mention}',
+                discord.Color.green(),
+                'Timeout removed'
+                )
     
     formatted_until: str = discord.utils.format_dt(until, style='F')
     
-    return create_log_embed(member.name, member.display_avatar.url, f'Timeout set for {member.mention} until {formatted_until}', discord.Color.red(), 'Timeout added')
+    return create_log_embed(
+            member.name,
+            member.display_avatar.url,
+            f'Timeout set for {member.mention} until {formatted_until}',
+            discord.Color.red(),
+            'Timeout added'
+            )
     
-def avatar_update_embed(after: discord.Member) -> discord.Embed:
+def avatar_update_embed(after: discord.Member | discord.User) -> discord.Embed:
     embed = create_log_embed(
             after.name,
             after.display_avatar.url,
@@ -153,4 +188,12 @@ def avatar_update_embed(after: discord.Member) -> discord.Embed:
             )
     embed.set_thumbnail(url=after.display_avatar.url)
     return embed
-    
+
+def name_change_embed(before: discord.User, after: discord.User) -> discord.Embed:
+    return create_log_embed(
+            after.name,
+            after.display_avatar.url,
+            f'{after.mention} changed their name from {before.name} to {after.name}',
+            discord.Color.blurple(),
+            'Name change'
+            )

@@ -18,10 +18,7 @@ from config.bot_config import BotConfig, load_config
 logger = logging.getLogger('discord')
 
 class NoChannel:
-    async def send(self, *args, **kwargs):
-        _ = args
-        _ = kwargs
-        _ = self
+    async def send(self, *args, **kwargs): ...
 
 
 class CContext(commands.Context):
@@ -34,30 +31,43 @@ class CContext(commands.Context):
         try:
             await self.message.delete()
         
-        except Exception as e:
-            # We don't care if we can't delete the message
-            logger.error(f"Failed to delete message: {e}")
+        except discord.Forbidden:
+            logger.info(f"We do not have permission to delete message {self.message.id}")
             return False
+        
+        except discord.NotFound:
+            logger.info(f"Message {self.message.id} not found")
+            return False
+        
+        except discord.HTTPException as e:
+            logger.info(f"Failed to delete message {self.message.id}: {e}")
+            return False
+        
         return True
     
     async def safe_reply(self, content: Optional[str] = None, **kwargs: Any) -> Message | None:
         """
         Reply to a message safely, handling exceptions.
+        Will still raise any exceptions that aren't related to the sending of the actual message
         Returns the sent message if successful, None otherwise.
         """
         try:
             return await super().reply(content, **kwargs)
+        
+        except ValueError:
+            raise
+        
+        except TypeError:
+            raise
+        
         except discord.Forbidden as e:
-            logger.error(f"Failed to send reply, Forbidden: {e}")
+            logger.info(f"Failed to send reply, Forbidden: {e}")
             return None
         
         except discord.HTTPException as e:
-            logger.error(f"Failed to send reply, HTTPException: {e}")
+            logger.info(f"Failed to send reply, HTTPException: {e}")
             return None
         
-        except Exception as e:
-            logger.error(f"Failed to send reply, Unknown error: {e}")
-            return None
 
 class CoolBot(commands.Bot):
     def __init__(self, *args, **kwargs) -> None:

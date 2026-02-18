@@ -5,7 +5,7 @@ from discord.ext import commands
 
 from command_utils.CContext import CoolBot
 from command_utils.embed_util import create_log_embed
-from cogs.member_events_utils import time_ago, get_changes, MISSING, nick_update_embed, roles_changed_embed, timeout_embed, MissingType, avatar_update_embed
+from cogs.member_events_utils import time_ago, get_member_changes, MISSING, nick_update_embed, roles_changed_embed, timeout_embed, MissingType, avatar_update_embed, get_user_changes, UserChange
 
 logger = logging.getLogger('discord')
 
@@ -106,7 +106,7 @@ class MemberEvents(commands.Cog, name="Member Events"):
     @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         logger.debug(f'{before.name} with ID {before.id} updated.')
-        changes = get_changes(before, after)
+        changes = get_member_changes(before, after)
         logger.debug("Changes: " + str(changes))
         
         if not self.ensure_member_logs_channel():
@@ -115,31 +115,59 @@ class MemberEvents(commands.Cog, name="Member Events"):
         assert self.member_logs_channel is not None
         
         if changes['nick'] is not MISSING:
-            logger.debug(f'{before.name} changed nickname: {changes["nick"]}')
+            logger.debug(f'{after.name} changed nickname: {changes["nick"]}')
             embed = nick_update_embed(before.nick, after)
             await self.member_logs_channel.send(embed=embed)
         
         if changes['roles_added'] is not MISSING:
             assert not isinstance(changes['roles_added'], MissingType)
-            logger.debug(f'{before.name} added roles: {", ".join([c.name for c in changes["roles_added"]])}')
+            logger.debug(f'{after.name} added roles: {", ".join([c.name for c in changes["roles_added"]])}')
             embed = roles_changed_embed(changes["roles_added"], after, 'Roles added', 'added to')
             await self.member_logs_channel.send(embed=embed)
         
         if changes['roles_removed'] is not MISSING:
             assert not isinstance(changes['roles_removed'], MissingType)
-            logger.debug(f'{before.name} removed roles: {", ".join([c.name for c in changes["roles_removed"]])}')
+            logger.debug(f'{after.name} removed roles: {", ".join([c.name for c in changes["roles_removed"]])}')
             embed = roles_changed_embed(changes["roles_removed"], after, 'Roles removed', 'removed from')
             await self.member_logs_channel.send(embed=embed)
         
         if changes['timed_out_until'] is not MISSING:
             assert not isinstance(changes['timed_out_until'], MissingType)
-            logger.debug(f'{before.name} timeout changed')
+            logger.debug(f'{after.name} timeout changed')
             embed = timeout_embed(after, changes["timed_out_until"])
             await self.member_logs_channel.send(embed=embed)
         
         if changes['avatar'] is not MISSING:
-            logger.debug(f'{before.name} changed avatar')
+            logger.debug(f'{before.name} changed their guild specific avatar')
             embed = avatar_update_embed(after)
+            await self.member_logs_channel.send(embed=embed)
+    
+    @commands.Cog.listener()
+    async def on_user_update(self, before: discord.User, after: discord.User):
+        logger.debug(f'{before.name} with ID {before.id} updated.')
+        changes: UserChange = get_user_changes(before, after)
+        logger.debug("Changes: " + str(changes))
+        
+        if not self.ensure_member_logs_channel():
+            return
+        
+        assert self.member_logs_channel is not None
+        
+        if changes['avatar'] is not MISSING:
+            logger.debug(f'{after.name} changed their global avatar')
+            embed = avatar_update_embed(after)
+            await self.member_logs_channel.send(embed=embed)
+        
+        if changes['username'] is not MISSING:
+            logger.debug(f'{after.name} changed their username')
+            embed = create_log_embed(
+                    after.name,
+                    after.display_avatar.url,
+                    f'{after.mention} changed their username from {before.name} to {after.name}',
+                    discord.Color.blue(),
+                    'Username changed',
+                    )
+            
             await self.member_logs_channel.send(embed=embed)
     
     @commands.Cog.listener()

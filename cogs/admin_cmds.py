@@ -406,7 +406,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send(f'{member.display_name} has been unverified.', delete_after=ctx.bot.del_after)
         
         except Exception as e:
-            logger.error(f'Failed to assign verified role to {member.display_name}: {e}')
+            logger.error(f'Failed to remove verified role from {member.display_name}: {e}')
             return
     
     @commands.command(name='last_messages', aliases=['lastmsgs', 'last_msgs'],
