@@ -5,6 +5,7 @@ import datetime
 import logging
 import os
 import string
+import traceback
 from typing import Any, Mapping, TypedDict, Literal, NotRequired, TypeVar
 
 import discord
@@ -311,7 +312,7 @@ async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> Mes
         )
     
     except Exception as e:
-        logger.error('Error during message analysis: %s', e)
+        logger.error(f'Error during message analysis: {traceback.format_exc()}')
         return f'Error during analysis: {str(e)}'
 
 
@@ -387,7 +388,7 @@ async def analyse_user_messages(member: discord.User, time_filter: str | None = 
         )
     
     except Exception as e:
-        logger.error('Error during user message analysis: %s', e)
+        logger.error(f'Error during user message analysis: {traceback.format_exc()}')
         return f'Error during analysis: {str(e)}'
 
 
@@ -486,7 +487,7 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
     
     
     except Exception as e:
-        logger.error('Error formatting analysis: %s', e)
+        logger.error(f'Error formatting analysis: {traceback.format_exc()}')
         await ctx.send(f'Error during analysis: {e}')
 
 
@@ -560,11 +561,16 @@ async def generate_user_activity_graph(ctx: Context, result: MessageAnalysisResu
         # Clean up the file
         try:
             os.remove(graph_file)
-        except:
-            pass  # Ignore if file deletion fails, we'd rather keep the bot running and clean up manually later
+        
+        except FileNotFoundError:
+            pass
+        
+        except OSError:
+            logger.warning(f'Error deleting graph file {graph_file}: {traceback.format_exc()}')
+            # Ignore if file deletion fails, we'd rather keep the bot running and clean up manually later
     
     except Exception as e:
-        logger.error('Error generating graph: %s', e)
+        logger.error(f'Error generating graph: {traceback.format_exc()}')
         await ctx.send(f'Error generating graph: {e}')
 
 
@@ -781,8 +787,8 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
                 active_channels_lb=top_channels,
         )
     
-    except Exception as e:
-        logger.error('Error retrieving voice statistics: %s', e)
+    except Exception:
+        logger.error(f'Error retrieving voice statistics: {traceback.format_exc()}')
         return None
 
 
@@ -834,8 +840,8 @@ async def get_user_voice_statistics(user_id: str) -> UserVoiceAnalysisResult | N
                 active_channel_lb=top_channels,
         )
     
-    except Exception as e:
-        logger.error('Error retrieving user voice statistics: %s', e)
+    except Exception:
+        logger.error(f'Error retrieving user voice statistics: {traceback.format_exc()}')
         return None
 
 
@@ -883,7 +889,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
         try:
             await generate_voice_activity_graph(ctx.channel, ctx.bot, stats, 15) # type: ignore
         except Exception as e:
-            logger.error('Error generating voice activity graph: %s', e)
+            logger.error(f'Error generating voice activity graph: {traceback.format_exc()}')
             await ctx.send(f'Error generating graph: {e}')
 
 
