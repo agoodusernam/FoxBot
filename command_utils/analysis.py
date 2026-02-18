@@ -61,6 +61,7 @@ class UserMessageStats(TypedDict):
 
 class MessageAnalysisResult(TypedDict):
     total_messages: int
+    total_valid_messages: int
     most_common_word: str
     most_common_word_count: int
     total_unique_words: int
@@ -299,6 +300,7 @@ async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> Mes
         
         return MessageAnalysisResult(
                 total_messages=total_messages,
+                total_valid_messages=len(valid_messages),
                 most_common_word=word_stats['most_common_word'],
                 most_common_word_count=word_stats['most_common_word_count'],
                 total_unique_words=word_stats['total_unique_words'],
@@ -454,7 +456,7 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
         )[:5]
         
         activity_ratio: str = ""
-        if guild.member_count:
+        if guild.member_count and flag != 'il':
             activity_ratio = f"({round((result['total_users'] / guild.member_count) * 100, 2)}% activity)"
         
         msg = (
@@ -462,7 +464,7 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
             f"Most common word: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n" +
             f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
             f"Total users: {result['total_users']} {activity_ratio}\n"
-            f"On average every active user has sent {round(result['total_messages'] / result['total_users'], 2)} messages\n"
+            f"On average every active user has sent {round(result['total_valid_messages'] / result['total_users'], 2)} messages\n"
             f"Top 5 most active users:\n"
         )
         
