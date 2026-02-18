@@ -88,7 +88,7 @@ async def send_message(message: DBMessage) -> bool:
     """
     Saves a single message to MongoDB.
     :param message: A dictionary representing the message to be saved.
-    :return: None
+    :return: If the message was saved successfully
     """
     client = await _connect()
     if not client:

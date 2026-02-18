@@ -253,6 +253,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send('Please provide the new content for the message.',
                            delete_after=ctx.bot.del_after)
             return
+        
         new_content = split_args[2]
         
         message: discord.Message = await ctx.bot.get_channel(channel_id).fetch_message(message_id)

@@ -101,11 +101,8 @@ async def try_resolve_uid(uid: int, bot: CoolBot) -> str:
     
     if guild is not None:
         guild_member = guild.get_member(uid)
-    else:
-        guild_member = None
-    
-    if isinstance(guild_member, discord.Member):
-        return guild_member.display_name
+        if guild_member is not None:
+            return guild_member.display_name
     
     try:
         fetched = await bot.fetch_user(uid)
@@ -402,7 +399,7 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
         to_analyse: The user to analyse
         flag: Optional time filter - 'w' for last week, 'd' for last day, etc.
     """
-    #TODO: Make the filtering less dumb
+    # TODO: Make the filtering less dumb
     
     # Parse time filter from message
     valid_flags = ['-w', '-d', '-h', '-il']
@@ -413,7 +410,6 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
             ctx.message.content = ctx.message.content.replace(flag, '')
             flag = flag.lower().replace("-", "")
     
-    # Send initial "Analysing..." message
     new_msg = await ctx.send('Analysing...')
     
     # Check if a user was specified
@@ -429,12 +425,12 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
         return
     
     
-    # analyse all messages
+    # Analyse all messages
     try:
         guild: discord.Guild | None = ctx.bot.get_guild(ctx.bot.config.guild_id)
         if guild is None:
-            await new_msg.edit(content='Guild not found. Please report this error.')
-            logger.error('Guild not found.')
+            await new_msg.edit(content='Guild not found.')
+            logger.error(f'Guild not found. ID: {ctx.bot.config.guild_id}')
             return
         
         result = await analyse_messages(ctx, flag)
@@ -457,12 +453,16 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
                 reverse=True,
         )[:5]
         
-        # Format message
+        activity_ratio: str = ""
+        if guild.member_count:
+            activity_ratio = f"({round((result['total_users'] / guild.member_count) * 100, 2)}% activity)"
+        
         msg = (
-            f"{result['total_messages']} total messages analysed\n"
-            f"Most common word: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n"
-            f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} "
-            f"characters)\nTotal users: {result['total_users']}\n"
+            f"{result['total_messages']} total messages analysed\n" +
+            f"Most common word: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n" +
+            f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
+            f"Total users: {result['total_users']} {activity_ratio}\n"
+            f"On average every active user has sent {round(result['total_messages'] / result['total_users'], 2)} messages\n"
             f"Top 5 most active users:\n"
         )
         
@@ -507,7 +507,6 @@ async def generate_user_activity_graph(ctx: Context, result: MessageAnalysisResu
         usernames = []
         message_counts = []
         
-        # Process each user
         for user in top_15_users:
             user_id = int(user['user_id'].strip())
             
@@ -517,7 +516,7 @@ async def generate_user_activity_graph(ctx: Context, result: MessageAnalysisResu
                 # Fetch user if not in guild
                 try:
                     discord_member = await ctx.bot.fetch_user(user_id)
-                except:
+                except (discord.NotFound, discord.HTTPException):
                     discord_member = None
             
             # Get display name
@@ -587,7 +586,6 @@ async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
                 reverse=True,
         )
         
-        # Determine how many channels to show
         num_channels = 5
         
         active_channels = active_channels[:num_channels]

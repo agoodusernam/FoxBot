@@ -141,14 +141,14 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         
         await ctx.send(embed=embed)
     
-    @commands.command(name='debug_log',
+    @commands.command(name='debug_log', aliases=['debuglog', 'dlog'],
                       brief='Get the debug log',
                       help='Dev only: Send the debug log to the channel',
                       usage='f!debug_log')
     async def debug_log(self, ctx: CContext):
         await ctx.send(file=discord.File(ctx.bot.log_path / 'debug.log'))
     
-    @commands.command(name='err_log',
+    @commands.command(name='err_log', aliases=['error_log', 'errlog', 'elog'],
                       brief='Get the error log',
                       help='Dev only: Send the error log to the channel',
                       usage='f!err_log')

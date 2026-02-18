@@ -26,20 +26,23 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous: bool = False) -
         await ctx.send('Mod log channel or public logs channel not found.', delete_after=ctx.bot.del_after)
         return
     
-    last_mod_log_message = [msg async for msg in mod_log_channel.history(limit=1)][0]
+    last_mod_log_message: discord.Message = [msg async for msg in mod_log_channel.history(limit=1)][0]
     if last_mod_log_message.content == 'Posted':
         await ctx.send('This log has already been sent to the public logs channel.', delete_after=ctx.bot.del_after)
         return
     
     embed = last_mod_log_message.embeds[0]
+    if embed is None or embed.title is None or embed.description is None:
+        await ctx.send('No embed found in the last mod log message.', delete_after=ctx.bot.del_after)
+        return
     
     offence = embed.title.split(sep='|')[0].title()
     if offence.strip() == 'Warn':
         offence = 'Warning'
-    description = embed.description.split(sep='\n')
+    description: list[str] = embed.description.split(sep='\n')
     offender = re.sub(r'^.*?<', '<', description[0])  # Extract offender mention
     description.pop(0)
-    duration = None
+    duration: str | None = None
     if description[0].startswith('**Duration'):
         duration = description[0].replace('**Duration:**', '')
         description.pop(0)
