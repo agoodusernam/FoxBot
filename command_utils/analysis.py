@@ -951,7 +951,7 @@ async def format_voice_analysis(ctx: CContext, graph: bool = False,
         await voice_analysis(ctx, graph, include_left)
         await new_msg.delete()
     except Exception as e:
-        logger.error('Error during voice analysis: %s', e)
+        logger.error(f'Error during voice analysis: {traceback.format_exc()}')
         await ctx.send(f'Error during voice analysis: {e}')
 
 
@@ -1019,10 +1019,10 @@ async def generate_voice_activity_graph(channel: discord.PartialMessageable, bot
         try:
             os.remove(graph_file)
         except OSError as e:
-            logger.warning('Could not remove graph file %s: %s', graph_file, e)
+            logger.warning(f'Could not remove graph file {graph_file}: {traceback.format_exc()}')
     
     except Exception as e:
-        logger.error('Error generating voice activity graph: %s', e)
+        logger.error(f'Error generating voice activity graph: {traceback.format_exc()}')
         if send_errors:
             await channel.send(f'Error generating graph: {e}')
 
