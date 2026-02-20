@@ -128,7 +128,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
         embed.add_field(name="dev_ids", value=f"{dev_ids}", inline=True)
         await ctx.send(embed=embed)
         return
-        
+    
     @commands.command(name="reload_config", brief="Reload configuration from file")
     @commands.check(is_admin)
     async def reload_config(self, ctx: CContext):
@@ -144,9 +144,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
     async def save_config(self, ctx: CContext):
         """Save current bot configuration to config.json"""
         success = self.bot.config.save()
-        if success is not None:
-            await self.bot.log_error(success, ctx.channel)
-        else:
+        if success is None:
             await ctx.send("Configuration saved successfully!")
 
 

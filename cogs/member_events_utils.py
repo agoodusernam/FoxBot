@@ -1,5 +1,5 @@
 import datetime
-from typing import TypedDict
+from typing import TypedDict, Self
 
 import discord
 from dateutil.relativedelta import relativedelta  # type: ignore[import-untyped]
@@ -10,15 +10,15 @@ from command_utils.embed_util import create_log_embed
 class MissingType:
     instance = None
     
-    def __new__(cls):
+    def __new__(cls) -> Self:
         if cls.instance is None:
             cls.instance = super().__new__(cls)
         return cls.instance
     
-    def __str__(self):
+    def __str__(self) -> str:
         return "MISSING"
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
 

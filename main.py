@@ -96,34 +96,29 @@ async def on_ready() -> None:
 
 
 @bot.event
-async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandError):
+async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandError) -> None:
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.send('This command is on cooldown. Please try again in ' +
                        f'{utils.seconds_to_human_readable(error.retry_after)}.')
         
     elif isinstance(error, commands.NoPrivateMessage):
         await ctx.send('This command cannot be used in private messages.')
-        await ctx.delete()
     
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(f'Missing required argument: {error.param.name}')
-        await ctx.delete()
     
     elif isinstance(error, commands.BotMissingPermissions):
         missing = ', '.join(error.missing_permissions)
         await ctx.send(f'I am missing the following permissions to run this command: {missing}')
-        await ctx.delete()
     
     elif isinstance(error, commands.CheckFailure):
         await ctx.send('You do not have permission to use this command.')
-        await ctx.delete()
     
     elif isinstance(error, commands.BadArgument):
         await ctx.send(f'Bad argument: {error}')
     
     elif isinstance(error, commands.CommandNotFound):
         await ctx.send(f'Command not found: {error}')
-        await ctx.delete()
     
     else:
         logger.error(f'Error in command {ctx.command}: {error}', exc_info=error)
@@ -153,7 +148,7 @@ async def load_extensions() -> None:
 
 
 @bot.check
-async def not_blacklisted(ctx: CContext):
+async def not_blacklisted(ctx: CContext) -> bool:
     """
     Check if the user is blacklisted from using commands.
     """
@@ -163,7 +158,7 @@ async def not_blacklisted(ctx: CContext):
     return True
 
 @bot.event
-async def on_message(message: discord.Message):
+async def on_message(message: discord.Message) -> None:
     # Suppressed because we are listening for messages in cogs/message_events.py
     _ = message
 

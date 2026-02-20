@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Awaitable, Coroutine
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from typing import TypedDict, Any
 
@@ -125,7 +125,7 @@ class DrugItem(BlackMarketItem):
     income_multiplier: float = 0.5
     work_catch_risk: float = 0.1
     uses: int = 1
-    od_chance: float = 0.05
+    od_chance: float = 0.005
 
 
 @dataclass

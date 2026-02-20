@@ -149,6 +149,7 @@ rr_phantom = ShopItem(
         stock=-1,
         perk=None,
 )
+
 ferrari_sf90 = ShopItem(
         name="Ferrari SF90",
         description="Hybrid hypercar with Formula 1 technology and breathtaking Italian styling.",
@@ -210,6 +211,7 @@ cocaine = DrugItem(
         income_multiplier=0.8,
         work_catch_risk=0.3,
         uses=10,
+        od_chance=0.01
 )
 
 lsd = DrugItem(
@@ -256,7 +258,7 @@ methamphetamine = DrugItem(
         income_multiplier=1.3,
         work_catch_risk=0.25,
         uses=10,
-        od_chance=0.1
+        od_chance=0.05
 )
 
 fentanyl = DrugItem(
@@ -272,7 +274,7 @@ fentanyl = DrugItem(
         income_multiplier=1.5,
         work_catch_risk=0.3,
         uses=1,
-        od_chance=0.5
+        od_chance=0.2
 )
 
 ominous_knife = BlackMarketItem(
@@ -341,7 +343,7 @@ the_colt = GunItem(
 
 mr556 = GunItem(
         name="MR556A1",
-        description="A HK MR556A1 semi-automatic rifle.",
+        description="A civilian HK MR556A1 semi-automatic rifle.",
         price=3_500,
         stock=-1,
         perk=None,
@@ -354,7 +356,7 @@ mr556 = GunItem(
 
 sig_mcx_spear = GunItem(
         name="SIG MCX Spear",
-        description="A SIG MCX Spear semi-automatic rifle with a suppressor.",
+        description="A civilian SIG MCX Spear semi-automatic rifle with a suppressor.",
         price=4_000,
         stock=-1,
         perk=None,
@@ -367,7 +369,7 @@ sig_mcx_spear = GunItem(
 
 hk417 = GunItem(
         name="HK417",
-        description="A HK417 fully automatic rifle.",
+        description="A military grade HK417 fully automatic rifle.",
         price=10_000,
         stock=-1,
         perk=None,
@@ -380,7 +382,7 @@ hk417 = GunItem(
 
 sig_mx7 = GunItem(
         name="SIG MX7",
-        description="A SIG MX7 fully automatic rifle with a suppressor.",
+        description="A military grade SIG MX7 fully automatic rifle with a suppressor.",
         price=12_000,
         stock=-1,
         perk=None,
@@ -406,7 +408,7 @@ ak_47 = GunItem(
 
 m39_emr = GunItem(
         name="M39 EMR",
-        description="A M39 Enhanced Marksman Rifle.",
+        description="A military grade M39 Enhanced Marksman Rifle.",
         price=3_450,
         stock=-1,
         perk=None,
@@ -419,7 +421,7 @@ m39_emr = GunItem(
 
 barrett_m82 = GunItem(
         name="Barrett M82",
-        description="A Barrett M82 anti-materiel rifle.",
+        description="A military grade Barrett M82 anti-materiel rifle.",
         price=20_000,
         stock=-1,
         perk=None,
@@ -432,7 +434,7 @@ barrett_m82 = GunItem(
 
 l115a3_awm = GunItem(
         name="L115A3 AWM",
-        description="A suppressed L115A3 Arctic Warfare Magnum sniper rifle, used in the longest range confirmed kill in history.",
+        description="A military grade suppressed L115A3 Arctic Warfare Magnum sniper rifle, used in the longest range confirmed kill in history.",
         price=15_000,
         stock=-1,
         perk=None,
@@ -460,6 +462,6 @@ categories = [var for var in globals().values() if isinstance(var, ShopCategory)
 bm_categories = [var for var in globals().values() if isinstance(var, BlackMarketCategory)]
 
 all_items = [var for var in globals().values() if isinstance(var, ShopItem)]
+all_bm_items = [var for var in globals().values() if isinstance(var, BlackMarketItem)]
 all_guns = [var for var in globals().values() if isinstance(var, GunItem)]
 all_drugs = [var for var in globals().values() if isinstance(var, DrugItem)]
-all_bm_items = [var for var in globals().values() if isinstance(var, BlackMarketItem)]

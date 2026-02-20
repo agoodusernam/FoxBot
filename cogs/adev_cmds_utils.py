@@ -27,7 +27,7 @@ async def aexec(func_name: str, context: CContext) -> Any:
 
 def run_func(loop: asyncio.AbstractEventLoop, func_name: str, ctx: CContext) -> Any:
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(aexec(func_name, ctx))
+    return loop.run_until_complete(aexec(func_name, ctx))
 
 
 async def shutdown(bot: CoolBot, update=False, restart=False, time: int = 0) -> None:

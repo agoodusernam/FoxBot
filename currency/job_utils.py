@@ -192,8 +192,8 @@ class Job:
                 # Check if there is a next level in the tree
                 if i + 1 < len(self.parent_tree.jobs):
                     if isinstance(self.parent_tree.jobs[i + 1], list):
-                        return random.choice(self.parent_tree.jobs[i + 1])
-                    return self.parent_tree.jobs[i + 1]
+                        return random.choice(self.parent_tree.jobs[i + 1])  # type: ignore[arg-type]
+                    return self.parent_tree.jobs[i + 1]  # type: ignore[return-value]
                     
                 else:
                     return None
@@ -222,8 +222,6 @@ class Job:
         Converts the job to a JSON string representation.
         :return: A JSON string representation of the job.
         """
-        import json
-        
         return json.dumps(self.to_dict())
     
     @classmethod
@@ -285,7 +283,7 @@ class JobTree:
     
     def __post_init__(self):
         """
-        Post-initialization to set the parent_tree for each job.
+        Post-initialisation to set the parent_tree for each job.
         """
         for job_or_list in self.jobs:
             if isinstance(job_or_list, list):

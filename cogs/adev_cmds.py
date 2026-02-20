@@ -5,7 +5,7 @@ import threading
 from datetime import timedelta
 
 import discord
-import psutil  # type: ignore[import-untyped]
+import psutil
 from discord.ext import commands
 from discord.ext import tasks
 
@@ -108,19 +108,18 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         internet: str = 'Available' if utils.utils.internet() else 'Not Available'
         ping: str = str(round(ctx.bot.latency * 1000, 1))
         
-        process = psutil.Process(os.getpid())
+        process: psutil.Process = psutil.Process(os.getpid())
         py_cpu_usage: str = str(round(process.cpu_percent(interval=0.5), 2))
         py_mem_usage: str = str(round(process.memory_info().rss / (1024 * 1024), 2)) + "MiB"
         
         tts_lock: str = 'Locked' if ctx.bot.tts_lock.locked() else 'Unlocked'
-        vc_client: str
-        assert isinstance(ctx.bot.vc_client, discord.VoiceClient) or ctx.bot.vc_client is None
+        vc_client_status: str
         if ctx.bot.vc_client is None:
-            vc_client = 'No VC client'
+            vc_client_status = 'No VC client'
         elif ctx.bot.vc_client.is_connected():
-            vc_client = f'Connected to {ctx.bot.vc_client.channel.name}'
+            vc_client_status = f'Connected to {ctx.bot.vc_client.channel.name}'
         else:
-            vc_client = 'Exists, not connected'
+            vc_client_status = 'Exists, not connected'
         
         discord_version = discord.__version__
         
@@ -130,7 +129,7 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         embed.add_field(name='Python CPU Usage', value=py_cpu_usage, inline=True)
         embed.add_field(name='Python Memory Usage', value=py_mem_usage, inline=True)
         embed.add_field(name='TTS Lock', value=tts_lock, inline=True)
-        embed.add_field(name='Voice Client', value=vc_client, inline=True)
+        embed.add_field(name='Voice Client', value=vc_client_status, inline=True)
         embed.add_field(name='Discord.py Version', value=discord_version, inline=True)
         
         err_log_file = ctx.bot.log_path / 'err.log'

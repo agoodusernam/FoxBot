@@ -33,22 +33,18 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
             await ctx.send(f'**Explanation:** {ctx.bot.nasa_data['explanation']}')
             return
         
-        try:
-            fetch_msg = await ctx.message.channel.send('Fetching NASA picture of the day...')
-            nasa_data = await api_utils.get_nasa_apod()
-            ctx.bot.nasa_data = deepcopy(nasa_data)
-            
-            await utils.download_from_url(f'nasa/nasa_pic_{ctx.bot.config.today}.jpg', nasa_data['url'])
-            
-            await ctx.send(f'**{nasa_data['title']}**\n')
-            await ctx.send(
-                    file=discord.File(f'nasa/nasa_pic_{ctx.bot.config.today}.jpg',
-                                      filename=f'nasa_pic_{ctx.bot.config.today}.jpg'))
-            await ctx.send(f'**Explanation:** {nasa_data['explanation']}')
-            await fetch_msg.delete()
+        fetch_msg = await ctx.message.channel.send('Fetching NASA picture of the day...')
+        nasa_data = await api_utils.get_nasa_apod()
+        ctx.bot.nasa_data = deepcopy(nasa_data)
         
-        except Exception as e:
-            raise discord.ext.commands.CommandError(f"{e}")
+        await utils.download_from_url(f'nasa/nasa_pic_{ctx.bot.config.today}.jpg', nasa_data['url'])
+        
+        await ctx.send(f'**{nasa_data['title']}**\n')
+        await ctx.send(
+                file=discord.File(f'nasa/nasa_pic_{ctx.bot.config.today}.jpg',
+                                  filename=f'nasa_pic_{ctx.bot.config.today}.jpg'))
+        await ctx.send(f'**Explanation:** {nasa_data['explanation']}')
+        await fetch_msg.delete()
     
     @commands.command(name='dog', aliases=['dogpic', 'dog_pic'],
                       brief='Get a random dog picture',
