@@ -486,7 +486,7 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
         await generate_user_activity_graph(ctx, result, guild)
 
 
-async def generate_user_activity_graph(ctx: Context, result: MessageAnalysisResult, guild: discord.Guild) -> None:
+async def generate_user_activity_graph(ctx: CContext, result: MessageAnalysisResult, guild: discord.Guild) -> None:
     """
     Generate and send a graph of user activity.
 

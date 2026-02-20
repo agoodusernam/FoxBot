@@ -21,7 +21,7 @@ class NoChannel:
     async def send(self, *args, **kwargs) -> discord.Message: ... # type: ignore
 
 
-class CContext(commands.Context):
+class CContext(commands.Context["CoolBot"]):
     bot: "CoolBot"
     async def delete(self) -> bool:
         """Delete the command message if possible.
