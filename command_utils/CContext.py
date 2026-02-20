@@ -18,7 +18,7 @@ from config.bot_config import BotConfig, load_config
 logger = logging.getLogger('discord')
 
 class NoChannel:
-    async def send(self, *args, **kwargs): ...
+    async def send(self, *args, **kwargs) -> discord.Message: ... # type: ignore
 
 
 class CContext(commands.Context):
@@ -70,7 +70,7 @@ class CContext(commands.Context):
         
 
 class CoolBot(commands.Bot):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: tuple[Any, Any], **kwargs: Any) -> None:
         self.config: BotConfig = load_config()
         cool_logging.setup_colour_logging(self.config.logs_path)
         
@@ -92,6 +92,7 @@ class CoolBot(commands.Bot):
         self.logs_channel: discord.TextChannel | NoChannel = NoChannel()
         self.update_queued: bool = False
         self.last_sent_dt: datetime.datetime = discord.utils.utcnow()
+        self.last_tts_sent_time: float | None = None
         
     
     @property
@@ -102,7 +103,7 @@ class CoolBot(commands.Bot):
         self._pings.append(self.latency * 1000)
     
         
-    async def get_context(self, message, *, cls=CContext) -> Any:
+    async def get_context(self, message: discord.Message | discord.Interaction, *, cls=CContext) -> Any:
         return await super().get_context(message, cls=cls)
     
     @staticmethod
@@ -125,7 +126,7 @@ class CoolBot(commands.Bot):
         
         return True
     
-    async def log_error(self, err: str, channel: discord.TextChannel | None = None):
+    async def log_error(self, err: str, channel: discord.TextChannel | None = None) -> None:
         pings: str = ", ".join(f"<@{uid}>" for uid in self.config.dev_ids)
         if channel is None:
             try:

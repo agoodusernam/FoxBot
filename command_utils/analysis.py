@@ -9,7 +9,6 @@ import traceback
 from typing import Any, Mapping, TypedDict, Literal, NotRequired, TypeVar
 
 import discord
-from bson import ObjectId
 from discord.ext.commands import Context
 import matplotlib.pyplot as plt
 
@@ -33,7 +32,7 @@ class DBMessageBase(TypedDict):
     channel: str
     channel_id: str  # Will always be a number
     edits: NotRequired[list[str]]
-    _id: NotRequired[ObjectId]  # The database internal ID
+    _id: NotRequired[Any]  # The database internal ID
     
 
 class DBMessage(DBMessageBase):
@@ -120,6 +119,7 @@ async def try_resolve_uid(uid: int, bot: CoolBot) -> str:
 async def try_resolve_channel_id(channel_id: str, guild: discord.Guild | None = None) -> str:
     if guild is None:
         return channel_id
+    
     channel = guild.get_channel(int(channel_id))
     return channel.name if channel else channel_id
 
@@ -141,6 +141,22 @@ def check_required_message_keys(message: Mapping[str, Any]) -> bool:
     }
     return all(key in message for key in required_keys)
 
+def to_dbm(message: dict[Any, Any] | DBMessage) -> DBMessage:
+    return DBMessage(
+            author=message['author'],
+            author_id=message['author_id'],
+            author_global_name=message['author_global_name'],
+            content=message['content'],
+            reply_to=message['reply_to'],
+            HasAttachments=message['HasAttachments'],
+            timestamp=message['timestamp'],
+            channel=message['channel'],
+            channel_id=message['channel_id'],
+            id=message['id'],
+            edits=message.get('edits', []),
+            _id=message.get('_id', None)
+        )
+
 
 async def remove_invalid_messages(messages: list[DBMessage | dict[str, Any]] | None) -> list[DBMessage]:
     valid_messages: list[DBMessage] = []
@@ -149,7 +165,8 @@ async def remove_invalid_messages(messages: list[DBMessage | dict[str, Any]] | N
     
     for message in messages:
         if check_required_message_keys(message):
-            valid_messages.append(message)
+            valid_messages.append(to_dbm(message))
+            
         else:
             logger.warning(f'Removing invalid message with ID {message.get("_id", "unknown")}')
             await db_stuff.delete_message(message['_id'])
@@ -173,8 +190,8 @@ async def get_valid_messages(flag: str | None = None, ctx: CContext | None = Non
     messages: list[DBMessage] | None = await db_stuff.cached_download_all()  # type: ignore
     if messages is None:
         return [], 0
-    total_messages = len(messages)
-    guild = None
+    total_messages: int = len(messages)
+    guild: discord.Guild | None = None
     if ctx is not None:
         guild = ctx.bot.get_guild(1081760248433492140)
     
@@ -182,13 +199,10 @@ async def get_valid_messages(flag: str | None = None, ctx: CContext | None = Non
         logger.warning('No messages found or failed to connect to the database.')
         return [], 0
     
-    # Filter out excluded users
     all_messages: list[DBMessage] = [msg for msg in messages if msg['author_id'] not in EXCLUDED_USER_IDS]
     
-    # Validate messages and remove invalid ones
     valid_messages: list[DBMessage] = await remove_invalid_messages(all_messages)
     
-    # Apply time filter if specified
     if flag in TIME_FILTERS:
         filter_name, time_delta = TIME_FILTERS[flag]
         time_ago = discord.utils.utcnow() - time_delta
@@ -204,8 +218,8 @@ async def get_valid_messages(flag: str | None = None, ctx: CContext | None = Non
         # don't include messages from users no longer in the guild
         valid_messages = [msg for msg in valid_messages if guild.get_member(int(msg['author_id']))]
     
-    logger.info('Total valid messages: %s', len(valid_messages))
-    logger.info('Total messages in database: %s', total_messages)
+    logger.info(f'Total valid messages: {len(valid_messages)}')
+    logger.info(f'Total messages in database: {total_messages}')
     return valid_messages, total_messages
 
 
@@ -222,7 +236,7 @@ def analyse_word_stats(content_list: list[str]) -> WordStats | None:
     if not content_list:
         return None
     
-    # Extract and normalize all words
+    # Extract and normalise all words
     all_words = [word.lower() for msg in content_list for word in msg.split() if word]
     if not all_words:
         return None
@@ -276,44 +290,39 @@ async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> Mes
     Returns:
         Dictionary containing analysis results or error message
     """
-    try:
-        valid_messages, total_messages = await get_valid_messages(time_filter, ctx=ctx)
-        if not valid_messages:
-            return 'No valid messages found to analyse.'
-        
-        # Extract message content
-        content_list = [message['content'] for message in valid_messages]
-        
-        # analyse word statistics
-        word_stats: WordStats | None = analyse_word_stats(content_list)
-        if not word_stats:
-            return 'No valid content to analyse.'
-        
-        # Get user message counts
-        user_message_count = collections.Counter(msg['author_id'] for msg in valid_messages)
-        active_users: list[UserMessageStats] = [
-            UserMessageStats(user_id=user_id, num_messages=count)
-            for user_id, count in user_message_count.items()
-        ]
-        
-        # Get channel stats
-        active_channels = get_channel_stats(valid_messages)
-        
-        return MessageAnalysisResult(
-                total_messages=total_messages,
-                total_valid_messages=len(valid_messages),
-                most_common_word=word_stats['most_common_word'],
-                most_common_word_count=word_stats['most_common_word_count'],
-                total_unique_words=word_stats['total_unique_words'],
-                average_length=word_stats['average_length'],
-                active_users_lb=active_users,
-                active_channels_lb=active_channels,
-                total_users=len(user_message_count),
-        )
+    valid_messages, total_messages = await get_valid_messages(time_filter, ctx=ctx)
+    if not valid_messages:
+        return 'No valid messages found to analyse.'
     
-    except Exception as e:
-        logger.error(f'Error during message analysis: {traceback.format_exc()}')
-        return f'Error during analysis: {str(e)}'
+    # Extract message content
+    content_list = [message['content'] for message in valid_messages]
+    
+    # analyse word statistics
+    word_stats: WordStats | None = analyse_word_stats(content_list)
+    if not word_stats:
+        return 'No valid content to analyse.'
+    
+    # Get user message counts
+    user_message_count = collections.Counter(msg['author_id'] for msg in valid_messages)
+    active_users: list[UserMessageStats] = [
+        UserMessageStats(user_id=user_id, num_messages=count)
+        for user_id, count in user_message_count.items()
+    ]
+    
+    # Get channel stats
+    active_channels = get_channel_stats(valid_messages)
+    
+    return MessageAnalysisResult(
+            total_messages=total_messages,
+            total_valid_messages=len(valid_messages),
+            most_common_word=word_stats['most_common_word'],
+            most_common_word_count=word_stats['most_common_word_count'],
+            total_unique_words=word_stats['total_unique_words'],
+            average_length=word_stats['average_length'],
+            active_users_lb=active_users,
+            active_channels_lb=active_channels,
+            total_users=len(user_message_count),
+    )
 
 
 async def analyse_user_messages(member: discord.User, time_filter: str | None = None) -> UserMessageAnalysisResult | str:
@@ -328,68 +337,60 @@ async def analyse_user_messages(member: discord.User, time_filter: str | None = 
     Returns:
         Dictionary containing analysis results, error message, or None
     """
-    try:
-        valid_messages, _ = await get_valid_messages(time_filter)
-        if not valid_messages:
-            return 'No valid messages found to analyse.'
-        
-        # Filter messages by this user
-        user_id_str = str(member.id)
-        messages_by_user = [msg for msg in valid_messages if msg['author_id'] == user_id_str]
-        
-        if not messages_by_user:
-            return f'No messages found for user {member.display_name}.'
-        
-        # Extract content and analyse
-        content_list = [msg['content'] for msg in messages_by_user]
-        word_stats = analyse_word_stats(content_list)
-        
-        if not word_stats:
-            return f'No analysable content found for user {member.display_name}.'
-        
-        # Get channel stats for this user
-        active_channels = get_channel_stats(messages_by_user)
-        
-        # Find most recent message timestamp
-        most_recent: datetime.datetime | None = max(
-                (datetime.datetime.fromtimestamp(msg['timestamp'], tz=datetime.UTC) for msg in messages_by_user),
-                default=None,
-        )
-        
-        # Calculate leaderboard position
-        user_message_count = collections.Counter(msg['author_id'] for msg in valid_messages)
-        active_users: list[UserMessageStats] = [
-            {'user_id': user, 'num_messages': count}
-            for user, count in user_message_count.items()
-        ]
-        
-        # Sort users by message count
-        active_user_lb = sorted(
-                active_users,
-                key=lambda x: x['num_messages'],
-                reverse=True,
-        )
-        
-        # Find user's position in leaderboard
-        lb_position = next(
-                (i for i, user in enumerate(active_user_lb, 1)
-                 if user['user_id'] == user_id_str), 0,
-        )
-        
-        return UserMessageAnalysisResult(
-                total_messages=len(messages_by_user),
-                most_common_word=word_stats['most_common_word'],
-                most_common_word_count=word_stats['most_common_word_count'],
-                total_unique_words=word_stats['total_unique_words'],
-                average_length=word_stats['average_length'],
-                active_channels_lb=active_channels,
-                active_users_lb_position=lb_position,
-                most_recent_message=int(most_recent.timestamp()) if most_recent else 'N/A',
-        )
+    valid_messages, _ = await get_valid_messages(time_filter)
+    if not valid_messages:
+        return 'No valid messages found to analyse.'
     
-    except Exception as e:
-        logger.error(f'Error during user message analysis: {traceback.format_exc()}')
-        return f'Error during analysis: {str(e)}'
+    user_id_str = str(member.id)
+    messages_by_user = [msg for msg in valid_messages if msg['author_id'] == user_id_str]
+    
+    if not messages_by_user:
+        return f'No messages found for user {member.display_name}.'
+    
+    content_list = [msg['content'] for msg in messages_by_user]
+    word_stats = analyse_word_stats(content_list)
+    
+    if not word_stats:
+        return f'No analysable content found for user {member.display_name}.'
+    
+    active_channels = get_channel_stats(messages_by_user)
+    
+    # Find most recent message timestamp
+    most_recent: datetime.datetime | None = max(
+            (datetime.datetime.fromtimestamp(msg['timestamp'], tz=datetime.UTC) for msg in messages_by_user),
+            default=None,
+    )
+    
+    # Calculate leaderboard position
+    user_message_count = collections.Counter(msg['author_id'] for msg in valid_messages)
+    active_users: list[UserMessageStats] = [
+        {'user_id': user, 'num_messages': count}
+        for user, count in user_message_count.items()
+    ]
+    
+    # Sort users by message count
+    active_user_lb = sorted(
+            active_users,
+            key=lambda x: x['num_messages'],
+            reverse=True,
+    )
+    
+    # Find user's position in leaderboard
+    lb_position = next(
+            (i for i, user in enumerate(active_user_lb, 1)
+             if user['user_id'] == user_id_str), 0,
+    )
+    
+    return UserMessageAnalysisResult(
+            total_messages=len(messages_by_user),
+            most_common_word=word_stats['most_common_word'],
+            most_common_word_count=word_stats['most_common_word_count'],
+            total_unique_words=word_stats['total_unique_words'],
+            average_length=word_stats['average_length'],
+            active_channels_lb=active_channels,
+            active_users_lb_position=lb_position,
+            most_recent_message=int(most_recent.timestamp()) if most_recent else 'N/A',
+    )
 
 
 async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discord.Object | None = None, flag: str | None = '') -> None:
@@ -429,66 +430,60 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
     
     
     # Analyse all messages
-    try:
-        guild: discord.Guild | None = ctx.bot.get_guild(ctx.bot.config.guild_id)
-        if guild is None:
-            await new_msg.edit(content='Guild not found.')
-            logger.error(f'Guild not found. ID: {ctx.bot.config.guild_id}')
-            return
-        
-        result = await analyse_messages(ctx, flag)
-        
-        if isinstance(result, str):
-            await new_msg.edit(content=result)
-            return
-        
-        # Get top users and channels
-        active_users_lb: list[UserMessageStats] = copy.deepcopy(result['active_users_lb'])
-        top_5_users: list[UserMessageStats] = sorted(
-                active_users_lb,
-                key=lambda x: x['num_messages'],
-                reverse=True,
-        )[:5]
-        
-        top_5_channels: list[ChannelMessageStats] = sorted(
-                result['active_channels_lb'],
-                key=lambda x: x['num_messages'],
-                reverse=True,
-        )[:5]
-        
-        activity_ratio: str = ""
-        if guild.member_count and flag != 'il':
-            activity_ratio = f"({round((result['total_users'] / guild.member_count) * 100, 2)}% activity)"
-        
-        msg = (
-            f"{result['total_messages']} total messages analysed\n" +
-            f"Most common word: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n" +
-            f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
-            f"Total users: {result['total_users']} {activity_ratio}\n"
-            f"On average every active user has sent {round(result['total_valid_messages'] / result['total_users'], 2)} messages\n"
-            f"Top 5 most active users:\n"
-        )
-        
-        # Add top users
-        for i, user in enumerate(top_5_users, start=1):
-            msg += f"**{i}. {await try_resolve_uid(int(user['user_id']), ctx.bot)}** {user['num_messages']} messages\n"
-        
-        # Add top channels
-        msg += '\nTop 5 most active channels:\n'
-        for i, channel in enumerate(top_5_channels, start=1):
-            msg += f"**{i}. {await try_resolve_channel_id(channel['channel_id'], guild)}** {channel['num_messages']} messages\n"
-        
-        # Send the message
-        await new_msg.edit(content=msg)
-        
-        # Generate graph if requested
-        if graph:
-            await generate_user_activity_graph(ctx, result, guild)
+    guild: discord.Guild | None = ctx.bot.get_guild(ctx.bot.config.guild_id)
+    if guild is None:
+        await new_msg.edit(content='Guild not found.')
+        logger.error(f'Guild not found. ID: {ctx.bot.config.guild_id}')
+        return
     
+    result = await analyse_messages(ctx, flag)
     
-    except Exception as e:
-        logger.error(f'Error formatting analysis: {traceback.format_exc()}')
-        await ctx.send(f'Error during analysis: {e}')
+    if isinstance(result, str):
+        await new_msg.edit(content=result)
+        return
+    
+    # Get top users and channels
+    active_users_lb: list[UserMessageStats] = copy.deepcopy(result['active_users_lb'])
+    top_5_users: list[UserMessageStats] = sorted(
+            active_users_lb,
+            key=lambda x: x['num_messages'],
+            reverse=True,
+    )[:5]
+    
+    top_5_channels: list[ChannelMessageStats] = sorted(
+            result['active_channels_lb'],
+            key=lambda x: x['num_messages'],
+            reverse=True,
+    )[:5]
+    
+    activity_ratio: str = ""
+    if guild.member_count and flag != 'il':
+        activity_ratio = f"({round((result['total_users'] / guild.member_count) * 100, 2)}% activity)"
+    
+    msg = (
+        f"{result['total_messages']} total messages analysed\n" +
+        f"Most common word: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n" +
+        f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
+        f"Total users: {result['total_users']} {activity_ratio}\n"
+        f"On average every active user has sent {round(result['total_valid_messages'] / result['total_users'], 2)} messages\n"
+        f"Top 5 most active users:\n"
+    )
+    
+    # Add top users
+    for i, user in enumerate(top_5_users, start=1):
+        msg += f"**{i}. {await try_resolve_uid(int(user['user_id']), ctx.bot)}** {user['num_messages']} messages\n"
+    
+    # Add top channels
+    msg += '\nTop 5 most active channels:\n'
+    for i, channel in enumerate(top_5_channels, start=1):
+        msg += f"**{i}. {await try_resolve_channel_id(channel['channel_id'], guild)}** {channel['num_messages']} messages\n"
+    
+    # Send the message
+    await new_msg.edit(content=msg)
+    
+    # Generate graph if requested
+    if graph:
+        await generate_user_activity_graph(ctx, result, guild)
 
 
 async def generate_user_activity_graph(ctx: Context, result: MessageAnalysisResult, guild: discord.Guild) -> None:
@@ -500,78 +495,73 @@ async def generate_user_activity_graph(ctx: Context, result: MessageAnalysisResu
         result: Analysis results
         guild: Discord guild
     """
-    try:
-        # Get top 15 users
-        top_15_users = sorted(
-                result['active_users_lb'],
-                key=lambda x: x['num_messages'],
-                reverse=True)[:15]
-        
-        usernames = []
-        message_counts = []
-        
-        for user in top_15_users:
-            user_id = int(user['user_id'].strip())
-            
-            # Try to get member from guild first
-            discord_member: discord.Member | discord.User | None = guild.get_member(user_id)
-            if discord_member is None:
-                # Fetch user if not in guild
-                try:
-                    discord_member = await ctx.bot.fetch_user(user_id)
-                except (discord.NotFound, discord.HTTPException):
-                    discord_member = None
-            
-            # Get display name
-            display = user['user_id']
-            if discord_member is not None:
-                display = discord_member.display_name
-            
-            if not all(c in string.printable for c in display) and discord_member is not None:
-                display = discord_member.name
-            
-            usernames.append(display)
-            message_counts.append(user['num_messages'])
-        
-        # Reverse lists so users with most messages are at the top
-        usernames = usernames[::-1]
-        message_counts = message_counts[::-1]
-        
-        # Create the plot
-        plt.figure(figsize=(10, 6), facecolor='#1f1f1f')
-        ax = plt.gca()
-        ax.set_facecolor('#2d2d2d')
-        plt.barh(usernames, message_counts, color='#8a2be2')
-        plt.xlabel('Number of Messages', color='white')
-        plt.title('Top 15 Active Users', color='white')
-        plt.tick_params(axis='both', colors='white')
-        
-        # Style the plot
-        for spine in ax.spines.values():
-            spine.set_color('#555555')
-        plt.tight_layout()
-        
-        # Save and send the graph
-        graph_file = 'top_active_users.png'
-        plt.savefig(graph_file)
-        plt.close()
-        
-        await ctx.send(file=discord.File(graph_file))
-        
-        # Clean up the file
-        try:
-            os.remove(graph_file)
-        
-        except FileNotFoundError:
-            pass
-        
-        except OSError:
-            logger.warning(f'Error deleting graph file {graph_file}: {traceback.format_exc()}')
-            # Ignore if file deletion fails, we'd rather keep the bot running and clean up manually later
+    # Get top 15 users
+    top_15_users = sorted(
+            result['active_users_lb'],
+            key=lambda x: x['num_messages'],
+            reverse=True)[:15]
     
-    except Exception as e:
-        logger.error(f'Error generating graph: {traceback.format_exc()}')
-        await ctx.send(f'Error generating graph: {e}')
+    usernames: list[str] = []
+    message_counts: list[int] = []
+    
+    for user in top_15_users:
+        user_id = int(user['user_id'].strip())
+        
+        # Try to get member from guild first
+        discord_member: discord.Member | discord.User | None = guild.get_member(user_id)
+        if discord_member is None:
+            # Fetch user if not in guild
+            try:
+                discord_member = await ctx.bot.fetch_user(user_id)
+            except (discord.NotFound, discord.HTTPException):
+                discord_member = None
+        
+        # Get display name
+        display = user['user_id']
+        if discord_member is not None:
+            display = discord_member.display_name
+        
+        if not all(c in string.printable for c in display) and discord_member is not None:
+            display = discord_member.name
+        
+        usernames.append(display)
+        message_counts.append(user['num_messages'])
+    
+    # Reverse lists so users with most messages are at the top
+    usernames = usernames[::-1]
+    message_counts = message_counts[::-1]
+    
+    # Create the plot
+    plt.figure(figsize=(10, 6), facecolor='#1f1f1f')
+    ax = plt.gca()
+    ax.set_facecolor('#2d2d2d')
+    plt.barh(usernames, message_counts, color='#8a2be2')
+    plt.xlabel('Number of Messages', color='white')
+    plt.title('Top 15 Active Users', color='white')
+    plt.tick_params(axis='both', colors='white')
+    
+    # Style the plot
+    for spine in ax.spines.values():
+        spine.set_color('#555555')
+    plt.tight_layout()
+    
+    # Save and send the graph
+    graph_file = 'top_active_users.png'
+    plt.savefig(graph_file)
+    plt.close()
+    
+    await ctx.send(file=discord.File(graph_file))
+    
+    # Clean up the file
+    try:
+        os.remove(graph_file)
+    
+    except FileNotFoundError:
+        pass
+    
+    except OSError:
+        logger.warning(f'Error deleting graph file {graph_file}: {traceback.format_exc()}')
+        # Ignore if file deletion fails, we'd rather keep the bot running and clean up manually later
 
 
 async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
@@ -585,41 +575,37 @@ async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
         time_filter: Optional time filter
     """
     result = await analyse_user_messages(member, time_filter)
-    
-    if isinstance(result, dict):
-        # Sort channels by message count
-        active_channels = sorted(
-                result['active_channels_lb'],
-                key=lambda x: x['num_messages'],
-                reverse=True,
-        )
-        
-        num_channels = 5
-        
-        active_channels = active_channels[:num_channels]
-        
-        # Format message
-        msg = (
-            f"{result['total_messages']} messages found for **{member.name}**\n"
-            f"Most common word: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n"
-            f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} "
-            f"characters)\n"
-            f"Leaderboard position: {result['active_users_lb_position']}\n"
-            f"Most recent message sent at: <t:{result['most_recent_message']}>\n"
-            f"Top {num_channels} most active channels:\n"
-        )
-        
-        # Add channel information
-        for i, channel in enumerate(active_channels, 1):
-            msg += f"**{i}. {channel['channel_id']}** {channel['num_messages']} messages\n"
-        
-        await ctx.send(msg)
-    
-    elif isinstance(result, str):
+    if isinstance(result, str):
         await ctx.send(result)
+        return
     
-    else:
-        await ctx.send('An error occurred during analysis.')
+    # Sort channels by message count
+    active_channels = sorted(
+            result['active_channels_lb'],
+            key=lambda x: x['num_messages'],
+            reverse=True,
+    )
+    
+    num_channels = 5
+    
+    active_channels = active_channels[:num_channels]
+    
+    # Format message
+    msg = (
+        f"{result['total_messages']} messages found for **{member.name}**\n"
+        f"Most common word: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n"
+        f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} "
+        f"characters)\n"
+        f"Leaderboard position: {result['active_users_lb_position']}\n"
+        f"Most recent message sent at: <t:{result['most_recent_message']}>\n"
+        f"Top {num_channels} most active channels:\n"
+    )
+    
+    # Add channel information
+    for i, channel in enumerate(active_channels, 1):
+        msg += f"**{i}. {channel['channel_id']}** {channel['num_messages']} messages\n"
+    
+    await ctx.send(msg)
 
 
 # ===== Voice Analysis Functions =====
@@ -694,7 +680,7 @@ async def remove_invalid_voice_sessions(sessions: list[dict[str, Any]]) -> tuple
         valid = all(key in session for key in required_keys)
         
         if not valid:
-            logger.warning('deleting invalid voice session: %s', session)
+            logger.warning(f'deleting invalid voice session: {session}')
             await db_stuff.del_db_entry('voice_sessions', session['_id'])
             continue
             
@@ -712,11 +698,7 @@ async def remove_invalid_voice_sessions(sessions: list[dict[str, Any]]) -> tuple
 
 
 async def get_valid_voice_sessions(skip_cache: bool = False) -> tuple[list[DBVoiceSession], int] | None:
-    if not skip_cache:
-        sessions = await db_stuff.cached_download_voice_sessions()
-    else:
-        # noinspection PyProtectedMember
-        sessions = await db_stuff._download_voice_sessions()
+    sessions = await db_stuff.cached_download_voice_sessions(skip_cache)
     
     if not sessions:
         return None
@@ -735,61 +717,56 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
     Returns:
         Dictionary containing voice statistics or None if no data
     """
-    try:
-        DB_sessions: tuple[list[DBVoiceSession], int] | None = await get_valid_voice_sessions()
-        
-        if not DB_sessions:
-            return None
-        
-        sessions, total_seconds_including_left = DB_sessions
-        total_seconds: int = 0
-        # Calculate user statistics
-        user_stats: dict[str, UserVoiceStats] = {}
-        channel_stats: dict[str, ChannelVoiceStats] = {}
-        for session in sessions:
-            user_id = session['user_id']
-            if not include_left and guild is not None:
-                if guild.get_member(int(user_id)) is None:
-                    continue
-            
-            user_stat: UserVoiceStats = user_stats.get(user_id, {'user_id': user_id, 'total_seconds': 0})
-            user_stats[user_id] = add_time_stats(user_stat, session['duration_seconds'])
-            total_seconds += session['duration_seconds']
-            
-            channel_id = session['channel_id']
-            if guild is not None:
-                exists = not (discord.utils.get(guild.channels, id=int(channel_id)) is None)
-                if not exists:
-                    continue
-            
-            channel_stat: ChannelVoiceStats = channel_stats.get(channel_id, {'channel_id': channel_id, 'total_seconds': 0})
-            channel_stats[channel_id] = add_time_stats(channel_stat, session['duration_seconds'])
-        
-        # Sort statistics
-        top_users: list[UserVoiceStats] = sorted(
-                [UserVoiceStats(user_id=user_id, total_seconds=data['total_seconds'])
-                 for user_id, data in user_stats.items()],
-                key=lambda x: x['total_seconds'],
-                reverse=True,
-        )
-        
-        top_channels: list[ChannelVoiceStats] = sorted(
-                [ChannelVoiceStats(channel_id=channel_id, total_seconds=data['total_seconds'])
-                 for channel_id, data in channel_stats.items()],
-                key=lambda x: x['total_seconds'],
-                reverse=True,
-        )
-        
-        return VoiceAnalysisResult(
-                total_seconds=total_seconds_including_left if include_left else total_seconds,
-                total_users=len(user_stats),
-                active_users_lb=top_users,
-                active_channels_lb=top_channels,
-        )
+    DB_sessions: tuple[list[DBVoiceSession], int] | None = await get_valid_voice_sessions()
     
-    except Exception:
-        logger.error(f'Error retrieving voice statistics: {traceback.format_exc()}')
+    if not DB_sessions:
         return None
+    
+    sessions, total_seconds_including_left = DB_sessions
+    total_seconds: int = 0
+    # Calculate user statistics
+    user_stats: dict[str, UserVoiceStats] = {}
+    channel_stats: dict[str, ChannelVoiceStats] = {}
+    for session in sessions:
+        user_id = session['user_id']
+        if not include_left and guild is not None:
+            if guild.get_member(int(user_id)) is None:
+                continue
+        
+        user_stat: UserVoiceStats = user_stats.get(user_id, {'user_id': user_id, 'total_seconds': 0})
+        user_stats[user_id] = add_time_stats(user_stat, session['duration_seconds'])
+        total_seconds += session['duration_seconds']
+        
+        channel_id = session['channel_id']
+        if guild is not None:
+            exists = not (discord.utils.get(guild.channels, id=int(channel_id)) is None)
+            if not exists:
+                continue
+        
+        channel_stat: ChannelVoiceStats = channel_stats.get(channel_id, {'channel_id': channel_id, 'total_seconds': 0})
+        channel_stats[channel_id] = add_time_stats(channel_stat, session['duration_seconds'])
+    
+    # Sort statistics
+    top_users: list[UserVoiceStats] = sorted(
+            [UserVoiceStats(user_id=user_id, total_seconds=data['total_seconds'])
+             for user_id, data in user_stats.items()],
+            key=lambda x: x['total_seconds'],
+            reverse=True,
+    )
+    
+    top_channels: list[ChannelVoiceStats] = sorted(
+            [ChannelVoiceStats(channel_id=channel_id, total_seconds=data['total_seconds'])
+             for channel_id, data in channel_stats.items()],
+            key=lambda x: x['total_seconds'],
+            reverse=True,
+    )
+    
+    return VoiceAnalysisResult(
+            total_seconds=total_seconds_including_left if include_left else total_seconds,
+            total_users=len(user_stats),
+            active_users_lb=top_users,
+            active_channels_lb=top_channels,
+    )
 
 
 async def get_user_voice_statistics(user_id: str) -> UserVoiceAnalysisResult | None:
@@ -802,47 +779,42 @@ async def get_user_voice_statistics(user_id: str) -> UserVoiceAnalysisResult | N
     Returns:
         Dictionary containing user voice statistics or None if no data
     """
-    try:
-        DB_sessions: tuple[list[DBVoiceSession], int] | None = await get_valid_voice_sessions()
-        
-        if not DB_sessions:
-            return None
-        
-        sessions, total_seconds = DB_sessions
-        
-        # Filter sessions for this user
-        user_sessions = [s for s in sessions if s["user_id"] == user_id]
-        
-        if not user_sessions:
-            return None
-        
-        # Calculate total time
-        total_seconds = sum(s["duration_seconds"] for s in user_sessions)
-        
-        # Calculate per-channel stats
-        channel_stats: dict[str, ChannelVoiceStats] = {}
-        for session in user_sessions:
-            channel_id = session['channel_id']
-            channel_stat: ChannelVoiceStats = channel_stats.get(channel_id, {'channel_id': channel_id, 'total_seconds': 0})
-            channel_stats[channel_id] = add_time_stats(channel_stat, session['duration_seconds'])
-        
-        # Sort channels by time
-        top_channels = sorted(
-                [ChannelVoiceStats(channel_id=channel_id, total_seconds=data['total_seconds'])
-                 for channel_id, data in channel_stats.items()],
-                key=lambda x: x['total_seconds'],
-                reverse=True,
-        )
-        
-        return UserVoiceAnalysisResult(
-                user_id=user_id,
-                total_seconds=total_seconds,
-                active_channel_lb=top_channels,
-        )
+    DB_sessions: tuple[list[DBVoiceSession], int] | None = await get_valid_voice_sessions()
     
-    except Exception:
-        logger.error(f'Error retrieving user voice statistics: {traceback.format_exc()}')
+    if not DB_sessions:
         return None
+    
+    sessions, total_seconds = DB_sessions
+    
+    # Filter sessions for this user
+    user_sessions = [s for s in sessions if s["user_id"] == user_id]
+    
+    if not user_sessions:
+        return None
+    
+    # Calculate total time
+    total_seconds = sum(s["duration_seconds"] for s in user_sessions)
+    
+    # Calculate per-channel stats
+    channel_stats: dict[str, ChannelVoiceStats] = {}
+    for session in user_sessions:
+        channel_id = session['channel_id']
+        channel_stat: ChannelVoiceStats = channel_stats.get(channel_id, {'channel_id': channel_id, 'total_seconds': 0})
+        channel_stats[channel_id] = add_time_stats(channel_stat, session['duration_seconds'])
+    
+    # Sort channels by time
+    top_channels = sorted(
+            [ChannelVoiceStats(channel_id=channel_id, total_seconds=data['total_seconds'])
+             for channel_id, data in channel_stats.items()],
+            key=lambda x: x['total_seconds'],
+            reverse=True,
+    )
+    
+    return UserVoiceAnalysisResult(
+            user_id=user_id,
+            total_seconds=total_seconds,
+            active_channel_lb=top_channels,
+    )
 
 
 async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool = False) -> None:
@@ -887,7 +859,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
     await ctx.send(result)
     if graph:
         try:
-            await generate_voice_activity_graph(ctx.channel, ctx.bot, stats, 15) # type: ignore
+            await generate_voice_activity_graph(ctx.channel, ctx.bot, stats, 15)
         except Exception as e:
             logger.error(f'Error generating voice activity graph: {traceback.format_exc()}')
             await ctx.send(f'Error generating graph: {e}')
@@ -927,8 +899,8 @@ async def add_voice_analysis_for_user(ctx: CContext, member: discord.Object) -> 
     await ctx.send(result)
 
 
-async def format_voice_analysis(ctx: CContext, graph: bool = False,
-        user: discord.Object | None = None, include_left: bool = False) -> None:
+async def format_voice_analysis(ctx: CContext, graph: bool = False, user: discord.Object | None = None,
+                                include_left: bool = False) -> None:
     """
     Format and send voice analysis results.
 
@@ -955,8 +927,8 @@ async def format_voice_analysis(ctx: CContext, graph: bool = False,
         await ctx.send(f'Error during voice analysis: {e}')
 
 
-async def generate_voice_activity_graph(channel: discord.PartialMessageable, bot: CoolBot,
-        stats: VoiceAnalysisResult | list[UserVoiceStats], count: int, send_errors: bool = True):
+async def generate_voice_activity_graph(channel: discord.abc.MessageableChannel, bot: CoolBot,
+        stats: VoiceAnalysisResult | list[UserVoiceStats], count: int, send_errors: bool = True) -> None:
     """ Generate and send a graph of voice activity.
     Args:
         channel: The channel where to send the graph
@@ -965,66 +937,61 @@ async def generate_voice_activity_graph(channel: discord.PartialMessageable, bot
         count: The amount of users to show on the graph
         send_errors: Whether to send an error message if no data is available
     """
-    try:
-        if isinstance(stats, list):
-            top_users = stats[:count]
-        else:
-            top_users = stats["active_users_lb"][:count]
-        if not top_users:
-            logger.error("No user voice activity data to graph.")
-            if send_errors:
-                await channel.send("No user voice activity data to graph.")
-            return
+    if isinstance(stats, list):
+        top_users = stats[:count]
+    else:
+        top_users = stats["active_users_lb"][:count]
         
-        usernames: list[str] = []
-        voice_time_hours = []
-        
-        for user_data in top_users:
-            total_seconds = user_data['total_seconds']
-            
-            name = await try_resolve_uid(int(user_data['user_id']), bot)
-            
-            usernames.append(name if name is not None else f"ID:{user_data['user_id']}")
-            voice_time_hours.append(int(total_seconds) / 3600)
-        
-        if not usernames:
-            logger.error("No user voice activity data to graph.")
-            if send_errors:
-                await channel.send("No valid user data to generate a graph.")
-            return
-        
-        # Reverse for horizontal bar chart
-        usernames.reverse()
-        voice_time_hours.reverse()
-        
-        # Create the plot
-        plt.figure(figsize=(10, 8), facecolor='#1f1f1f')
-        ax = plt.gca()
-        ax.set_facecolor('#2d2d2d')
-        plt.barh(usernames, voice_time_hours, color='#8a2be2')
-        plt.xlabel('Total Voice Time (hours)', color='white')
-        plt.title('Top Users by Voice Activity', color='white')
-        plt.tick_params(axis='both', colors='white')
-        
-        for spine in ax.spines.values():
-            spine.set_color('#555555')
-        plt.tight_layout()
-        
-        graph_file = 'top_voice_users.png'
-        plt.savefig(graph_file)
-        plt.close()
-        
-        await channel.send(file=discord.File(graph_file))
-        
-        try:
-            os.remove(graph_file)
-        except OSError as e:
-            logger.warning(f'Could not remove graph file {graph_file}: {traceback.format_exc()}')
-    
-    except Exception as e:
-        logger.error(f'Error generating voice activity graph: {traceback.format_exc()}')
+    if not top_users:
+        logger.error("No user voice activity data to graph.")
         if send_errors:
-            await channel.send(f'Error generating graph: {e}')
+            await channel.send("No user voice activity data to graph.")
+        return
+    
+    usernames: list[str] = []
+    voice_time_hours = []
+    
+    for user_data in top_users:
+        total_seconds = user_data['total_seconds']
+        
+        name = await try_resolve_uid(int(user_data['user_id']), bot)
+        
+        usernames.append(name if name is not None else f"ID:{user_data['user_id']}")
+        voice_time_hours.append(int(total_seconds) / 3600)
+    
+    if not usernames:
+        logger.error("No user voice activity data to graph.")
+        if send_errors:
+            await channel.send("No valid user data to generate a graph.")
+        return
+    
+    # Reverse so the highest is at the top
+    usernames.reverse()
+    voice_time_hours.reverse()
+    
+    # Create the plot
+    plt.figure(figsize=(10, 8), facecolor='#1f1f1f')
+    ax = plt.gca()
+    ax.set_facecolor('#2d2d2d')
+    plt.barh(usernames, voice_time_hours, color='#8a2be2')
+    plt.xlabel('Total Voice Time (hours)', color='white')
+    plt.title('Top Users by Voice Activity', color='white')
+    plt.tick_params(axis='both', colors='white')
+    
+    for spine in ax.spines.values():
+        spine.set_color('#555555')
+    plt.tight_layout()
+    
+    graph_file = 'top_voice_users.png'
+    plt.savefig(graph_file)
+    plt.close()
+    
+    await channel.send(file=discord.File(graph_file))
+    
+    try:
+        os.remove(graph_file)
+    except OSError:
+        logger.warning(f'Could not remove graph file {graph_file}: {traceback.format_exc()}')
 
 async def user_time_in_channel(ctx: CContext, user: discord.User, channel: discord.VoiceChannel) -> None:
     sessions = await get_valid_voice_sessions()

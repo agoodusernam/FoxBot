@@ -5,7 +5,7 @@ import shutil
 import socket
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Union, Any
+from typing import Any
 import logging
 import aiohttp
 
@@ -43,20 +43,12 @@ def get_id_from_str(u_id: str) -> int:
         raise ValueError("Invalid user ID")
 
 
-def formatted_time() -> str:
-    """
-	Generates a formatted string representing the current time in 'dd-mm-yyyy_HH-MM-SS' format.
-	:return: str: The current time in 'dd-mm-yyyy_HH-MM-SS' format.
-	"""
-    return datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y_%H-%M-%S')
-
-
 def formatted_today() -> str:
     """
 	Generates a formatted string representing the current date in 'dd-mm-yyyy' format.
 	:return: str: The current date in 'dd-mm-yyyy' format.
 	"""
-    return datetime.datetime.now(datetime.timezone.utc).strftime('%d-%m-%Y')
+    return datetime.datetime.now(datetime.UTC).strftime('%d-%m-%Y')
 
 
 def seconds_to_human_readable(seconds: float) -> str:
@@ -92,9 +84,10 @@ def make_empty_file(path: Path) -> None:
 	:param path: str | Path: The path where the empty file will be created.
 	:return:
 	"""
-    if not os.path.exists(path.parent):
-        os.makedirs(path.parent, exist_ok=True)
-    if not os.path.exists(path):
+    if not path.parent.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        
+    if not path.exists():
         with open(path, 'x'):
             pass
 
@@ -159,7 +152,7 @@ def clean_up_APOD() -> None:
 	Cleans up the APOD directory by deleting old images.
 	:return: None
 	"""
-    apod_dir = Path('nasa/')
+    apod_dir = Path('nasa/').resolve()
     if not apod_dir.exists():
         logger.info('APOD directory does not exist, creating it.')
         apod_dir.mkdir(parents=True, exist_ok=True)
@@ -213,31 +206,6 @@ def check_env_variables() -> bool:
         complete = False
     
     return complete
-
-
-def format_perms_overwrite(overwrite: discord.PermissionOverwrite) -> dict[str, Union[bool, None]]:
-    perms: dict[str, Union[bool, None]] = {}
-    for permission in overwrite:
-        name = permission[0]
-        value = permission[1]
-        perms[name] = value
-    
-    return perms
-
-
-def format_permissions(permissions: dict[discord.Role | discord.Member | discord.Object,
-discord.PermissionOverwrite]) -> dict[str, dict[str, Union[bool, None]]]:
-    formatted = {}
-    
-    for key in permissions:
-        if isinstance(key, discord.Role):
-            formatted[f'R{key.id}'] = format_perms_overwrite(permissions[key])
-        elif isinstance(key, discord.Member):
-            formatted[f'M{key.id}'] = format_perms_overwrite(permissions[key])
-        else:
-            formatted[f'O{key.id}'] = format_perms_overwrite(permissions[key])
-    
-    return formatted
 
 
 def get_attachment(user_id: int | str, message_id: int | str) -> Path | list[Path] | None:
@@ -367,7 +335,7 @@ def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_ty
     # We build the result by modifying containers in place
     
     if isinstance(obj, dict):
-        root: dict | list = {}
+        root: dict[Any, Any] | list[Any] = {}
     elif isinstance(obj, (list, tuple)):
         root = []
     else:
@@ -389,6 +357,7 @@ def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_ty
         for k, v in obj.items():
             stack.append((v, root, k))
     else:  # list or tuple
+        assert isinstance(root, list)
         for i, item in enumerate(obj):
             stack.append((item, root, i))
         # Pre-fill list with placeholders
@@ -401,7 +370,7 @@ def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_ty
         if current is None or isinstance(current, (bool, int, float, str)):
             if isinstance(parent, dict):
                 parent[key] = current
-            else:  # list
+            elif isinstance(parent, list):  # list
                 parent[key] = current
             continue
         
@@ -410,7 +379,7 @@ def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_ty
             new_container: dict | list = {}
             if isinstance(parent, dict):
                 parent[key] = new_container
-            else:
+            elif isinstance(parent, list):
                 parent[key] = new_container
             for k, v in current.items():
                 stack.append((v, new_container, k))
@@ -420,7 +389,7 @@ def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_ty
             new_list: list = [SKIP] * len(current)
             if isinstance(parent, dict):
                 parent[key] = new_list
-            else:
+            elif isinstance(parent, list):
                 parent[key] = new_list
             for i, item in enumerate(current):
                 stack.append((item, new_list, i))
@@ -431,7 +400,7 @@ def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_ty
         if meaningful is not None:
             if isinstance(parent, dict):
                 parent[key] = meaningful
-            else:
+            elif isinstance(parent, list):
                 parent[key] = meaningful
             continue
         
@@ -440,14 +409,14 @@ def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_ty
             if isinstance(parent, dict):
                 # Don't add to dict (will be filtered later if somehow added)
                 pass  # Key simply won't be added
-            else:
+            elif isinstance(parent, list):
                 parent[key] = SKIP  # Mark for removal
         else:
             raise TypeError(f"Object of type {type(current).__name__} is not JSON serializable")
     
     # Clean up SKIP markers from lists and dicts
-    def remove_skip_markers(container: dict | list) -> None:
-        work_stack: list[dict | list] = [container]
+    def remove_skip_markers(container: dict[Any, Any] | list[Any]) -> None:
+        work_stack: list[dict[Any, Any] | list[Any]] = [container]
         while work_stack:
             c = work_stack.pop()
             if isinstance(c, dict):
@@ -468,7 +437,7 @@ def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_ty
     return tuple(root) if was_tuple and isinstance(root, list) else root
 
 
-def flexible_dumps(obj: Any, skip_unserializable: bool = False, **kwargs) -> str:
+def flexible_dumps(obj: Any, skip_unserializable: bool = False, **kwargs: Any) -> str:
     """JSON dumps with flexible handling of unserializable objects."""
     processed = _preprocess_for_json(obj, skip_unserializable)
     return json.dumps(processed, **kwargs)

@@ -40,7 +40,7 @@ async def dice_roll(message: discord.Message) -> None:
         num: int = random.randint(nums[1], nums[0])
     else:
         num = random.randint(nums[0], nums[1])
-    if math.log10(num) > 1984:
+    if math.log10(num) > 1987:
         await message.channel.send('The output number would be too large to send in discord')
         return
     

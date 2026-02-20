@@ -7,6 +7,7 @@ import datetime
 import cachetools
 import discord
 import pymongo
+from bson import ObjectId
 from gridfs import AsyncGridFS
 from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import AsyncDatabase
@@ -19,7 +20,7 @@ from command_utils.analysis import DBMessage
 logger = logging.getLogger('discord')
 
 # Global client instance
-_mongo_client: AsyncMongoClient | None = None
+_mongo_client: AsyncMongoClient[dict[str, Any]] | None = None
 _DB_connect_enabled: bool = False
 message_download_cache: cachetools.TTLCache[None, list[dict[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 voice_download_cache: cachetools.TTLCache[None, list[dict[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
@@ -35,7 +36,7 @@ def enable_connection() -> None:
     _DB_connect_enabled = True
 
 
-async def _connect() -> AsyncMongoClient | None:
+async def _connect() -> AsyncMongoClient[dict[str, Any]] | None:
     """
     Establishes a connection to the MongoDB database using the URI from environment variables.
     :return: MongoClient instance if successful, None otherwise.
@@ -51,7 +52,7 @@ async def _connect() -> AsyncMongoClient | None:
     
     uri = os.getenv('MONGO_URI')
     
-    client: AsyncMongoClient = AsyncMongoClient(uri, server_api=ServerApi('1'), serverSelectionTimeoutMS=5000, tls=True,
+    client: AsyncMongoClient[dict[str, Any]] = AsyncMongoClient(uri, server_api=ServerApi('1'), serverSelectionTimeoutMS=5000, tls=True,
             tlsCertificateKeyFile="mongo_cert.pem")
     try:
         await client.admin.command('ping')
@@ -65,23 +66,27 @@ async def _connect() -> AsyncMongoClient | None:
         logger.error(f"An error occurred while connecting to MongoDB: {e}")
         return None
 
-def synchronous_disconnect():
+def synchronous_disconnect() -> None:
     asyncio.run(disconnect())
 
-async def disconnect():
+async def disconnect() -> bool:
     """
     Closes the MongoDB connection if it exists.
-    :return: None
+    :return: If the connection existed and was closed successfully.
     """
     global _mongo_client
     if _mongo_client is not None:
         try:
             await _mongo_client.close()
             logger.info('MongoDB connection closed')
+            return True
         except Exception as e:
             logger.error(f'Error closing MongoDB connection: {e}')
         finally:
             _mongo_client = None
+        
+        return False
+    return True
 
 
 async def send_message(message: DBMessage) -> bool:
@@ -169,9 +174,9 @@ async def cached_download_all() -> list[dict[str, Any]] | None:
     global message_download_cache
     if message_download_cache.get(None) is not None:
         return message_download_cache[None]
-    stuff = await _download_all()
-    message_download_cache[None] = stuff
-    return stuff
+    downloaded = await _download_all()
+    message_download_cache[None] = downloaded
+    return downloaded
 
 
 async def _download_all() -> list[dict[str, Any]] | None:
@@ -193,7 +198,7 @@ async def _download_all() -> list[dict[str, Any]] | None:
         return None
 
 
-async def delete_message(ObjId: str) -> None:
+async def delete_message(ObjId: ObjectId) -> None:
     """
     Deletes a message from the MongoDB database by its ObjectId.
     :param ObjId: The ObjectId of the message to delete.
@@ -255,13 +260,13 @@ async def send_voice_session(session_data: dict[str, Any]) -> None:
         logger.error(f'Error saving voice session: {e}')
 
 
-async def cached_download_voice_sessions() -> list[dict[Any, Any]] | None:
-    if voice_download_cache.get(None) is not None:
+async def cached_download_voice_sessions(skip_cache: bool = False) -> list[dict[Any, Any]] | None:
+    if voice_download_cache.get(None) is not None and not skip_cache:
         return voice_download_cache[None]
     
-    stuff = await _download_voice_sessions()
-    voice_download_cache[None] = stuff
-    return stuff
+    downloaded = await _download_voice_sessions()
+    voice_download_cache[None] = downloaded
+    return downloaded
 
 
 async def _download_voice_sessions() -> list[dict[str, str | int]] | None:
@@ -448,14 +453,14 @@ async def get_many_from_db(collection_name: str, query: dict[str, Any], sort_by=
         return None
 
 
-async def edit_db_message(message_id: str, content: str):
+async def edit_db_message(message_id: str, content: str) -> bool:
     logger.debug(f"Editing message {message_id}")
     current = await get_from_db('messages', {'id': message_id})
     
     if current is None:
         logger.error(f'failed to edit message {message_id}. Message not found in DB')
-        return
+        return False
     
     edits = current.get('edits', [])
     edits.append({'timestamp': datetime.datetime.now(datetime.UTC).timestamp(), 'content': content})
-    await edit_db_entry('messages', {'id': message_id}, {'edits': edits})
+    return await edit_db_entry('messages', {'id': message_id}, {'edits': edits})

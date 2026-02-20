@@ -67,7 +67,7 @@ async def give_rich_role(ctx: Context, member: discord.Member) -> bool:
     return True
 
 
-async def send_announcement(ctx: Context, member: discord.Member) -> None:
+async def send_announcement(ctx: Context, member: discord.Member) -> bool:
     """
     Allows the bot to send an announcement message in the server.
     :param ctx: The context in which the command is invoked.

@@ -227,17 +227,14 @@ class FunCommands(commands.Cog, name='Fun'):
     async def tts_leave(self, ctx: CContext):
         if ctx.bot.vc_client is None:
             await ctx.send('The bot is not connected to a voice channel.')
-            if hasattr(ctx.bot, 'last_tts_sent_time'):
-                del ctx.bot.last_tts_sent_time
+            ctx.bot.last_tts_sent_time = None
             return
         
         if ctx.bot.vc_client.is_connected():
             await ctx.bot.vc_client.disconnect()
         
         ctx.bot.vc_client = None
-        
-        if hasattr(ctx.bot, "last_sent_tts_time"):
-            del ctx.bot.last_sent_tts_time
+        ctx.bot.last_tts_sent_time = None
     
     
     @commands.command(name='stats',
@@ -276,7 +273,8 @@ class FunCommands(commands.Cog, name='Fun'):
     async def manual_send_vc_lb(self, ctx: CContext, channel: typing.Optional[discord.TextChannel]) -> None:
         if channel is None:
             channel = ctx.channel # type: ignore
-        if not hasattr(channel, 'send') or channel is None:
+            
+        if not isinstance(channel, discord.TextChannel):
             logger.error('VC leaderboard channel not found.')
             return
         
@@ -287,37 +285,36 @@ class FunCommands(commands.Cog, name='Fun'):
             msg += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
         
         await channel.send(msg)
-        await analysis.generate_voice_activity_graph(channel, self.bot, lb, 5)  # type: ignore
+        await analysis.generate_voice_activity_graph(channel, self.bot, lb, 5)
     
     @discord.ext.tasks.loop(seconds=59)
     async def check_tts_leave(self) -> None:
         logger.debug('Checking for TTS disconnect')
-        if self.bot.vc_client is None and not hasattr(self.bot, 'last_tts_sent_time'):
+        if self.bot.vc_client is None and self.bot.last_tts_sent_time is None:
             return
         
-        if self.bot.vc_client is None and hasattr(self.bot, 'last_tts_sent_time'):
-            del self.bot.last_tts_sent_time
+        if self.bot.vc_client is None and self.bot.last_tts_sent_time is not None:
+            self.bot.last_tts_sent_time = None
             return
         
-        if self.bot.vc_client is not None and not hasattr(self.bot, 'last_tts_sent_time'):
+        if self.bot.vc_client is not None and self.bot.last_tts_sent_time is None:
             if self.bot.vc_client.is_connected():
                 await self.bot.vc_client.disconnect()
             self.bot.vc_client = None
             return
         
         assert self.bot.vc_client is not None
-        assert hasattr(self.bot, 'last_tts_sent_time')
-        assert isinstance(self.bot.last_tts_sent_time, float)
+        assert self.bot.last_tts_sent_time is not None
         
         if not self.bot.vc_client.is_connected():
             self.bot.vc_client = None
-            del self.bot.last_tts_sent_time
+            self.bot.last_tts_sent_time = None
             return
         
         if time.time() - self.bot.last_tts_sent_time > 180.0:
             await self.bot.vc_client.disconnect()
             self.bot.vc_client = None
-            del self.bot.last_tts_sent_time
+            self.bot.last_tts_sent_time = None
         
         return
     
@@ -332,7 +329,7 @@ class FunCommands(commands.Cog, name='Fun'):
         await voice_events_utils.reconnect_all(self.bot)
         await asyncio.sleep(2)
         channel = self.bot.get_channel(self.bot.config.vc_lb_channel_id)
-        if not hasattr(channel, 'send') or channel is None:
+        if not isinstance(channel, discord.TextChannel):
             logger.error('VC leaderboard channel not found.')
             return
         
@@ -343,7 +340,7 @@ class FunCommands(commands.Cog, name='Fun'):
             msg += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
         
         await channel.send(msg)
-        await analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False) # type: ignore
+        await analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False)
     
     @discord.ext.tasks.loop(minutes=1)
     async def add_ping(self):

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Awaitable
+from collections.abc import Callable, Awaitable, Coroutine
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import TypedDict, Any
 
 import discord.ext.commands
 
@@ -34,7 +34,7 @@ class ShopItem:
     description: str
     price: int
     stock: int
-    perk: list[Callable[["discord.ext.commands.Context", discord.Member], Awaitable[None | bool]]] | None
+    perk: list[Callable[["discord.ext.commands.Context", discord.Member], Coroutine[Any, Any, bool]]] | None
 
 
 @dataclass

@@ -2,7 +2,8 @@
 import atexit
 import logging
 import os
-from typing import Any, Collection
+from typing import Any
+from collections.abc import Collection
 
 import discord
 import discord.utils
