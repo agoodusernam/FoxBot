@@ -9,7 +9,6 @@ import traceback
 from typing import Any, Mapping, TypedDict, Literal, NotRequired, TypeVar
 
 import discord
-from discord.ext.commands import Context
 import matplotlib.pyplot as plt
 
 from command_utils.CContext import CContext, CoolBot
@@ -927,7 +926,7 @@ async def format_voice_analysis(ctx: CContext, graph: bool = False, user: discor
         await ctx.send(f'Error during voice analysis: {e}')
 
 
-async def generate_voice_activity_graph(channel: discord.abc.MessageableChannel, bot: CoolBot,
+async def generate_voice_activity_graph(channel: discord.TextChannel, bot: CoolBot,
         stats: VoiceAnalysisResult | list[UserVoiceStats], count: int, send_errors: bool = True) -> None:
     """ Generate and send a graph of voice activity.
     Args:
