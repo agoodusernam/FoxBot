@@ -274,7 +274,7 @@ class FunCommands(commands.Cog, name='Fun'):
         if channel is None:
             channel = ctx.channel # type: ignore
 
-        if not isinstance(channel, discord.TextChannel):
+        if not isinstance(channel, (discord.TextChannel, discord.DMChannel)):
             logger.error('VC leaderboard channel not found.')
             return
 
