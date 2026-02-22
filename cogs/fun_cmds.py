@@ -341,14 +341,23 @@ class FunCommands(commands.Cog, name='Fun'):
         if not isinstance(channel, discord.TextChannel):
             logger.error('VC leaderboard channel not found.')
             return
-        
+
         lb = await analysis.voice_activity_this_week(skip_cache=True)
-        msg: str = 'Time spent in VCs leaderboard for last week:\n'
+
+        leaderboard_text = ''
+
         for i, stat in enumerate(lb):
             formatted_time = analysis.format_duration(stat["total_seconds"])
-            msg += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
-        
-        await channel.send(msg)
+            leaderboard_text += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
+
+        embed = discord.Embed(
+            title='Time spent in VCs leaderboard for last week:',
+            description=leaderboard_text,
+            colour=discord.Colour.purple()
+        )
+        embed.timestamp = discord.utils.utcnow()
+
+        await channel.send(embed=embed)
         await analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False)
     
     @discord.ext.tasks.loop(minutes=1)
