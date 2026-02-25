@@ -29,7 +29,7 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
         # Member joined channel
         if before.channel is None and after.channel is not None:
             await handle_join(member, after)
-            embed = discord.Embed(title=f'{member.display_name} joined #{after.channel.name}',
+            embed = discord.Embed(title=f'{member.mention} joined #{after.channel.name}',
                     color=discord.Color.green())
             embed.set_author(name=member.name, icon_url=url)
             embed.timestamp = discord.utils.utcnow()
@@ -41,7 +41,7 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
         elif before.channel is not None and after.channel is None:
             await handle_leave(member)
             if logging_channel:
-                embed = discord.Embed(title=f'{member.display_name} left #{before.channel.name}',
+                embed = discord.Embed(title=f'{member.mention} left #{before.channel.name}',
                         color=discord.Color.red())
                 embed.set_author(name=member.name, icon_url=url)
                 embed.timestamp = discord.utils.utcnow()
@@ -67,7 +67,7 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
             if before.channel is None or after.channel is None:
                 return
             await handle_move(member, before, after)
-            embed = discord.Embed(title=f'{member.display_name} moved from #{before.channel.name} to'
+            embed = discord.Embed(title=f'{member.mention} moved from #{before.channel.name} to'
                                         f' #{after.channel.name}', color=discord.Color.blue())
             embed.set_author(name=member.name, icon_url=url)
             embed.timestamp = discord.utils.utcnow()
