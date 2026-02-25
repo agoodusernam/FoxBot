@@ -185,7 +185,6 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         if payload.message_id != self.bot.config.last_counted_message_id:
             return
         
-        unknown_author: bool = False
         author_id: int = 0
         
         if payload.cached_message is not None:
@@ -193,13 +192,11 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         else:
             if db_msg is not None:
                 author_id = int(db_msg['author_id'])
-            else:
-                unknown_author = True
         
         channel = self.bot.get_channel(payload.channel_id)
         assert isinstance(channel, discord.TextChannel)
         
-        if unknown_author or author_id == 0:
+        if author_id == 0:
             await channel.send(f'Unknown user deleted their message. The next number is {self.bot.config.last_count + 1}')
             return
         
@@ -209,7 +206,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         """
         Post the deleted message to the log channel.
         """
-        no_post: list[str] = ['update', 'shutdown', 'restart']
+        no_post: list[str] = ['update', 'shutdown', 'restart', 'qu']
         no_post = ['f!' + i for i in no_post]
         assert self.bot.user is not None
         
@@ -239,13 +236,14 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         
         if author_obj is None:
-            display_name = 'Unknown user'
+            assert isinstance(message, dict)
+            display_name = f'<@{message['author_id']}>'
             name = 'Unknown user'
         else:
             if author_obj.id == self.bot.user.id:
                 return
             
-            display_name = author_obj.display_name
+            display_name = author_obj.mention
             name = author_obj.name
         
         url = author_obj.display_avatar.url if author_obj is not None else self.bot.user.display_avatar.url
@@ -295,7 +293,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
                 and payload.message_id == self.bot.config.last_counted_message_id):
             
             if not self.bot.config.last_highest_count_edited:
-                await payload.message.channel.send(f'<@{payload.message.author.id}> edited their message. The next number is `{self.bot.config.last_count + 1}`')
+                await payload.message.channel.send(f'{payload.message.author.mention} edited their message. The next number is `{self.bot.config.last_count + 1}`')
         
         before_content: str
         after_content: str
@@ -304,7 +302,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         await db_stuff.edit_db_message(str(payload.message_id), payload.message.content)
         
         if db_msg is None:
-            logger.error(f'Message {payload.message_id} not found in database.')
+            logger.error(f'Edited message {payload.message_id} not found in database.')
             return
         
         after_content = payload.message.content
@@ -349,7 +347,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
                 author.display_avatar.url,
                 description,
                 discord.Color.blurple(),
-                f'{author.display_name} edited a message in <#{channel_id}>',
+                f'{author.mention} edited their message in <#{channel_id}>',
                 f'ID: {message_id}'
         )
         
@@ -363,7 +361,6 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             self.logs_channel = logs_channel
         
         await self.logs_channel.send(embed=embed)
-        
 
 
 class ReactionEvents(commands.Cog, name='Reaction Logging'):

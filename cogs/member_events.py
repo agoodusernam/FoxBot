@@ -91,7 +91,7 @@ class MemberEvents(commands.Cog, name="Member Events"):
         if roles == "":
             roles = "None"
         
-        description: str = f'Joined {left_ago}.\nRoles: {roles}'
+        description: str = f'{member.mention} joined {left_ago}.\nRoles: {roles}'
         embed: discord.Embed = create_log_embed(
                 member.name,
                 member.display_avatar.url,
