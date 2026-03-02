@@ -362,22 +362,17 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             return
         
         
-        try:
-            roles: list[discord.Role] = []
-            for role_id in ctx.bot.config.verified_roles:
-                role = discord.utils.get(ctx.guild.roles, id=role_id)
-                if role is None:
-                    logger.error(f'Failed to find role with ID {role_id} for verification.')
-                    continue
-                roles.append(role)
-            
-            await member.add_roles(*roles, reason='Verified by admin')
-                    
-            await ctx.send(f'{member.display_name} has been verified.', delete_after=ctx.bot.del_after)
-            
-        except Exception as e:
-            logger.error(f'Failed to assign verified role to {member.display_name}: {e}')
-            return
+        roles: list[discord.Role] = []
+        for role_id in ctx.bot.config.verified_roles:
+            role = discord.utils.get(ctx.guild.roles, id=role_id)
+            if role is None:
+                logger.error(f'Failed to find role with ID {role_id} for verification.')
+                continue
+            roles.append(role)
+        
+        await member.add_roles(*roles, reason='Verified by admin')
+        
+        await ctx.send(f'{member.display_name} has been verified.', delete_after=ctx.bot.del_after)
     
     @commands.command(name='unverify', aliases=['uver', 'uv'],
             brief='Verify a user',
@@ -393,22 +388,18 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send('User not found.', delete_after=ctx.bot.del_after)
             return
         
-        try:
-            roles: list[discord.Role] = []
-            for role_id in ctx.bot.config.verified_roles:
-                role = discord.utils.get(ctx.guild.roles, id=role_id)
-                if role is None:
-                    logger.error(f'Failed to find role with ID {role_id} for verification.')
-                    continue
-                roles.append(role)
-            
-            await member.remove_roles(*roles, reason='Unverified by admin', atomic=True)
-            
-            await ctx.send(f'{member.display_name} has been unverified.', delete_after=ctx.bot.del_after)
+        roles: list[discord.Role] = []
+        for role_id in ctx.bot.config.verified_roles:
+            role = discord.utils.get(ctx.guild.roles, id=role_id)
+            if role is None:
+                logger.error(f'Failed to find role with ID {role_id} for verification.')
+                continue
+            roles.append(role)
         
-        except Exception as e:
-            logger.error(f'Failed to remove verified role from {member.display_name}: {e}')
-            return
+        await member.remove_roles(*roles, reason='Unverified by admin', atomic=True)
+        
+        await ctx.send(f'{member.display_name} has been unverified.', delete_after=ctx.bot.del_after)
+        
     
     @commands.command(name='last_messages', aliases=['lastmsgs', 'last_msgs'],
                       brief='Fetch last messages from a user',
@@ -472,11 +463,11 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     async def landmine(self, ctx: CContext, channel_or_amount: typing.Union[discord.TextChannel, int], amount: int = 0) -> None:
         if isinstance(channel_or_amount, int):
             channel = ctx.channel
-            amount: int = channel_or_amount
+            amount = channel_or_amount
         else:
             channel = channel_or_amount
         
-        if amount < 0:
+        if amount <= 0:
             await ctx.send('Please specify the number of landmines.',
                            delete_after=ctx.bot.del_after)
             return

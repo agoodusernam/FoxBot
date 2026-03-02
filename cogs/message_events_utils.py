@@ -31,36 +31,32 @@ def url_in_string(string: str) -> bool:
 
 async def landmine_explode(message: discord.Message, bot: CoolBot, forced: bool = False) -> None:
     assert not isinstance(message.author, discord.User)
-    try:
-        msgs: list[str] = ["Landmine exploded!", "You stepped in a claymore!", "A grenade exploded next to you!",
-                           "A rogue cluster bomblet went off!", "You tripped down some stairs. (How did you manage that one?)",
-                           "You went too close to a proximity mine.", "A tree fell on you. (What an idiot.)",
-                           "You were hit by a car.", "You got struck by lightning.", "You fell off a cliff.",
-                           "You tripped on a rock and drowned in a puddle.",
-                           "A subspace tripmine appeared under you and detonated.",
-                           "You fell beyond the event horizon of a black hole and disappeared forever.",
-                           "nuke"]
-        msg: str = random.choice(msgs)
-        if msg == "nuke":
-            await message.author.timeout(datetime.timedelta(seconds=60), reason='Nuke exploded')
-            await message.reply(f'A nuclear bomb went off below your feet! You cannot talk for 60 seconds.')
-        else:
-            await message.author.timeout(datetime.timedelta(seconds=10), reason='Landmine exploded')
-            await message.reply(f'{msg} You cannot talk for 10 seconds.')
-        
-        if not forced:
-            await message.channel.send(
-                    f'There are now {bot.landmine_channels[message.channel.id] - 1} traps left in this channel.')
-            bot.landmine_channels[message.channel.id] -= 1
-            if bot.landmine_channels[message.channel.id] == 0:
-                del bot.landmine_channels[message.channel.id]
-        else:
-            left = bot.landmine_channels.get(message.channel.id, 0)
-            await message.channel.send(f'There are now {left} traps left in this channel.')
-            bot.forced_landmines.remove(message.author.id)
+    msgs: list[str] = ["Landmine exploded!", "You stepped in a claymore!", "A grenade exploded next to you!",
+                       "A rogue cluster bomblet went off!", "You tripped down some stairs. (How did you manage that one?)",
+                       "You went too close to a proximity mine.", "A tree fell on you. (What an idiot)",
+                       "You were hit by a car.", "You got struck by lightning.", "You fell off a cliff.",
+                       "You tripped on a rock and drowned in a puddle.",
+                       "A subspace tripmine appeared under you and detonated.",
+                       "You fell beyond the event horizon of a black hole and disappeared forever.",
+                       "nuke"]
+    msg: str = random.choice(msgs)
+    if msg == "nuke":
+        await message.author.timeout(datetime.timedelta(seconds=60), reason='Nuke exploded')
+        await message.reply(f'A nuclear bomb went off below your feet! You cannot talk for 60 seconds.')
+    else:
+        await message.author.timeout(datetime.timedelta(seconds=10), reason='Landmine exploded')
+        await message.reply(f'{msg} You cannot talk for 10 seconds.')
     
-    except Exception:
-        pass
+    if not forced:
+        await message.channel.send(
+                f'There are now {bot.landmine_channels[message.channel.id] - 1} traps left in this channel.')
+        bot.landmine_channels[message.channel.id] -= 1
+        if bot.landmine_channels[message.channel.id] == 0:
+            del bot.landmine_channels[message.channel.id]
+    else:
+        left = bot.landmine_channels.get(message.channel.id, 0)
+        await message.channel.send(f'There are now {left} traps left in this channel.')
+        bot.forced_landmines.remove(message.author.id)
 
 
 async def check_landmine(message: discord.Message, bot: CoolBot) -> None:
