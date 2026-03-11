@@ -226,6 +226,6 @@ async def get_vt_hash_info(given_hash: str) -> VTInfo | str:
         response: dict[str, Any] = await (await client.get_async('/files/' + given_hash)).json_async()
     
     try:
-        return VTInfo(response)
+        return VTInfo(response['data'])
     except KeyError as e:
         return handle_vt_error(response, f'{e}')

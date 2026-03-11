@@ -9,3 +9,4 @@ aiohttp~=3.13.3
 python-dateutil~=2.9.0.post0
 pystatx~=0.1
 vt-py~=0.22.0
+davey~=0.1.4
