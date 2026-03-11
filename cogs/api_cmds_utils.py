@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 from typing import Any
@@ -6,9 +7,8 @@ import discord.ext.commands
 import aiohttp
 from discord.ext.commands import Context
 import vt  # type: ignore[import-untyped]
-from dotenv import load_dotenv
 
-load_dotenv()
+logger = logging.getLogger('discord')
 
 def bytes_to_human_readable(size: int) -> str:
     if size < 1024:
@@ -60,19 +60,14 @@ async def fetch_json(url: str, headers: dict[str, str] | None = None) -> tuple[i
         return response.status, await response.json()
 
 
-_vt_client: vt.Client | None = None
 
 
 def _get_vt_client() -> vt.Client:
-    global _vt_client
-    if _vt_client is not None:
-        return _vt_client
     api_key = os.getenv('VT_API_KEY')
     if api_key is None:
         raise ValueError('VT_API_KEY environment variable not set')
     
-    _vt_client = vt.Client(api_key)
-    return _vt_client
+    return vt.Client(api_key)
 
 
 async def get_nasa_apod() -> dict[str, str]:
@@ -215,12 +210,15 @@ async def get_no(ctx: Context) -> None:
 def handle_vt_error(response: dict[str, Any]) -> str:
     error = response.get("error")
     if error is None:
+        logger.error(f'Error getting VT info, no error: {response}')
         return "Unknown error"
     
     if error.get("code") == "NotFoundError":
         return "File has not been scanned yet"
     if error.get("code") == "QuotaExceededError":
         return "API usage quota exceeded. Please try again later."
+    
+    logger.error(f'Error getting VT info, unknown: {response}')
     return error.get("message", "Unknown error")
 
 async def get_vt_hash_info(given_hash: str) -> VTInfo | str:
