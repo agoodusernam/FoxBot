@@ -207,19 +207,19 @@ async def get_no(ctx: Context) -> None:
     
     await ctx.send(data["reason"])
 
-def handle_vt_error(response: dict[str, Any]) -> str:
+def handle_vt_error(response: dict[str, Any], err: str) -> str:
     error = response.get("error")
     if error is None:
-        logger.error(f'Error getting VT info, no error: {response}')
-        return "Unknown error"
+        logger.error(f'Error getting VT info, no error. Error: {err}, response: {response}')
+        return "An unknown error has occurred."
     
     if error.get("code") == "NotFoundError":
         return "File has not been scanned yet"
     if error.get("code") == "QuotaExceededError":
         return "API usage quota exceeded. Please try again later."
     
-    logger.error(f'Error getting VT info, unknown: {response}')
-    return error.get("message", "Unknown error")
+    logger.error(f'Error getting VT info, unknown. Error: {err}, response: {response}')
+    return error.get("message", "An unknown error has occurred.")
 
 async def get_vt_hash_info(given_hash: str) -> VTInfo | str:
     async with _get_vt_client() as client:
@@ -227,5 +227,5 @@ async def get_vt_hash_info(given_hash: str) -> VTInfo | str:
     
     try:
         return VTInfo(response)
-    except KeyError:
-        return handle_vt_error(response)
+    except KeyError as e:
+        return handle_vt_error(response, f'{e}')
