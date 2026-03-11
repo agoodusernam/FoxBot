@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord.ext.commands import BucketType
 
 import cogs.api_cmds_utils as api_utils
+from cogs.api_cmds_utils import VTInfo
 from command_utils.CContext import CContext, CoolBot
 from utils import utils
 
@@ -19,8 +20,8 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
     @commands.command(name='nasa', aliases=['nasa_pic', 'nasa_apod', 'nasapic'],
                       brief="NASA's picture of the day",
                       help="Get NASA's Astronomy Picture of the Day with explanation")
-    @commands.cooldown(1, 5, BucketType.guild)  # type: ignore
-    async def nasa_pic(self, ctx: CContext):
+    @commands.cooldown(1, 5, BucketType.guild)  
+    async def nasa_pic(self, ctx: CContext) -> None:
         # TODO: This is kind of cursed, fix it later
         # You may be wondering why I can't post the URL directly,
         # Well, discord doesn't feel like embedding images from this source apparently.
@@ -49,59 +50,95 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
     @commands.command(name='dog', aliases=['dogpic', 'dog_pic'],
                       brief='Get a random dog picture',
                       help='Fetches and displays a random dog picture from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  # type: ignore
-    async def dogpic(self, ctx: CContext):
+    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    async def dogpic(self, ctx: CContext) -> None:
         await api_utils.get_dog_pic(ctx)
     
     @commands.command(name='cat', aliases=['catpic', 'cat_pic'],
                       brief='Get a random cat picture',
                       help='Fetches and displays a random cat picture from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  # type: ignore
-    async def catpic(self, ctx: CContext):
+    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    async def catpic(self, ctx: CContext) -> None:
         await api_utils.get_cat_pic(ctx)
     
     @commands.command(name='fox', aliases=['foxpic', 'fox_pic'],
                       brief='Get a random fox picture',
                       help='Fetches and displays a random fox picture from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  # type: ignore
-    async def foxpic(self, ctx: CContext):
+    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    async def foxpic(self, ctx: CContext) -> None:
         await api_utils.get_fox_pic(ctx)
     
     @commands.command(name='insult', aliases=['insults'],
                       brief='Get a random insult',
                       help='Fetches and displays a random insult from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  # type: ignore
-    async def insult(self, ctx: CContext):
+    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    async def insult(self, ctx: CContext) -> None:
         await api_utils.get_insult(ctx)
     
     @commands.command(name='advice', aliases=['advise', 'give_advice'],
                       brief='Get random advice',
                       help='Fetches and displays a random piece of advice from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  # type: ignore
-    async def advice(self, ctx: CContext):
+    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    async def advice(self, ctx: CContext) -> None:
         await api_utils.get_advice(ctx)
     
     @commands.command(name='joke', aliases=['jokes'],
                       brief='Get a random joke',
                       help='Fetches and displays a random joke from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  # type: ignore
-    async def joke(self, ctx: CContext):
+    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    async def joke(self, ctx: CContext) -> None:
         await api_utils.get_joke(ctx)
     
     @commands.command(name='wyr', aliases=['would_you_rather', 'wouldyourather'],
                       brief="Get a random 'Would You Rather' question",
                       help="Fetches and displays a random 'Would You Rather' question from an API")
-    @commands.cooldown(1, 5, commands.BucketType.guild)  # type: ignore
-    async def wyr(self, ctx: CContext):
+    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    async def wyr(self, ctx: CContext) -> None:
         await api_utils.get_wyr(ctx)
     
     @commands.command(name='no',
                       brief="Get a random 'no' response",
                       help="Fetches and displays a random 'no' response from an API")
-    @commands.cooldown(1, 5, commands.BucketType.guild)  # type: ignore
-    async def no(self, ctx: CContext):
+    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    async def no(self, ctx: CContext) -> None:
         await api_utils.get_no(ctx)
-
+    
+    @commands.command(name='virus_total_hash', aliases=['virustotalhash', 'vt_hash', 'vth'],
+                      brief='Get file information from VirusTotal',
+                      help='Get information about a file from VirusTotal using its hash',
+                      usage='f!vt_hash <hash>'
+                      )
+    @commands.cooldown(3, 10, commands.BucketType.guild)
+    async def virus_total_hash(self, ctx: CContext, given_hash: str) -> None:
+        vt_info: VTInfo | str = await api_utils.get_vt_hash_info(given_hash)
+        if isinstance(vt_info, str):
+            await ctx.send(vt_info)
+            return
+        
+        av_num = vt_info.total_AVs_run
+        description: str = ''
+        if vt_info.likely_malicious:
+            colour = discord.Colour.red()
+            title = 'This file is likely malicious.'
+            description += f'Generic malware category: {vt_info.threat_classification}\n'
+            description += f'Specific type: {vt_info.threat_label}\n'
+        else:
+            colour = discord.Colour.green()
+            title = 'This file is likely not malicious.'
+            
+        description += f'File type: {vt_info.type_description}\n'
+        description += f'Reputation: {vt_info.reputation}\n'
+        description += f'Meaningful name: {vt_info.meaningful_name}\n'
+        description += f'Size: {vt_info.size}\n'
+        description += f'First submission date: <t:{vt_info.first_submission_date}>\n'
+        description += f'Last analysis date: <t:{vt_info.last_analysis_date}>\n'
+        description += f'[Full VirusTotal report]({vt_info.link})'
+        
+        embed = discord.Embed(title=title, colour=colour, description=description)
+        embed.add_field(name='Detections', value=f'{vt_info.malicious_detections}/{av_num} security vendors flagged file as malicious\n'
+                                                 f'{vt_info.suspicious_detections}/{av_num} security vendors flagged file as suspicious.')
+        embed.add_field(name='Tags', value=", ".join(vt_info.tags))
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(ApiCommands(bot))

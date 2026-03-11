@@ -5,12 +5,74 @@ from typing import Any
 import discord.ext.commands
 import aiohttp
 from discord.ext.commands import Context
+import vt  # type: ignore[import-untyped]
+from dotenv import load_dotenv
 
-session = aiohttp.ClientSession()
+load_dotenv()
+
+def bytes_to_human_readable(size: int) -> str:
+    if size < 1024:
+        return f"{size} B"
+    if size < 1024 ** 2:
+        return f"{size / 1024:.1f} KiB"
+    if size < 1024 ** 3:
+        return f"{size / 1024 ** 2:.1f} MiB"
+    
+    return f"{size / 1024 ** 3:.2f} GiB"
+
+class VTInfo:
+    def __init__(self, data: dict[str, Any]):
+        attributes: dict[str, Any] = data['attributes']
+        last_analysis_stats: dict[str, Any] = attributes['last_analysis_stats']
+        self.sha256_hash: str = data['id']
+        self.meaningful_name: str = attributes['meaningful_name']
+        self.first_submission_date: int = data['attributes']['first_submission_date']
+        self.last_analysis_date: int = last_analysis_stats['last_analysis_date']
+        self.reputation: int = attributes['reputation']
+        self.size: str = bytes_to_human_readable(attributes['size'])
+        self.type_description: str = attributes['type_description']
+        self.link: str = f"https://www.virustotal.com/gui/file/{data['id']}"
+        self.malicious_detections: int = last_analysis_stats['malicious']
+        self.suspicious_detections: int = last_analysis_stats['suspicious']
+        self.maybe_detections: int = self.malicious_detections + self.suspicious_detections
+        self.no_detections: int = last_analysis_stats['undetected'] + last_analysis_stats['harmless']
+        self.total_AVs_run: int = self.malicious_detections + self.suspicious_detections + self.no_detections
+        self.tags: list[str] = attributes['tags']
+        
+        self.low_reputation: bool = self.reputation < 0
+        self.likely_malicious: bool = ((self.malicious_detections + self.suspicious_detections) >= 5)
+        self.likely_malicious = self.likely_malicious or self.low_reputation
+        
+        self.threat_classification: str = 'Unknown'
+        self.threat_label: str = 'Unknown'
+        
+        if attributes.get('popular_threat_classification', None) is not None:
+            categories: list[dict] = attributes['popular_threat_classification']['popular_threat_category']
+            categories = sorted(categories, key=lambda x: x['count'], reverse=True)
+            self.threat_classification = categories[0]['value']
+            self.threat_label = attributes['popular_threat_classification']['suggested_threat_label']
+
+_session = aiohttp.ClientSession()
+
 
 async def fetch_json(url: str, headers: dict[str, str] | None = None) -> tuple[int, dict[Any, Any]]:
-    async with session.get(url, headers=headers) as response:
+    async with _session.get(url, headers=headers) as response:
         return response.status, await response.json()
+
+
+_vt_client: vt.Client | None = None
+
+
+def _get_vt_client() -> vt.Client:
+    global _vt_client
+    if _vt_client is not None:
+        return _vt_client
+    api_key = os.getenv('VT_API_KEY')
+    if api_key is None:
+        raise ValueError('VT_API_KEY environment variable not set')
+    
+    _vt_client = vt.Client(api_key)
+    return _vt_client
 
 
 async def get_nasa_apod() -> dict[str, str]:
@@ -49,7 +111,7 @@ async def get_fox_pic(ctx: Context) -> None:
     if 'image' in data:
         await ctx.send(data['image'])
         return
-        
+    
     if 'message' in data:
         await ctx.send(data['message'])
         return
@@ -149,3 +211,23 @@ async def get_no(ctx: Context) -> None:
         raise discord.ext.commands.CommandError(f'Unexpected reason format from no API: {data}')
     
     await ctx.send(data["reason"])
+
+def handle_vt_error(response: dict[str, Any]) -> str:
+    error = response.get("error")
+    if error is None:
+        return "Unknown error"
+    
+    if error.get("code") == "NotFoundError":
+        return "File has not been scanned yet"
+    if error.get("code") == "QuotaExceededError":
+        return "API usage quota exceeded. Please try again later."
+    return error.get("message", "Unknown error")
+
+async def get_vt_hash_info(given_hash: str) -> VTInfo | str:
+    async with _get_vt_client() as client:
+        response: dict[str, Any] = await (await client.get_async('/files/' + given_hash)).json_async()
+    
+    try:
+        return VTInfo(response)
+    except KeyError:
+        return handle_vt_error(response)

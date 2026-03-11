@@ -11,7 +11,7 @@ class CTF(commands.Cog, name='CTF'):
     
     @commands.command(name='submit')
     @commands.guild_only()
-    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 5, commands.BucketType.user)  
     async def submit(self, ctx: CContext, *, args: str):
         """The command to submit a solution to a CTF challenge."""
         if not args or args in ['help', 'h', '?', '', ' ']:

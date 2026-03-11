@@ -19,7 +19,7 @@ class Counting(commands.Cog, name='Counting'):
     @commands.command(name='counting_fails_lb', aliases=['cflb'],
             help='View the leaderboard for failed counting attempts',
             usage='f!counting_fails_lb [number_of_entries]')
-    @commands.cooldown(1, 2, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 2, commands.BucketType.user)  
     async def count_fails_lb(self, ctx: CContext, number_of_entries: int = 10):
         lb = ctx.bot.config.counting_fails
         if len(lb) == 0:
@@ -42,7 +42,7 @@ class Counting(commands.Cog, name='Counting'):
     @commands.command(name='count_fails', aliases=['cf'],
             help='View the number of failed counting attempts for a user',
             usage='f!count_fails <user>')
-    @commands.cooldown(1, 2, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 2, commands.BucketType.user)  
     async def count_fails(self, ctx: CContext, member: discord.Member | discord.User):
         fails: int | None = ctx.bot.config.counting_fails.get(member.id, None)
         if fails is None:
@@ -53,7 +53,7 @@ class Counting(commands.Cog, name='Counting'):
     @commands.command(name='count_leaderboard', aliases=['clb'],
             help='View the top 5 leaderboard for the most successful counting attempts, and highest number counted',
             usage='f!count_leaderboard')
-    @commands.cooldown(1, 2, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 2, commands.BucketType.user)  
     async def count_leaderboard(self, ctx: CContext):
         if len(ctx.bot.config.counting_successes) == 0:
             await ctx.send('No users have counted yet.')
@@ -88,7 +88,7 @@ class Counting(commands.Cog, name='Counting'):
     @commands.command(name='calculate', aliases=['calc'],
                       help='Calculate a mathematical expression',
                       usage='f!calculate <expression>')
-    @commands.cooldown(1, 1, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 1, commands.BucketType.user)  
     async def calculate(self, ctx: CContext, *, expression: str) -> None:
         s = expression.lower()
         for char in string.whitespace:

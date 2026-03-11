@@ -96,7 +96,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
                       brief='Rob someone',
                       help="Attempt to steal from someone's wallet.",
                       usage='rob <target>')
-    @commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)  
     async def rob_cmd(self, ctx: CContext, target: discord.Member) -> None:
         if target.id == ctx.author.id:
             await ctx.send('You cannot rob yourself!')

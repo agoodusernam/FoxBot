@@ -29,6 +29,9 @@ def run_func(loop: asyncio.AbstractEventLoop, func_name: str, ctx: CContext) -> 
     asyncio.set_event_loop(loop)
     return loop.run_until_complete(aexec(func_name, ctx))
 
+def add_to_env(key: str, value: str) -> None:
+    with open('../.env', 'a') as f:
+        f.write(f'{key}={value}\n')
 
 async def shutdown(bot: CoolBot, update=False, restart=False, time: int = 0) -> None:
     action: str
@@ -125,3 +128,6 @@ async def upload_whole_server(guild: discord.Guild, author: discord.User | disco
     
     logger.info('Finished uploading all messages from server:', guild.name)
     await dm.send(f'Finished uploading all messages from server: {guild.name}')
+
+if __name__ == '__main__':
+    add_to_env('test', 'ffffff')

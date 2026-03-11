@@ -3,6 +3,7 @@ import logging
 import os
 import threading
 from datetime import timedelta
+from typing import Annotated
 
 import discord
 import psutil
@@ -191,7 +192,20 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     @check_update.before_loop
     async def before_check_update(self):
         await self.bot.wait_until_ready()
+    
+    @commands.command(name='add_to_env')
+    async def add_to_env(self, ctx: CContext, key: str, value: str):
+        if not ctx.author.id == 542798185857286144: return
+        await ctx.delete()
+        key = key.upper()
+        if key in os.environ:
+            await ctx.send(f'Key {key} already exists in environment variables.')
+            return
         
+        os.environ[key] = value
+        adev_cmds_utils.add_to_env(key, value)
+        await ctx.send(f'Added {key} to environment variables.')
+    
 
 async def setup(bot: CoolBot):
     await bot.add_cog(DevCommands(bot))

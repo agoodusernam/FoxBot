@@ -14,7 +14,7 @@ class Backup(commands.Cog):
         self.bot: CoolBot = bot
     
     @commands.command(name='backup', help='Backup the server data', usage='f!backup')
-    @commands.cooldown(1, 60, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 60, commands.BucketType.user)  
     @commands.check(is_admin)
     @commands.guild_only()
     async def backup(self, ctx: CContext):

@@ -37,29 +37,29 @@ class FunCommands(commands.Cog, name='Fun'):
                       brief='Roll a dice',
                       help='Roll a dice between two values',
                       usage='f!dice <min> <max>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 5, commands.BucketType.user)  
     async def dice(self, ctx: CContext):
         await fun_cmds_utils.dice_roll(ctx.message)
     
     @commands.command(name='flip', aliases=['coin_flip', 'coinflip'],
                       brief='Flip a coin',
                       help='Flip a coin and get either Heads or Tails')
-    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def flip(self, ctx: CContext):
         await ctx.send(f'You flipped a coin and got: **{random.choice(['Heads', 'Tails'])}**')
     
     @commands.command(name='ping', aliases=['latency'],
                       brief="Check the bot's latency",
                       help="Shows the bot's current latency in milliseconds")
-    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def ping(self, ctx: CContext):
-        await ctx.send(f'{ctx.bot.latency * 1000:.1f}ms')  # type: ignore
+        await ctx.send(f'{ctx.bot.latency * 1000:.1f}ms')
     
     @commands.command(name='suggest', aliases=['suggestion'],
                       brief='Submit a suggestion',
                       help='Submit a suggestion for the bot',
                       usage='f!suggest <suggestion>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def suggest_cmd(self, ctx: CContext, *, suggestion: str):
         """
         Sends a suggestion to the designated channel and creates a thread for discussion.
@@ -109,7 +109,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='8ball', aliases=['eight_ball', 'magic_8_ball'],
                         brief='Ask the magic 8-ball a question',
                         help='Ask the magic 8-ball a question and get a random answer')
-    @commands.cooldown(1, 3, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 3, commands.BucketType.user)  
     async def eight_ball(self, ctx: CContext):
         pos_responses = [ # 10 positive responses
             'It is certain', 'It is decidedly so', 'Without a doubt', 'Yes definitely',
@@ -136,7 +136,7 @@ class FunCommands(commands.Cog, name='Fun'):
                         brief='Convert text to OwO language',
                         help='Converts the given text to OwO language (UwU style)',
                         usage='f!owo <text>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 5, commands.BucketType.user)  
     async def owoify(self, ctx: CContext, *, text: str):
         # Simple conversion to OwO language
         # Why did I add this. I hate myself
@@ -149,7 +149,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='code', aliases=['source', 'github'],
                       brief="Get the bot's source code",
                       help="Get the link to the bot's source code on GitHub")
-    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 5, commands.BucketType.user)  
     async def code(self, ctx: CContext):
         await ctx.send('You can find the source code for this bot on GitHub: https://github.com/agoodusernam/FoxBot')
     
@@ -157,7 +157,7 @@ class FunCommands(commands.Cog, name='Fun'):
                       brief='Get the number of lines of code in the bot',
                       help="Get the number of lines of code in the bot's source code",
                       usage='f!loc')
-    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 5, commands.BucketType.user)  
     async def lines_of_code(self, ctx: CContext):
         # function that returns the number of lines of code in a given directory recursively, excluding .venv
         total_lines, total_files = utils.utils.loc_total()
@@ -169,7 +169,7 @@ class FunCommands(commands.Cog, name='Fun'):
                       brief='Send a text-to-speech message',
                       help='Send a text-to-speech message in the current channel',
                       usage='f!tts <message>')
-    @commands.cooldown(1, 1, commands.BucketType.guild) # type: ignore
+    @commands.cooldown(1, 1, commands.BucketType.guild) 
     @guild_only()
     @commands.has_role(1405824995946532995) # TODO: Make configurable
     async def tts(self, ctx: CContext, *, message: str):
@@ -222,7 +222,7 @@ class FunCommands(commands.Cog, name='Fun'):
                         brief='Disconnect the bot from voice channel',
                         help='Disconnect the bot from the voice channel it is currently in',
                         usage='f!tts_leave')
-    @commands.cooldown(1, 1, commands.BucketType.guild)  # type: ignore
+    @commands.cooldown(1, 1, commands.BucketType.guild)  
     @guild_only()
     async def tts_leave(self, ctx: CContext):
         if ctx.bot.vc_client is None:
@@ -240,7 +240,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='stats',
                       brief="Get bot statistics",
                       help="Get statistics about the bot")
-    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 5, commands.BucketType.user)  
     async def stats(self, ctx: CContext):
         loc = utils.utils.loc_total()[0]
         files = utils.utils.loc_total()[1]
@@ -269,7 +269,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='vc_lb',
                       brief="Send the voice call leaderboard",
                       help="Send the voice call leaderboard to the current channel")
-    @commands.cooldown(1, 5, commands.BucketType.user)  # type: ignore
+    @commands.cooldown(1, 5, commands.BucketType.user)  
     async def manual_send_vc_lb(self, ctx: CContext, channel: typing.Optional[discord.TextChannel]) -> None:
         if channel is None:
             channel = ctx.channel # type: ignore
