@@ -119,12 +119,12 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
         description: str = ''
         if vt_info.likely_malicious:
             colour = discord.Colour.red()
-            title = 'This file is likely malicious.'
-            description += f'Generic malware category: {vt_info.threat_classification}\n'
-            description += f'Specific type: {vt_info.threat_label}\n'
+            title = 'This file is likely malicious'
+            description += f'Generic malware category: {vt_info.threat_classification.title()}\n'
+            description += f'Specific type: {vt_info.threat_label.capitalize()}\n'
         else:
             colour = discord.Colour.green()
-            title = 'This file is likely not malicious.'
+            title = 'This file is likely not malicious'
             
         description += f'File type: {vt_info.type_description}\n'
         description += f'Reputation: {vt_info.reputation}\n'
@@ -135,8 +135,8 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
         description += f'[Full VirusTotal report]({vt_info.link})'
         
         embed = discord.Embed(title=title, colour=colour, description=description)
-        embed.add_field(name='Detections', value=f'{vt_info.malicious_detections}/{av_num} security vendors flagged file as malicious\n'
-                                                 f'{vt_info.suspicious_detections}/{av_num} security vendors flagged file as suspicious.')
+        embed.add_field(name='Detections', value=f'{vt_info.malicious_detections}/{av_num} Security vendors flagged the file as malicious\n'
+                                                 f'{vt_info.suspicious_detections}/{av_num} Security vendors flagged the file as suspicious')
         embed.add_field(name='Tags', value=", ".join(vt_info.tags))
         await ctx.send(embed=embed)
 
