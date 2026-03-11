@@ -26,8 +26,8 @@ class VTInfo:
         last_analysis_stats: dict[str, Any] = attributes['last_analysis_stats']
         self.sha256_hash: str = data['id']
         self.meaningful_name: str = attributes['meaningful_name']
-        self.first_submission_date: int = data['attributes']['first_submission_date']
-        self.last_analysis_date: int = last_analysis_stats['last_analysis_date']
+        self.first_submission_date: int = attributes['first_submission_date']
+        self.last_analysis_date: int = attributes['last_analysis_date']
         self.reputation: int = attributes['reputation']
         self.size: str = bytes_to_human_readable(attributes['size'])
         self.type_description: str = attributes['type_description']
