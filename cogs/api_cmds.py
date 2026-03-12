@@ -122,7 +122,7 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
             await ctx.send(vt_info)
             return
         
-        await ctx.send(embed=api_utils.create_vt_embed(vt_info))
+        await ctx.send(embed=api_utils.create_vt_file_embed(vt_info))
     
     @commands.command(name='virus_total_file', aliases=['virustotalfile', 'vt_file', 'vtf'],
                       brief='Get file information from VirusTotal',
@@ -162,7 +162,7 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
         if isinstance(result, str):
             await ctx.send(result)
         else:
-            await ctx.send(embed=api_utils.create_vt_embed(result))
+            await ctx.send(embed=api_utils.create_vt_file_embed(result))
         
         await ctx.send(ctx.author.mention)
 

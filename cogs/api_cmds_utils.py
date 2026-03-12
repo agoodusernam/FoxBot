@@ -30,7 +30,7 @@ class VTInfo:
         attributes: dict[str, Any] = data['attributes']
         last_analysis_stats: dict[str, Any] = attributes['last_analysis_stats']
         self.sha256_hash: str = data['id']
-        self.meaningful_name: str = attributes['meaningful_name']
+        self.meaningful_name: str = attributes['meaningful_name'] or 'No other names'
         self.first_submission_date: int = attributes['first_submission_date']
         self.last_analysis_date: int = attributes['last_analysis_date']
         self.reputation: int = attributes['reputation']
@@ -213,7 +213,7 @@ async def get_no(ctx: Context) -> None:
     await ctx.send(data["reason"])
 
 
-def create_vt_embed(vt_info: VTInfo) -> discord.Embed:
+def create_vt_file_embed(vt_info: VTInfo) -> discord.Embed:
     av_num = vt_info.total_AVs_run
     description: str = ''
     if vt_info.likely_malicious:
@@ -257,29 +257,23 @@ def handle_vt_error(response: dict[str, Any], err: str) -> str:
 
 
 @overload
-async def get_vt_hash_info(given_hash: str, return_err: Literal[False] = False, client: Any = None) -> VTInfo | str:
+async def get_vt_hash_info(given_hash: str, return_err: Literal[False] = False) -> VTInfo | str:
     ...
 
 
 @overload
-async def get_vt_hash_info(given_hash: str, return_err: Literal[True], client: Any = None) -> VTInfo | dict[str, Any]:
+async def get_vt_hash_info(given_hash: str, return_err: Literal[True]) -> VTInfo | dict[str, Any]:
     ...
 
 
 async def get_vt_hash_info(
         given_hash: str,
         return_err: bool = False,
-        client: vt.Client | None = None,
         ) -> VTInfo | str | dict[str, Any]:
     
     logger.debug(f'Getting VT info for hash: {given_hash}')
-    if client is None:
-        async with _get_vt_client() as client:
-            response: dict[str, Any] = await (await client.get_async('/files/' + given_hash)).json_async()
-            
-    else:
-        logger.debug('Using existing VT client for hash_info')
-        response = await (await client.get_async('/files/' + given_hash)).json_async()
+    async with _get_vt_client() as client:
+        response: dict[str, Any] = await (await client.get_async('/files/' + given_hash)).json_async()
         
     logger.debug(f'VT response for hash_info: {response}')
     try:
@@ -293,7 +287,6 @@ async def get_vt_hash_info(
 
 
 async def upload_file_vt(f: IO[bytes], zip_password: str | None = None) -> VTInfo | str:
-    f.seek(0)
     hasher = hashlib.sha256()
     logger.debug(f'Uploading file to VT: {f.name}')
     hashed_len: int = 0
@@ -303,20 +296,21 @@ async def upload_file_vt(f: IO[bytes], zip_password: str | None = None) -> VTInf
     
     sha256_hash = hasher.hexdigest()
     logger.debug(f'File read, hashed {hashed_len} bytes, SHA256 hash: {sha256_hash}')
+
+    resp = await get_vt_hash_info(sha256_hash, return_err=True)
+    if isinstance(resp, VTInfo):
+        logger.debug('File already scanned, returning VT info')
+        return resp
+    
+    if resp.get("error", {}).get("code") == "QuotaExceededError":
+        logger.warning('API usage quota exceeded.')
+        return "API usage quota exceeded. Please try again later."
+    
+    if not resp.get("error", {}).get("code") == "NotFoundError":
+        logger.error(f'Error uploading file to VT, unknown error. Error: {resp}')
+        return "An unknown error has occurred."
+    
     async with _get_vt_client() as client:
-        resp = await get_vt_hash_info(sha256_hash, return_err=True, client=client)
-        if isinstance(resp, VTInfo):
-            logger.debug('File already scanned, returning VT info')
-            return resp
-        
-        if resp.get("error", {}).get("code") == "QuotaExceededError":
-            logger.warning('API usage quota exceeded.')
-            return "API usage quota exceeded. Please try again later."
-        
-        if not resp.get("error", {}).get("code") == "NotFoundError":
-            logger.error(f'Error uploading file to VT, unknown error. Error: {resp}')
-            return "An unknown error has occurred."
-        
         await client.scan_file_async(f, wait_for_completion=True, zip_password=zip_password)
-        
-        return await get_vt_hash_info(sha256_hash, client=client)
+    
+    return await get_vt_hash_info(sha256_hash)
