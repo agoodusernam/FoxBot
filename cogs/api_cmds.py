@@ -2,6 +2,7 @@ import logging
 import os
 import tempfile
 from copy import deepcopy
+from io import UnsupportedOperation
 from typing import Final
 
 import discord
@@ -143,7 +144,7 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
         
         await ctx.send('Scanning file, this may take a while. You will be pinged when it is done.')
         
-        with tempfile.NamedTemporaryFile('wb') as f:
+        with tempfile.NamedTemporaryFile('w+b') as f:
             logger.debug(f'Writing file to {f.name}')
             # I would use Attachment.save() here, but it would try to open the file
             # twice as it's not of type io.BufferedIOBase
