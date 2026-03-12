@@ -1,5 +1,8 @@
+import logging
 import os
+import tempfile
 from copy import deepcopy
+from typing import Final
 
 import discord
 from discord.ext import commands
@@ -10,6 +13,9 @@ from cogs.api_cmds_utils import VTInfo
 from command_utils.CContext import CContext, CoolBot
 from utils import utils
 
+logger = logging.getLogger('discord')
+
+MAX_VT_FILE_SIZE: Final[int] = 100*1024*1024
 
 class ApiCommands(commands.Cog, name='Images and APIs'):
     """These commands fetch images and data from various APIs."""
@@ -115,30 +121,49 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
             await ctx.send(vt_info)
             return
         
-        av_num = vt_info.total_AVs_run
-        description: str = ''
-        if vt_info.likely_malicious:
-            colour = discord.Colour.red()
-            title = 'This file is likely malicious'
-            description += f'Generic malware category: {vt_info.threat_classification.title()}\n'
-            description += f'Specific type: {vt_info.threat_label.capitalize()}\n'
-        else:
-            colour = discord.Colour.green()
-            title = 'This file is likely not malicious'
-            
-        description += f'File type: {vt_info.type_description}\n'
-        description += f'Reputation: {vt_info.reputation}\n'
-        description += f'Meaningful name: {vt_info.meaningful_name}\n'
-        description += f'Size: {vt_info.size}\n'
-        description += f'First submission date: <t:{vt_info.first_submission_date}>\n'
-        description += f'Last analysis date: <t:{vt_info.last_analysis_date}>\n'
-        description += f'[Full VirusTotal report]({vt_info.link})'
+        await ctx.send(embed=api_utils.create_vt_embed(vt_info))
+    
+    @commands.command(name='virus_total_file', aliases=['virustotalfile', 'vt_file', 'vtf'],
+                      brief='Get file information from VirusTotal',
+                      help='Scan and get information about a file from VirusTotal',
+                      usage='f!vt_file [zip password, if applicable]')
+    @commands.cooldown(1, 10, commands.BucketType.guild)
+    async def virus_total_file(self, ctx: CContext, zip_password: str | None = None):
+        if not ctx.message.attachments:
+            await ctx.send('You must attach a file to scan.')
+            return
         
-        embed = discord.Embed(title=title, colour=colour, description=description)
-        embed.add_field(name='Detections', value=f'{vt_info.malicious_detections}/{av_num} Security vendors flagged the file as malicious\n'
-                                                 f'{vt_info.suspicious_detections}/{av_num} Security vendors flagged the file as suspicious')
-        embed.add_field(name='Tags', value=", ".join(vt_info.tags))
-        await ctx.send(embed=embed)
+        if len(ctx.message.attachments) > 1:
+            await ctx.send('You can only scan one file at a time.')
+            return
+        
+        if ctx.message.attachments[0].size > MAX_VT_FILE_SIZE:
+            await ctx.send('Files above 100MiB are currently unsupported.')
+            return
+        
+        await ctx.send('Scanning file, this may take a while. You will be pinged when it is done.')
+        
+        with tempfile.NamedTemporaryFile('wb') as f:
+            logger.debug(f'Writing file to {f.name}')
+            # I would use Attachment.save() here, but it would try to open the file
+            # twice as it's not of type io.BufferedIOBase
+            written: int = f.write(await ctx.message.attachments[0].read())
+            logger.debug(f'Wrote {written} bytes to file')
+        
+            if written > MAX_VT_FILE_SIZE:
+                logger.warning('File was somehow over 100MiB, this should never happen')
+                # This should never happen, but just in case
+                await ctx.send('Files above 100MiB are currently unsupported.')
+                return
+            
+            result: VTInfo | str = await api_utils.upload_file_vt(f.file, zip_password)
+        
+        if isinstance(result, str):
+            await ctx.send(result)
+        else:
+            await ctx.send(embed=api_utils.create_vt_embed(result))
+        
+        await ctx.send(ctx.author.mention)
 
 async def setup(bot):
     await bot.add_cog(ApiCommands(bot))

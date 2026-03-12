@@ -1,14 +1,18 @@
+import hashlib
 import logging
 import os
 import random
-from typing import Any
+from typing import Any, IO, Literal, overload
 
 import discord.ext.commands
 import aiohttp
 from discord.ext.commands import Context
 import vt  # type: ignore[import-untyped]
 
+from command_utils.vt_utils import ZipVTClient
+
 logger = logging.getLogger('discord')
+
 
 def bytes_to_human_readable(size: int) -> str:
     if size < 1024:
@@ -19,6 +23,7 @@ def bytes_to_human_readable(size: int) -> str:
         return f"{size / 1024 ** 2:.1f} MiB"
     
     return f"{size / 1024 ** 3:.2f} GiB"
+
 
 class VTInfo:
     def __init__(self, data: dict[str, Any]):
@@ -52,6 +57,7 @@ class VTInfo:
             self.threat_classification = categories[0]['value']
             self.threat_label = attributes['popular_threat_classification']['suggested_threat_label']
 
+
 _session = aiohttp.ClientSession()
 
 
@@ -60,14 +66,13 @@ async def fetch_json(url: str, headers: dict[str, str] | None = None) -> tuple[i
         return response.status, await response.json()
 
 
-
-
-def _get_vt_client() -> vt.Client:
+def _get_vt_client() -> ZipVTClient:
+    logger.debug('Creating new VT client.')
     api_key = os.getenv('VT_API_KEY')
     if api_key is None:
         raise ValueError('VT_API_KEY environment variable not set')
     
-    return vt.Client(api_key)
+    return ZipVTClient(api_key)
 
 
 async def get_nasa_apod() -> dict[str, str]:
@@ -207,6 +212,35 @@ async def get_no(ctx: Context) -> None:
     
     await ctx.send(data["reason"])
 
+
+def create_vt_embed(vt_info: VTInfo) -> discord.Embed:
+    av_num = vt_info.total_AVs_run
+    description: str = ''
+    if vt_info.likely_malicious:
+        colour = discord.Colour.red()
+        title = 'This file is likely malicious'
+        description += f'Generic malware category: {vt_info.threat_classification.title()}\n'
+        description += f'Specific type: {vt_info.threat_label.capitalize()}\n'
+    else:
+        colour = discord.Colour.green()
+        title = 'This file is likely not malicious'
+    
+    description += f'File type: {vt_info.type_description}\n'
+    description += f'Reputation: {vt_info.reputation}\n'
+    description += f'Meaningful name: {vt_info.meaningful_name}\n'
+    description += f'Size: {vt_info.size}\n'
+    description += f'First submission date: <t:{vt_info.first_submission_date}>\n'
+    description += f'Last analysis date: <t:{vt_info.last_analysis_date}>\n'
+    description += f'[Full VirusTotal report]({vt_info.link})'
+    
+    embed = discord.Embed(title=title, colour=colour, description=description)
+    embed.add_field(name='Detections', value=f'{vt_info.malicious_detections}/{av_num} Security vendors flagged the file as malicious\n'
+                                             f'{vt_info.suspicious_detections}/{av_num} Security vendors flagged the file as suspicious',
+                    )
+    embed.add_field(name='Tags', value=", ".join(vt_info.tags))
+    return embed
+
+
 def handle_vt_error(response: dict[str, Any], err: str) -> str:
     error = response.get("error")
     if error is None:
@@ -221,11 +255,60 @@ def handle_vt_error(response: dict[str, Any], err: str) -> str:
     logger.error(f'Error getting VT info, unknown. Error: {err}, response: {response}')
     return error.get("message", "An unknown error has occurred.")
 
-async def get_vt_hash_info(given_hash: str) -> VTInfo | str:
-    async with _get_vt_client() as client:
-        response: dict[str, Any] = await (await client.get_async('/files/' + given_hash)).json_async()
+
+@overload
+async def get_vt_hash_info(given_hash: str, return_err: Literal[False] = False, client: Any = None) -> VTInfo | str:
+    ...
+
+
+@overload
+async def get_vt_hash_info(given_hash: str, return_err: Literal[True], client: Any = None) -> VTInfo | dict[str, Any]:
+    ...
+
+
+async def get_vt_hash_info(
+        given_hash: str,
+        return_err: bool = False,
+        client: vt.Client | None = None,
+        ) -> VTInfo | str | dict[str, Any]:
     
+    logger.debug(f'Getting VT info for hash: {given_hash}')
+    if client is None:
+        async with _get_vt_client() as client:
+            response: dict[str, Any] = await (await client.get_async('/files/' + given_hash)).json_async()
+            
+    else:
+        logger.debug('Using existing VT client for hash_info')
+        response = await (await client.get_async('/files/' + given_hash)).json_async()
+        
+    logger.debug(f'VT response for hash_info: {response}')
     try:
         return VTInfo(response['data'])
     except KeyError as e:
+        if return_err:
+            return response
         return handle_vt_error(response, f'{e}')
+
+
+async def upload_file_vt(f: IO[bytes], zip_password: str | None = None) -> VTInfo | str:
+    hasher = hashlib.sha256()
+    logger.debug(f'Uploading file to VT: {f.name}')
+    while chunk := f.read(65535):
+        hasher.update(chunk)
+    
+    sha256_hash = hasher.hexdigest()
+    logger.debug(f'SHA256 hash of file: {sha256_hash}')
+    async with _get_vt_client() as client:
+        resp = await get_vt_hash_info(sha256_hash, return_err=True, client=client)
+        if isinstance(resp, VTInfo):
+            return resp
+        
+        if resp.get("error", {}).get("code") == "QuotaExceededError":
+            return "API usage quota exceeded. Please try again later."
+        
+        if not resp.get("error", {}).get("code") == "NotFoundError":
+            return "An unknown error has occurred."
+        
+        await client.scan_file_async(f, wait_for_completion=True, zip_password=zip_password)
+        
+        return await get_vt_hash_info(sha256_hash, client=client)
