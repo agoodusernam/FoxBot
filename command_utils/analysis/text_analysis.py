@@ -383,15 +383,17 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
     
     # Check if a user was specified
     if to_analyse:
-        if to_analyse.type == discord.abc.User:
+        try:
             to_ana_user = await ctx.bot.fetch_user(to_analyse.id)
-            assert to_ana_user is not None
-            await analyse_single_user_cmd(ctx, to_ana_user, flag)
-            await new_msg.delete()
+            
+        except discord.NotFound:
+            await ctx.send("The input is not be a valid user.")
             return
         
-        await ctx.send("The input is not be a valid user.")
+        await analyse_single_user_cmd(ctx, to_ana_user, flag)
+        await new_msg.delete()
         return
+
     
     
     # Analyse all messages
