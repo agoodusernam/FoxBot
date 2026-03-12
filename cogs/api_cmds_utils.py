@@ -293,13 +293,16 @@ async def get_vt_hash_info(
 
 
 async def upload_file_vt(f: IO[bytes], zip_password: str | None = None) -> VTInfo | str:
+    f.seek(0)
     hasher = hashlib.sha256()
     logger.debug(f'Uploading file to VT: {f.name}')
+    hashed_len: int = 0
     while chunk := f.read(65535):
+        hashed_len += len(chunk)
         hasher.update(chunk)
     
     sha256_hash = hasher.hexdigest()
-    logger.debug(f'SHA256 hash of file: {sha256_hash}')
+    logger.debug(f'File read, hashed {hashed_len} bytes, SHA256 hash: {sha256_hash}')
     async with _get_vt_client() as client:
         resp = await get_vt_hash_info(sha256_hash, return_err=True, client=client)
         if isinstance(resp, VTInfo):
