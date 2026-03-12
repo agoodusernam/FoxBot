@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 import traceback
+from collections import Counter
 from typing import Any, NotRequired, TypeVar, TypedDict
 
 import discord
@@ -41,6 +42,9 @@ class UserVoiceAnalysisResult(TypedDict):
     total_seconds: int
     active_channel_lb: list[ChannelVoiceStats]
     top_companions: list[CompanionStats]
+    avg_session_duration: int
+    peak_activity_hour: NotRequired[int]
+    favorite_day: NotRequired[str]
 
 
 class VoiceAnalysisResult(TypedDict):
@@ -247,12 +251,32 @@ async def get_user_voice_statistics(user_id: str) -> UserVoiceAnalysisResult | N
             reverse=True,
     )
     
-    return UserVoiceAnalysisResult(
+    # Session duration stats
+    avg_session_duration = total_seconds // len(user_sessions) if user_sessions else 0
+    
+    # Peak activity hour and favorite day (only from timed sessions)
+    result_dict = UserVoiceAnalysisResult(
             user_id=user_id,
             total_seconds=total_seconds,
             active_channel_lb=top_channels,
             top_companions=top_companions,
+            avg_session_duration=avg_session_duration,
     )
+    
+    if timed_user_sessions:
+        hour_counter: Counter[int] = Counter()
+        day_counter: Counter[int] = Counter()
+        for s in timed_user_sessions:
+            start_ts = s['timestamp'] - s['duration_seconds']
+            start_dt = datetime.datetime.fromtimestamp(start_ts, tz=datetime.timezone.utc)
+            hour_counter[start_dt.hour] += s['duration_seconds']
+            day_counter[start_dt.weekday()] += s['duration_seconds']
+        
+        result_dict['peak_activity_hour'] = hour_counter.most_common(1)[0][0]
+        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        result_dict['favorite_day'] = day_names[day_counter.most_common(1)[0][0]]
+    
+    return result_dict
 
 
 async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool = False) -> None:
@@ -339,6 +363,13 @@ async def add_voice_analysis_for_user(ctx: CContext, member: discord.Object) -> 
         for i, companion in enumerate(stats['top_companions'][:5], 1):
             formatted_time = format_duration(companion['total_seconds'])
             result += f"{i}. {await try_resolve_uid(int(companion['user_id']), ctx.bot)}: {formatted_time}\n"
+    
+    result += f"\n**Average session duration:** {format_duration(stats['avg_session_duration'])}\n"
+    
+    if 'peak_activity_hour' in stats:
+        result += f"**Peak activity hour (UTC):** {stats['peak_activity_hour']}:00 - {stats['peak_activity_hour']}:59\n"
+    if 'favorite_day' in stats:
+        result += f"**Most active day of the week:** {stats['favorite_day']}\n"
     
     await ctx.send(result)
 
