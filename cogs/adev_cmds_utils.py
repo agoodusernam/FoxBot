@@ -30,7 +30,7 @@ def run_func(loop: asyncio.AbstractEventLoop, func_name: str, ctx: CContext) -> 
     return loop.run_until_complete(aexec(func_name, ctx))
 
 def add_to_env(key: str, value: str) -> None:
-    with open('../.env', 'a') as f:
+    with open('.env', 'a') as f:
         f.write(f'{key}={value}\n')
 
 async def shutdown(bot: CoolBot, update=False, restart=False, time: int = 0) -> None:
