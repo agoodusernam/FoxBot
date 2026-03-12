@@ -393,8 +393,6 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
         await analyse_single_user_cmd(ctx, to_ana_user, flag)
         await new_msg.delete()
         return
-
-    
     
     # Analyse all messages
     guild: discord.Guild | None = ctx.bot.get_guild(ctx.bot.config.guild_id)
@@ -570,6 +568,6 @@ async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
     
     # Add channel information
     for i, channel in enumerate(active_channels, 1):
-        msg += f"**{i}. {channel['channel_id']}** {channel['num_messages']} messages\n"
+        msg += f"**{i}**. <#{channel['channel_id']}> {channel['num_messages']} messages\n"
     
     await ctx.send(msg)
