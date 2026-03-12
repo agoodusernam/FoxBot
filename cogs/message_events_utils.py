@@ -8,7 +8,7 @@ import re
 import discord
 
 from command_utils.CContext import CoolBot
-from command_utils.analysis import DBMessage
+from command_utils.analysis.text_analysis import DBMessage
 from utils import utils, db_stuff
 
 logger = logging.getLogger('discord')

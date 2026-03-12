@@ -15,10 +15,10 @@ from discord.ext.tasks import loop
 from gtts import gTTS  # type: ignore[import-untyped]
 
 from cogs import fun_cmds_utils
-from command_utils import analysis
 from cogs import voice_events_utils
 import utils.utils
 from command_utils.CContext import CContext, CoolBot
+from command_utils.analysis import voice_analysis
 
 logger = logging.getLogger('discord')
 
@@ -278,12 +278,12 @@ class FunCommands(commands.Cog, name='Fun'):
             logger.error('VC leaderboard channel not found.')
             return
 
-        lb = await analysis.voice_activity_this_week()
+        lb = await voice_analysis.voice_activity_this_week()
 
         leaderboard_text = ''
 
         for i, stat in enumerate(lb):
-            formatted_time = analysis.format_duration(stat["total_seconds"])
+            formatted_time = voice_analysis.format_duration(stat["total_seconds"])
             leaderboard_text += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
 
         embed = discord.Embed(
@@ -294,7 +294,7 @@ class FunCommands(commands.Cog, name='Fun'):
         embed.timestamp = discord.utils.utcnow()
 
         await channel.send(embed=embed)
-        await analysis.generate_voice_activity_graph(channel, self.bot, lb, 5)
+        await voice_analysis.generate_voice_activity_graph(channel, self.bot, lb, 5)
     
     @discord.ext.tasks.loop(seconds=59)
     async def check_tts_leave(self) -> None:
@@ -342,12 +342,12 @@ class FunCommands(commands.Cog, name='Fun'):
             logger.error('VC leaderboard channel not found.')
             return
 
-        lb = await analysis.voice_activity_this_week(skip_cache=True)
+        lb = await voice_analysis.voice_activity_this_week(skip_cache=True)
 
         leaderboard_text = ''
 
         for i, stat in enumerate(lb):
-            formatted_time = analysis.format_duration(stat["total_seconds"])
+            formatted_time = voice_analysis.format_duration(stat["total_seconds"])
             leaderboard_text += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
 
         embed = discord.Embed(
@@ -358,7 +358,7 @@ class FunCommands(commands.Cog, name='Fun'):
         embed.timestamp = discord.utils.utcnow()
 
         await channel.send(embed=embed)
-        await analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False)
+        await voice_analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False)
     
     @discord.ext.tasks.loop(minutes=1)
     async def add_ping(self):

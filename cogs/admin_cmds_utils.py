@@ -4,7 +4,7 @@ import re
 import discord
 from discord.ext import commands
 
-from command_utils.analysis import DBMessage, DatetimeDBMessage
+from command_utils.analysis.text_analysis import DBMessage, DatetimeDBMessage
 
 
 def dt_from_timestamp(timestamp: float) -> datetime.datetime:

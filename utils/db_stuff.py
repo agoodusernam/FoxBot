@@ -15,7 +15,7 @@ from pymongo.asynchronous.mongo_client import AsyncMongoClient
 from pymongo.results import DeleteResult, InsertManyResult
 from pymongo.server_api import ServerApi
 
-from command_utils.analysis import DBMessage
+from command_utils.analysis.text_analysis import DBMessage
 
 logger = logging.getLogger('discord')
 

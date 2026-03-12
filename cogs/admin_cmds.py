@@ -11,9 +11,9 @@ from discord.ext.commands import guild_only
 
 import utils.utils
 from cogs.admin_cmds_utils import sort_by_timestamp, last_log
-from command_utils import analysis
 from command_utils.CContext import CContext, CoolBot
-from command_utils.analysis import DBMessage, DatetimeDBMessage
+from command_utils.analysis import text_analysis, voice_analysis
+from command_utils.analysis.text_analysis import DBMessage, DatetimeDBMessage
 from command_utils.checks import is_admin
 from config import bot_config
 from utils import db_stuff
@@ -108,7 +108,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  
     async def analyse(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
-        await analysis.format_analysis(ctx, graph=False, to_analyse=user, flag=args)
+        await text_analysis.format_analysis(ctx, graph=False, to_analyse=user, flag=args)
     
     @commands.command(name='analyse_graph', aliases=['anag'],
                       brief='Analyze server message data with graphs',
@@ -117,7 +117,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)  
     async def analyse_graph(self, ctx: CContext,user: typing.Optional[discord.Object] = None, *, args: str = ''):
-        await analysis.format_analysis(ctx, graph=True, to_analyse=user, flag=args)
+        await text_analysis.format_analysis(ctx, graph=True, to_analyse=user, flag=args)
     
     @commands.command(name='analyse_voice', aliases=['anavc'],
                       brief='Analyze voice channel usage',
@@ -130,7 +130,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         if args.strip() == '-il':
             include_left = True
             
-        await analysis.format_voice_analysis(ctx, graph=False, user=user, include_left=include_left)
+        await voice_analysis.format_voice_analysis(ctx, graph=False, user=user, include_left=include_left)
     
     @commands.command(name='analyse_vc_graph', aliases=['anavcg'],
                       brief='Analyze server message data with graphs',
@@ -143,7 +143,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         if args.strip() == '-il':
             include_left = True
         
-        await analysis.format_voice_analysis(ctx, graph=True, user=user, include_left=include_left)
+        await voice_analysis.format_voice_analysis(ctx, graph=True, user=user, include_left=include_left)
     
     @commands.command(name='time_in_vc', aliases=["tiv"],
             brief="Get the time spent in a voice channel",
@@ -152,7 +152,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.user) 
     async def time_in_vc(self, ctx: CContext, user: discord.User, channel: discord.VoiceChannel):
-        await analysis.user_time_in_channel(ctx, user, channel)
+        await voice_analysis.user_time_in_channel(ctx, user, channel)
         
     
     @commands.command(name='blacklist',
@@ -418,7 +418,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                            delete_after=ctx.bot.del_after)
             return
         
-        t_messages: list[DBMessage] = await analysis.remove_invalid_messages(await db_stuff.cached_download_all())
+        t_messages: list[DBMessage] = await text_analysis.remove_invalid_messages(await db_stuff.cached_download_all())
         t_messages = [msg for msg in t_messages if msg['author_id'] == str(member.id)]
         messages: list[DatetimeDBMessage] = sort_by_timestamp(t_messages)[:number_of_messages]
         if not messages:
