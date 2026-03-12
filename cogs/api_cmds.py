@@ -157,7 +157,7 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
                 await ctx.send('Files above 100MiB are currently unsupported.')
                 return
             
-            result: VTInfo | str = await api_utils.upload_file_vt(f.file, zip_password)
+            result: VTInfo | str = await api_utils.upload_file_vt(f, zip_password)
         
         if isinstance(result, str):
             await ctx.send(result)
