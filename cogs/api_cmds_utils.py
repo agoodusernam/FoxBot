@@ -285,7 +285,9 @@ async def get_vt_hash_info(
     try:
         return VTInfo(response['data'])
     except KeyError as e:
+        logger.error(f'Error getting VT info, key error. Error: {e}, response: {response}')
         if return_err:
+            logger.debug('Returning VT error response')
             return response
         return handle_vt_error(response, f'{e}')
 
@@ -301,12 +303,15 @@ async def upload_file_vt(f: IO[bytes], zip_password: str | None = None) -> VTInf
     async with _get_vt_client() as client:
         resp = await get_vt_hash_info(sha256_hash, return_err=True, client=client)
         if isinstance(resp, VTInfo):
+            logger.debug('File already scanned, returning VT info')
             return resp
         
         if resp.get("error", {}).get("code") == "QuotaExceededError":
+            logger.warning('API usage quota exceeded.')
             return "API usage quota exceeded. Please try again later."
         
         if not resp.get("error", {}).get("code") == "NotFoundError":
+            logger.error(f'Error uploading file to VT, unknown error. Error: {resp}')
             return "An unknown error has occurred."
         
         await client.scan_file_async(f, wait_for_completion=True, zip_password=zip_password)
