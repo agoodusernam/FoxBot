@@ -563,11 +563,11 @@ async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
         f"characters)\n"
         f"Leaderboard position: {result['active_users_lb_position']}\n"
         f"Most recent message sent at: <t:{result['most_recent_message']}>\n"
-        f"Top {num_channels} most active channels:\n"
+        f"**Top {num_channels} most active channels**\n"
     )
     
     # Add channel information
     for i, channel in enumerate(active_channels, 1):
-        msg += f"**{i}**. <#{channel['channel_id']}> {channel['num_messages']} messages\n"
+        msg += f"{i}. <#{channel['channel_id']}> {channel['num_messages']} messages\n"
     
     await ctx.send(msg)
