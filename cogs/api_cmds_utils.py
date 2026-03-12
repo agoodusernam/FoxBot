@@ -287,6 +287,7 @@ async def get_vt_hash_info(
 
 
 async def upload_file_vt(f: IO[bytes], zip_password: str | None = None) -> VTInfo | str:
+    f.seek(0)
     hasher = hashlib.sha256()
     logger.debug(f'Uploading file to VT: {f.name}')
     hashed_len: int = 0
@@ -310,6 +311,7 @@ async def upload_file_vt(f: IO[bytes], zip_password: str | None = None) -> VTInf
         logger.error(f'Error uploading file to VT, unknown error. Error: {resp}')
         return "An unknown error has occurred."
     
+    f.seek(0)
     async with _get_vt_client() as client:
         await client.scan_file_async(f, wait_for_completion=True, zip_password=zip_password)
     
