@@ -3,6 +3,7 @@ import os
 import tempfile
 from copy import deepcopy
 from io import UnsupportedOperation
+from pathlib import Path
 from typing import Final
 
 import discord
@@ -143,20 +144,21 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
             return
         
         await ctx.send('Scanning file, this may take a while. You will be pinged when it is done.')
-        
-        with tempfile.NamedTemporaryFile('w+b') as f:
-            logger.debug(f'Writing file to {f.name}')
-            # I would use Attachment.save() here, but it would try to open the file
-            # twice as it's not of type io.BufferedIOBase
-            written: int = f.write(await ctx.message.attachments[0].read())
-            logger.debug(f'Wrote {written} bytes to file')
-            if written > MAX_VT_FILE_SIZE:
-                logger.warning('File was somehow over 100MiB, this should never happen')
-                # This should never happen, but just in case
-                await ctx.send('Files above 100MiB are currently unsupported.')
-                return
-            
-            result: VTInfo | str = await api_utils.upload_file_vt(f.file, zip_password)
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
+            file_path: Path = Path(d) / ctx.message.attachments[0].filename
+            with open(file_path, "w+b") as f:
+                logger.debug(f'Writing file to {file_path}')
+                # I would use Attachment.save() here, but it would try to open the file
+                # twice as it's not of type io.BufferedIOBase
+                written: int = f.write(await ctx.message.attachments[0].read())
+                logger.debug(f'Wrote {written} bytes to file')
+                if written > MAX_VT_FILE_SIZE:
+                    # This should never happen, but just in case
+                    logger.warning('File was somehow over 100MiB, this should never happen')
+                    await ctx.send('Files above 100MiB are currently unsupported.')
+                    return
+                
+                result: VTInfo | str = await api_utils.upload_file_vt(f, zip_password)
         
         if isinstance(result, str):
             await ctx.send(result)
