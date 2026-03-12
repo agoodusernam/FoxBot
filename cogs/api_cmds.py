@@ -150,7 +150,7 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
             # twice as it's not of type io.BufferedIOBase
             written: int = f.write(await ctx.message.attachments[0].read())
             logger.debug(f'Wrote {written} bytes to file')
-        
+            f.seek(0)
             if written > MAX_VT_FILE_SIZE:
                 logger.warning('File was somehow over 100MiB, this should never happen')
                 # This should never happen, but just in case
