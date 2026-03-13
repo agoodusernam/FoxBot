@@ -3,6 +3,7 @@ import copy
 import datetime
 import logging
 import os
+import statistics
 import string
 import traceback
 from typing import Any, Literal, Mapping, NotRequired, TypedDict
@@ -44,6 +45,7 @@ class WordStats(TypedDict):
     most_common_word_count: int
     total_unique_words: int
     average_length: float
+    vocabulary_diversity: float
 
 
 class ChannelMessageStats(TypedDict):
@@ -64,9 +66,14 @@ class MessageAnalysisResult(TypedDict):
     most_common_word_count: int
     total_unique_words: int
     average_length: float
+    vocabulary_diversity: float
     active_users_lb: list[UserMessageStats]
     active_channels_lb: list[ChannelMessageStats]
     total_users: int
+    median_message_length: float
+    longest_silence: str
+    messages_per_day: float
+    average_words_per_message: float
 
 
 class UserMessageAnalysisResult(TypedDict):
@@ -75,9 +82,14 @@ class UserMessageAnalysisResult(TypedDict):
     most_common_word_count: int
     total_unique_words: int
     average_length: float
+    vocabulary_diversity: float
     active_channels_lb: list[ChannelMessageStats]
     active_users_lb_position: int
     most_recent_message: int | Literal['N/A']
+    median_message_length: float
+    longest_silence: str
+    messages_per_day: float
+    average_words_per_message: float
 
 
 EXCLUDED_USER_IDS = ['1107579143140413580']
@@ -214,12 +226,18 @@ def analyse_word_stats(content_list: list[str]) -> WordStats | None:
     # Calculate average word length
     avg_length = sum(len(word) for word in unique_words) / len(unique_words) if unique_words else 0
     
+    # Calculate vocabulary diversity: unique words / total words * 100
+    vocabulary_diversity = (len(unique_words) / len(all_words)) * 100 if all_words else 0.0
+    
     return WordStats(
             most_common_word=most_common_word,
             most_common_word_count=most_common_count,
             total_unique_words=len(unique_words),
             average_length=avg_length,
+            vocabulary_diversity=vocabulary_diversity,
     )
+
+
 
 
 def get_channel_stats(messages: list[DBMessage]) -> list[ChannelMessageStats]:
@@ -277,6 +295,35 @@ async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> Mes
     # Get channel stats
     active_channels = get_channel_stats(valid_messages)
     
+    lengths: list[int] = [len(c) for c in content_list]
+    median_length: float = statistics.median(lengths) if lengths else 0.0
+    
+    word_counts: list[int] = [len(c.split()) for c in content_list]
+    avg_words: float = sum(word_counts) / len(word_counts) if word_counts else 0.0
+    
+    timestamps: list[float] = sorted(msg['timestamp'] for msg in valid_messages)
+    longest_silence_str: str = 'N/A'
+    if len(timestamps) >= 2:
+        max_gap: float = max(timestamps[i + 1] - timestamps[i] for i in range(len(timestamps) - 1))
+        gap_td: datetime.timedelta = datetime.timedelta(seconds=max_gap)
+        days: int = gap_td.days
+        hours, remainder = divmod(gap_td.seconds, 3600)
+        minutes: int = remainder // 60
+        parts = []
+        if days:
+            parts.append(f"{days}d")
+        if hours:
+            parts.append(f"{hours}h")
+        if minutes:
+            parts.append(f"{minutes}m")
+        longest_silence_str = ' '.join(parts) if parts else '<1m'
+    
+    messages_per_day: float = 0.0
+    if len(timestamps) >= 2:
+        span_days: float = (timestamps[-1] - timestamps[0]) / 86400
+        if span_days > 0:
+            messages_per_day = len(valid_messages) / span_days
+    
     return MessageAnalysisResult(
             total_messages=total_messages,
             total_valid_messages=len(valid_messages),
@@ -284,9 +331,14 @@ async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> Mes
             most_common_word_count=word_stats['most_common_word_count'],
             total_unique_words=word_stats['total_unique_words'],
             average_length=word_stats['average_length'],
+            vocabulary_diversity=word_stats['vocabulary_diversity'],
             active_users_lb=active_users,
             active_channels_lb=active_channels,
             total_users=len(user_message_count),
+            median_message_length=median_length,
+            longest_silence=longest_silence_str,
+            messages_per_day=messages_per_day,
+            average_words_per_message=avg_words,
     )
 
 
@@ -346,15 +398,49 @@ async def analyse_user_messages(member: discord.User, time_filter: str | None = 
              if user['user_id'] == user_id_str), 0,
     )
     
+    lengths: list[int] = [len(c) for c in content_list]
+    median_length: float = statistics.median(lengths) if lengths else 0.0
+    
+    word_counts: list[int] = [len(c.split()) for c in content_list]
+    avg_words: float = sum(word_counts) / len(word_counts) if word_counts else 0.0
+    
+    timestamps: list[float] = sorted(msg['timestamp'] for msg in messages_by_user)
+    longest_silence_str: str = 'N/A'
+    if len(timestamps) >= 2:
+        max_gap: float = max(timestamps[i + 1] - timestamps[i] for i in range(len(timestamps) - 1))
+        gap_td: datetime.timedelta = datetime.timedelta(seconds=max_gap)
+        days: int = gap_td.days
+        hours, remainder = divmod(gap_td.seconds, 3600)
+        minutes: int = remainder // 60
+        parts = []
+        if days:
+            parts.append(f"{days}d")
+        if hours:
+            parts.append(f"{hours}h")
+        if minutes:
+            parts.append(f"{minutes}m")
+        longest_silence_str = ' '.join(parts) if parts else '<1m'
+    
+    messages_per_day: float = 0.0
+    if len(timestamps) >= 2:
+        span_days: float = (timestamps[-1] - timestamps[0]) / 86400
+        if span_days > 0:
+            messages_per_day = len(messages_by_user) / span_days
+    
     return UserMessageAnalysisResult(
             total_messages=len(messages_by_user),
             most_common_word=word_stats['most_common_word'],
             most_common_word_count=word_stats['most_common_word_count'],
             total_unique_words=word_stats['total_unique_words'],
             average_length=word_stats['average_length'],
+            vocabulary_diversity=word_stats['vocabulary_diversity'],
             active_channels_lb=active_channels,
             active_users_lb_position=lb_position,
             most_recent_message=int(most_recent.timestamp()) if most_recent else 'N/A',
+            median_message_length=median_length,
+            longest_silence=longest_silence_str,
+            messages_per_day=messages_per_day,
+            average_words_per_message=avg_words,
     )
 
 
@@ -426,11 +512,10 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
         activity_ratio = f"({round((result['total_users'] / guild.member_count) * 100, 2)}% activity)"
     
     msg = (
-        f"{result['total_messages']} total messages analysed\n" +
-        f"Most common word: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n" +
-        f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} characters)\n"
-        f"Total users: {result['total_users']} {activity_ratio}\n"
-        f"On average every active user has sent {round(result['total_valid_messages'] / result['total_users'], 2)} messages\n"
+        "**Text Activity Analysis**\n" +
+        f"**Total messages**: {result['total_messages']}\n" +
+        f"**Total users**: {result['total_users']} {activity_ratio}\n" +
+        f"**Average messages per active user**: {round(result['total_valid_messages'] / result['total_users'], 2)}\n" +
         f"Top 5 most active users:\n"
     )
     
@@ -442,6 +527,15 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
     msg += '\nTop 5 most active channels:\n'
     for i, channel in enumerate(top_5_channels, start=1):
         msg += f"**{i}. {await try_resolve_channel_id(channel['channel_id'], guild)}** {channel['num_messages']} messages\n"
+    
+    msg += f"**Most common word**: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n"
+    msg += f"**Unique words**: {result['total_unique_words']}\n"
+    msg += f"**Vocabulary diversity**: {result['vocabulary_diversity']:.2f}%\n"
+    msg += f"**Average word length**: {result['average_length']:.2f} characters\n"
+    msg += f"**Median message length**: {result['median_message_length']:.0f} characters\n"
+    msg += f"**Average words per message**: {result['average_words_per_message']:.2f}\n"
+    msg += f"**Messages per day**: {result['messages_per_day']:.2f}\n"
+    msg += f"**Longest silence**: {result['longest_silence']}"
     
     # Send the message
     await new_msg.edit(content=msg)
@@ -557,17 +651,24 @@ async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
     
     # Format message
     msg = (
-        f"{result['total_messages']} messages found for **{member.name}**\n"
-        f"Most common word: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n"
-        f"({result['total_unique_words']} unique words, average length: {result['average_length']:.2f} "
-        f"characters)\n"
-        f"Leaderboard position: {result['active_users_lb_position']}\n"
-        f"Most recent message sent at: <t:{result['most_recent_message']}>\n"
+        f"**Message Activity for {member.display_name}**"
+        f"**Total messages sent**: {result['total_messages']}\n"
+        f"**Leaderboard position**: {result['active_users_lb_position']}\n"
         f"**Top {num_channels} most active channels**\n"
     )
     
     # Add channel information
     for i, channel in enumerate(active_channels, 1):
         msg += f"{i}. <#{channel['channel_id']}> {channel['num_messages']} messages\n"
+    
+    msg += f"**Most common word**: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n"
+    msg += f"**Unique words**: {result['total_unique_words']}\n"
+    msg += f"**Vocabulary diversity**: {result['vocabulary_diversity']:.2f}%\n"
+    msg += f"**Average word length**: {result['average_length']:.2f} characters\n"
+    msg += f"**Median message length**: {result['median_message_length']:.0f} characters\n"
+    msg += f"**Average words per message**: {result['average_words_per_message']:.2f}\n"
+    msg += f"**Messages per day**: {result['messages_per_day']:.2f}\n"
+    msg += f"**Longest silence**: {result['longest_silence']}\n"
+    msg += f"**Most recent message sent at**: <t:{result['most_recent_message']}>\n"
     
     await ctx.send(msg)
