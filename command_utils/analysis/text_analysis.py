@@ -2,10 +2,10 @@ import collections
 import copy
 import datetime
 import logging
-import os
 import statistics
 import string
-import traceback
+import tempfile
+from pathlib import Path
 from typing import Any, Literal, Mapping, NotRequired, TypedDict
 
 import discord
@@ -664,23 +664,16 @@ async def generate_user_activity_graph(ctx: CContext, result: MessageAnalysisRes
     plt.tight_layout()
     
     # Save and send the graph
-    graph_file = 'top_active_users.png'
-    plt.savefig(graph_file)
-    plt.close()
-    
-    await ctx.send(file=discord.File(graph_file))
-    
-    # Clean up the file
-    try:
-        os.remove(graph_file)
-    
-    except FileNotFoundError:
-        pass
-    
-    except OSError:
-        logger.warning(f'Error deleting graph file {graph_file}: {traceback.format_exc()}')
-        # Ignore if file deletion fails, we'd rather keep the bot running and clean up manually later
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        graph_file = Path('top_active_users.png')
+        plt.savefig(temp_dir_path / graph_file)
+        plt.close()
+        
+        await ctx.send(file=discord.File(graph_file))
 
+    
+    
 
 async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
         time_filter: str | None = None) -> None:

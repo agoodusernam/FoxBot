@@ -1,8 +1,10 @@
 import datetime
 import logging
-import os
+import tempfile
 import traceback
 from collections import Counter
+from pathlib import Path
+from statistics import median
 from typing import Any, NotRequired, TypeVar, TypedDict
 
 import discord
@@ -43,6 +45,9 @@ class UserVoiceAnalysisResult(TypedDict):
     active_channel_lb: list[ChannelVoiceStats]
     top_companions: list[CompanionStats]
     avg_session_duration: int
+    total_sessions: int
+    avg_users_per_session: float
+    median_session_duration: int
     peak_activity_hour: NotRequired[int]
     favorite_day: NotRequired[str]
 
@@ -67,6 +72,8 @@ class VoiceAnalysisResult(TypedDict):
     best_duo: NotRequired[DuoStats]
     avg_users_per_session: NotRequired[float]
     total_sessions: NotRequired[int]
+    avg_session_duration: NotRequired[int]
+    median_session_duration: NotRequired[int]
     weekly_active: NotRequired[WeeklyActiveStats]
 
 T = TypeVar('T', UserVoiceStats, ChannelVoiceStats, ChannelVoiceStats)
@@ -289,6 +296,11 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
     else:
         avg_users_per_session = 1.0
 
+    # Average and median session duration
+    session_durations = [s['duration_seconds'] for s in sessions]
+    avg_session_duration = sum(session_durations) // len(session_durations) if session_durations else 0
+    median_session_duration = int(median(session_durations)) if session_durations else 0
+
     # Weekly unique active users
     now = datetime.datetime.now(datetime.timezone.utc)
     one_week_ago = now - datetime.timedelta(days=7)
@@ -316,6 +328,8 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
             active_channels_lb=top_channels,
             total_sessions=total_session_count,
             avg_users_per_session=avg_users_per_session,
+            avg_session_duration=avg_session_duration,
+            median_session_duration=median_session_duration,
             weekly_active=weekly_active,
     )
     if best_duo:
@@ -397,7 +411,31 @@ async def get_user_voice_statistics(user_id: str) -> UserVoiceAnalysisResult | N
     
     # Session duration stats
     avg_session_duration = total_seconds // len(user_sessions) if user_sessions else 0
-    
+    median_session_duration = int(median([s['duration_seconds'] for s in user_sessions])) if user_sessions else 0
+    total_sessions = len(user_sessions)
+
+    # Average users per session for this user
+    timed_user_sessions_for_avg = [s for s in user_sessions if 'timestamp' in s]
+    all_timed = [s for s in sessions if 'timestamp' in s]
+    if timed_user_sessions_for_avg:
+        concurrent_counts_user: list[int] = []
+        for s in timed_user_sessions_for_avg:
+            s_start = s['timestamp'] - s['duration_seconds']
+            count: int = 0
+            for other in all_timed:
+                if other is s:
+                    continue
+                if other['channel_id'] != s['channel_id']:
+                    continue
+                o_start = other['timestamp'] - other['duration_seconds']
+                o_end = other['timestamp']
+                if o_start <= s_start < o_end:
+                    count += 1
+            concurrent_counts_user.append(count + 1)
+        avg_users_per_session = sum(concurrent_counts_user) / len(concurrent_counts_user)
+    else:
+        avg_users_per_session = 1.0
+
     # Peak activity hour and favorite day (only from timed sessions)
     result_dict = UserVoiceAnalysisResult(
             user_id=user_id,
@@ -405,6 +443,9 @@ async def get_user_voice_statistics(user_id: str) -> UserVoiceAnalysisResult | N
             active_channel_lb=top_channels,
             top_companions=top_companions,
             avg_session_duration=avg_session_duration,
+            total_sessions=total_sessions,
+            avg_users_per_session=avg_users_per_session,
+            median_session_duration=median_session_duration,
     )
     
     if timed_user_sessions:
@@ -475,6 +516,10 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
         result += f"**Total sessions:** {stats['total_sessions']}\n"
     if 'avg_users_per_session' in stats:
         result += f"**Average users per session:** {stats['avg_users_per_session']:.1f}\n"
+    if 'avg_session_duration' in stats:
+        result += f"**Average session length:** {format_duration(stats['avg_session_duration'])}\n"
+    if 'median_session_duration' in stats:
+        result += f"**Median session length:** {format_duration(stats['median_session_duration'])}\n"
 
     # Weekly active users
     if 'weekly_active' in stats:
@@ -530,7 +575,10 @@ async def add_voice_analysis_for_user(ctx: CContext, member: discord.Object) -> 
             formatted_time = format_duration(companion['total_seconds'])
             result += f"{i}. {await try_resolve_uid(int(companion['user_id']), ctx.bot)}: {formatted_time}\n"
     
-    result += f"\n**Average session duration:** {format_duration(stats['avg_session_duration'])}\n"
+    result += f"\n**Total sessions:** {stats['total_sessions']}\n"
+    result += f"**Average users per session:** {stats['avg_users_per_session']:.1f}\n"
+    result += f"**Average session duration:** {format_duration(stats['avg_session_duration'])}\n"
+    result += f"**Median session duration:** {format_duration(stats['median_session_duration'])}\n"
     
     if 'peak_activity_hour' in stats:
         result += f"**Peak activity hour (UTC):** {stats['peak_activity_hour']}:00 - {stats['peak_activity_hour']}:59\n"
@@ -623,17 +671,14 @@ async def generate_voice_activity_graph(channel: discord.TextChannel, bot: CoolB
         spine.set_color('#555555')
     plt.tight_layout()
     
-    graph_file = 'top_voice_users.png'
-    plt.savefig(graph_file)
-    plt.close()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        graph_file = Path('top_voice_users.png')
+        plt.savefig(temp_dir_path / graph_file)
+        plt.close()
     
-    await channel.send(file=discord.File(graph_file))
+        await channel.send(file=discord.File(graph_file))
     
-    try:
-        os.remove(graph_file)
-    except OSError:
-        logger.warning(f'Could not remove graph file {graph_file}: {traceback.format_exc()}')
-
 
 async def user_time_in_channel(ctx: CContext, user: discord.User, channel: discord.VoiceChannel) -> None:
     sessions = await get_valid_voice_sessions()
