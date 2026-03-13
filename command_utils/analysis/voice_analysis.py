@@ -47,11 +47,27 @@ class UserVoiceAnalysisResult(TypedDict):
     favorite_day: NotRequired[str]
 
 
+class DuoStats(TypedDict):
+    user_id_1: str
+    user_id_2: str
+    total_seconds: int
+
+
+class WeeklyActiveStats(TypedDict):
+    this_week: int
+    last_week: int
+    activity_ratio: float  # this_week / total_users
+
+
 class VoiceAnalysisResult(TypedDict):
     total_seconds: int
     total_users: int
     active_users_lb: list[UserVoiceStats]
     active_channels_lb: list[ChannelVoiceStats]
+    best_duo: NotRequired[DuoStats]
+    avg_users_per_session: NotRequired[float]
+    total_sessions: NotRequired[int]
+    weekly_active: NotRequired[WeeklyActiveStats]
 
 T = TypeVar('T', UserVoiceStats, ChannelVoiceStats, ChannelVoiceStats)
 
@@ -172,12 +188,88 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
             reverse=True,
     )
     
-    return VoiceAnalysisResult(
+    # Best duo calculation
+    timed_sessions = [s for s in sessions if 'timestamp' in s]
+    duo_seconds: dict[tuple[str, str], int] = {}
+    for i, s1 in enumerate(timed_sessions):
+        s1_start = s1['timestamp'] - s1['duration_seconds']
+        s1_end = s1['timestamp']
+        for s2 in timed_sessions[i + 1:]:
+            if s1['user_id'] == s2['user_id']:
+                continue
+            if s1['channel_id'] != s2['channel_id']:
+                continue
+            s2_start = s2['timestamp'] - s2['duration_seconds']
+            s2_end = s2['timestamp']
+            overlap = min(s1_end, s2_end) - max(s1_start, s2_start)
+            if overlap > 0:
+                uid1, uid2 = sorted([s1['user_id'], s2['user_id']])
+                pair: tuple[str, str] = (uid1, uid2)
+                duo_seconds[pair] = duo_seconds.get(pair, 0) + overlap
+
+    best_duo: DuoStats | None = None
+    if duo_seconds:
+        best_pair = max(duo_seconds, key=lambda k: duo_seconds[k])
+        best_duo = DuoStats(user_id_1=best_pair[0], user_id_2=best_pair[1], total_seconds=duo_seconds[best_pair])
+
+    # Average users per session and total sessions
+    # A "session" is approximated by grouping overlapping timed sessions per channel
+    total_session_count = len(sessions)
+    # Count unique users per channel-session overlap window is complex;
+    # simpler: for each session, count how many other users were in the same channel at the same time
+    # Average users per session = average number of concurrent users when a session starts
+    if timed_sessions:
+        concurrent_counts: list[int] = []
+        for s in timed_sessions:
+            s_start = s['timestamp'] - s['duration_seconds']
+            count: int = 0
+            for other in timed_sessions:
+                if other is s:
+                    continue
+                if other['channel_id'] != s['channel_id']:
+                    continue
+                o_start = other['timestamp'] - other['duration_seconds']
+                o_end = other['timestamp']
+                if o_start <= s_start < o_end:
+                    count += 1
+            concurrent_counts.append(count + 1)  # +1 for the user themselves
+        avg_users_per_session = sum(concurrent_counts) / len(concurrent_counts)
+    else:
+        avg_users_per_session = 1.0
+
+    # Weekly unique active users
+    now = datetime.datetime.now(datetime.timezone.utc)
+    one_week_ago = now - datetime.timedelta(days=7)
+    two_weeks_ago = now - datetime.timedelta(days=14)
+    this_week_users: set[str] = set()
+    last_week_users: set[str] = set()
+    for s in timed_sessions:
+        session_time = datetime.datetime.fromtimestamp(s['timestamp'], datetime.timezone.utc)
+        if session_time >= one_week_ago:
+            this_week_users.add(s['user_id'])
+        elif session_time >= two_weeks_ago:
+            last_week_users.add(s['user_id'])
+
+    total_user_count = len(user_stats) if user_stats else 1
+    weekly_active = WeeklyActiveStats(
+        this_week=len(this_week_users),
+        last_week=len(last_week_users),
+        activity_ratio=len(this_week_users) / total_user_count,
+    )
+
+    result_dict = VoiceAnalysisResult(
             total_seconds=total_seconds_including_left if include_left else total_seconds,
             total_users=len(user_stats),
             active_users_lb=top_users,
             active_channels_lb=top_channels,
+            total_sessions=total_session_count,
+            avg_users_per_session=avg_users_per_session,
+            weekly_active=weekly_active,
     )
+    if best_duo:
+        result_dict['best_duo'] = best_duo
+
+    return result_dict
 
 
 async def get_user_voice_statistics(user_id: str) -> UserVoiceAnalysisResult | None:
@@ -314,10 +406,32 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
     
     total_time_formatted = format_duration(stats['total_seconds'])
     if include_left:
-        result += f"\n**Total time in voice channels, all time:** {total_time_formatted}"
+        result += f"\n**Total time in voice channels, all time:** {total_time_formatted}\n"
     else:
-        result += f"\n**Total time in voice channels:** {total_time_formatted}"
-    
+        result += f"\n**Total time in voice channels:** {total_time_formatted}\n"
+
+    # Best duo
+    if 'best_duo' in stats:
+        duo = stats['best_duo']
+        duo_time = format_duration(duo['total_seconds'])
+        user1 = await try_resolve_uid(int(duo['user_id_1']), ctx.bot)
+        user2 = await try_resolve_uid(int(duo['user_id_2']), ctx.bot)
+        result += f"\n**Best Duo:** {user1} & {user2} — {duo_time} together\n"
+
+    # Session stats
+    if 'total_sessions' in stats:
+        result += f"**Total sessions:** {stats['total_sessions']}\n"
+    if 'avg_users_per_session' in stats:
+        result += f"**Average users per session:** {stats['avg_users_per_session']:.1f}\n"
+
+    # Weekly active users
+    if 'weekly_active' in stats:
+        wa = stats['weekly_active']
+        diff = wa['this_week'] - wa['last_week']
+        trend = f"(+{diff})" if diff >= 0 else f"({diff})"
+        result += f"\n**Weekly unique active users:** {wa['this_week']} {trend} vs last week ({wa['last_week']})\n"
+        result += f"**Activity ratio:** {wa['activity_ratio']:.1%} of all users\n"
+
     await ctx.send(result)
     if graph:
         try:
