@@ -651,7 +651,7 @@ async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
     
     # Format message
     msg = (
-        f"**Message Activity for {member.display_name}**"
+        f"**Message Activity for {member.display_name}**\n"
         f"**Total messages sent**: {result['total_messages']}\n"
         f"**Leaderboard position**: {result['active_users_lb_position']}\n"
         f"**Top {num_channels} most active channels**\n"
