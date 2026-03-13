@@ -528,14 +528,14 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
     for i, channel in enumerate(top_5_channels, start=1):
         msg += f"**{i}. {await try_resolve_channel_id(channel['channel_id'], guild)}** {channel['num_messages']} messages\n"
     
-    msg += f"**Most common word**: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n"
-    msg += f"**Unique words**: {result['total_unique_words']}\n"
-    msg += f"**Vocabulary diversity**: {result['vocabulary_diversity']:.2f}%\n"
-    msg += f"**Average word length**: {result['average_length']:.2f} characters\n"
-    msg += f"**Median message length**: {result['median_message_length']:.0f} characters\n"
-    msg += f"**Average words per message**: {result['average_words_per_message']:.2f}\n"
-    msg += f"**Messages per day**: {result['messages_per_day']:.2f}\n"
-    msg += f"**Longest silence**: {result['longest_silence']}"
+    msg += f"\nMost common word: **\"{result['most_common_word']}\"** said **{result['most_common_word_count']}** times\n"
+    msg += f"Unique words: **{result['total_unique_words']}**\n"
+    msg += f"Vocabulary diversity: **{result['vocabulary_diversity']:.2f}%**\n"
+    msg += f"Average word length: **{result['average_length']:.2f} characters**\n"
+    msg += f"Median message length: **{result['median_message_length']:.0f} characters**\n"
+    msg += f"Average words per message: **{result['average_words_per_message']:.2f}**\n"
+    msg += f"Messages per day: **{result['messages_per_day']:.2f}**\n"
+    msg += f"Longest silence: **{result['longest_silence']}**"
     
     # Send the message
     await new_msg.edit(content=msg)
@@ -659,16 +659,16 @@ async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
     
     # Add channel information
     for i, channel in enumerate(active_channels, 1):
-        msg += f"{i}. <#{channel['channel_id']}> {channel['num_messages']} messages\n"
+        msg += f"**{i}. <#{channel['channel_id']}>** {channel['num_messages']} messages\n"
     
-    msg += f"**Most common word**: \"{result['most_common_word']}\" said {result['most_common_word_count']} times\n"
-    msg += f"**Unique words**: {result['total_unique_words']}\n"
-    msg += f"**Vocabulary diversity**: {result['vocabulary_diversity']:.2f}%\n"
-    msg += f"**Average word length**: {result['average_length']:.2f} characters\n"
-    msg += f"**Median message length**: {result['median_message_length']:.0f} characters\n"
-    msg += f"**Average words per message**: {result['average_words_per_message']:.2f}\n"
-    msg += f"**Messages per day**: {result['messages_per_day']:.2f}\n"
-    msg += f"**Longest silence**: {result['longest_silence']}\n"
-    msg += f"**Most recent message sent at**: <t:{result['most_recent_message']}>\n"
+    msg += f"\nMost common word: **\"{result['most_common_word']}\"** said **{result['most_common_word_count']}** times\n"
+    msg += f"Unique words: **{result['total_unique_words']}**\n"
+    msg += f"Vocabulary diversity: **{result['vocabulary_diversity']:.2f}%**\n"
+    msg += f"Average word length: **{result['average_length']:.2f} characters**\n"
+    msg += f"Median message length: **{result['median_message_length']:.0f} characters**\n"
+    msg += f"Average words per message: **{result['average_words_per_message']:.2f}**\n"
+    msg += f"Messages per day: **{result['messages_per_day']:.2f}**\n"
+    msg += f"Longest silence: **{result['longest_silence']}\n**"
+    msg += f"Most recent message sent at: **<t:{result['most_recent_message']}>**"
     
     await ctx.send(msg)
