@@ -66,8 +66,14 @@ async def _connect() -> AsyncMongoClient[dict[str, Any]] | None:
         logger.error(f"An error occurred while connecting to MongoDB: {e}")
         return None
 
-def synchronous_disconnect() -> None:
-    asyncio.run(disconnect())
+def synchronous_disconnect() -> bool:
+    try:
+        event_loop = asyncio.get_event_loop()
+    except RuntimeError:
+        # Generate an event loop if there isn't any.
+        event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(event_loop)
+    return event_loop.run_until_complete(disconnect())
 
 async def disconnect() -> bool:
     """
