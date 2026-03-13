@@ -97,6 +97,55 @@ def format_duration(seconds: int) -> str:
     return f"{seconds}s"
 
 
+def _merge_adjacent_sessions(sessions: list[DBVoiceSession], max_gap_seconds: int = 60) -> list[DBVoiceSession]:
+    """
+    Merge sessions from the same user and channel that are close together in time.
+    This handles the case where the bot restarts and creates two separate sessions
+    for what is effectively a single continuous voice session.
+    
+    Sessions are merged when the gap between one session's end and the next session's
+    start is within max_gap_seconds.
+    """
+    # Only timed sessions can be merged; keep untimed ones as-is
+    timed = [s for s in sessions if 'timestamp' in s]
+    untimed = [s for s in sessions if 'timestamp' not in s]
+    
+    if not timed:
+        return sessions
+    
+    # Sort by user_id, channel_id, then timestamp
+    timed.sort(key=lambda s: (s['user_id'], s['channel_id'], s['timestamp']))
+    
+    merged: list[DBVoiceSession] = []
+    current = timed[0]
+    
+    for next_session in timed[1:]:
+        same_user = current['user_id'] == next_session['user_id']
+        same_channel = current['channel_id'] == next_session['channel_id']
+        
+        if same_user and same_channel:
+            current_end = current['timestamp']
+            next_start = next_session['timestamp'] - next_session['duration_seconds']
+            gap = next_start - current_end
+            
+            if 0 <= gap <= max_gap_seconds:
+                # Merge: combine durations + gap, keep the later timestamp
+                current = DBVoiceSession(
+                    user_id=current['user_id'],
+                    channel_id=current['channel_id'],
+                    duration_seconds=current['duration_seconds'] + next_session['duration_seconds'] + gap,
+                    _id=current['_id'],
+                    timestamp=next_session['timestamp'],
+                )
+                continue
+        
+        merged.append(current)
+        current = next_session
+    
+    merged.append(current)
+    return untimed + merged
+
+
 async def remove_invalid_voice_sessions(sessions: list[dict[str, Any]]) -> tuple[list[DBVoiceSession], int] | None:
     required_keys = {'user_id', 'channel_id', 'duration_seconds'}
     valid_sessions: list[DBVoiceSession] = []
@@ -121,7 +170,10 @@ async def remove_invalid_voice_sessions(sessions: list[dict[str, Any]]) -> tuple
         
     if not valid_sessions:
         return None
-    return valid_sessions, total_seconds
+    
+    valid_sessions = _merge_adjacent_sessions(valid_sessions)
+    merged_total = sum(s['duration_seconds'] for s in valid_sessions)
+    return valid_sessions, merged_total
 
 
 async def get_valid_voice_sessions(skip_cache: bool = False) -> tuple[list[DBVoiceSession], int] | None:
