@@ -13,7 +13,7 @@ import utils.utils
 from cogs.admin_cmds_utils import sort_by_timestamp, last_log
 from command_utils.CContext import CContext, CoolBot
 from command_utils.analysis import text_analysis, voice_analysis
-from command_utils.analysis.text_analysis import DBMessage, DatetimeDBMessage
+from command_utils.analysis.text_analysis import DBMessage, DatetimeDBMessage, remove_invalid_messages
 from command_utils.checks import is_admin
 from config import bot_config
 from utils import db_stuff
@@ -418,7 +418,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                            delete_after=ctx.bot.del_after)
             return
         
-        t_messages: list[DBMessage] = await text_analysis.remove_invalid_messages(await db_stuff.cached_download_all())
+        all_messages: Any = await db_stuff.cached_download_all()
+        t_messages: list[DBMessage] = await remove_invalid_messages(all_messages)
         t_messages = [msg for msg in t_messages if msg['author_id'] == str(member.id)]
         messages: list[DatetimeDBMessage] = sort_by_timestamp(t_messages)[:number_of_messages]
         if not messages:

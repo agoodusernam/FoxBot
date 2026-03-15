@@ -465,7 +465,7 @@ async def analyse_user_messages(member: discord.User, time_filter: str | None = 
         avg_days = avg_gap_td.days
         avg_hours, avg_remainder = divmod(avg_gap_td.seconds, 3600)
         avg_minutes = avg_remainder // 60
-        avg_parts = []
+        avg_parts: list[str] = []
         if avg_days:
             avg_parts.append(f"{avg_days}d")
         if avg_hours:

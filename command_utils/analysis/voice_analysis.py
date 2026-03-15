@@ -153,7 +153,7 @@ def _merge_adjacent_sessions(sessions: list[DBVoiceSession], max_gap_seconds: in
     return untimed + merged
 
 
-async def remove_invalid_voice_sessions(sessions: list[dict[str, Any]]) -> tuple[list[DBVoiceSession], int] | None:
+async def remove_invalid_voice_sessions(sessions: list[dict[str, Any]], merge_sessions: bool = True) -> tuple[list[DBVoiceSession], int] | None:
     required_keys = {'user_id', 'channel_id', 'duration_seconds'}
     valid_sessions: list[DBVoiceSession] = []
     total_seconds: int = 0
@@ -178,18 +178,19 @@ async def remove_invalid_voice_sessions(sessions: list[dict[str, Any]]) -> tuple
     if not valid_sessions:
         return None
     
-    valid_sessions = _merge_adjacent_sessions(valid_sessions)
+    if merge_sessions:
+        valid_sessions = _merge_adjacent_sessions(valid_sessions)
     merged_total = sum(s['duration_seconds'] for s in valid_sessions)
     return valid_sessions, merged_total
 
 
-async def get_valid_voice_sessions(skip_cache: bool = False) -> tuple[list[DBVoiceSession], int] | None:
+async def get_valid_voice_sessions(skip_cache: bool = False, merge_sessions: bool = True) -> tuple[list[DBVoiceSession], int] | None:
     sessions = await db_stuff.cached_download_voice_sessions(skip_cache)
     
     if not sessions:
         return None
     
-    return await remove_invalid_voice_sessions(sessions)
+    return await remove_invalid_voice_sessions(sessions, merge_sessions)
 
 
 async def get_voice_statistics(include_left: bool = False, guild: discord.Guild | None = None) -> VoiceAnalysisResult | None:
@@ -697,14 +698,14 @@ async def user_time_in_channel(ctx: CContext, user: discord.User, channel: disco
     await ctx.send(f"{user.display_name} has been in {channel.mention} for {format_duration(total_seconds)}")
 
 
-async def all_sessions_this_week(skip_cache: bool = False) -> list[DBVoiceSession]:
+async def all_sessions_this_week(skip_cache: bool = False, merge_sessions: bool = True) -> list[DBVoiceSession]:
     """
     Retrieve all voice sessions from the past week.
 
     Returns:
         List of voice session dictionaries
     """
-    sessions = await get_valid_voice_sessions(skip_cache)
+    sessions = await get_valid_voice_sessions(skip_cache, merge_sessions)
     
     if not sessions:
         return []
@@ -730,8 +731,8 @@ async def all_sessions_this_week(skip_cache: bool = False) -> list[DBVoiceSessio
     return valid_sessions
 
 
-async def voice_activity_this_week(skip_cache: bool = False) -> list[UserVoiceStats]:
-    sessions = await all_sessions_this_week(skip_cache)
+async def voice_activity_this_week(skip_cache: bool = False, merge_sessions: bool = False) -> list[UserVoiceStats]:
+    sessions = await all_sessions_this_week(skip_cache, merge_sessions)
     stats: dict[str, UserVoiceStats] = {}
     for session in sessions:
         user_id = session['user_id']
