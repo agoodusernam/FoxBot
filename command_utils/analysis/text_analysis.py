@@ -241,12 +241,14 @@ def analyse_word_stats(content_list: list[str]) -> WordStats | None:
         return None
     
     # Extract and normalise all words
-    all_words = [word.lower().strip() for msg in content_list for word in msg.split() if word and is_valid_word(word.strip().lower())]
+    all_words = [word.lower().strip() for msg in content_list for word in msg.split() if word]
     if not all_words:
         return None
     
+    interesting_words = [word for word in all_words if is_valid_word(word)]
+    
     # Calculate statistics
-    word_count = collections.Counter(all_words)
+    word_count = collections.Counter(interesting_words)
     top_3 = word_count.most_common(3)
     most_common_word, most_common_count = top_3[0]
     unique_words = set(all_words)
