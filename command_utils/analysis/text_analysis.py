@@ -376,7 +376,7 @@ async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> Mes
     )
 
 
-async def analyse_user_messages(member: discord.User, time_filter: str | None = None) -> UserMessageAnalysisResult | str:
+async def analyse_user_messages(member: discord.User | discord.Member, time_filter: str | None = None) -> UserMessageAnalysisResult | str:
     """
     analyse messages from a specific user.
 

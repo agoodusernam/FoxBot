@@ -163,7 +163,31 @@ class FunCommands(commands.Cog, name='Fun'):
         total_lines, total_files = utils.utils.loc_total()
         
         await ctx.send(f'There are {total_lines} lines of code across {total_files} Python files in this bot\'s source code.')
+    
+    @commands.command(name='user_info',
+                      help='Get info about a user',
+                      usage='f!user_info <user>')
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    async def user_info(self, ctx: CContext, user: discord.Member | discord.User | None = None) -> None:
+        if user is None:
+            await ctx.send('Invalid user.')
+            return
         
+        embed = discord.Embed(title=f'Info about {user.display_name}', colour=discord.Colour.purple())
+        embed.set_thumbnail(url=user.display_avatar.url)
+        embed.add_field(name='User ID', value=str(user.id), inline=True)
+        embed.add_field(name='Bot Account', value='Yes' if user.bot else 'No', inline=True)
+        embed.add_field(name='Created', value=f'<t:{int(user.created_at.timestamp())}:F>', inline=False)
+        
+        if isinstance(user, discord.Member):
+            if user.joined_at is not None:
+                embed.add_field(name='Joined Server', value=f'<t:{int(user.joined_at.timestamp())}:F>', inline=False)
+            if user.premium_since is not None:
+                embed.add_field(name='Boosting since', value=f'<t:{int(user.premium_since.timestamp())}:F>')
+            if user.timed_out_until is not None and user.is_timed_out():
+                embed.add_field(name='Timed out until', value=f'<t:{int(user.timed_out_until.timestamp())}:F>')
+        
+        await ctx.send(embed=embed)
     
     @commands.command(name='tts',
                       brief='Send a text-to-speech message',

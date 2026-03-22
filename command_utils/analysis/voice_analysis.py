@@ -698,14 +698,14 @@ async def user_time_in_channel(ctx: CContext, user: discord.User, channel: disco
     await ctx.send(f"{user.display_name} has been in {channel.mention} for {format_duration(total_seconds)}")
 
 
-async def all_sessions_this_week(skip_cache: bool = False, merge_sessions: bool = True) -> list[DBVoiceSession]:
+async def all_sessions_this_week(skip_cache: bool = False) -> list[DBVoiceSession]:
     """
     Retrieve all voice sessions from the past week.
 
     Returns:
         List of voice session dictionaries
     """
-    sessions = await get_valid_voice_sessions(skip_cache, merge_sessions)
+    sessions = await get_valid_voice_sessions(skip_cache, False)
     
     if not sessions:
         return []
@@ -731,8 +731,8 @@ async def all_sessions_this_week(skip_cache: bool = False, merge_sessions: bool 
     return valid_sessions
 
 
-async def voice_activity_this_week(skip_cache: bool = False, merge_sessions: bool = False) -> list[UserVoiceStats]:
-    sessions = await all_sessions_this_week(skip_cache, merge_sessions)
+async def voice_activity_this_week(skip_cache: bool = False) -> list[UserVoiceStats]:
+    sessions = await all_sessions_this_week(skip_cache)
     stats: dict[str, UserVoiceStats] = {}
     for session in sessions:
         user_id = session['user_id']
