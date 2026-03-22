@@ -675,10 +675,11 @@ async def generate_voice_activity_graph(channel: discord.TextChannel, bot: CoolB
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir_path = Path(temp_dir)
         graph_file = Path('top_voice_users.png')
-        plt.savefig(temp_dir_path / graph_file)
+        graph_path = temp_dir_path / graph_file
+        plt.savefig(graph_path)
         plt.close()
     
-        await channel.send(file=discord.File(graph_file))
+        await channel.send(file=discord.File(graph_path))
     
 
 async def user_time_in_channel(ctx: CContext, user: discord.User, channel: discord.VoiceChannel) -> None:
