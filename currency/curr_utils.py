@@ -70,7 +70,7 @@ async def delete_profile(member: discord.abc.Snowflake) -> bool:
     return await db_stuff.del_db_entry(collection_name='currency', query={'user_id': str(member.id)})
 
 
-async def user_has_gun(profile: Profile) -> bool:
+def user_has_gun(profile: Profile) -> bool:
     """
     Checks if a member has a gun in their inventory.
     :param profile: The profile of the member to check.
