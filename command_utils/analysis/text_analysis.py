@@ -6,7 +6,7 @@ import statistics
 import string
 import tempfile
 from pathlib import Path
-from typing import Any, Literal, Mapping, NotRequired, TypedDict
+from typing import Any, Final, Literal, Mapping, NotRequired, TypedDict
 
 import discord
 from matplotlib import pyplot as plt
@@ -101,12 +101,30 @@ class UserMessageAnalysisResult(TypedDict):
     average_time_between_messages: str
 
 
-EXCLUDED_USER_IDS = ['1107579143140413580']
-TIME_FILTERS = {
+EXCLUDED_USER_IDS: Final[list[str]] = ['1107579143140413580']
+TIME_FILTERS: Final[dict[str, tuple[str, datetime.timedelta]]] = {
     'w': ('week', datetime.timedelta(days=7)),
     'd': ('day', datetime.timedelta(days=1)),
-    'h': ('hour', datetime.timedelta(hours=1))
-}
+    'h': ('hour', datetime.timedelta(hours=1)),
+    }
+ARTICLES: Final[list[str]] = ["the", "a", "an", "this", "that", "these", "those"]
+PRONOUNS: Final[list[str]] = ["i", "you", "we", "they", "he", "she", "it", "me", "my", "your", "our", "their"]
+AUX_VERBS: Final[list[str]] = ["is", "am", "are", "was", "were", "be", "been", "being", "do", "does", "did", "have", "has", "had"]
+PREPOSITIONS: Final[list[str]] = ["to", "of", "in", "on", "at", "for", "from", "with", "by", "about", "as", "into", "over", "under"]
+CONJUNCTIONS: Final[list[str]] = ["and", "or", "but", "so", "if", "because", "while"]
+NOT_MEANINGFUL: Final[list[str]] = ["yeah", "yes", "no", "ok", "okay", "lol", "lmao", "haha", "uh", "um", "hmm"]
+EXCLUDED_WORDS: Final[set[str]] = set(ARTICLES + PRONOUNS + AUX_VERBS + PREPOSITIONS + CONJUNCTIONS + NOT_MEANINGFUL)
+PUNCT_SET: Final[set[str]] = set(string.punctuation)
+
+
+def is_valid_word(word: str):
+    return (
+        len(word) > 2
+        and not word.startswith('https://')
+        and not (word.startswith('<@') and word.endswith('>'))
+        and not all(c in PUNCT_SET for c in word)
+        and word not in EXCLUDED_WORDS
+    )
 
 
 def check_required_message_keys(message: Mapping[str, Any]) -> bool:
@@ -122,8 +140,8 @@ def check_required_message_keys(message: Mapping[str, Any]) -> bool:
     required_keys = {
         'author', 'author_id', 'author_global_name',
         'content', 'reply_to', 'HasAttachments',
-        'timestamp', 'channel', 'channel_id', 'id'
-    }
+        'timestamp', 'channel', 'channel_id', 'id',
+        }
     return all(key in message for key in required_keys)
 
 
@@ -140,8 +158,8 @@ def to_dbm(message: dict[Any, Any] | DBMessage) -> DBMessage:
             channel_id=message['channel_id'],
             id=message['id'],
             edits=message.get('edits', []),
-            _id=message.get('_id', None)
-        )
+            _id=message.get('_id', None),
+            )
 
 
 async def remove_invalid_messages(messages: list[DBMessage | dict[str, Any]] | None) -> list[DBMessage]:
@@ -152,7 +170,7 @@ async def remove_invalid_messages(messages: list[DBMessage | dict[str, Any]] | N
     for message in messages:
         if check_required_message_keys(message):
             valid_messages.append(to_dbm(message))
-            
+        
         else:
             logger.warning(f'Removing invalid message with ID {message.get("_id", "unknown")}')
             await db_stuff.delete_message(message['_id'])
@@ -197,7 +215,7 @@ async def get_valid_messages(flag: str | None = None, ctx: CContext | None = Non
         valid_messages = [
             msg for msg in valid_messages
             if datetime.datetime.fromtimestamp(msg['timestamp'], datetime.UTC) >= time_ago
-        ]
+            ]
         logger.info(f'Applied {filter_name} filter: {len(valid_messages)} messages')
     
     if flag != "il" and guild is not None:
@@ -223,7 +241,7 @@ def analyse_word_stats(content_list: list[str]) -> WordStats | None:
         return None
     
     # Extract and normalise all words
-    all_words = [word.lower() for msg in content_list for word in msg.split() if word]
+    all_words = [word.lower().strip() for msg in content_list for word in msg.split() if word and is_valid_word(word.strip().lower())]
     if not all_words:
         return None
     
@@ -246,9 +264,7 @@ def analyse_word_stats(content_list: list[str]) -> WordStats | None:
             total_unique_words=len(unique_words),
             average_length=avg_length,
             vocabulary_diversity=vocabulary_diversity,
-    )
-
-
+            )
 
 
 def get_channel_stats(messages: list[DBMessage]) -> list[ChannelMessageStats]:
@@ -269,7 +285,7 @@ def get_channel_stats(messages: list[DBMessage]) -> list[ChannelMessageStats]:
         {'channel_id': channel_id, 'num_messages': count}
         for channel_id, count in channel_counts.items()
         if count > 0
-    ]
+        ]
 
 
 async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> MessageAnalysisResult | str:
@@ -301,7 +317,7 @@ async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> Mes
     active_users: list[UserMessageStats] = [
         UserMessageStats(user_id=user_id, num_messages=count)
         for user_id, count in user_message_count.items()
-    ]
+        ]
     
     # Get channel stats
     active_channels = get_channel_stats(valid_messages)
@@ -373,7 +389,7 @@ async def analyse_messages(ctx: CContext, time_filter: str | None = None) -> Mes
             messages_per_day=messages_per_day,
             average_words_per_message=avg_words,
             average_time_between_messages=average_time_between_messages,
-    )
+            )
 
 
 async def analyse_user_messages(member: discord.User | discord.Member, time_filter: str | None = None) -> UserMessageAnalysisResult | str:
@@ -410,27 +426,27 @@ async def analyse_user_messages(member: discord.User | discord.Member, time_filt
     most_recent: datetime.datetime | None = max(
             (datetime.datetime.fromtimestamp(msg['timestamp'], tz=datetime.UTC) for msg in messages_by_user),
             default=None,
-    )
+            )
     
     # Calculate leaderboard position
     user_message_count = collections.Counter(msg['author_id'] for msg in valid_messages)
     active_users: list[UserMessageStats] = [
         {'user_id': user, 'num_messages': count}
         for user, count in user_message_count.items()
-    ]
+        ]
     
     # Sort users by message count
     active_user_lb = sorted(
             active_users,
             key=lambda x: x['num_messages'],
             reverse=True,
-    )
+            )
     
     # Find user's position in leaderboard
     lb_position = next(
             (i for i, user in enumerate(active_user_lb, 1)
              if user['user_id'] == user_id_str), 0,
-    )
+            )
     
     lengths: list[int] = [len(c) for c in content_list]
     median_length: float = statistics.median(lengths) if lengths else 0.0
@@ -498,7 +514,7 @@ async def analyse_user_messages(member: discord.User | discord.Member, time_filt
             messages_per_day=messages_per_day,
             average_words_per_message=avg_words,
             average_time_between_messages=average_time_between_messages,
-    )
+            )
 
 
 async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discord.Object | None = None, flag: str | None = '') -> None:
@@ -528,7 +544,7 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
     if to_analyse:
         try:
             to_ana_user = await ctx.bot.fetch_user(to_analyse.id)
-            
+        
         except discord.NotFound:
             await ctx.send("The input is not be a valid user.")
             return
@@ -556,24 +572,24 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
             active_users_lb,
             key=lambda x: x['num_messages'],
             reverse=True,
-    )[:5]
+            )[:5]
     
     top_5_channels: list[ChannelMessageStats] = sorted(
             result['active_channels_lb'],
             key=lambda x: x['num_messages'],
             reverse=True,
-    )[:5]
+            )[:5]
     
     activity_ratio: str = ""
     if guild.member_count and flag != 'il':
         activity_ratio = f"({round((result['total_users'] / guild.member_count) * 100, 2)}% activity)"
     
     msg = (
-        "**Text Activity Analysis**\n" +
-        f"**Total messages**: {result['total_messages']}\n" +
-        f"**Total users**: {result['total_users']} {activity_ratio}\n" +
-        f"**Average messages per active user**: {round(result['total_valid_messages'] / result['total_users'], 2)}\n" +
-        "Top 5 most active users:\n"
+            "**Text Activity Analysis**\n" +
+            f"**Total messages**: {result['total_messages']}\n" +
+            f"**Total users**: {result['total_users']} {activity_ratio}\n" +
+            f"**Average messages per active user**: {round(result['total_valid_messages'] / result['total_users'], 2)}\n" +
+            "Top 5 most active users:\n"
     )
     
     # Add top users
@@ -617,7 +633,8 @@ async def generate_user_activity_graph(ctx: CContext, result: MessageAnalysisRes
     top_15_users = sorted(
             result['active_users_lb'],
             key=lambda x: x['num_messages'],
-            reverse=True)[:15]
+            reverse=True,
+            )[:15]
     
     usernames: list[str] = []
     message_counts: list[int] = []
@@ -672,11 +689,10 @@ async def generate_user_activity_graph(ctx: CContext, result: MessageAnalysisRes
         
         await ctx.send(file=discord.File(graph_file))
 
-    
-    
 
 async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
-        time_filter: str | None = None) -> None:
+                                  time_filter: str | None = None,
+                                  ) -> None:
     """
     Format and send analysis results for a single user.
 
@@ -695,7 +711,7 @@ async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
             result['active_channels_lb'],
             key=lambda x: x['num_messages'],
             reverse=True,
-    )
+            )
     
     num_channels = 5
     
