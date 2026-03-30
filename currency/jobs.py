@@ -1,11 +1,6 @@
+from currency import collector
 from currency.currency_types import Job, SchoolQualif, JobTree, SecurityClearance
 
-unemployed = Job(
-        name="Unemployed",
-        req_experience=0,
-        salary=0,
-        salary_variance=0,
-)
 
 # Retail Jobs
 cashier = Job(
@@ -71,6 +66,7 @@ retail_tree = JobTree(
             director_of_operations
         ]
 )
+collector.register_job_tree(retail_tree)
 
 # Information_Technology Jobs
 IT_intern = Job(
@@ -157,6 +153,7 @@ it_tree = JobTree(
             it_director
         ]
 )
+collector.register_job_tree(it_tree)
 
 # Teaching/Education Jobs
 teacher_assistant = Job(
@@ -217,6 +214,7 @@ education_tree = JobTree(
             distinguished_professor
         ]
 )
+collector.register_job_tree(education_tree)
 
 # Engineering Jobs
 engineering_intern = Job(
@@ -301,6 +299,7 @@ engineering_tree = JobTree(
             engineering_director
         ]
 )
+collector.register_job_tree(engineering_tree)
 
 # Military Jobs
 private = Job(
@@ -398,7 +397,7 @@ command_sergeant_major = Job(
         salary_variance=20
 )
 
-seargeant_major_of_the_army = Job(
+sergeant_major_of_the_army = Job(
         name="Sergeant Major of the Army",
         req_school=SchoolQualif.HIGH_SCHOOL, 
         req_clearance=SecurityClearance.SPECIAL,
@@ -418,9 +417,10 @@ enlisted_army_tree = JobTree(
             seargeant_first_class,
             [master_sergeant, first_sergeant],
             [sergeant_major, command_sergeant_major],
-            seargeant_major_of_the_army
+            sergeant_major_of_the_army
         ]
 )
+collector.register_job_tree(enlisted_army_tree)
 
 warrant_officer_1 = Job(
         name="Warrant Officer 1",
@@ -495,7 +495,7 @@ captain = Job(
 major = Job(
         name="Major",
         req_school=SchoolQualif.BACHELOR, 
-        req_clearance=SecurityClearance.TS_SCI,
+        req_clearance=SecurityClearance.TOP_SECRET,
         req_experience=16,
         salary=70_000,
         salary_variance=20
@@ -555,7 +555,7 @@ general = Job(
         salary_variance=30
 )
 
-Army_Commissioned_Officer_tree = JobTree(
+army_commissioned_officer_tree = JobTree(
         name="Army_Commissioned_Officer",
         jobs=[
             warrant_officer_1,
@@ -575,6 +575,7 @@ Army_Commissioned_Officer_tree = JobTree(
             general
         ]
 )
+collector.register_job_tree(army_commissioned_officer_tree)
 
 # Healthcare Jobs
 certified_nurse_assistant = Job(
@@ -650,6 +651,7 @@ healthcare_tree = JobTree(
             clinical_director
         ]
 )
+collector.register_job_tree(healthcare_tree)
 
 # Finance Jobs
 financial_analyst = Job(
@@ -727,6 +729,7 @@ finance_tree = JobTree(
             chief_financial_officer
         ]
 )
+collector.register_job_tree(finance_tree)
 
 special_agent_trainee = Job(
         name="Special Agent Trainee",
@@ -811,6 +814,7 @@ federal_law_enforcement_tree = JobTree(
             federal_LE_director
         ]
 )
+collector.register_job_tree(federal_law_enforcement_tree)
 
 # Local law enforcement jobs
 police_cadet = Job(
@@ -914,6 +918,4 @@ local_law_enforcement_tree = JobTree(
             local_LE_chief
         ]
 )
-
-job_trees = [tree for tree in globals().values() if isinstance(tree, JobTree)]
-all_jobs = [job for job in globals().values() if isinstance(job, Job)]
+collector.register_job_tree(local_law_enforcement_tree)

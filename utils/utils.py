@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import os
@@ -6,10 +7,11 @@ import socket
 from io import TextIOWrapper
 from pathlib import Path
 from typing import Any
+from collections.abc import Coroutine
 import logging
 import aiohttp
 
-import cachetools.func
+import cachetools.func  # type: ignore[import-untyped]
 import discord
 import discord.ext.commands
 import discord.ext.tasks
@@ -23,6 +25,16 @@ def user_has_role(member: discord.Member, role_id: int) -> bool:
         if role.id == role_id:
             return True
     return False
+
+
+def make_sync(future: Coroutine):
+    try:
+        event_loop = asyncio.get_event_loop()
+    except RuntimeError:
+        # Generate an event loop if there isn't any.
+        event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(event_loop)
+    return event_loop.run_until_complete(future)
 
 
 def get_id_from_str(u_id: str) -> int:
@@ -86,7 +98,7 @@ def make_empty_file(path: Path) -> None:
 	"""
     if not path.parent.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
-        
+    
     if not path.exists():
         with open(path, 'x'):
             pass
@@ -138,7 +150,6 @@ async def download_from_url(path: str | Path, url: str) -> None:
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             response = await resp.read()
-            
     
     with open(path, 'wb') as file:
         file.write(response)
@@ -466,4 +477,3 @@ def num_k_v_total(obj: dict[Any, Any]) -> int:
             total += 2
     
     return total
-
