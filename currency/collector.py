@@ -50,8 +50,8 @@ def _get_from_name(name: str, container: list[T], default: T | None = None) -> T
 
 
 # noinspection DuplicatedCode
-def job_from_str(name: str) -> Job | None:
-    return _get_from_name(name, all_jobs)
+def job_from_str(name: str, default: Job | None = None) -> Job | None:
+    return _get_from_name(name, all_jobs, default)
 
 
 def job_tree_from_str(name: str) -> JobTree | None:

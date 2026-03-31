@@ -1,4 +1,8 @@
+from decimal import Decimal
+
 from currency import perks
+from currency.collector import register_shop_category
+from currency.curr_config import CIVILIAN_GUN_RESALE_MULT, MILITARY_GUN_RESALE_MULT
 from currency.currency_types import (
     PerkItem, ShopItem,
     ShopCategory,
@@ -41,6 +45,7 @@ special_perks = ShopCategory(
         description="Unique perks that enhance your experience.",
         items=[private_vc, rich_role, send_announce]
 )
+register_shop_category(special_perks)
 
 # Properties
 small_house = HouseItem(
@@ -84,6 +89,7 @@ properties = ShopCategory(
         description="Houses and properties you can buy or rent.",
         items=[small_house, medium_house, large_house, mansion]
 )
+register_shop_category(properties)
 
 # Cars
 honda_civic = ShopItem(
@@ -169,6 +175,7 @@ cars = ShopCategory(
         items=[honda_civic, nissan_versa, toyota_mirai, bmw_430i, bmw_740i, mercedes_amg_gt,
                porche_911_gt3_rs, rr_phantom, ferrari_sf90, bespoke_rr_phantom, bugatti_tourbillon]
 )
+register_shop_category(cars)
 
 # Black Market Items
 white_powder = DrugItem(
@@ -176,13 +183,14 @@ white_powder = DrugItem(
         description="A small bag of mysterious white powder.",
         price=200,
         stock=-1,
-        resale_mult=0.1,
+        resale_mult=Decimal(0.1),
         cops_risk=0.05,
         scam_risk=0,
         trace_back=False,
         income_multiplier=0.4,
+        income_multiplier_range=5,
         work_catch_risk=0.15,
-        od_chance=0.3,
+        od_chance=0.1,
         uses=5,
 )
 
@@ -191,7 +199,7 @@ cocaine = DrugItem(
         description="A small bag of cocaine.",
         price=500,
         stock=-1,
-        resale_mult=0.2,
+        resale_mult=Decimal(0.2),
         cops_risk=0.1,
         scam_risk=0.05,
         trace_back=False,
@@ -206,7 +214,7 @@ lsd = DrugItem(
         description="A small bottle of LSD pills.",
         price=400,
         stock=-1,
-        resale_mult=0.15,
+        resale_mult=Decimal(0.15),
         cops_risk=0.08,
         scam_risk=0.03,
         trace_back=False,
@@ -220,11 +228,11 @@ weed = DrugItem(
         description="A small bag of weed.",
         price=100,
         stock=-1,
-        resale_mult=0.1,
+        resale_mult=Decimal(0.1),
         cops_risk=0,
         scam_risk=0,
         trace_back=False,
-        income_multiplier=0.6,
+        income_multiplier=0.8,
         work_catch_risk=0.05,
         od_chance=0,
         uses=5,
@@ -235,7 +243,7 @@ methamphetamine = DrugItem(
         description="A small bag of Methamphetamine.",
         price=300,
         stock=-1,
-        resale_mult=0.15,
+        resale_mult=Decimal(0.15),
         cops_risk=0.1,
         scam_risk=0.05,
         trace_back=False,
@@ -250,7 +258,7 @@ fentanyl = DrugItem(
         description="A very small bag of fentanyl.",
         price=50,
         stock=-1,
-        resale_mult=0.2,
+        resale_mult=Decimal(0.2),
         cops_risk=0.15,
         scam_risk=0.1,
         trace_back=False,
@@ -265,7 +273,7 @@ ominous_knife = BlackMarketItem(
         description="An ominous knife made of... bone...?",
         price=50_000,
         stock=1,
-        resale_mult=0,
+        resale_mult=Decimal(0),
         cops_risk=0,
         scam_risk=0,
         trace_back=False
@@ -276,7 +284,7 @@ sig_p320_m1 = GunItem(
         description="A SIG P320 M1 with the serial number scraped off.",
         price=1_000,
         stock=-1,
-        resale_mult=0.8,
+        resale_mult=Decimal(0.8),
         cops_risk=0.05,
         scam_risk=0.05,
         trace_back=0.5,
@@ -288,7 +296,7 @@ glock_17_gen5 = GunItem(
         description="A Glock 17 Gen5 with the serial number scratched off.",
         price=500,
         stock=-1,
-        resale_mult=0.85,
+        resale_mult=Decimal(0.85),
         cops_risk=0.05,
         scam_risk=0.07,
         trace_back=0.5,
@@ -300,7 +308,7 @@ m1911_a1 = GunItem(
         description="Dean Winchester's M1911 A1.",
         price=50_000,
         stock=1,
-        resale_mult=0,
+        resale_mult=Decimal(0),
         cops_risk=0,
         scam_risk=0,
         trace_back=False,
@@ -312,7 +320,7 @@ the_colt = GunItem(
         description="The Colt made by Samuel Colt. It can kill all but 5 beings in existence.",
         price=1_000_000,
         stock=1,
-        resale_mult=0,
+        resale_mult=Decimal(0),
         cops_risk=0,
         scam_risk=0,
         trace_back=False,
@@ -372,7 +380,7 @@ ak_47 = GunItem(
         description="The working man's fully automatic rifle.",
         price=2_000,
         stock=-1,
-        resale_mult=0.4,
+        resale_mult=Decimal(0.4),
         cops_risk=0.05,
         scam_risk=0.1,
         trace_back=False,
@@ -420,6 +428,7 @@ drugs = BlackMarketCategory(
         description="Various drugs that may or may kill you.",
         items=[white_powder, cocaine, lsd, weed, methamphetamine, fentanyl]
 )
+register_shop_category(drugs)
 
 weapons = BlackMarketCategory(
         name="Weapons",
@@ -427,3 +436,4 @@ weapons = BlackMarketCategory(
         items=[ominous_knife, sig_p320_m1, glock_17_gen5, m1911_a1, the_colt, mr556, sig_mcx_spear, hk417, sig_mx7,
                ak_47, m39_emr, barrett_m82, l115a3_awm]
 )
+register_shop_category(weapons)

@@ -23,8 +23,8 @@ logger = logging.getLogger('discord')
 # Global client instance
 _mongo_client: AsyncMongoClient[Mapping[str, Any]] | None = None
 _DB_connect_enabled: bool = False
-message_download_cache: cachetools.TTLCache[None, list[dict[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
-voice_download_cache: cachetools.TTLCache[None, list[dict[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
+message_download_cache: cachetools.TTLCache[None, list[Mapping[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
+voice_download_cache: cachetools.TTLCache[None, list[Mapping[Any, Any]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 
 
 def disable_connection() -> None:
@@ -267,11 +267,13 @@ async def send_voice_session(session_data: Mapping[str, Any]) -> None:
         logger.error(f'Error saving voice session: {e}')
 
 
-async def cached_download_voice_sessions(skip_cache: bool = False) -> list[dict[Any, Any]] | None:
+async def cached_download_voice_sessions(skip_cache: bool = False) -> list[Mapping[Any, Any]] | None:
     if voice_download_cache.get(None) is not None and not skip_cache:
         return voice_download_cache[None]
     
     downloaded = await _download_voice_sessions()
+    if downloaded is None:
+        return None
     voice_download_cache[None] = downloaded
     return downloaded
 
@@ -355,7 +357,10 @@ async def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> bool:
     
     try:
         result: DeleteResult = await collection.delete_one(query)
-        if result.deleted_count > 0:
+        if not result.acknowledged:
+            logger.warning(f'DB entry deletion from {collection_name} collection not acknowledged. Query: {query}')
+            return False
+        if result.deleted_count == 1:
             logger.info(f'Entry deleted successfully from {collection_name} collection')
             return True
         else:
@@ -432,11 +437,11 @@ async def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | 
         return None
 
 
-async def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by=None, direction: Literal["a", "d"] = "a", limit: int = 0) -> list[Mapping[str, Any]] | None:
+async def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by=None, direction: Literal["asc", "desc"] = "asc", limit: int = 0) -> list[Mapping[str, Any]] | None:
     """
     Generic function to retrieve multiple documents from a specified MongoDB await collection.
 
-    Direction should be either "a" for ascending or "d" for descending.
+    Direction should be either "asc" for ascending or "desc" for descending.
     """
     if direction not in ['a', 'd']:
         raise ValueError("Direction must be either 'a' for ascending or 'd' for descending.")
@@ -447,7 +452,7 @@ async def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_
     
     db = client['discord']
     collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
-    if direction.lower() == 'a':
+    if direction.lower() == 'asc':
         mongo_direction = pymongo.ASCENDING
     else:
         mongo_direction = pymongo.DESCENDING

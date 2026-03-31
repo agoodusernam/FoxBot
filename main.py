@@ -143,6 +143,9 @@ async def load_extensions() -> None:
             
             except discord.ext.commands.ExtensionFailed as e:
                 logger.error(f'Extension {filename[:-3]} encountered an error:\n{e}')
+            
+            except Exception as e:
+                logger.error(f'An error occurred while loading {filename[:-3]}:\n{e}')
         else:
             logger.debug(f'Skipping {filename}')
 
