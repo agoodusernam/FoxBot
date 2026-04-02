@@ -7,7 +7,7 @@ from discord.ext import commands
 
 from command_utils.CContext import CContext
 from command_utils.checks import is_dev
-from currency import curr_utils, curr_config
+from currency import curr_config
 from currency.currency_types import Profile
 
 
@@ -132,13 +132,13 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
         
         elif profile.has_gun and not profile.has_gun:
             # User has a gun, target has no gun
-            # 75% chance of success
-            if random.random() < 0.75:
+            # 90% chance of success
+            if random.random() < 0.90:
                 await rob_success(ctx, profile, target, target_profile)
                 return None
             
             else:
-                # 25% chance of failure
+                # 10% chance of failure
                 await ctx.send(f'You were caught trying to rob {target.display_name} and they ran away!')
                 return None
             

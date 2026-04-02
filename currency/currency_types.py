@@ -548,7 +548,6 @@ class Profile:
     lottery_tickets: int = 0
     _credit_score: int = BASE_CREDIT_SCORE
     _fire_chance: float = BASE_FIRE_CHANCE
-    _db_active: bool = False
     
     def __post_init__(self) -> None:
         object.__setattr__(self, '_Profile__initialised', True)
