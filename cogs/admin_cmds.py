@@ -106,7 +106,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Provides statistics about messages sent in the server',
                       usage='f!ana [user_id/mention]')
     @commands.check(is_admin)
-    @commands.cooldown(1, 2, commands.BucketType.guild)  
+    @commands.cooldown(1, 2, commands.BucketType.guild)
     async def analyse(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
         await text_analysis.format_analysis(ctx, graph=False, to_analyse=user, flag=args)
     
@@ -127,10 +127,13 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.cooldown(1, 2, commands.BucketType.user)  
     async def analyse_voice(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
         include_left = False
+        dm_user = False
         if args.strip() == '-il':
             include_left = True
+        if args.strip() == '-dm':
+            dm_user = True
             
-        await voice_analysis.format_voice_analysis(ctx, graph=False, user=user, include_left=include_left)
+        await voice_analysis.format_voice_analysis(ctx, graph=False, user=user, include_left=include_left, dm_user=dm_user)
     
     @commands.command(name='analyse_vc_graph', aliases=['anavcg'],
                       brief='Analyze server message data with graphs',
@@ -140,10 +143,14 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.cooldown(1, 2, commands.BucketType.guild)  
     async def analyse_vc_graph(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
         include_left = False
+        dm_user = False
         if args.strip() == '-il':
             include_left = True
         
-        await voice_analysis.format_voice_analysis(ctx, graph=True, user=user, include_left=include_left)
+        if args.strip() == '-dm':
+            dm_user = True
+        
+        await voice_analysis.format_voice_analysis(ctx, graph=True, user=user, include_left=include_left, dm_user=dm_user)
     
     @commands.command(name='time_in_vc', aliases=["tiv"],
             brief="Get the time spent in a voice channel",

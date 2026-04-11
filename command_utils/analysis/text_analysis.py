@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Final, Literal, Mapping, NotRequired, TypedDict
 
 import discord
+from discord import DMChannel
 from matplotlib import pyplot as plt
 
 from command_utils.CContext import CContext
@@ -532,7 +533,7 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
     # TODO: Make the filtering less dumb
     
     # Parse time filter from message
-    valid_flags = ['-w', '-d', '-h', '-il']
+    valid_flags = ['-w', '-d', '-h', '-il', '-dm']
     if flag:
         if flag.lower() not in valid_flags:
             await ctx.send(f'Invalid flag. Flag should be one of {valid_flags}.')
@@ -551,7 +552,8 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
             await ctx.send("The input is not be a valid user.")
             return
         
-        await analyse_single_user_cmd(ctx, to_ana_user, flag)
+        dm_user: bool = True if flag == 'dm' else False
+        await analyse_single_user_cmd(ctx, to_ana_user, flag, dm_user)
         await new_msg.delete()
         return
     
@@ -694,14 +696,16 @@ async def generate_user_activity_graph(ctx: CContext, result: MessageAnalysisRes
 
 async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
                                   time_filter: str | None = None,
+                                  dm_user: bool = False,
                                   ) -> None:
     """
     Format and send analysis results for a single user.
-
+    
     Args:
         ctx: Discord command context
         member: Discord user to analyse
         time_filter: Optional time filter
+        dm_user: Whether to DM the user the results or send it in the current channel
     """
     result = await analyse_user_messages(member, time_filter)
     if isinstance(result, str):
@@ -743,4 +747,13 @@ async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
     msg += f"Longest silence: **{result['longest_silence']}** (from {result['longest_silence_start']} to {result['longest_silence_end']})\n"
     msg += f"Most recent message sent at: **<t:{result['most_recent_message']}>**"
     
-    await ctx.send(msg)
+    if dm_user:
+        channel: DMChannel | None = member.dm_channel
+        if channel is None:
+            channel = await member.create_dm()
+        if channel is not None:
+            await channel.send(msg)
+        else:
+            await ctx.send('Failed to create dm with user.')
+    else:
+        await ctx.send(msg)

@@ -8,6 +8,7 @@ from statistics import median
 from typing import Any, NotRequired, TypeVar, TypedDict
 
 import discord
+from discord import DMChannel
 from matplotlib import pyplot as plt
 
 from command_utils.CContext import CContext, CoolBot
@@ -539,13 +540,17 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
             await ctx.send(f'Error generating graph: {e}')
 
 
-async def add_voice_analysis_for_user(ctx: CContext, member: discord.Object) -> None:
+async def add_voice_analysis_for_user(ctx: CContext,
+                                      member: discord.Object,
+                                      dm_user: bool = False
+                                      ) -> None:
     """
     Generate voice activity statistics for a specific user.
 
     Args:
         ctx: The Discord command context
         member: Discord user to analyse
+        dm_user: Whether to DM the user the results or send it in the current channel
     """
     stats: UserVoiceAnalysisResult | None = await get_user_voice_statistics(str(member.id))
     guild: discord.Guild | None = ctx.bot.get_guild(ctx.bot.config.guild_id)
@@ -586,11 +591,31 @@ async def add_voice_analysis_for_user(ctx: CContext, member: discord.Object) -> 
     if 'favorite_day' in stats:
         result += f"**Most active day of the week:** {stats['favorite_day']}\n"
     
-    await ctx.send(result)
+    if not dm_user:
+        await ctx.send(result)
+        return
+    
+    dm_user_obj: discord.User | None = await ctx.bot.fetch_user(member.id)
+    if dm_user_obj is None:
+        await ctx.send('Could not find user to dm.')
+        return
+    
+    dm_channel: DMChannel | None = dm_user_obj.dm_channel
+    if dm_channel is None:
+        dm_channel = await dm_user_obj.create_dm()
+        
+    if dm_channel is not None:
+        await dm_channel.send(result)
+        
+    else:
+        await ctx.send('Failed to create dm with user.')
 
 
-async def format_voice_analysis(ctx: CContext, graph: bool = False, user: discord.Object | None = None,
-                                include_left: bool = False) -> None:
+async def format_voice_analysis(ctx: CContext, graph: bool = False,
+                                user: discord.Object | None = None,
+                                include_left: bool = False,
+                                dm_user: bool = False
+                                ) -> None:
     """
     Format and send voice analysis results.
 
@@ -599,12 +624,13 @@ async def format_voice_analysis(ctx: CContext, graph: bool = False, user: discor
         graph: Whether to generate and send a graph
         user: The optional user to analyse
         include_left: If True, include users who have left the server
+        dm_user: Whether to DM the user the results or send it in the current channel
     """
     
     new_msg: discord.Message = await ctx.send('Analysing voice statistics...')
     
     if user is not None:
-        await add_voice_analysis_for_user(ctx, user)
+        await add_voice_analysis_for_user(ctx, user, dm_user)
         await new_msg.delete()
         return
     
