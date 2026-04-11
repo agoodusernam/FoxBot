@@ -5,7 +5,7 @@ from command_utils.CContext import CContext
 from command_utils.checks import is_dev
 from currency import curr_utils, gambling_config, curr_config
 
-
+"""
 class GamblingCmds(commands.Cog, name='Gambling', command_attrs=dict(add_check=is_dev, hidden=True)):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -57,7 +57,7 @@ class GamblingCmds(commands.Cog, name='Gambling', command_attrs=dict(add_check=i
         await ctx.send(f'You bought {tickets} lottery ticket(s) for {cost} {curr_config.currency_name}.')
         await ctx.send('Winners are drawn every monday! Good luck!')
         return None
-
+"""
 
 async def setup(bot) -> None:
     pass

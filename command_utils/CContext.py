@@ -52,7 +52,15 @@ class CContext(commands.Context["CoolBot"]):
         Returns the sent message if successful, None otherwise.
         """
         try:
-            return await super().reply(content, **kwargs)
+            return await self.reply(content, **kwargs)
+        
+        except discord.Forbidden as e:
+            logger.warning(f"Failed to send safe reply, Forbidden: {e}")
+            return None
+        
+        except discord.HTTPException as e:
+            logger.warning(f"Failed to send safe reply, HTTPException: {e}")
+            return None
         
         except ValueError:
             raise
@@ -60,12 +68,8 @@ class CContext(commands.Context["CoolBot"]):
         except TypeError:
             raise
         
-        except discord.Forbidden as e:
-            logger.info(f"Failed to send reply, Forbidden: {e}")
-            return None
-        
-        except discord.HTTPException as e:
-            logger.info(f"Failed to send reply, HTTPException: {e}")
+        except Exception as e:
+            logger.warning(f"Failed to send safe reply, Exception: {e}")
             return None
         
 

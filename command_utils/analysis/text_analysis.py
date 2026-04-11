@@ -625,7 +625,7 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
 async def generate_user_activity_graph(ctx: CContext, result: MessageAnalysisResult, guild: discord.Guild) -> None:
     """
     Generate and send a graph of user activity.
-
+    
     Args:
         ctx: Discord command context
         result: Analysis results
@@ -685,8 +685,8 @@ async def generate_user_activity_graph(ctx: CContext, result: MessageAnalysisRes
     # Save and send the graph
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir_path = Path(temp_dir)
-        graph_file = Path('top_active_users.png')
-        plt.savefig(temp_dir_path / graph_file)
+        graph_file = temp_dir_path / Path('top_active_users.png')
+        plt.savefig(graph_file)
         plt.close()
         
         await ctx.send(file=discord.File(graph_file))
