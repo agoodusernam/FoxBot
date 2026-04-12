@@ -5,11 +5,10 @@ import random
 from typing import Any, Generator
 
 import cachetools
-import discord
-import discord.ext.commands
 from dateutil.relativedelta import relativedelta, MO  # type: ignore[import-untyped]
 
 from cogs import api_cmds_utils
+from command_utils.CContext import CContext
 
 logger = logging.getLogger('discord')
 
@@ -24,27 +23,16 @@ def monday_generator() -> Generator[datetime.datetime, None, None]:
         next_monday = dt + relativedelta(days=+1, weekday=MO(+1))
 
 
-async def dice_roll(message: discord.Message) -> None:
-    str_nums: list[str] = message.content.replace('f!dice', '').replace('f!roll', '').split()
-    if len(str_nums) < 2:
-        await message.delete()
-        await message.channel.send('Please choose 2 numbers to roll the dice, e.g. `dice 1 6`')
-        return
-    try:
-        nums: list[int] = list(map(int, str_nums))
-    except ValueError:
-        await message.delete()
-        await message.channel.send('Please provide valid numbers for the dice roll, e.g. `dice 1 6`')
-        return
-    if nums[0] > nums[1]:
-        num: int = random.randint(nums[1], nums[0])
+async def dice_roll(ctx: CContext, min_val: int, max_val: int) -> None:
+    if min_val > max_val:
+        num: int = random.randint(min_val, max_val)
     else:
-        num = random.randint(nums[0], nums[1])
+        num = random.randint(max_val, min_val)
     if math.log10(num) > 1987:
-        await message.channel.send('The output number would be too large to send in discord')
+        await ctx.send('The output number would be too large to send in discord')
         return
     
-    await message.channel.send(f'You rolled a {num}')
+    await ctx.send(f'You rolled a {num}')
     return
 
 

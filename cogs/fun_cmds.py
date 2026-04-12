@@ -35,11 +35,17 @@ class FunCommands(commands.Cog, name='Fun'):
         
     @commands.command(name='dice', aliases=['roll', 'dice_roll'],
                       brief='Roll a dice',
-                      help='Roll a dice between two values',
+                      help='Roll a dice between two values (inclusive)',
                       usage='f!dice <min> <max>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
-    async def dice(self, ctx: CContext):
-        await fun_cmds_utils.dice_roll(ctx.message)
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    async def dice(self, ctx: CContext, first_val: int | str, second_val: int = 1):
+        if isinstance(first_val, str):
+            try:
+                first_val = int(first_val[1:].strip())
+            except ValueError:
+                await ctx.send('Invalid value. Please provide valid numbers for the dice roll, e.g. `f!dice 1 6`, or `f!dice 6`, or `f!dice d6`')
+                return
+        await fun_cmds_utils.dice_roll(ctx, first_val, second_val)
     
     @commands.command(name='flip', aliases=['coin_flip', 'coinflip'],
                       brief='Flip a coin',
