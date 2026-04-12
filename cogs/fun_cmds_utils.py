@@ -24,7 +24,7 @@ def monday_generator() -> Generator[datetime.datetime, None, None]:
 
 
 async def dice_roll(ctx: CContext, min_val: int, max_val: int) -> None:
-    if min_val > max_val:
+    if min_val < max_val:
         num: int = random.randint(min_val, max_val)
     else:
         num = random.randint(max_val, min_val)
