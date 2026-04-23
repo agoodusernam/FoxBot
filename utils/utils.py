@@ -6,8 +6,8 @@ import shutil
 import socket
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Any
-from collections.abc import Coroutine
+from typing import Any, TypeVar
+from collections.abc import Awaitable
 import logging
 import aiohttp
 
@@ -19,6 +19,8 @@ from discord import HTTPException
 
 logger = logging.getLogger('discord')
 
+T = TypeVar('T')
+
 
 def user_has_role(member: discord.Member, role_id: int) -> bool:
     for role in member.roles:
@@ -27,7 +29,9 @@ def user_has_role(member: discord.Member, role_id: int) -> bool:
     return False
 
 
-def make_sync(future: Coroutine):
+def make_sync(future: Awaitable[T] | None) -> T | None:
+    if future is None:
+        return None
     try:
         event_loop = asyncio.get_event_loop()
     except RuntimeError:

@@ -1,12 +1,12 @@
-cachetools~=7.0.5
-pymongo~=4.16.0
+cachetools~=7.0.6
+pymongo~=4.17.0
 python-dotenv~=1.2.2
 matplotlib~=3.10.3
 discord.py~=2.7.1
 pynacl~=1.6.2
 gtts~=2.5.4
 psutil~=7.2.2
-aiohttp~=3.13.4
+aiohttp~=3.13.5
 python-dateutil~=2.9.0.post0
 pystatx~=0.1
 vt-py~=0.22.0

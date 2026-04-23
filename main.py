@@ -19,9 +19,10 @@ load_dotenv()
 
 
 @atexit.register
-def on_exit():
+def on_exit() -> None:
     db_stuff.disable_connection()
     db_stuff.synchronous_disconnect()
+    utils.make_sync(bot.uptime_session.close() if bot.uptime_session else None)
 
 
 bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True)

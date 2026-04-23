@@ -1,12 +1,14 @@
 import asyncio
 import datetime
 import logging
+import os
 import threading
 import time
 from pathlib import Path
 from typing import Any, Optional
 from collections import deque
 
+import aiohttp
 from discord import Message
 from discord.ext import commands
 import discord
@@ -97,6 +99,7 @@ class CoolBot(commands.Bot):
         self.update_queued: bool = False
         self.last_sent_dt: datetime.datetime = discord.utils.utcnow()
         self.last_tts_sent_time: float | None = None
+        self.uptime_session: aiohttp.ClientSession | None = None
         
     
     @property
@@ -105,6 +108,14 @@ class CoolBot(commands.Bot):
     
     def add_ping(self) -> None:
         self._pings.append(self.latency * 1000)
+        endpoint: str | None = os.getenv("UPTIME_ENDPOINT")
+        if endpoint is None or endpoint == "":
+            return
+        
+        if self.uptime_session is None:
+            self.uptime_session = aiohttp.ClientSession()
+        
+        self.uptime_session.get(endpoint)
     
         
     async def get_context(self, message: discord.Message | discord.Interaction, *, cls=CContext) -> Any:
