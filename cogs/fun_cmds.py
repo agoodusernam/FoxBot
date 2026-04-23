@@ -391,11 +391,11 @@ class FunCommands(commands.Cog, name='Fun'):
         await voice_analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False)
     
     @discord.ext.tasks.loop(minutes=1)
-    async def add_ping(self):
-        self.bot.add_ping()
+    async def add_ping(self) -> None:
+        await self.bot.add_ping()
     
     @add_ping.before_loop
-    async def before_add_ping(self):
+    async def before_add_ping(self) -> None:
         await self.bot.wait_until_ready()
 
 async def setup(bot: CoolBot) -> None:

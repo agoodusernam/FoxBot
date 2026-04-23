@@ -106,7 +106,7 @@ class CoolBot(commands.Bot):
     def avg_latency(self) -> float:
         return sum(self._pings) / len(self._pings)
     
-    def add_ping(self) -> None:
+    async def add_ping(self) -> None:
         self._pings.append(self.latency * 1000)
         endpoint: str | None = os.getenv("UPTIME_ENDPOINT")
         if endpoint is None or endpoint == "":
@@ -115,7 +115,7 @@ class CoolBot(commands.Bot):
         if self.uptime_session is None:
             self.uptime_session = aiohttp.ClientSession()
         
-        self.uptime_session.get(endpoint)
+        await self.uptime_session.get(endpoint)
     
         
     async def get_context(self, message: discord.Message | discord.Interaction, *, cls=CContext) -> Any:
