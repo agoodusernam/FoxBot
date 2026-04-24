@@ -543,7 +543,9 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     async def stop_tts(ctx: CContext):
         if ctx.bot.vc_client is None:
             return
-        ctx.bot.vc_client.stop()
+        if ctx.bot.vc_client.is_playing():
+            ctx.bot.vc_client.stop()
+        await ctx.send("TTS has been stopped.")
     
 
 async def setup(bot):
