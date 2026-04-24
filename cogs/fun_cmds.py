@@ -222,6 +222,9 @@ class FunCommands(commands.Cog, name='Fun'):
             return
         
         lock: asyncio.Lock = ctx.bot.tts_lock
+        if lock.locked():
+            await ctx.send("A tts message is already playing")
+            return
         
         vc_client: discord.VoiceClient
         ctx.bot.last_tts_sent_time = time.time()
