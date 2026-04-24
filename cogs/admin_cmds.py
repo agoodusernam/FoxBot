@@ -540,7 +540,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         
     @commands.command(name='stoptts')
     @commands.check(is_admin)
-    async def stop_tts(ctx: CContext):
+    async def stoptts(self, ctx: CContext):
         if ctx.bot.vc_client is None:
             return
         if ctx.bot.vc_client.is_playing():
