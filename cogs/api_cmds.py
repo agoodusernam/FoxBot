@@ -2,7 +2,6 @@ import logging
 import os
 import tempfile
 from copy import deepcopy
-from io import UnsupportedOperation
 from pathlib import Path
 from typing import Final
 

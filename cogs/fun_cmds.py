@@ -219,7 +219,6 @@ class FunCommands(commands.Cog, name='Fun'):
             if s not in string.printable:
                 await ctx.send('Invalid TTS message.')
                 return
-            
         
         opus = ctypes.util.find_library('opus')
         if opus is None:
@@ -245,10 +244,9 @@ class FunCommands(commands.Cog, name='Fun'):
             lock.release()
             if os.path.exists('msg.mp3'):
                 os.remove('msg.mp3')
-                
+            
             if error:
                 logger.error(f'TTS playback error: {error}')
-            
         
         discord.opus.load_opus(opus)
         if ctx.bot.vc_client is not None:
