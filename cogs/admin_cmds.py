@@ -544,7 +544,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         if ctx.bot.vc_client is None:
             return
         ctx.bot.vc_client.stop()
-        ctx.bot.tts_lock.release()
     
 
 async def setup(bot):
