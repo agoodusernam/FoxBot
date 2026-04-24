@@ -537,6 +537,14 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             return
         await ctx.send(f'{member.display_name} does not have any failed counting attempts to reset.')
         return
+        
+    @commands.command(name='stoptts')
+    @commands.check(is_admin)
+    async def stop_tts(ctx: CContext):
+        if ctx.bot.vc_client is None:
+            return
+        ctx.bot.vc_client.stop()
+        ctx.bot.tts_lock.release()
     
 
 async def setup(bot):
