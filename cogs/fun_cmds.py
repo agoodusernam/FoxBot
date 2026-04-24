@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import random
+import string
 import time
 import typing
 from typing import Any
@@ -207,8 +208,18 @@ class FunCommands(commands.Cog, name='Fun'):
             return
         
         if message.strip() == '':
-            await ctx.send('Please provide a message to convert to speech.')
+            await ctx.send('Please provide a message to convert.')
             return
+        
+        if len(message) > 50:
+            await ctx.send('TTS message too long.')
+            return
+        
+        for s in message:
+            if s not in string.printable:
+                await ctx.send('Invalid TTS message.')
+                return
+            
         
         opus = ctypes.util.find_library('opus')
         if opus is None:
@@ -265,6 +276,7 @@ class FunCommands(commands.Cog, name='Fun'):
         
         if ctx.bot.vc_client.is_connected():
             await ctx.bot.vc_client.disconnect()
+            await ctx.send('Bot has left the channel.')
         
         ctx.bot.vc_client = None
         ctx.bot.last_tts_sent_time = None

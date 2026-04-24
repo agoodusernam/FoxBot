@@ -540,13 +540,16 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         
     @commands.command(name='stoptts')
     @commands.check(is_admin)
-    async def stoptts(self, ctx: CContext):
+    async def stop_tts(self, ctx: CContext):
         if ctx.bot.vc_client is None:
+            await ctx.send('Bot is not connected to a voice call')
             return
-        if ctx.bot.vc_client.is_playing():
-            ctx.bot.vc_client.stop()
+        if not ctx.bot.vc_client.is_playing():
+            await ctx.send("Was not playing anything.")
+            return
+        ctx.bot.vc_client.stop()
         await ctx.send("TTS has been stopped.")
     
 
-async def setup(bot):
+async def setup(bot: CoolBot):
     await bot.add_cog(AdminCmds(bot))
