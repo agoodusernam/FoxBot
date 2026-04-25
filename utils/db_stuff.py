@@ -443,8 +443,8 @@ async def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_
 
     Direction should be either "asc" for ascending or "desc" for descending.
     """
-    if direction not in ['a', 'd']:
-        raise ValueError("Direction must be either 'a' for ascending or 'd' for descending.")
+    if direction not in ['asc', 'desc']:
+        raise ValueError("Direction must be either 'asc' for ascending or 'desc' for descending.")
     
     client = await _connect()
     if not client:

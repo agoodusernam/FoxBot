@@ -52,6 +52,39 @@ class ReactionRolesConfig(ConfigBase):
 
 
 @dataclass
+class CountingConfig(ConfigBase):
+    """Configuration for the counting channel feature"""
+    channel: int = 0
+    highest_count: int = 0
+    last_count: int = 0
+    last_count_user: int = 0
+    ban_role: int = 0
+    fail_role: int = 0
+    fails: dict[int, int] = field(default_factory=dict)
+    successes: dict[str, int] = field(default_factory=dict)
+    highest_user_count: dict[str, int] = field(default_factory=dict)
+    last_counted_message_id: str = "0"
+    last_highest_count_edited: bool = False
+
+    def add_fail(self, user_id: int) -> None:
+        self.fails[user_id] = self.fails.get(user_id, 0) + 1
+
+    def reset_fails(self, user_id: int) -> bool:
+        if user_id not in self.fails:
+            return False
+        self.fails[user_id] = 0
+        return True
+
+    def user_counted(self, user_id: str, number: int, message_id: str) -> None:
+        logger.debug(f"User {user_id}, in message {message_id} counted {number}")
+        self.successes[user_id] = self.successes.get(user_id, 0) + 1
+        logger.debug(f"User {user_id} now has {self.successes[user_id]} counting successes")
+        if number > self.highest_user_count.get(user_id, 0):
+            self.highest_user_count[user_id] = number
+        self.last_counted_message_id = message_id
+
+
+@dataclass
 class BotConfig(ConfigBase):
     """Main bot configuration class"""
     # Basic settings
@@ -62,21 +95,11 @@ class BotConfig(ConfigBase):
     verified_roles: list[int] = field(default_factory=list)
     staging: bool = False
     tts_requires_role: bool = False
-    
-    # Counting stuff
-    counting_channel: int = 0
-    highest_count: int = 0
-    last_count: int = 0
-    last_count_user: int = 0
     required_tts_role: int = 0
-    counting_ban_role: int = 0
-    counting_fail_role: int = 0
-    counting_fails: dict[int, int] = field(default_factory=dict)
-    counting_successes: dict[str, int] = field(default_factory=dict)
-    highest_user_count: dict[str, int] = field(default_factory=dict)
-    last_counted_message_id: str = "0"
-    last_highest_count_edited: bool = False
     
+    # Counting
+    counting: CountingConfig = field(default_factory=CountingConfig)
+
     # misc
     logs_path: Path = Path("logs").resolve()
     vc_lb_channel_id: int = 0
@@ -136,22 +159,24 @@ class BotConfig(ConfigBase):
             "verified_roles":   [],
             "staff_role_id":    0,
             "staging":          False,
-            "counting_channel": 0,
-            "highest_count":    0,
-            "last_count":       0,
-            "last_count_user":   0,
             "tts_requires_role": False,
             "required_tts_role": 0,
-            "counting_ban_role": 0,
-            "counting_fail_role": 0,
-            "counting_fails": {},
-            "counting_successes": {},
-            "highest_user_count": {},
-            "last_counted_message_id": 0,
+            "counting": {
+                "channel": 0,
+                "highest_count": 0,
+                "last_count": 0,
+                "last_count_user": 0,
+                "ban_role": 0,
+                "fail_role": 0,
+                "fails": {},
+                "successes": {},
+                "highest_user_count": {},
+                "last_counted_message_id": "0",
+                "last_highest_count_edited": False,
+            },
             "logs_path": Path("logs"),
             "vc_lb_channel_id": 0,
             "msg_log_channel_id": 0,
-            "last_highest_count_edited": False,
             "join_leave_log_channel_id": 0,
             "member_logs_channel_id": 0,
             "bot_logs_channel_id": 0,
@@ -169,25 +194,30 @@ class BotConfig(ConfigBase):
         config.guild_id = data.get("guild_id", config.guild_id)
         config.verified_roles = data.get("verified_roles", config.verified_roles)
         config.staging = data.get("staging", config.staging)
-        config.counting_channel = data.get("counting_channel", config.counting_channel)
-        config.highest_count = data.get("highest_count", config.highest_count)
-        config.last_count = data.get("last_count", config.last_count)
-        config.last_count_user = data.get("last_count_user", config.last_count_user)
         config.tts_requires_role = data.get("tts_requires_role", config.tts_requires_role)
         config.required_tts_role = data.get("required_tts_role", config.required_tts_role)
-        config.counting_ban_role = data.get("counting_ban_role", config.counting_ban_role)
-        config.counting_fail_role = data.get("counting_fail_role", config.counting_fail_role)
-        config.counting_fails = data.get("counting_fails", config.counting_fails)
-        config.counting_successes = data.get("counting_successes", config.counting_successes)
-        config.highest_user_count = data.get("highest_user_count", config.highest_user_count)
-        config.last_counted_message_id = data.get("last_counted_id", config.last_counted_message_id)
         config.logs_path = Path(data.get("logs_path", config.logs_path)).resolve()
         config.vc_lb_channel_id = data.get("vc_lb_channel_id", config.vc_lb_channel_id)
         config.msg_log_channel_id = data.get("msg_log_channel_id", config.msg_log_channel_id)
-        config.last_highest_count_edited = data.get("last_highest_count_edited", config.last_highest_count_edited)
         config.join_leave_log_channel_id = data.get("join_leave_log_channel_id", config.join_leave_log_channel_id)
         config.member_logs_channel_id = data.get("member_logs_channel_id", config.member_logs_channel_id)
         config.bot_logs_channel_id = data.get("bot_logs_channel_id", config.bot_logs_channel_id)
+
+        if "counting" in data:
+            c = data["counting"]
+            config.counting = CountingConfig(
+                channel=c.get("channel", 0),
+                highest_count=c.get("highest_count", 0),
+                last_count=c.get("last_count", 0),
+                last_count_user=c.get("last_count_user", 0),
+                ban_role=c.get("ban_role", 0),
+                fail_role=c.get("fail_role", 0),
+                fails=c.get("fails", {}),
+                successes=c.get("successes", {}),
+                highest_user_count=c.get("highest_user_count", {}),
+                last_counted_message_id=str(c.get("last_counted_message_id", "0")),
+                last_highest_count_edited=c.get("last_highest_count_edited", False),
+            )
         
         # User permissions
         config.admin_ids = set(data.get("admin_ids", config.admin_ids))
@@ -259,27 +289,29 @@ class BotConfig(ConfigBase):
                 "emoji_to_role": self.reaction_roles.emoji_to_role
             },
             
-            "verified_roles":   self.verified_roles,
-            "staging":          self.staging,
-            "counting_channel": self.counting_channel,
-            "highest_count":    self.highest_count,
-            "last_count":       self.last_count,
-            "last_count_user":  self.last_count_user,
+            "verified_roles":    self.verified_roles,
+            "staging":           self.staging,
             "tts_requires_role": self.tts_requires_role,
             "required_tts_role": self.required_tts_role,
-            "counting_ban_role": self.counting_ban_role,
-            "counting_fail_role": self.counting_fail_role,
-            "counting_fails": self.counting_fails,
-            "counting_successes": self.counting_successes,
-            "highest_user_count": self.highest_user_count,
-            "last_counted_message_id": self.last_counted_message_id,
-            "logs_path": str(self.logs_path),
-            "vc_lb_channel_id": self.vc_lb_channel_id,
-            "msg_log_channel_id": self.msg_log_channel_id,
-            "last_highest_count_edited": self.last_highest_count_edited,
+            "counting": {
+                "channel":                  self.counting.channel,
+                "highest_count":            self.counting.highest_count,
+                "last_count":               self.counting.last_count,
+                "last_count_user":          self.counting.last_count_user,
+                "ban_role":                 self.counting.ban_role,
+                "fail_role":                self.counting.fail_role,
+                "fails":                    self.counting.fails,
+                "successes":                self.counting.successes,
+                "highest_user_count":       self.counting.highest_user_count,
+                "last_counted_message_id":  self.counting.last_counted_message_id,
+                "last_highest_count_edited": self.counting.last_highest_count_edited,
+            },
+            "logs_path":                str(self.logs_path),
+            "vc_lb_channel_id":         self.vc_lb_channel_id,
+            "msg_log_channel_id":       self.msg_log_channel_id,
             "join_leave_log_channel_id": self.join_leave_log_channel_id,
-            "member_logs_channel_id": self.member_logs_channel_id,
-            "bot_logs_channel_id": self.bot_logs_channel_id,
+            "member_logs_channel_id":   self.member_logs_channel_id,
+            "bot_logs_channel_id":      self.bot_logs_channel_id,
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None | str:
@@ -347,28 +379,37 @@ class BotConfig(ConfigBase):
             raise KeyError(f"Key '{key}' not found in config")
         return item
     
-    def add_counting_fail(self, user_id: int) -> None:
-        """Add a counting fail to the config"""
-        self.counting_fails[user_id] = self.counting_fails.get(user_id, 0) + 1
     
-    def reset_counting_fails(self, user_id: int) -> bool:
-        """Reset the number of counting fails for a user"""
-        if user_id not in self.counting_fails:
-            return False
-        self.counting_fails[user_id] = 0
-        return True
-    
-    def user_counted(self, user_id: str, number: int, message_id: str) -> None:
-        """Record that a user has counted a number"""
-        logger.debug(f"User {user_id}, in message {message_id} counted {number}")
-        self.counting_successes[user_id] = self.counting_successes.get(user_id, 0) + 1
-        logger.debug(f"User {user_id} now has {self.counting_successes[user_id]} counting successes")
-        if number > self.highest_user_count.get(user_id, 0):
-            self.highest_user_count[user_id] = number
-            
-        self.last_counted_message_id = message_id
-        return
-    
+
+def migrate_counting_config(data: dict[str, Any]) -> dict[str, Any]:
+    """One-time migration: lift flat counting keys into a nested 'counting' dict."""
+    flat_keys = {
+        "counting_channel", "highest_count", "last_count", "last_count_user",
+        "counting_ban_role", "counting_fail_role", "counting_fails",
+        "counting_successes", "highest_user_count", "last_counted_message_id",
+        "last_counted_id", "last_highest_count_edited",
+    }
+    if "counting" in data or not flat_keys.intersection(data):
+        return data
+
+    logger.info("Migrating counting config from flat to nested format")
+    data = dict(data)
+    data["counting"] = {
+        "channel":                  data.pop("counting_channel", 0),
+        "highest_count":            data.pop("highest_count", 0),
+        "last_count":               data.pop("last_count", 0),
+        "last_count_user":          data.pop("last_count_user", 0),
+        "ban_role":                 data.pop("counting_ban_role", 0),
+        "fail_role":                data.pop("counting_fail_role", 0),
+        "fails":                    data.pop("counting_fails", {}),
+        "successes":                data.pop("counting_successes", {}),
+        "highest_user_count":       data.pop("highest_user_count", {}),
+        "last_counted_message_id":  str(data.pop("last_counted_message_id",
+                                        data.pop("last_counted_id", "0"))),
+        "last_highest_count_edited": data.pop("last_highest_count_edited", False),
+    }
+    return data
+
 
 def move_invalid_config(config_path: Path = Path("config.json")) -> None:
     """Move invalid config file to backup"""
@@ -392,9 +433,12 @@ def load_config(config_path: Path = Path("config.json")) -> BotConfig:
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-            
+
+        data = migrate_counting_config(data)
         logger.info("Configuration loaded successfully")
-        return BotConfig.from_dict(data)
+        config = BotConfig.from_dict(data)
+        config.save(config_path)
+        return config
     
     except Exception as e:
         logger.error(f"Error loading config: {e}")

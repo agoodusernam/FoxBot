@@ -6,7 +6,7 @@ from command_utils.checks import is_dev
 from currency import curr_utils, gambling_config, curr_config
 
 """
-class GamblingCmds(commands.Cog, name='Gambling', command_attrs=dict(add_check=is_dev, hidden=True)):
+class GamblingCmds(commands.Cog, name='Gambling'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     

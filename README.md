@@ -15,7 +15,7 @@ things in the code.
 Just to note if you do want to run this in your server: It is only intended to run on one server per instance. 
 I haven't tested, nor will I test it on multiple servers on one instance, and it will likely not work properly if you try.
 
-Primarily made for Python 3.14, so I can't guarantee it will work on other versions.
+Primarily made for, and uses features only added in, Python 3.14, so I can't guarantee it will work on other versions.
 
 If you want to contribute, feel free to open a pull request or an issue.
 I have tried to make everything readable and typed properly, but it's still not perfect.

@@ -21,7 +21,7 @@ class Counting(commands.Cog, name='Counting'):
             usage='f!counting_fails_lb [number_of_entries]')
     @commands.cooldown(1, 2, commands.BucketType.user)  
     async def count_fails_lb(self, ctx: CContext, number_of_entries: int = 10):
-        lb = ctx.bot.config.counting_fails
+        lb = ctx.bot.config.counting.fails
         if len(lb) == 0:
             await ctx.send('No users have failed counting yet.')
             return
@@ -44,7 +44,7 @@ class Counting(commands.Cog, name='Counting'):
             usage='f!count_fails <user>')
     @commands.cooldown(1, 2, commands.BucketType.user)  
     async def count_fails(self, ctx: CContext, member: discord.Member | discord.User):
-        fails: int | None = ctx.bot.config.counting_fails.get(member.id, None)
+        fails: int | None = ctx.bot.config.counting.fails.get(member.id, None)
         if fails is None:
             await ctx.send(f'{member.display_name} has not failed counting yet.')
             return
@@ -55,16 +55,16 @@ class Counting(commands.Cog, name='Counting'):
             usage='f!count_leaderboard')
     @commands.cooldown(1, 2, commands.BucketType.user)  
     async def count_leaderboard(self, ctx: CContext):
-        if len(ctx.bot.config.counting_successes) == 0:
+        if len(ctx.bot.config.counting.successes) == 0:
             await ctx.send('No users have counted yet.')
             return
-        
-        if len(ctx.bot.config.highest_user_count) == 0:
+
+        if len(ctx.bot.config.counting.highest_user_count) == 0:
             await ctx.send('No users have counted yet.')
             return
-        
-        lb_success: dict[str, int] = sort_dict_by_value_h2l(ctx.bot.config.counting_successes)
-        lb_user_number: dict[str, int] = sort_dict_by_value_h2l(ctx.bot.config.highest_user_count)
+
+        lb_success: dict[str, int] = sort_dict_by_value_h2l(ctx.bot.config.counting.successes)
+        lb_user_number: dict[str, int] = sort_dict_by_value_h2l(ctx.bot.config.counting.highest_user_count)
         
         num_successes_embed = discord.Embed(title='Most Successful Counting Attempts Leaderboard', color=discord.Color.blue())
         for i in range(5):

@@ -52,6 +52,7 @@ class CustomHelpCommand(commands.MinimalHelpCommand):
         )
         prefix = ctx.clean_prefix
         embeds: list[discord.Embed] = []
+        self.verify_checks = True
 
         for cog, cmds in mapping.items():
             cog_name = getattr(cog, "qualified_name", "Miscellaneous")

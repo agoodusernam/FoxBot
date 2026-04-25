@@ -8,27 +8,15 @@ from discord.ext import commands
 from command_utils.CContext import CContext
 from command_utils.checks import is_dev
 from currency import collector, curr_utils
+from currency.curr_utils import get_profile
 from currency.currency_types import BlackMarketItem, DrugItem, GunItem, HouseItem, JobTree, Profile, SchoolQualif, SecurityClearance, ShopItem
 from currency.curr_config import CURRENCY_NAME, INTEREST_RATE, SALES_TAX
 
 salary_offers: dict[int, dict[str, int]] = {}
-cached_profiles: dict[str, Profile] = {}
-
-async def get_profile(user_id: int | str | discord.User | discord.Member) -> Profile:
-    key: str
-    if isinstance(user_id, int):
-        key = str(user_id)
-    elif isinstance(user_id, (discord.User, discord.Member)):
-        key = str(user_id.id)
-    else:
-        key = user_id
-    if key not in cached_profiles:
-        cached_profiles[key] = await Profile.fetch_from_user_id(key)
-    return cached_profiles[key]
 
 # Create pagination view
 class ShopView(discord.ui.View):
-    def __init__(self, embeds):
+    def __init__(self, embeds) -> None:
         super().__init__(timeout=60)  # 60 second timeout
         self.embeds = embeds
         self.current_page = 0
@@ -49,10 +37,10 @@ class ShopView(discord.ui.View):
         else:
             await interaction.response.defer()  # type: ignore
     
-    async def on_timeout(self):
+    async def on_timeout(self) -> None:
         # Disable all buttons when the view times out
         for item in self.children:
-            item.disabled = True
+            item.disabled = True  # type: ignore[attr-defined]
     # View will be automatically removed from the message
 
 

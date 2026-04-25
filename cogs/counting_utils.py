@@ -95,10 +95,12 @@ class BitwiseDecimal(decimal.Decimal):
         return BitwiseDecimal(super().conjugate())
     
     @overload
-    def __round__(self) -> int: ...
+    def __round__(self) -> int:
+        ...
     
     @overload
-    def __round__(self, ndigits: int | None = None) -> "BitwiseDecimal": ...
+    def __round__(self, ndigits: int | None = None) -> "BitwiseDecimal":
+        ...
     
     def __round__(self, ndigits=None) -> "int | BitwiseDecimal":
         if ndigits is None:
@@ -192,6 +194,7 @@ def convert_to_base10(match: re.Match[str]) -> str:
         # This shouldn't happen
         return num_str
 
+
 def eval_count_msg(message: str) -> tuple[BitwiseDecimal, CountStatus]:
     """
     Returns the evaluated result of a counting message.
@@ -217,7 +220,7 @@ def eval_count_msg(message: str) -> tuple[BitwiseDecimal, CountStatus]:
     try:
         pattern = r"0b[01]+|0o[0-7]+|0x[0-9a-f]+"
         base_10_msg = re.sub(pattern, convert_to_base10, message)
-        decimal.getcontext().prec = 2**20 - 1
+        decimal.getcontext().prec = 2 ** 20 - 1
         expr: str = re.sub(r"(\d+\.\d*|\.\d+|\d+)", r"BitwiseDecimal('\1')", base_10_msg)
         result: BitwiseDecimal = round(eval(expr), 20).normalize()
         
@@ -246,13 +249,13 @@ def eval_count_msg(message: str) -> tuple[BitwiseDecimal, CountStatus]:
 
 async def fail_count_number(message: discord.Message, bot: CoolBot, actual: BitwiseDecimal) -> None:
     actual = round(actual, 5)
-    await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.last_count}**!! Next number is **1**. Your message evaluated to **{actual}**.")
+    await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.counting.last_count}**!! Next number is **1**. Your message evaluated to **{actual.normalize()}**.")
     await fail_count(message, bot)
     return None
 
 
 async def fail_count_user(message: discord.Message, bot: CoolBot) -> None:
-    await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.last_count}**!! Next number is **1**. **You can't count two numbers in a row**.")
+    await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.counting.last_count}**!! Next number is **1**. **You can't count two numbers in a row**.")
     await fail_count(message, bot)
     return None
 
@@ -261,20 +264,20 @@ async def fail_count(message: discord.Message, bot: CoolBot) -> None:
     logger.debug(f'Counting fail by user {message.author.id} at message {message.id}')
     assert isinstance(message.author, discord.Member)
     
-    bot.config.last_count = 0
+    bot.config.counting.last_count = 0
     await message.add_reaction("❌")
     
-    if not utils.user_has_role(message.author, bot.config.counting_fail_role):
+    if not utils.user_has_role(message.author, bot.config.counting.fail_role):
         try:
-            await message.author.add_roles(discord.Object(id=bot.config.counting_fail_role))
+            await message.author.add_roles(discord.Object(id=bot.config.counting.fail_role))
         except discord.Forbidden:
             logger.error(f"Failed to add counting fail role to user {message.author.display_name}, missing permissions")
         except discord.NotFound:
-            logger.error(f"Counting fail role {bot.config.counting_fail_role} not found")
+            logger.error(f"Counting fail role {bot.config.counting.fail_role} not found")
         except discord.HTTPException as e:
             logger.error(f"Failed to add counting fail role to user {message.author.display_name}: {e}")
     
-    bot.config.add_counting_fail(message.author.id)
+    bot.config.counting.add_fail(message.author.id)
     return None
 
 
@@ -293,14 +296,14 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
     if status == CountStatus.INVALID:
         return False
     
-    banrole: int = bot.config.counting_ban_role
+    banrole: int = bot.config.counting.ban_role
     
     if banrole != 0 and utils.user_has_role(message.author, banrole):
         await message.reply("You are banned from counting. Your message was not counted.")
         await message.delete()
         return False
     
-    if bot.config.last_count_user == message.author.id and bot.config.last_count != 0:
+    if bot.config.counting.last_count_user == message.author.id and bot.config.counting.last_count != 0:
         await fail_count_user(message, bot)
         return False
     
@@ -319,26 +322,26 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
     if status == CountStatus.DECIMAL_ERR:
         await message.reply("Expression resulted in a decimal error, likely due to insufficient precision. Try using numbers closer to 0.")
         return False
+        
+    int_result: int = int(result.to_integral_value(rounding=decimal.ROUND_HALF_UP))
     
-    int_result: int = round(result)
-    
-    if result != BitwiseDecimal(bot.config.last_count + 1).normalize():
-        if bot.config.last_count != 0:
+    if result != BitwiseDecimal(bot.config.counting.last_count + 1).normalize():
+        if bot.config.counting.last_count != 0:
             await fail_count_number(message, bot, actual=result)
             return False
         
         await message.reply("The next number is **1**.")
         return False
     
-    bot.config.user_counted(str(message.author.id), int_result, str(message.id))
+    bot.config.counting.user_counted(str(message.author.id), int_result, str(message.id))
     reaction: str = "✅"
     
-    bot.config.last_count = int_result
-    if int_result > bot.config.highest_count:
-        bot.config.highest_count = int_result
+    bot.config.counting.last_count = int_result
+    if int_result > bot.config.counting.highest_count:
+        bot.config.counting.highest_count = int_result
         reaction = "☑️"
     
-    bot.config.last_count_user = message.author.id
+    bot.config.counting.last_count_user = message.author.id
     await asyncio.sleep(0.2)
     await message.add_reaction(reaction)
     return True

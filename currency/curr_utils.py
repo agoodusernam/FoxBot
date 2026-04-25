@@ -1,13 +1,21 @@
-from __future__ import annotations
-
-from collections.abc import Mapping
-from decimal import Decimal
-from typing import Any
 import discord
 
-from currency import shop_items
-from currency.currency_types import Job, Profile, DBProfile
+from currency.currency_types import Profile, ShopItem
 from utils import db_stuff
+
+cached_profiles: dict[str, Profile] = {}
+
+async def get_profile(user_id: int | str | discord.User | discord.Member) -> Profile:
+    key: str
+    if isinstance(user_id, int):
+        key = str(user_id)
+    elif isinstance(user_id, (discord.User, discord.Member)):
+        key = str(user_id.id)
+    else:
+        key = user_id
+    if key not in cached_profiles:
+        cached_profiles[key] = await Profile.fetch_from_user_id(key)
+    return cached_profiles[key]
 
 async def get_stock(item: ShopItem) -> int:
     """

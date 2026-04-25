@@ -531,7 +531,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!reset_counting_fails <user>')
     @commands.check(is_admin)
     async def reset_count_fails(self, ctx: CContext, member: discord.Member):
-        reset: bool = ctx.bot.config.reset_counting_fails(member.id)
+        reset: bool = ctx.bot.config.counting.reset_fails(member.id)
         if reset:
             await ctx.send(f'Counting fails for {member.display_name} have been reset.')
             return

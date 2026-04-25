@@ -120,7 +120,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         await message_events_utils.check_landmine(message, bot=self.bot)
         
-        if (message.channel.id == self.bot.config.counting_channel
+        if (message.channel.id == self.bot.config.counting.channel
                 and message_events_utils.url_in_string(message.content)
                 and not message.author.bot
                 and not (message.author.id in self.bot.config.admin_ids
@@ -152,7 +152,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             self.bot.last_sent_dt = discord.utils.utcnow()
             await message_events_utils.log_msg(message)
         
-        if message.channel.id == self.bot.config.counting_channel and not self.bot.config.staging:
+        if message.channel.id == self.bot.config.counting.channel and not self.bot.config.staging:
             await counting_utils.counting_msg(message, self.bot)
             success = self.bot.config.save()
             if success is not None:
@@ -179,10 +179,10 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         else:
             await self.post_deleted_to_log(db_msg, payload.channel_id, payload.message_id)
         
-        if payload.channel_id != self.bot.config.counting_channel:
+        if payload.channel_id != self.bot.config.counting.channel:
             return
-        
-        if payload.message_id != self.bot.config.last_counted_message_id:
+
+        if payload.message_id != self.bot.config.counting.last_counted_message_id:
             return
         
         author_id: int = 0
@@ -197,10 +197,10 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         assert isinstance(channel, discord.TextChannel)
         
         if author_id == 0:
-            await channel.send(f'Unknown user deleted their message. The next number is {self.bot.config.last_count + 1}')
+            await channel.send(f'Unknown user deleted their message. The next number is {self.bot.config.counting.last_count + 1}')
             return
         
-        await channel.send(f'<@{author_id}> deleted their message. The next number is `{self.bot.config.last_count + 1}`')
+        await channel.send(f'<@{author_id}> deleted their message. The next number is `{self.bot.config.counting.last_count + 1}`')
     
     async def post_deleted_to_log(self, message: discord.Message | dict[str, Any], channel_id: int, message_id: int):
         """
@@ -289,11 +289,14 @@ class MessageLogging(commands.Cog, name='Message Logging'):
                 and payload.channel_id in self.bot.config.no_log.category_ids):
             return
         
-        if (payload.channel_id == self.bot.config.counting_channel
-                and payload.message_id == self.bot.config.last_counted_message_id):
-            
-            if not self.bot.config.last_highest_count_edited:
-                await payload.message.channel.send(f'{payload.message.author.mention} edited their message. The next number is `{self.bot.config.last_count + 1}`')
+        if (payload.channel_id == self.bot.config.counting.channel
+                and payload.message_id == self.bot.config.counting.last_counted_message_id):
+
+            if not self.bot.config.counting.last_highest_count_edited:
+                await payload.message.channel.send(
+                    f'{payload.message.author.mention} edited their message. '
+                    f'The next number is `{self.bot.config.counting.last_count + 1}`'
+                )
         
         before_content: str
         after_content: str

@@ -1,8 +1,12 @@
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
-from currency.currency_types import BlackMarketCategory, BlackMarketItem, Job, JobTree, ShopCategory, ShopItem
+if TYPE_CHECKING:
+    from currency.currency_types import BlackMarketCategory, BlackMarketItem, Job, JobTree, ShopCategory, ShopItem
 
-T = TypeVar('T', bound=Job | JobTree | ShopItem | ShopCategory)
+    T = TypeVar('T', bound=Job | JobTree | ShopItem | ShopCategory)
+else:
+    # Python 3.14 has lazily evaluates type annotations
+    T = TypeVar('T')
 
 all_jobs: list[Job] = []
 all_job_trees: list[JobTree] = []

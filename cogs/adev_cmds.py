@@ -3,7 +3,6 @@ import logging
 import os
 import threading
 from datetime import timedelta
-from typing import Annotated
 
 import discord
 import psutil
