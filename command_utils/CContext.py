@@ -115,7 +115,7 @@ class CoolBot(commands.Bot):
         if self.uptime_session is None:
             self.uptime_session = aiohttp.ClientSession()
         
-        await self.uptime_session.get(endpoint)
+        await self.uptime_session.get(endpoint + str(self.avg_latency))
     
         
     async def get_context(self, message: discord.Message | discord.Interaction, *, cls=CContext) -> Any:
