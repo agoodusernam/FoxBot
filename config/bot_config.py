@@ -379,38 +379,6 @@ class BotConfig(ConfigBase):
             raise KeyError(f"Key '{key}' not found in config")
         return item
     
-    
-
-def migrate_counting_config(data: dict[str, Any]) -> dict[str, Any]:
-    """One-time migration: lift flat counting keys into a nested 'counting' dict."""
-    flat_keys = {
-        "counting_channel", "highest_count", "last_count", "last_count_user",
-        "counting_ban_role", "counting_fail_role", "counting_fails",
-        "counting_successes", "highest_user_count", "last_counted_message_id",
-        "last_counted_id", "last_highest_count_edited",
-    }
-    if "counting" in data or not flat_keys.intersection(data):
-        return data
-
-    logger.info("Migrating counting config from flat to nested format")
-    data = dict(data)
-    data["counting"] = {
-        "channel":                  data.pop("counting_channel", 0),
-        "highest_count":            data.pop("highest_count", 0),
-        "last_count":               data.pop("last_count", 0),
-        "last_count_user":          data.pop("last_count_user", 0),
-        "ban_role":                 data.pop("counting_ban_role", 0),
-        "fail_role":                data.pop("counting_fail_role", 0),
-        "fails":                    data.pop("counting_fails", {}),
-        "successes":                data.pop("counting_successes", {}),
-        "highest_user_count":       data.pop("highest_user_count", {}),
-        "last_counted_message_id":  str(data.pop("last_counted_message_id",
-                                        data.pop("last_counted_id", "0"))),
-        "last_highest_count_edited": data.pop("last_highest_count_edited", False),
-    }
-    return data
-
-
 def move_invalid_config(config_path: Path = Path("config.json")) -> None:
     """Move invalid config file to backup"""
     logger.debug("Moving invalid config to backup")
@@ -434,7 +402,6 @@ def load_config(config_path: Path = Path("config.json")) -> BotConfig:
         with open(config_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        data = migrate_counting_config(data)
         logger.info("Configuration loaded successfully")
         config = BotConfig.from_dict(data)
         config.save(config_path)
