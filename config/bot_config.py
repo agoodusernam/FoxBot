@@ -60,37 +60,37 @@ class CountingConfig(ConfigBase):
     last_count_user: int = 0
     ban_role: int = 0
     fail_role: int = 0
-    fails: dict[int, int] = field(default_factory=dict)
+    fails: dict[str, int] = field(default_factory=dict)
     successes: dict[str, int] = field(default_factory=dict)
     highest_user_count: dict[str, int] = field(default_factory=dict)
     last_counted_message_id: str = "0"
     last_highest_count_edited: bool = False
-    saves: dict[int, int] = field(default_factory=dict)
+    saves: dict[str, int] = field(default_factory=dict)
 
     def add_fail(self, user_id: int) -> None:
-        self.fails[user_id] = self.fails.get(user_id, 0) + 1
+        self.fails[str(user_id)] = self.fails.get(str(user_id), 0) + 1
 
     def reset_fails(self, user_id: int) -> bool:
-        if user_id not in self.fails:
+        if str(user_id) not in self.fails:
             return False
-        self.fails[user_id] = 0
+        self.fails[str(user_id)] = 0
         return True
 
     def set_saves(self, user_id: int, count: int) -> None:
         if count <= 0:
-            self.saves.pop(user_id, None)
+            self.saves.pop(str(user_id), None)
         else:
-            self.saves[user_id] = count
+            self.saves[str(user_id)] = count
     
     def use_save(self, user_id: int) -> int:
         """Consumes one save. Returns remaining saves."""
-        if self.saves.get(user_id, 0) <= 0:
-            self.saves.pop(user_id, None)
+        if self.saves.get(str(user_id), 0) <= 0:
+            self.saves.pop(str(user_id), None)
             return 0
-        self.saves[user_id] -= 1
-        remaining = self.saves[user_id]
+        self.saves[str(user_id)] -= 1
+        remaining = self.saves[str(user_id)]
         if remaining == 0:
-            del self.saves[user_id]
+            del self.saves[str(user_id)]
         return remaining
 
     def user_counted(self, user_id: str, number: int, message_id: str) -> None:
@@ -236,7 +236,7 @@ class BotConfig(ConfigBase):
                 highest_user_count=c.get("highest_user_count", {}),
                 last_counted_message_id=str(c.get("last_counted_message_id", "0")),
                 last_highest_count_edited=c.get("last_highest_count_edited", False),
-                saves={int(k): v for k, v in c.get("saves", {}).items()},
+                saves={str(k): v for k, v in c.get("saves", {}).items()},
             )
         
         # User permissions

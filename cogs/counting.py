@@ -27,16 +27,15 @@ class Counting(commands.Cog, name='Counting'):
             return
         
         sorted_lb = sort_dict_by_value_h2l(lb)
-        embed = discord.Embed(title='Counting Fails Leaderboard', color=discord.Color.blue())
         description = ''
         for i in range(number_of_entries):
             if i >= len(sorted_lb):
                 break
             user_id, count = list(sorted_lb.items())[i]
-            user = await ctx.bot.fetch_user(user_id)
+            user = await ctx.bot.fetch_user(int(user_id))
             description += f'{i + 1}. {user.display_name} - {count}\n'
         
-        embed.description = description
+        embed = discord.Embed(title='Counting Fails Leaderboard', color=discord.Color.blue(), description=description)
         await ctx.send(embed=embed)
     
     @commands.command(name='count_fails', aliases=['cf'],
@@ -44,7 +43,7 @@ class Counting(commands.Cog, name='Counting'):
             usage='f!count_fails <user>')
     @commands.cooldown(1, 2, commands.BucketType.user)  
     async def count_fails(self, ctx: CContext, member: discord.Member | discord.User):
-        fails: int | None = ctx.bot.config.counting.fails.get(member.id, None)
+        fails: int | None = ctx.bot.config.counting.fails.get(str(member.id), None)
         if fails is None:
             await ctx.send(f'{member.display_name} has not failed counting yet.')
             return
@@ -94,9 +93,9 @@ class Counting(commands.Cog, name='Counting'):
             member = ctx.author
         counting = ctx.bot.config.counting
         successes: int | None = counting.successes.get(str(member.id))
-        fails: int | None = counting.fails.get(member.id)
+        fails: int | None = counting.fails.get(str(member.id))
         highest: int | None = counting.highest_user_count.get(str(member.id))
-        saves: int = counting.saves.get(member.id, 0)
+        saves: int = counting.saves.get(str(member.id), 0)
 
         if successes is None and fails is None and highest is None:
             await ctx.send(f'{member.display_name} has not counted yet.')
