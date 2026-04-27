@@ -85,6 +85,30 @@ class Counting(commands.Cog, name='Counting'):
         await ctx.send(embed=num_successes_embed)
         await ctx.send(embed=num_user_embed)
     
+    @commands.command(name='counting_stats', aliases=['cs'],
+            help='View counting stats for a user',
+            usage='f!counting_stats <user>')
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    async def counting_stats(self, ctx: CContext, member: discord.Member | discord.User | None):
+        if member is None:
+            member = ctx.author
+        counting = ctx.bot.config.counting
+        successes: int | None = counting.successes.get(str(member.id))
+        fails: int | None = counting.fails.get(member.id)
+        highest: int | None = counting.highest_user_count.get(str(member.id))
+        saves: int = counting.saves.get(member.id, 0)
+
+        if successes is None and fails is None and highest is None:
+            await ctx.send(f'{member.display_name} has not counted yet.')
+            return
+
+        embed = discord.Embed(title=f'Counting Stats — {member.display_name}', color=discord.Color.blue())
+        embed.add_field(name='Successful Counts', value=successes if successes is not None else 0, inline=True)
+        embed.add_field(name='Fails', value=fails if fails is not None else 0, inline=True)
+        embed.add_field(name='Highest Count', value=highest if highest is not None else 0, inline=True)
+        embed.add_field(name='Saves', value=saves, inline=True)
+        await ctx.send(embed=embed)
+
     @commands.command(name='calculate', aliases=['calc'],
                       help='Calculate a mathematical expression',
                       usage='f!calculate <expression>')

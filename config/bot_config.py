@@ -65,6 +65,7 @@ class CountingConfig(ConfigBase):
     highest_user_count: dict[str, int] = field(default_factory=dict)
     last_counted_message_id: str = "0"
     last_highest_count_edited: bool = False
+    saves: dict[int, int] = field(default_factory=dict)
 
     def add_fail(self, user_id: int) -> None:
         self.fails[user_id] = self.fails.get(user_id, 0) + 1
@@ -74,6 +75,23 @@ class CountingConfig(ConfigBase):
             return False
         self.fails[user_id] = 0
         return True
+
+    def set_saves(self, user_id: int, count: int) -> None:
+        if count <= 0:
+            self.saves.pop(user_id, None)
+        else:
+            self.saves[user_id] = count
+    
+    def use_save(self, user_id: int) -> int:
+        """Consumes one save. Returns remaining saves."""
+        if self.saves.get(user_id, 0) <= 0:
+            self.saves.pop(user_id, None)
+            return 0
+        self.saves[user_id] -= 1
+        remaining = self.saves[user_id]
+        if remaining == 0:
+            del self.saves[user_id]
+        return remaining
 
     def user_counted(self, user_id: str, number: int, message_id: str) -> None:
         logger.debug(f"User {user_id}, in message {message_id} counted {number}")
@@ -173,6 +191,7 @@ class BotConfig(ConfigBase):
                 "highest_user_count": {},
                 "last_counted_message_id": "0",
                 "last_highest_count_edited": False,
+                "saves": {},
             },
             "logs_path": Path("logs"),
             "vc_lb_channel_id": 0,
@@ -217,6 +236,7 @@ class BotConfig(ConfigBase):
                 highest_user_count=c.get("highest_user_count", {}),
                 last_counted_message_id=str(c.get("last_counted_message_id", "0")),
                 last_highest_count_edited=c.get("last_highest_count_edited", False),
+                saves={int(k): v for k, v in c.get("saves", {}).items()},
             )
         
         # User permissions
@@ -305,6 +325,7 @@ class BotConfig(ConfigBase):
                 "highest_user_count":       self.counting.highest_user_count,
                 "last_counted_message_id":  self.counting.last_counted_message_id,
                 "last_highest_count_edited": self.counting.last_highest_count_edited,
+                "saves":                    self.counting.saves,
             },
             "logs_path":                str(self.logs_path),
             "vc_lb_channel_id":         self.vc_lb_channel_id,

@@ -14,13 +14,10 @@ from cogs.admin_cmds_utils import sort_by_timestamp, last_log
 from command_utils.CContext import CContext, CoolBot
 from command_utils.analysis import text_analysis, voice_analysis
 from command_utils.analysis.text_analysis import DBMessage, DatetimeDBMessage, remove_invalid_messages
-from command_utils.checks import is_admin
-from config import bot_config
+from command_utils.checks import is_admin, is_staff
 from utils import db_stuff
 
 logger = logging.getLogger('discord')
-
-staff_role_id = bot_config.get_config_option('staff_role_id', 0)
 
 class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     """Admin commands for managing the server and users."""
@@ -287,7 +284,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Send the last modlog message',
                       usage='f!last_log')
     @commands.cooldown(1, 5, commands.BucketType.user)  
-    @commands.has_role(staff_role_id)
+    @commands.check(is_staff)
     async def send_last_log(self, ctx: CContext):
         await ctx.delete()
         await last_log(ctx)
@@ -300,7 +297,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Send the last modlog message without mentioning the moderator',
                       usage='f!last_log_anonymous')
     @commands.cooldown(1, 5, commands.BucketType.user)  
-    @commands.has_role(staff_role_id)
+    @commands.check(is_staff)
     async def send_last_log_anonymous(self, ctx: CContext):
         await ctx.delete()
         await last_log(ctx, anonymous=True)
@@ -359,7 +356,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                         help='Admin only: Assign the verified role to a user',
                         usage='f!verify <user_id/mention>')
     @commands.guild_only()
-    @commands.has_role(staff_role_id)
+    @commands.check(is_staff)
     async def verify(self, ctx: CContext, member: discord.Member):
         await ctx.delete()
         assert ctx.guild is not None
@@ -386,7 +383,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             help='Admin only: Assign the verified role to a user',
             usage='f!unverify <user_id/mention>')
     @commands.guild_only()
-    @commands.has_role(staff_role_id)
+    @commands.check(is_staff)
     async def unverify(self, ctx: CContext, member: discord.Member):
         await ctx.delete()
         assert ctx.guild is not None
@@ -412,7 +409,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       brief='Fetch last messages from a user',
                       help='Admin only: Fetch the last messages sent by a user in the server',
                       usage='f!last_messages <user_id/mention> [number_of_messages]')
-    @commands.has_role(staff_role_id)
+    @commands.check(is_staff)
     async def last_messages(self, ctx: CContext, member: discord.User, number_of_messages: int = 5):
         await ctx.delete()
         
@@ -537,6 +534,21 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             return
         await ctx.send(f'{member.display_name} does not have any failed counting attempts to reset.')
         return
+    
+    @commands.command(name='set_counting_saves', aliases=['scs'],
+                      brief='Set counting saves for a user',
+                      help='Admin only: Set the number of counting saves for a user',
+                      usage='f!set_counting_saves <user> <amount>')
+    @commands.check(is_admin)
+    async def set_counting_saves(self, ctx: CContext, member: discord.Member, amount: int):
+        if amount < 0:
+            await ctx.send('Amount must be 0 or greater.', delete_after=ctx.bot.del_after)
+            return
+        ctx.bot.config.counting.set_saves(member.id, amount)
+        if amount == 0:
+            await ctx.send(f'Counting saves for {member.display_name} have been removed.')
+        else:
+            await ctx.send(f'{member.display_name} now has **{amount}** counting save(s).')
         
     @commands.command(name='stoptts')
     @commands.check(is_admin)

@@ -14,7 +14,7 @@ import discord
 from command_utils.CContext import CoolBot
 from utils import utils
 
-__all__ = ["counting_msg", "BitwiseDecimal", "CountStatus", "fail_count", "count_only_allowed_chars", "eval_count_msg"]
+__all__ = ["counting_msg", "BitwiseDecimal", "CountStatus", "fail_count", "count_only_allowed_chars", "eval_count_msg", "try_use_save"]
 
 logger = logging.getLogger('discord')
 
@@ -247,7 +247,21 @@ def eval_count_msg(message: str) -> tuple[BitwiseDecimal, CountStatus]:
             signal.signal(signal.SIGALRM, old_handler)  # type: ignore  # noqa
 
 
+async def try_use_save(message: discord.Message, bot: CoolBot) -> bool:
+    """Consumes one save for the message author. Returns True if a save was used."""
+    remaining = bot.config.counting.use_save(message.author.id)
+    if remaining < 0:
+        return False
+    await message.reply(
+        f"<@{message.author.id}> would have ruined it, but used a save! You have **{remaining}** save{'s' if remaining == 1 else ''} remaining."
+    )
+    await message.add_reaction("🛡️")
+    return True
+
+
 async def fail_count_number(message: discord.Message, bot: CoolBot, actual: BitwiseDecimal) -> None:
+    if await try_use_save(message, bot):
+        return None
     actual = round(actual, 5)
     await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.counting.last_count}**!! Next number is **1**. Your message evaluated to **{actual.normalize()}**.")
     await fail_count(message, bot)
@@ -255,6 +269,8 @@ async def fail_count_number(message: discord.Message, bot: CoolBot, actual: Bitw
 
 
 async def fail_count_user(message: discord.Message, bot: CoolBot) -> None:
+    if await try_use_save(message, bot):
+        return None
     await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.counting.last_count}**!! Next number is **1**. **You can't count two numbers in a row**.")
     await fail_count(message, bot)
     return None
