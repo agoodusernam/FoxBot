@@ -47,7 +47,7 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     async def update(self, ctx: CContext, time: int = 0):
         await ctx.delete()
         await adev_cmds_utils.shutdown(ctx.bot, update=True, restart=True, time=time)
-        
+    
     """
     @commands.command(name='upload_all_history',
                       brief='Upload all messages from a server',
@@ -64,7 +64,6 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         await upload_whole_server(ctx.guild, ctx.author, nolog_channels)
     """
     
-    
     @commands.command(name='maintenance_mode',
                       brief='Toggle maintenance mode',
                       help='Dev only: Toggle maintenance mode for the bot',
@@ -78,9 +77,9 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         await ctx.send(f'Maintenance mode has been {status}.', delete_after=ctx.bot.del_after)
     
     @commands.command(name='reset_cooldowns',
-                        brief='Reset command cooldowns',
-                        help='Dev only: Reset all command cooldowns for the bot',
-                        usage='f!reset_cooldowns')
+                      brief='Reset command cooldowns',
+                      help='Dev only: Reset all command cooldowns for the bot',
+                      usage='f!reset_cooldowns')
     async def reset_cooldowns(self, ctx: CContext):
         await ctx.delete()
         
@@ -95,15 +94,16 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
                       usage='f!run_func <function_name>')
     async def run_func(self, ctx: CContext, func_name: str):
         await ctx.delete()
-        if ctx.author.id != 542798185857286144: return
+        if ctx.author.id != 542798185857286144:
+            return
         loop = asyncio.new_event_loop()
         ctx.bot.dev_func_thread = threading.Thread(target=adev_cmds_utils.run_func, args=(loop, func_name, ctx))
         ctx.bot.dev_func_thread.start()
     
     @commands.command(name='debug_status',
-                        brief='Get debug status',
-                        help='Dev only: Get debug info about the bot',
-                        usage='f!debug_status')
+                      brief='Get debug status',
+                      help='Dev only: Get debug info about the bot',
+                      usage='f!debug_status')
     async def debug_status(self, ctx: CContext):
         internet: str = 'Available' if utils.utils.internet() else 'Not Available'
         ping: str = str(round(ctx.bot.latency * 1000, 1))
@@ -159,7 +159,6 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         ctx.bot.config.admin_ids.add(user.id)
         ctx.bot.config.save()
         await ctx.send(f'Added {user.display_name} as admin')
-        
     
     @commands.command(name='remove_admin', aliases=['rm_admin'])
     async def remove_admin(self, ctx: CContext, user: discord.User | discord.Member):
@@ -194,7 +193,8 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     
     @commands.command(name='add_to_env')
     async def add_to_env(self, ctx: CContext, key: str, value: str):
-        if not ctx.author.id == 542798185857286144: return
+        if not ctx.author.id == 542798185857286144:
+            return
         await ctx.delete()
         key = key.upper()
         if key in os.environ:
@@ -204,7 +204,7 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
         os.environ[key] = value
         adev_cmds_utils.add_to_env(key, value)
         await ctx.send(f'Added {key} to environment variables.')
-    
+
 
 async def setup(bot: CoolBot):
     await bot.add_cog(DevCommands(bot))

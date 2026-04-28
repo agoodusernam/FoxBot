@@ -60,7 +60,7 @@ async def give_rich_role(ctx: Context, member: discord.Member) -> bool:
     
     try:
         await member.add_roles(rich_role)
-        
+    
     except discord.Forbidden:
         raise discord.ext.commands.BotMissingPermissions(["manage_roles"])
     

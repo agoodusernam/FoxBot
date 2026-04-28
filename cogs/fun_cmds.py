@@ -33,7 +33,7 @@ class FunCommands(commands.Cog, name='Fun'):
         self.check_tts_leave.start()
         self.send_vc_lb.start()
         self.add_ping.start()
-        
+    
     @commands.command(name='dice', aliases=['roll', 'dice_roll'],
                       brief='Roll a dice',
                       help='Roll a dice between two values (inclusive)',
@@ -112,25 +112,25 @@ class FunCommands(commands.Cog, name='Fun'):
         
         except discord.HTTPException as e:
             logger.error(f'Failed to send suggestion: {e}')
-        
+    
     @commands.command(name='8ball', aliases=['eight_ball', 'magic_8_ball'],
-                        brief='Ask the magic 8-ball a question',
-                        help='Ask the magic 8-ball a question and get a random answer')
-    @commands.cooldown(1, 3, commands.BucketType.user)  
+                      brief='Ask the magic 8-ball a question',
+                      help='Ask the magic 8-ball a question and get a random answer')
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def eight_ball(self, ctx: CContext):
-        pos_responses = [ # 10 positive responses
+        pos_responses = [  # 10 positive responses
             'It is certain', 'It is decidedly so', 'Without a doubt', 'Yes definitely',
             'You may rely on it', 'As I see it, yes', 'Most likely', 'Outlook good',
-            'Yes', 'Signs point to yes'
+            'Yes', 'Signs point to yes',
         ]
-        neut_responses = [ # 4 neutral responses
+        neut_responses = [  # 4 neutral responses
             'Reply hazy try again', 'Better not tell you now', 'I see no clear answer',
-            "I shouldn't answer that"
+            "I shouldn't answer that",
         ]
-        neg_responses = [ # 10 negative responses
+        neg_responses = [  # 10 negative responses
             "Don't count on it", 'Certainly not', 'My sources say unlikely',
             'Outlook not so good', 'Very doubtful', 'No', 'Definitely not',
-            'You should not count on it', 'I would not rely on it', 'In my opinion, no'
+            'You should not count on it', 'I would not rely on it', 'In my opinion, no',
         ]
         responses = pos_responses + neut_responses + neg_responses
         answer = random.choice(responses)
@@ -138,12 +138,12 @@ class FunCommands(commands.Cog, name='Fun'):
         await ctx.typing()
         await asyncio.sleep(2)  # Simulate thinking time
         await ctx.safe_reply(f'{answer}')
-        
+    
     @commands.command(name='owoify', aliases=['owo', 'uwu'],
-                        brief='Convert text to OwO language',
-                        help='Converts the given text to OwO language (UwU style)',
-                        usage='f!owo <text>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+                      brief='Convert text to OwO language',
+                      help='Converts the given text to OwO language (UwU style)',
+                      usage='f!owo <text>')
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def owoify(self, ctx: CContext, *, text: str):
         # Simple conversion to OwO language
         # Why did I add this. I hate myself
@@ -156,7 +156,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='code', aliases=['source', 'github'],
                       brief="Get the bot's source code",
                       help="Get the link to the bot's source code on GitHub")
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def code(self, ctx: CContext):
         await ctx.send('You can find the source code for this bot on GitHub: https://github.com/agoodusernam/FoxBot')
     
@@ -164,7 +164,7 @@ class FunCommands(commands.Cog, name='Fun'):
                       brief='Get the number of lines of code in the bot',
                       help="Get the number of lines of code in the bot's source code",
                       usage='f!loc')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def lines_of_code(self, ctx: CContext):
         # function that returns the number of lines of code in a given directory recursively, excluding .venv
         total_lines, total_files = utils.utils.loc_total()
@@ -200,9 +200,9 @@ class FunCommands(commands.Cog, name='Fun'):
                       brief='Send a text-to-speech message',
                       help='Send a text-to-speech message in the current channel',
                       usage='f!tts <message>')
-    @commands.cooldown(1, 1, commands.BucketType.guild) 
+    @commands.cooldown(1, 1, commands.BucketType.guild)
     @guild_only()
-    @commands.has_role(1405824995946532995) # TODO: Make configurable
+    @commands.has_role(1405824995946532995)  # TODO: Make configurable
     async def tts(self, ctx: CContext, *, message: str):
         if isinstance(ctx.author, discord.User):
             return
@@ -240,6 +240,7 @@ class FunCommands(commands.Cog, name='Fun'):
         ctx.bot.last_tts_sent_time = time.time()
         await lock.acquire()
         gTTS(text=message).save('msg.mp3')
+        
         def done(error: Exception | None) -> None:
             lock.release()
             if os.path.exists('msg.mp3'):
@@ -261,10 +262,10 @@ class FunCommands(commands.Cog, name='Fun'):
         vc_client.play(audio, after=done)
     
     @commands.command(name='tts_leave', aliases=['tts_disconnect', "ttsl"],
-                        brief='Disconnect the bot from voice channel',
-                        help='Disconnect the bot from the voice channel it is currently in',
-                        usage='f!tts_leave')
-    @commands.cooldown(1, 1, commands.BucketType.guild)  
+                      brief='Disconnect the bot from voice channel',
+                      help='Disconnect the bot from the voice channel it is currently in',
+                      usage='f!tts_leave')
+    @commands.cooldown(1, 1, commands.BucketType.guild)
     @guild_only()
     async def tts_leave(self, ctx: CContext):
         if ctx.bot.vc_client is None:
@@ -279,11 +280,10 @@ class FunCommands(commands.Cog, name='Fun'):
         ctx.bot.vc_client = None
         ctx.bot.last_tts_sent_time = None
     
-    
     @commands.command(name='stats',
                       brief="Get bot statistics",
                       help="Get statistics about the bot")
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def stats(self, ctx: CContext):
         loc = utils.utils.loc_total()[0]
         files = utils.utils.loc_total()[1]
@@ -312,30 +312,30 @@ class FunCommands(commands.Cog, name='Fun'):
     @commands.command(name='vc_lb',
                       brief="Send the voice call leaderboard",
                       help="Send the voice call leaderboard to the current channel")
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def manual_send_vc_lb(self, ctx: CContext, channel: typing.Optional[discord.TextChannel]) -> None:
         if channel is None:
-            channel = ctx.channel # type: ignore
-
+            channel = ctx.channel  # type: ignore
+        
         if not isinstance(channel, (discord.TextChannel, discord.DMChannel)):
             logger.error('VC leaderboard channel not found.')
             return
-
+        
         lb = await voice_analysis.voice_activity_this_week()
-
+        
         leaderboard_text = ''
-
+        
         for i, stat in enumerate(lb):
             formatted_time = voice_analysis.format_duration(stat["total_seconds"])
             leaderboard_text += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
-
+        
         embed = discord.Embed(
-            title='Time spent in VCs leaderboard for last week:',
-            description=leaderboard_text,
-            colour=discord.Colour.purple()
+                title='Time spent in VCs leaderboard for last week:',
+                description=leaderboard_text,
+                colour=discord.Colour.purple(),
         )
         embed.timestamp = discord.utils.utcnow()
-
+        
         await channel.send(embed=embed)
         await voice_analysis.generate_voice_activity_graph(channel, self.bot, lb, 5)
     
@@ -384,22 +384,22 @@ class FunCommands(commands.Cog, name='Fun'):
         if not isinstance(channel, discord.TextChannel):
             logger.error('VC leaderboard channel not found.')
             return
-
+        
         lb = await voice_analysis.voice_activity_this_week(skip_cache=True)
-
+        
         leaderboard_text = ''
-
+        
         for i, stat in enumerate(lb):
             formatted_time = voice_analysis.format_duration(stat["total_seconds"])
             leaderboard_text += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
-
+        
         embed = discord.Embed(
-            title='Time spent in VCs leaderboard for last week:',
-            description=leaderboard_text,
-            colour=discord.Colour.purple()
+                title='Time spent in VCs leaderboard for last week:',
+                description=leaderboard_text,
+                colour=discord.Colour.purple(),
         )
         embed.timestamp = discord.utils.utcnow()
-
+        
         await channel.send(embed=embed)
         await voice_analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False)
     
@@ -410,6 +410,7 @@ class FunCommands(commands.Cog, name='Fun'):
     @add_ping.before_loop
     async def before_add_ping(self) -> None:
         await self.bot.wait_until_ready()
+
 
 async def setup(bot: CoolBot) -> None:
     await bot.add_cog(FunCommands(bot))

@@ -8,7 +8,7 @@ def create_log_embed(user_name: str,
                      description: str,
                      colour: C,
                      embed_title: str,
-                     footer: str | None = None
+                     footer: str | None = None,
                      ) -> discord.Embed:
     
     if isinstance(colour, str):

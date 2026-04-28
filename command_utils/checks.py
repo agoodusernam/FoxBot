@@ -11,6 +11,7 @@ def is_dev(ctx: CContext) -> bool:
 def is_admin(ctx: CContext) -> bool:
     return ctx.author.id in ctx.bot.admin_ids
 
+
 def is_staff(ctx: CContext) -> bool:
     if isinstance(ctx.author, discord.User):
         return False

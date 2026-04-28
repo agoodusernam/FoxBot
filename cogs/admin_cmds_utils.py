@@ -10,10 +10,11 @@ from command_utils.analysis.text_analysis import DBMessage, DatetimeDBMessage
 def dt_from_timestamp(timestamp: float) -> datetime.datetime:
     return datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
 
+
 def sort_by_timestamp(messages: list[DBMessage]) -> list[DatetimeDBMessage]:
     new_msgs: list[DatetimeDBMessage]
     
-    new_msgs = [DatetimeDBMessage(**message, timestamp = dt_from_timestamp(message['timestamp'])) for message in messages]
+    new_msgs = [DatetimeDBMessage(**message, timestamp=dt_from_timestamp(message['timestamp'])) for message in messages]
     
     return sorted(new_msgs, key=lambda x: x['timestamp'], reverse=True)
 
@@ -59,7 +60,7 @@ async def last_log(ctx: discord.ext.commands.Context, anonymous: bool = False) -
             title=f'{offence}',
             description=new_description,
             color=discord.Color.red(),
-            timestamp=discord.utils.utcnow()
+            timestamp=discord.utils.utcnow(),
     )
     if duration:
         to_send_embed.add_field(name='Duration', value=duration, inline=False)

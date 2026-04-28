@@ -17,6 +17,7 @@ from utils import db_stuff
 
 logger = logging.getLogger('discord')
 
+
 class DBVoiceSession(TypedDict):
     user_id: str
     channel_id: str
@@ -77,7 +78,9 @@ class VoiceAnalysisResult(TypedDict):
     median_session_duration: NotRequired[int]
     weekly_active: NotRequired[WeeklyActiveStats]
 
+
 T = TypeVar('T', UserVoiceStats, ChannelVoiceStats, ChannelVoiceStats)
+
 
 def add_time_stats(stats: T, seconds: int) -> T:
     total = stats.get('total_seconds', 0)
@@ -139,11 +142,11 @@ def _merge_adjacent_sessions(sessions: list[DBVoiceSession], max_gap_seconds: in
             if 0 <= gap <= max_gap_seconds:
                 # Merge: combine durations + gap, keep the later timestamp
                 current = DBVoiceSession(
-                    user_id=current['user_id'],
-                    channel_id=current['channel_id'],
-                    duration_seconds=current['duration_seconds'] + next_session['duration_seconds'] + gap,
-                    _id=current['_id'],
-                    timestamp=next_session['timestamp'],
+                        user_id=current['user_id'],
+                        channel_id=current['channel_id'],
+                        duration_seconds=current['duration_seconds'] + next_session['duration_seconds'] + gap,
+                        _id=current['_id'],
+                        timestamp=next_session['timestamp'],
                 )
                 continue
         
@@ -167,15 +170,15 @@ async def remove_invalid_voice_sessions(sessions: list[dict[str, Any]], merge_se
             logger.warning(f'deleting invalid voice session: {session}')
             await db_stuff.del_db_entry('voice_sessions', session['_id'])
             continue
-            
+        
         total_seconds += session['duration_seconds']
         valid_session = DBVoiceSession(user_id=session['user_id'], channel_id=session['channel_id'], duration_seconds=session['duration_seconds'], _id=session['_id'])
         
         if 'timestamp' in session:
             valid_session['timestamp'] = session['timestamp']
-            
-        valid_sessions.append(valid_session)
         
+        valid_sessions.append(valid_session)
+    
     if not valid_sessions:
         return None
     
@@ -267,12 +270,12 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
                 uid1, uid2 = sorted([s1['user_id'], s2['user_id']])
                 pair: tuple[str, str] = (uid1, uid2)
                 duo_seconds[pair] = duo_seconds.get(pair, 0) + overlap
-
+    
     best_duo: DuoStats | None = None
     if duo_seconds:
         best_pair = max(duo_seconds, key=lambda k: duo_seconds[k])
         best_duo = DuoStats(user_id_1=best_pair[0], user_id_2=best_pair[1], total_seconds=duo_seconds[best_pair])
-
+    
     # Average users per session and total sessions
     # A "session" is approximated by grouping overlapping timed sessions per channel
     total_session_count = len(sessions)
@@ -297,12 +300,12 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
         avg_users_per_session = sum(concurrent_counts) / len(concurrent_counts)
     else:
         avg_users_per_session = 1.0
-
+    
     # Average and median session duration
     session_durations = [s['duration_seconds'] for s in sessions]
     avg_session_duration = sum(session_durations) // len(session_durations) if session_durations else 0
     median_session_duration = int(median(session_durations)) if session_durations else 0
-
+    
     # Weekly unique active users
     now = datetime.datetime.now(datetime.timezone.utc)
     one_week_ago = now - datetime.timedelta(days=7)
@@ -315,14 +318,14 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
             this_week_users.add(s['user_id'])
         elif session_time >= two_weeks_ago:
             last_week_users.add(s['user_id'])
-
+    
     total_user_count = len(user_stats) if user_stats else 1
     weekly_active = WeeklyActiveStats(
-        this_week=len(this_week_users),
-        last_week=len(last_week_users),
-        activity_ratio=len(this_week_users) / total_user_count,
+            this_week=len(this_week_users),
+            last_week=len(last_week_users),
+            activity_ratio=len(this_week_users) / total_user_count,
     )
-
+    
     result_dict = VoiceAnalysisResult(
             total_seconds=total_seconds_including_left if include_left else total_seconds,
             total_users=len(user_stats),
@@ -336,7 +339,7 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
     )
     if best_duo:
         result_dict['best_duo'] = best_duo
-
+    
     return result_dict
 
 
@@ -415,7 +418,7 @@ async def get_user_voice_statistics(user_id: str) -> UserVoiceAnalysisResult | N
     avg_session_duration = total_seconds // len(user_sessions) if user_sessions else 0
     median_session_duration = int(median([s['duration_seconds'] for s in user_sessions])) if user_sessions else 0
     total_sessions = len(user_sessions)
-
+    
     # Average users per session for this user
     timed_user_sessions_for_avg = [s for s in user_sessions if 'timestamp' in s]
     all_timed = [s for s in sessions if 'timestamp' in s]
@@ -437,7 +440,7 @@ async def get_user_voice_statistics(user_id: str) -> UserVoiceAnalysisResult | N
         avg_users_per_session = sum(concurrent_counts_user) / len(concurrent_counts_user)
     else:
         avg_users_per_session = 1.0
-
+    
     # Peak activity hour and favorite day (only from timed sessions)
     result_dict = UserVoiceAnalysisResult(
             user_id=user_id,
@@ -504,7 +507,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
         result += f"\n**Total time in voice channels, all time:** {total_time_formatted}\n"
     else:
         result += f"\n**Total time in voice channels:** {total_time_formatted}\n"
-
+    
     # Best duo
     if 'best_duo' in stats:
         duo = stats['best_duo']
@@ -512,7 +515,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
         user1 = await try_resolve_uid(int(duo['user_id_1']), ctx.bot)
         user2 = await try_resolve_uid(int(duo['user_id_2']), ctx.bot)
         result += f"\n**Best Duo:** {user1} & {user2} — {duo_time} together\n"
-
+    
     # Session stats
     if 'total_sessions' in stats:
         result += f"**Total sessions:** {stats['total_sessions']}\n"
@@ -522,7 +525,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
         result += f"**Average session length:** {format_duration(stats['avg_session_duration'])}\n"
     if 'median_session_duration' in stats:
         result += f"**Median session length:** {format_duration(stats['median_session_duration'])}\n"
-
+    
     # Weekly active users
     if 'weekly_active' in stats:
         wa = stats['weekly_active']
@@ -530,7 +533,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
         trend = f"(+{diff})" if diff >= 0 else f"({diff})"
         result += f"\n**Weekly unique active users:** {wa['this_week']} {trend} vs last week ({wa['last_week']})\n"
         result += f"**Activity ratio:** {wa['activity_ratio']:.1%} of all users\n"
-
+    
     await ctx.send(result)
     if graph:
         try:
@@ -542,7 +545,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
 
 async def add_voice_analysis_for_user(ctx: CContext,
                                       member: discord.Object,
-                                      dm_user: bool = False
+                                      dm_user: bool = False,
                                       ) -> None:
     """
     Generate voice activity statistics for a specific user.
@@ -603,10 +606,10 @@ async def add_voice_analysis_for_user(ctx: CContext,
     dm_channel: DMChannel | None = dm_user_obj.dm_channel
     if dm_channel is None:
         dm_channel = await dm_user_obj.create_dm()
-        
+    
     if dm_channel is not None:
         await dm_channel.send(result)
-        
+    
     else:
         await ctx.send('Failed to create dm with user.')
 
@@ -614,7 +617,7 @@ async def add_voice_analysis_for_user(ctx: CContext,
 async def format_voice_analysis(ctx: CContext, graph: bool = False,
                                 user: discord.Object | None = None,
                                 include_left: bool = False,
-                                dm_user: bool = False
+                                dm_user: bool = False,
                                 ) -> None:
     """
     Format and send voice analysis results.
@@ -644,7 +647,8 @@ async def format_voice_analysis(ctx: CContext, graph: bool = False,
 
 
 async def generate_voice_activity_graph(channel: discord.TextChannel, bot: CoolBot,
-        stats: VoiceAnalysisResult | list[UserVoiceStats], count: int, send_errors: bool = True) -> None:
+                                        stats: VoiceAnalysisResult | list[UserVoiceStats], count: int, send_errors: bool = True,
+                                        ) -> None:
     """ Generate and send a graph of voice activity.
     Args:
         channel: The channel where to send the graph
@@ -657,7 +661,7 @@ async def generate_voice_activity_graph(channel: discord.TextChannel, bot: CoolB
         top_users = stats[:count]
     else:
         top_users = stats["active_users_lb"][:count]
-        
+    
     if not top_users:
         logger.error("No user voice activity data to graph.")
         if send_errors:
@@ -704,9 +708,9 @@ async def generate_voice_activity_graph(channel: discord.TextChannel, bot: CoolB
         graph_path = temp_dir_path / graph_file
         plt.savefig(graph_path)
         plt.close()
-    
+        
         await channel.send(file=discord.File(graph_path))
-    
+
 
 async def user_time_in_channel(ctx: CContext, user: discord.User, channel: discord.VoiceChannel) -> None:
     sessions = await get_valid_voice_sessions()
@@ -743,7 +747,7 @@ async def all_sessions_this_week(skip_cache: bool = False) -> list[DBVoiceSessio
     for session in sessions_list:
         if 'timestamp' not in session:
             continue
-            
+        
         logger.debug('session timestamp: %s', session['timestamp'])
         session_time = datetime.datetime.fromtimestamp(session['timestamp'], datetime.UTC)
         difference = discord.utils.utcnow() - session_time
@@ -752,7 +756,7 @@ async def all_sessions_this_week(skip_cache: bool = False) -> list[DBVoiceSessio
                     user_id=session['user_id'],
                     channel_id=session['channel_id'],
                     duration_seconds=session['duration_seconds'],
-                    _id=session['_id']
+                    _id=session['_id'],
             ))
     
     return valid_sessions

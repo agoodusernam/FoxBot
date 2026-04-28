@@ -8,7 +8,7 @@ import discord
 def setup_colour_logging(path: Path | str) -> None:
     if isinstance(path, str):
         path = Path(path)
-        
+    
     logs_path = path.resolve()
     
     ensure_logs_path(logs_path)
@@ -20,10 +20,10 @@ def setup_colour_logging(path: Path | str) -> None:
     basic_formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
     
     err_handler = logging.handlers.RotatingFileHandler(
-        filename=logs_path / 'err.log',
-        encoding='utf-8',
-        maxBytes=8 * 1024 * 1024,
-        backupCount=3
+            filename=logs_path / 'err.log',
+            encoding='utf-8',
+            maxBytes=8 * 1024 * 1024,
+            backupCount=3,
     )
     
     err_handler.setFormatter(basic_formatter)
@@ -31,10 +31,10 @@ def setup_colour_logging(path: Path | str) -> None:
     logger.addHandler(err_handler)
     
     debug_handler = logging.handlers.RotatingFileHandler(
-        filename=logs_path / 'debug.log',
-        encoding='utf-8',
-        maxBytes=8 * 1024 * 1024,
-        backupCount=3
+            filename=logs_path / 'debug.log',
+            encoding='utf-8',
+            maxBytes=8 * 1024 * 1024,
+            backupCount=3,
     )
     
     debug_handler.setFormatter(basic_formatter)
@@ -50,10 +50,10 @@ def setup_colour_logging(path: Path | str) -> None:
     logging.getLogger('discord.gateway').setLevel(logging.INFO)
     logging.getLogger('discord.client').setLevel(logging.INFO)
 
+
 def ensure_logs_path(path: Path) -> None:
     if path.is_file():
         path.unlink()
     
     if not path.exists():
         path.mkdir(parents=True)
-    

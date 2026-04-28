@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from currency.currency_types import BlackMarketCategory, BlackMarketItem, Job, JobTree, ShopCategory, ShopItem
-
+    
     T = TypeVar('T', bound=Job | JobTree | ShopItem | ShopCategory)
 else:
     # Python 3.14 has lazily evaluates type annotations
@@ -18,6 +18,7 @@ all_bm_shop_items: list[BlackMarketItem] = []
 all_shop_categories: list[ShopCategory] = []
 all_normal_shop_categories: list[ShopCategory] = []
 all_bm_shop_categories: list[BlackMarketCategory] = []
+
 
 def register_job_tree(job_tree: JobTree) -> None:
     all_job_trees.append(job_tree)

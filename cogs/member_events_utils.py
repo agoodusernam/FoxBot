@@ -33,7 +33,8 @@ class MemberChange(TypedDict):
     pending: bool | MissingType
     avatar: discord.Asset | MissingType | None
     flags: discord.MemberFlags | MissingType
-    
+
+
 class UserChange(TypedDict):
     avatar: discord.Asset | MissingType | None
     username: str | MissingType
@@ -51,8 +52,8 @@ def time_ago(dt: datetime.datetime | int | float):
         'days':    delta.days,
         'hours':   delta.hours,
         'minutes': delta.minutes,
-        'seconds': delta.seconds
-        }
+        'seconds': delta.seconds,
+    }
     slots: int = 0
     max_slots: int = 3
     times: list[tuple[str, int]] = []
@@ -119,16 +120,18 @@ def get_member_changes(before: discord.Member, after: discord.Member) -> MemberC
         'timed_out_until': after.timed_out_until if after.timed_out_until != before.timed_out_until else MISSING,
         'pending':         after.pending if after.pending != before.pending else MISSING,
         'avatar':          after.guild_avatar if after.guild_avatar != before.guild_avatar else MISSING,
-        'flags':           after.flags if after.flags != before.flags else MISSING
-        }
+        'flags':           after.flags if after.flags != before.flags else MISSING,
+    }
     return changes
+
 
 def get_user_changes(before: discord.User, after: discord.User) -> UserChange:
     changes: UserChange = {
         'username': after.name if after.name != before.name else MISSING,
-        'avatar':   after.display_avatar if after.display_avatar != before.display_avatar else MISSING
-        }
+        'avatar':   after.display_avatar if after.display_avatar != before.display_avatar else MISSING,
+    }
     return changes
+
 
 def nick_update_embed(before_nick: str | None, after: discord.Member) -> discord.Embed:
     title: str = 'Nickname changed'
@@ -145,8 +148,9 @@ def nick_update_embed(before_nick: str | None, after: discord.Member) -> discord
             after.display_avatar.url,
             description,
             discord.Color.blurple(),
-            title
-            )
+            title,
+    )
+
 
 def roles_changed_embed(changed: list[discord.Role], member: discord.Member, title: str, desc: str) -> discord.Embed:
     roles: str = ", ".join([r.mention for r in changed])
@@ -155,8 +159,9 @@ def roles_changed_embed(changed: list[discord.Role], member: discord.Member, tit
             member.display_avatar.url,
             f'Roles {desc} {member.mention}:\n{roles}',
             discord.Color.blurple(),
-            title
-            )
+            title,
+    )
+
 
 def timeout_embed(member: discord.Member, until: datetime.datetime | None) -> discord.Embed:
     if until is None:
@@ -165,8 +170,8 @@ def timeout_embed(member: discord.Member, until: datetime.datetime | None) -> di
                 member.display_avatar.url,
                 f'Timeout removed from {member.mention}',
                 discord.Color.green(),
-                'Timeout removed'
-                )
+                'Timeout removed',
+        )
     
     formatted_until: str = discord.utils.format_dt(until, style='F')
     
@@ -175,9 +180,10 @@ def timeout_embed(member: discord.Member, until: datetime.datetime | None) -> di
             member.display_avatar.url,
             f'Timeout set for {member.mention} until {formatted_until}',
             discord.Color.red(),
-            'Timeout added'
-            )
-    
+            'Timeout added',
+    )
+
+
 def avatar_update_embed(after: discord.Member | discord.User) -> discord.Embed:
     embed = create_log_embed(
             after.name,
@@ -185,9 +191,10 @@ def avatar_update_embed(after: discord.Member | discord.User) -> discord.Embed:
             f'{after.mention}',
             discord.Color.blurple(),
             'Avatar update',
-            )
+    )
     embed.set_thumbnail(url=after.display_avatar.url)
     return embed
+
 
 def name_change_embed(before: discord.User, after: discord.User) -> discord.Embed:
     return create_log_embed(
@@ -195,5 +202,5 @@ def name_change_embed(before: discord.User, after: discord.User) -> discord.Embe
             after.display_avatar.url,
             f'{after.mention} changed their name from {before.name} to {after.name}',
             discord.Color.blurple(),
-            'Name change'
-            )
+            'Name change',
+    )

@@ -54,7 +54,7 @@ async def _connect() -> AsyncMongoClient[Mapping[str, Any]] | None:
     uri = os.getenv('MONGO_URI')
     
     client: AsyncMongoClient[Mapping[str, Any]] = AsyncMongoClient(uri, server_api=ServerApi('1'), serverSelectionTimeoutMS=5000, tls=True,
-            tlsCertificateKeyFile="mongo_cert.pem")
+                                                                   tlsCertificateKeyFile="mongo_cert.pem")
     try:
         await client.admin.command('ping')
         _mongo_client = client  # Store the connection
@@ -67,6 +67,7 @@ async def _connect() -> AsyncMongoClient[Mapping[str, Any]] | None:
         logger.error(f"An error occurred while connecting to MongoDB: {e}")
         return None
 
+
 def synchronous_disconnect() -> bool:
     try:
         event_loop = asyncio.get_event_loop()
@@ -75,6 +76,7 @@ def synchronous_disconnect() -> bool:
         event_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(event_loop)
     return event_loop.run_until_complete(disconnect())
+
 
 async def disconnect() -> bool:
     """
@@ -161,7 +163,7 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
             'message_id':   str(message.id),
             'author_id':    str(message.author.id),
             'content_type': attachment.content_type,
-            'timestamp':    message.created_at.timestamp()
+            'timestamp':    message.created_at.timestamp(),
         }
         
         # Store file in GridFS
@@ -367,7 +369,7 @@ async def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> bool:
             logger.warning(f'No entry matched the query in {collection_name} collection')
     except Exception as e:
         logger.error(f'Error deleting entry from {collection_name} collection: {e}')
-        
+    
     return False
 
 

@@ -7,13 +7,14 @@ If you want to use this bot on your own server, follow this guide:
 
 Don't
 
-Jokes aside, you probably shouldn't use this bot on your own server. It's not made to run for other servers and is 
+Jokes aside, you probably shouldn't use this bot on your own server. It's not made to run for other servers and is
 specifically designed for the foxeshaven server. I have done my best to make it customisable, but if doing that would
-have taken more time or added complexity, I didn't. There are still quite a few magic numbers and other server specific 
+have taken more time or added complexity, I didn't. There are still quite a few magic numbers and other server specific
 things in the code.
 
-Just to note if you do want to run this in your server: It is only intended to run on one server per instance. 
-I haven't tested, nor will I test it on multiple servers on one instance, and it will likely not work properly if you try.
+Just to note if you do want to run this in your server: It is only intended to run on one server per instance.
+I haven't tested, nor will I test it on multiple servers on one instance, and it will likely not work properly if you
+try.
 
 Primarily made for, and uses features only added in, Python 3.14, so I can't guarantee it will work on other versions.
 

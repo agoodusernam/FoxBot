@@ -14,8 +14,8 @@ class ZipVTClient(vt.Client):
             self,
             file: typing.BinaryIO,
             wait_for_completion: bool = False,
-            zip_password: str | None = None
-            ) -> Object:
+            zip_password: str | None = None,
+    ) -> Object:
         """Like :func:`scan_file` but returns a coroutine."""
         
         if not isinstance(file, io.IOBase):
@@ -49,9 +49,9 @@ class ZipVTClient(vt.Client):
         logger.debug(f"Upload URL: {upload_url}")
         response = ClientResponse(
                 await self._get_session().post(
-                        upload_url, data=form_data, proxy=self._proxy
-                        )
-                )
+                        upload_url, data=form_data, proxy=self._proxy,
+                ),
+        )
         logger.debug(f"Status: {response.status}")
         logger.debug(f"Reason: {response.reason}")
         logger.debug(f"Headers: {response.headers}")

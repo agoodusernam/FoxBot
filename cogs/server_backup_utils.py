@@ -30,7 +30,7 @@ def get_file_creation_time(path: Path) -> int:
     if on_linux:
         creation_time = round(statx.statx(str(path)).btime)
     else:
-        creation_time = round(path.stat().st_birthtime) # type: ignore
+        creation_time = round(path.stat().st_birthtime)  # type: ignore
     return creation_time
 
 
@@ -154,7 +154,7 @@ async def serialise_role(role: discord.Role) -> SerialisedRole:
         'tertiary_colour':  role.tertiary_colour.to_rgb() if role.tertiary_colour is not None else None,
         'permissions':      role.permissions.value,
         'icon':             icon,
-        'id':               role.id
+        'id':               role.id,
     }
     return serialised_role
 
@@ -322,7 +322,7 @@ async def load_roles(roles: Reversible[SerialisedRole], server: discord.Guild) -
             'permissions': permissions,
             'colour':      colour,
             'hoist':       role['hoist'],
-            'mentionable': role['mentionable']
+            'mentionable': role['mentionable'],
         }
         """
         if role['icon'] is None:

@@ -253,7 +253,7 @@ async def try_use_save(message: discord.Message, bot: CoolBot) -> bool:
     if remaining < 0:
         return False
     await message.reply(
-        f"<@{message.author.id}> would have ruined it, but used a save! You have **{remaining}** save{'s' if remaining != 1 else ''} remaining."
+            f"<@{message.author.id}> would have ruined it, but used a save! You have **{remaining}** save{'s' if remaining != 1 else ''} remaining.",
     )
     await message.add_reaction("🛡️")
     return True
@@ -338,7 +338,7 @@ async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
     if status == CountStatus.DECIMAL_ERR:
         await message.reply("Expression resulted in a decimal error, likely due to insufficient precision. Try using numbers closer to 0.")
         return False
-        
+    
     int_result: int = int(result.to_integral_value(rounding=decimal.ROUND_HALF_UP))
     
     if result != BitwiseDecimal(bot.config.counting.last_count + 1).normalize():

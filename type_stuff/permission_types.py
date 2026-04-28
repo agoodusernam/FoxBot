@@ -58,6 +58,7 @@ class PermissionOverwriteDict(TypedDict):
     create_polls: bool | None
     use_external_apps: bool | None
 
+
 class SerialisedRole(TypedDict):
     name: str
     hoist: bool
@@ -71,8 +72,10 @@ class SerialisedRole(TypedDict):
     # else, icon[1] is the absolute file path to the role icon image as a str.
     id: int
 
+
 class ChannelBase(TypedDict):
     id: int
+
 
 class SerialisedChannel(ChannelBase):
     channel_type: Literal["text", "voice", "category", "stage", "forum"]
@@ -84,10 +87,12 @@ class SerialisedChannel(ChannelBase):
     permissions_synced: bool
     nsfw: bool
 
+
 class TextChannel(SerialisedChannel):
     default_auto_archive_duration: int
     default_thread_slowmode_delay: int
     topic: str | None
+
 
 class VoiceChannel(SerialisedChannel):
     bitrate: int
@@ -95,15 +100,17 @@ class VoiceChannel(SerialisedChannel):
     rtc_region: str | None
     slowmode_delay: int
 
+
 class CategoryChannel(SerialisedChannel):
     channels: list[SerialisedChannel]
+
 
 class SerialisedGuild(TypedDict):
     name: str
     description: str | None
     icon: str | None
     afk_channel_id: int | None
-    afk_timeout: int#
+    afk_timeout: int  #
     verification_level: int
     default_notifications: int
     explicit_content_filter: int

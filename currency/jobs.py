@@ -1,34 +1,33 @@
 from currency import collector
 from currency.currency_types import Job, SchoolQualif, JobTree, SecurityClearance
 
-
 # Retail Jobs
 cashier = Job(
         name="Cashier",
         req_experience=0,
         salary=20_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 stock_clerk = Job(
         name="Stock Clerk",
         req_experience=0,
         salary=22_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 department_supervisor = Job(
         name="Department Supervisor",
         req_experience=2,
         salary=25_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 store_manager = Job(
         name="Store Manager",
         req_experience=4,
         salary=40_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 district_manager = Job(
@@ -36,7 +35,7 @@ district_manager = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=6,
         salary=60_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 regional_manager = Job(
@@ -44,7 +43,7 @@ regional_manager = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=8,
         salary=80_000,
-        salary_variance=25
+        salary_variance=25,
 )
 
 director_of_operations = Job(
@@ -52,7 +51,7 @@ director_of_operations = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=10,
         salary=90_000,
-        salary_variance=30
+        salary_variance=30,
 )
 
 retail_tree = JobTree(
@@ -63,8 +62,8 @@ retail_tree = JobTree(
             store_manager,
             district_manager,
             regional_manager,
-            director_of_operations
-        ]
+            director_of_operations,
+        ],
 )
 collector.register_job_tree(retail_tree)
 
@@ -74,14 +73,14 @@ IT_intern = Job(
         req_experience=0,
         salary=0,
         salary_variance=0,
-        experience_multiplier=2
+        experience_multiplier=2,
 )
 
 helpdesk = Job(
         name="Helpdesk Technician",
         req_experience=1,
         salary=30_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 helpdesk_specialist = Job(
@@ -89,7 +88,7 @@ helpdesk_specialist = Job(
         req_school=SchoolQualif.ASSOCIATE,
         req_experience=2,
         salary=40_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 technician = Job(
@@ -97,7 +96,7 @@ technician = Job(
         req_school=SchoolQualif.ASSOCIATE,
         req_experience=3,
         salary=50_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 j_system_administrator = Job(
@@ -105,7 +104,7 @@ j_system_administrator = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=4,
         salary=60_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 system_administrator = Job(
@@ -113,7 +112,7 @@ system_administrator = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=6,
         salary=75_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 supervisor = Job(
@@ -121,7 +120,7 @@ supervisor = Job(
         req_school=SchoolQualif.MASTER,
         req_experience=8,
         salary=90_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 it_manager = Job(
@@ -129,7 +128,7 @@ it_manager = Job(
         req_school=SchoolQualif.MASTER,
         req_experience=10,
         salary=120_000,
-        salary_variance=25
+        salary_variance=25,
 )
 
 it_director = Job(
@@ -137,7 +136,7 @@ it_director = Job(
         req_school=SchoolQualif.MASTER,
         req_experience=12,
         salary=160_000,
-        salary_variance=30
+        salary_variance=30,
 )
 
 it_tree = JobTree(
@@ -150,8 +149,8 @@ it_tree = JobTree(
             system_administrator,
             supervisor,
             it_manager,
-            it_director
-        ]
+            it_director,
+        ],
 )
 collector.register_job_tree(it_tree)
 
@@ -160,7 +159,7 @@ teacher_assistant = Job(
         name="Teacher Assistant",
         req_experience=0,
         salary=25_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 teacher = Job(
@@ -168,7 +167,7 @@ teacher = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=2,
         salary=40_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 university_lecturer = Job(
@@ -176,7 +175,7 @@ university_lecturer = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=5,
         salary=50_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 associate_professor = Job(
@@ -184,7 +183,7 @@ associate_professor = Job(
         req_school=SchoolQualif.MASTER,
         req_experience=7,
         salary=70_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 professor = Job(
@@ -192,7 +191,7 @@ professor = Job(
         req_school=SchoolQualif.MASTER,
         req_experience=10,
         salary=90_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 distinguished_professor = Job(
@@ -200,7 +199,7 @@ distinguished_professor = Job(
         req_school=SchoolQualif.PHD,
         req_experience=15,
         salary=100_000,
-        salary_variance=25
+        salary_variance=25,
 )
 
 education_tree = JobTree(
@@ -211,8 +210,8 @@ education_tree = JobTree(
             university_lecturer,
             associate_professor,
             professor,
-            distinguished_professor
-        ]
+            distinguished_professor,
+        ],
 )
 collector.register_job_tree(education_tree)
 
@@ -222,7 +221,7 @@ engineering_intern = Job(
         req_experience=0,
         salary=0,
         salary_variance=0,
-        experience_multiplier=2
+        experience_multiplier=2,
 )
 
 apprentice_engineer = Job(
@@ -230,61 +229,61 @@ apprentice_engineer = Job(
         req_school=SchoolQualif.ASSOCIATE,
         req_experience=0,
         salary=30_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 junior_engineer = Job(
         name="Junior Engineer",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.CONFIDENTIAL,
         req_experience=1,
         salary=50_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 flight_systems_engineer = Job(
         name="Flight Systems Engineer",
-        req_school=SchoolQualif.MASTER, 
+        req_school=SchoolQualif.MASTER,
         req_clearance=SecurityClearance.SECRET,
         req_experience=3,
         salary=70_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 orbital_analyst_engineer = Job(
         name="Orbital Analyst Engineer",
-        req_school=SchoolQualif.MASTER, 
+        req_school=SchoolQualif.MASTER,
         req_clearance=SecurityClearance.SECRET,
         req_experience=5,
         salary=70_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 avionics_engineer = Job(
         name="Avionics Engineer",
-        req_school=SchoolQualif.MASTER, 
+        req_school=SchoolQualif.MASTER,
         req_clearance=SecurityClearance.TOP_SECRET,
         req_experience=7,
         salary=70_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 lead_aerospace_engineer = Job(
         name="Lead Aerospace Engineer",
-        req_school=SchoolQualif.PHD, 
+        req_school=SchoolQualif.PHD,
         req_clearance=SecurityClearance.TOP_SECRET,
         req_experience=10,
         salary=100_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 engineering_director = Job(
         name="Director of Engineering",
-        req_school=SchoolQualif.PHD, 
+        req_school=SchoolQualif.PHD,
         req_clearance=SecurityClearance.TS_SCI,
         req_experience=15,
         salary=120_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 engineering_tree = JobTree(
@@ -296,8 +295,8 @@ engineering_tree = JobTree(
             orbital_analyst_engineer,
             avionics_engineer,
             lead_aerospace_engineer,
-            engineering_director
-        ]
+            engineering_director,
+        ],
 )
 collector.register_job_tree(engineering_tree)
 
@@ -306,104 +305,104 @@ private = Job(
         name="Private",
         req_experience=0,
         salary=30_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 private_first_class = Job(
         name="Private First Class",
         req_experience=1,
         salary=32_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 corporal = Job(
         name="Corporal",
-        req_school=SchoolQualif.HIGH_SCHOOL, 
+        req_school=SchoolQualif.HIGH_SCHOOL,
         req_clearance=SecurityClearance.CONFIDENTIAL,
         req_experience=2,
         salary=35_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 specialist = Job(
         name="Specialist",
-        req_school=SchoolQualif.HIGH_SCHOOL, 
+        req_school=SchoolQualif.HIGH_SCHOOL,
         req_clearance=SecurityClearance.CONFIDENTIAL,
         req_experience=2,
         salary=35_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 sergeant = Job(
         name="Sergeant",
-        req_school=SchoolQualif.HIGH_SCHOOL, 
+        req_school=SchoolQualif.HIGH_SCHOOL,
         req_clearance=SecurityClearance.SECRET,
         req_experience=4,
         salary=40_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 staff_sergeant = Job(
         name="Staff Sergeant",
-        req_school=SchoolQualif.HIGH_SCHOOL, 
+        req_school=SchoolQualif.HIGH_SCHOOL,
         req_clearance=SecurityClearance.SECRET,
         req_experience=6,
         salary=45_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 seargeant_first_class = Job(
         name="Sergeant First Class",
-        req_school=SchoolQualif.HIGH_SCHOOL, 
+        req_school=SchoolQualif.HIGH_SCHOOL,
         req_clearance=SecurityClearance.TOP_SECRET,
         req_experience=8,
         salary=50_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 master_sergeant = Job(
         name="Master Sergeant",
-        req_school=SchoolQualif.HIGH_SCHOOL, 
+        req_school=SchoolQualif.HIGH_SCHOOL,
         req_clearance=SecurityClearance.TOP_SECRET,
         req_experience=10,
         salary=60_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 first_sergeant = Job(
         name="First Sergeant",
-        req_school=SchoolQualif.HIGH_SCHOOL, 
+        req_school=SchoolQualif.HIGH_SCHOOL,
         req_clearance=SecurityClearance.TS_SCI,
         req_experience=10,
         salary=60_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 sergeant_major = Job(
         name="Sergeant Major",
-        req_school=SchoolQualif.HIGH_SCHOOL, 
+        req_school=SchoolQualif.HIGH_SCHOOL,
         req_clearance=SecurityClearance.TS_SCI,
         req_experience=12,
         salary=75_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 command_sergeant_major = Job(
         name="Command Sergeant Major",
-        req_school=SchoolQualif.HIGH_SCHOOL, 
+        req_school=SchoolQualif.HIGH_SCHOOL,
         req_clearance=SecurityClearance.SPECIAL,
         req_experience=12,
         salary=90_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 sergeant_major_of_the_army = Job(
         name="Sergeant Major of the Army",
-        req_school=SchoolQualif.HIGH_SCHOOL, 
+        req_school=SchoolQualif.HIGH_SCHOOL,
         req_clearance=SecurityClearance.SPECIAL,
         req_experience=15,
         salary=100_000,
-        salary_variance=25
+        salary_variance=25,
 )
 
 enlisted_army_tree = JobTree(
@@ -417,8 +416,8 @@ enlisted_army_tree = JobTree(
             seargeant_first_class,
             [master_sergeant, first_sergeant],
             [sergeant_major, command_sergeant_major],
-            sergeant_major_of_the_army
-        ]
+            sergeant_major_of_the_army,
+        ],
 )
 collector.register_job_tree(enlisted_army_tree)
 
@@ -426,133 +425,133 @@ warrant_officer_1 = Job(
         name="Warrant Officer 1",
         req_experience=0,
         salary=28_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 warrant_officer_2 = Job(
         name="Warrant Officer 2",
-        req_school=SchoolQualif.ASSOCIATE, 
+        req_school=SchoolQualif.ASSOCIATE,
         req_clearance=SecurityClearance.CONFIDENTIAL,
         req_experience=2,
         salary=32_500,
-        salary_variance=5
+        salary_variance=5,
 )
 
 warrant_officer_3 = Job(
         name="Warrant Officer 3",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.SECRET,
         req_experience=4,
         salary=35_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 warrant_officer_4 = Job(
         name="Warrant Officer 4",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.SECRET,
         req_experience=6,
         salary=40_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 warrant_officer_5 = Job(
         name="Warrant Officer 5",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.SECRET,
         req_experience=8,
         salary=45_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 second_lieutenant = Job(
         name="Second Lieutenant",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.SECRET,
         req_experience=10,
         salary=50_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 first_lieutenant = Job(
         name="First Lieutenant",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.TOP_SECRET,
         req_experience=12,
         salary=55_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 captain = Job(
         name="Captain",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.TOP_SECRET,
         req_experience=14,
         salary=60_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 major = Job(
         name="Major",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.TOP_SECRET,
         req_experience=16,
         salary=70_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 lieutenant_colonel = Job(
         name="Lieutenant Colonel",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.TS_SCI,
         req_experience=18,
         salary=80_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 colonel = Job(
         name="Colonel",
-        req_school=SchoolQualif.MASTER, 
+        req_school=SchoolQualif.MASTER,
         req_clearance=SecurityClearance.TS_SCI,
         req_experience=20,
         salary=90_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 brigadier_general = Job(
         name="Brigadier General",
-        req_school=SchoolQualif.MASTER, 
+        req_school=SchoolQualif.MASTER,
         req_clearance=SecurityClearance.SPECIAL,
         req_experience=22,
         salary=100_000,
-        salary_variance=25
+        salary_variance=25,
 )
 
 major_general = Job(
         name="Major General",
-        req_school=SchoolQualif.MASTER, 
+        req_school=SchoolQualif.MASTER,
         req_clearance=SecurityClearance.SPECIAL,
         req_experience=24,
         salary=110_000,
-        salary_variance=25
+        salary_variance=25,
 )
 
 lieutenant_general = Job(
         name="Lieutenant General",
-        req_school=SchoolQualif.MASTER, 
+        req_school=SchoolQualif.MASTER,
         req_clearance=SecurityClearance.SPECIAL,
         req_experience=26,
         salary=120_000,
-        salary_variance=30
+        salary_variance=30,
 )
 
 general = Job(
         name="General",
-        req_school=SchoolQualif.MASTER, 
+        req_school=SchoolQualif.MASTER,
         req_clearance=SecurityClearance.SPECIAL,
         req_experience=28,
         salary=130_000,
-        salary_variance=30
+        salary_variance=30,
 )
 
 army_commissioned_officer_tree = JobTree(
@@ -572,8 +571,8 @@ army_commissioned_officer_tree = JobTree(
             brigadier_general,
             major_general,
             lieutenant_general,
-            general
-        ]
+            general,
+        ],
 )
 collector.register_job_tree(army_commissioned_officer_tree)
 
@@ -582,14 +581,14 @@ certified_nurse_assistant = Job(
         name="Certified Nurse Assistant",
         req_experience=0,
         salary=27_500,
-        salary_variance=5
+        salary_variance=5,
 )
 
 medical_assistant = Job(
         name="Medical Assistant",
         req_experience=0,
         salary=30_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 registered_nurse = Job(
@@ -597,7 +596,7 @@ registered_nurse = Job(
         req_school=SchoolQualif.ASSOCIATE,
         req_experience=2,
         salary=50_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 licensed_practical_nurse = Job(
@@ -605,7 +604,7 @@ licensed_practical_nurse = Job(
         req_school=SchoolQualif.ASSOCIATE,
         req_experience=2,
         salary=50_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 nurse_practitioner = Job(
@@ -613,7 +612,7 @@ nurse_practitioner = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=4,
         salary=80_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 nurse_manager = Job(
@@ -621,7 +620,7 @@ nurse_manager = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=6,
         salary=90_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 healthcare_administrator = Job(
@@ -629,7 +628,7 @@ healthcare_administrator = Job(
         req_school=SchoolQualif.MASTER,
         req_experience=8,
         salary=100_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 clinical_director = Job(
@@ -637,7 +636,7 @@ clinical_director = Job(
         req_school=SchoolQualif.MASTER,
         req_experience=10,
         salary=120_000,
-        salary_variance=25
+        salary_variance=25,
 )
 
 healthcare_tree = JobTree(
@@ -648,8 +647,8 @@ healthcare_tree = JobTree(
             nurse_practitioner,
             nurse_manager,
             healthcare_administrator,
-            clinical_director
-        ]
+            clinical_director,
+        ],
 )
 collector.register_job_tree(healthcare_tree)
 
@@ -659,7 +658,7 @@ financial_analyst = Job(
         req_school=SchoolQualif.ASSOCIATE,
         req_experience=0,
         salary=50_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 junior_accountant = Job(
@@ -667,7 +666,7 @@ junior_accountant = Job(
         req_school=SchoolQualif.ASSOCIATE,
         req_experience=0,
         salary=45_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 senior_financial_analyst = Job(
@@ -675,7 +674,7 @@ senior_financial_analyst = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=3,
         salary=70_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 accountant = Job(
@@ -683,7 +682,7 @@ accountant = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=3,
         salary=65_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 senior_accountant = Job(
@@ -691,7 +690,7 @@ senior_accountant = Job(
         req_school=SchoolQualif.BACHELOR,
         req_experience=5,
         salary=80_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 financial_manager = Job(
@@ -699,7 +698,7 @@ financial_manager = Job(
         req_school=SchoolQualif.MASTER,
         req_experience=7,
         salary=100_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 finance_director = Job(
@@ -707,7 +706,7 @@ finance_director = Job(
         req_school=SchoolQualif.MASTER,
         req_experience=10,
         salary=120_000,
-        salary_variance=25
+        salary_variance=25,
 )
 
 chief_financial_officer = Job(
@@ -715,7 +714,7 @@ chief_financial_officer = Job(
         req_school=SchoolQualif.MASTER,
         req_experience=20,
         salary=150_000,
-        salary_variance=45
+        salary_variance=45,
 )
 
 finance_tree = JobTree(
@@ -726,8 +725,8 @@ finance_tree = JobTree(
             senior_accountant,
             financial_manager,
             finance_director,
-            chief_financial_officer
-        ]
+            chief_financial_officer,
+        ],
 )
 collector.register_job_tree(finance_tree)
 
@@ -735,70 +734,70 @@ special_agent_trainee = Job(
         name="Special Agent Trainee",
         req_experience=0,
         salary=30_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 special_agent = Job(
         name="Special Agent",
-        req_school=SchoolQualif.ASSOCIATE, 
+        req_school=SchoolQualif.ASSOCIATE,
         req_clearance=SecurityClearance.CONFIDENTIAL,
         req_experience=2,
         salary=40_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 senior_special_agent = Job(
         name="Senior Special Agent",
-        req_school=SchoolQualif.ASSOCIATE, 
+        req_school=SchoolQualif.ASSOCIATE,
         req_clearance=SecurityClearance.CONFIDENTIAL,
         req_experience=5,
         salary=45_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 supervisory_special_agent = Job(
         name="Supervisory Special Agent",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.SECRET,
         req_experience=8,
         salary=50_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 special_agent_in_charge = Job(
         name="Special Agent in Charge",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.SECRET,
         req_experience=10,
         salary=60_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 federal_LE_assistant_director = Job(
         name="Assistant Director",
-        req_school=SchoolQualif.MASTER, 
+        req_school=SchoolQualif.MASTER,
         req_clearance=SecurityClearance.SECRET,
         req_experience=12,
         salary=70_000,
-        salary_variance=25
+        salary_variance=25,
 )
 
 federal_LE_deputy_director = Job(
         name="Deputy Director",
-        req_school=SchoolQualif.MASTER, 
+        req_school=SchoolQualif.MASTER,
         req_clearance=SecurityClearance.SECRET,
         req_experience=15,
         salary=80_000,
-        salary_variance=30
+        salary_variance=30,
 )
 
 federal_LE_director = Job(
         name="Director",
-        req_school=SchoolQualif.MASTER, 
+        req_school=SchoolQualif.MASTER,
         req_clearance=SecurityClearance.TOP_SECRET,
         req_experience=20,
         salary=120_000,
-        salary_variance=35
+        salary_variance=35,
 )
 
 federal_law_enforcement_tree = JobTree(
@@ -811,8 +810,8 @@ federal_law_enforcement_tree = JobTree(
             special_agent_in_charge,
             federal_LE_assistant_director,
             federal_LE_deputy_director,
-            federal_LE_director
-        ]
+            federal_LE_director,
+        ],
 )
 collector.register_job_tree(federal_law_enforcement_tree)
 
@@ -821,86 +820,86 @@ police_cadet = Job(
         name="Police Cadet",
         req_experience=0,
         salary=30_000,
-        salary_variance=5
+        salary_variance=5,
 )
 
 police_officer = Job(
         name="Police Officer",
         req_experience=2,
         salary=40_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 detective = Job(
         name="Detective",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.CONFIDENTIAL,
         req_experience=5,
         salary=50_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 local_LE_corporal = Job(
         name="Corporal",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.CONFIDENTIAL,
         req_experience=7,
         salary=55_000,
-        salary_variance=10
+        salary_variance=10,
 )
 
 local_LE_sergeant = Job(
         name="Sergeant",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.SECRET,
         req_experience=10,
         salary=60_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 local_LE_lieutenant = Job(
         name="Lieutenant",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.SECRET,
         req_experience=12,
         salary=70_000,
-        salary_variance=15
+        salary_variance=15,
 )
 
 local_LE_captain = Job(
         name="Captain",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.SECRET,
         req_experience=15,
         salary=80_000,
-        salary_variance=20
+        salary_variance=20,
 )
 
 local_LE_commander = Job(
         name="Commander",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.SECRET,
         req_experience=18,
         salary=90_000,
-        salary_variance=25
+        salary_variance=25,
 )
 
 local_LE_assistant_chief = Job(
         name="Assistant Chief",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.TOP_SECRET,
         req_experience=20,
         salary=100_000,
-        salary_variance=30
+        salary_variance=30,
 )
 
 local_LE_chief = Job(
         name="Chief of Police",
-        req_school=SchoolQualif.BACHELOR, 
+        req_school=SchoolQualif.BACHELOR,
         req_clearance=SecurityClearance.TOP_SECRET,
         req_experience=25,
         salary=120_000,
-        salary_variance=35
+        salary_variance=35,
 )
 
 local_law_enforcement_tree = JobTree(
@@ -915,7 +914,7 @@ local_law_enforcement_tree = JobTree(
             local_LE_captain,
             local_LE_commander,
             local_LE_assistant_chief,
-            local_LE_chief
-        ]
+            local_LE_chief,
+        ],
 )
 collector.register_job_tree(local_law_enforcement_tree)

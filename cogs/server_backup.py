@@ -14,7 +14,7 @@ class Backup(commands.Cog):
         self.bot: CoolBot = bot
     
     @commands.command(name='backup', help='Backup the server data', usage='f!backup')
-    @commands.cooldown(1, 60, commands.BucketType.user)  
+    @commands.cooldown(1, 60, commands.BucketType.user)
     @commands.check(is_admin)
     @commands.guild_only()
     async def backup(self, ctx: CContext):
@@ -28,7 +28,7 @@ class Backup(commands.Cog):
         await ctx.send('Backup complete.')
     
     @commands.command(name='load_backup')
-    @commands.cooldown(1, 60*60, commands.BucketType.guild)
+    @commands.cooldown(1, 60 * 60, commands.BucketType.guild)
     @commands.check(is_admin)
     @commands.guild_only()
     async def load_backup(self, ctx: CContext, g_id: str):
@@ -60,6 +60,7 @@ class Backup(commands.Cog):
         
         if isinstance(success, str):
             await ctx.send(f'There was an Error: {success}')
-    
+
+
 async def setup(bot: CoolBot):
     await bot.add_cog(Backup(bot))

@@ -9,17 +9,19 @@ from cogs.counting_utils import *
 
 T = TypeVar('T')
 
+
 def sort_dict_by_value_h2l(d: dict[T, int]) -> dict[T, int]:
     return {k: v for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}
+
 
 class Counting(commands.Cog, name='Counting'):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
     
     @commands.command(name='counting_fails_lb', aliases=['cflb'],
-            help='View the leaderboard for failed counting attempts',
-            usage='f!counting_fails_lb [number_of_entries]')
-    @commands.cooldown(1, 2, commands.BucketType.user)  
+                      help='View the leaderboard for failed counting attempts',
+                      usage='f!counting_fails_lb [number_of_entries]')
+    @commands.cooldown(1, 2, commands.BucketType.user)
     async def count_fails_lb(self, ctx: CContext, number_of_entries: int = 10):
         lb = ctx.bot.config.counting.fails
         if len(lb) == 0:
@@ -39,9 +41,9 @@ class Counting(commands.Cog, name='Counting'):
         await ctx.send(embed=embed)
     
     @commands.command(name='count_fails', aliases=['cf'],
-            help='View the number of failed counting attempts for a user',
-            usage='f!count_fails <user>')
-    @commands.cooldown(1, 2, commands.BucketType.user)  
+                      help='View the number of failed counting attempts for a user',
+                      usage='f!count_fails <user>')
+    @commands.cooldown(1, 2, commands.BucketType.user)
     async def count_fails(self, ctx: CContext, member: discord.Member | discord.User):
         fails: int | None = ctx.bot.config.counting.fails.get(str(member.id), None)
         if fails is None:
@@ -50,18 +52,18 @@ class Counting(commands.Cog, name='Counting'):
         await ctx.send(f'{member.display_name} has failed counting {fails} times.')
     
     @commands.command(name='count_leaderboard', aliases=['clb'],
-            help='View the top 5 leaderboard for the most successful counting attempts, and highest number counted',
-            usage='f!count_leaderboard')
-    @commands.cooldown(1, 2, commands.BucketType.user)  
+                      help='View the top 5 leaderboard for the most successful counting attempts, and highest number counted',
+                      usage='f!count_leaderboard')
+    @commands.cooldown(1, 2, commands.BucketType.user)
     async def count_leaderboard(self, ctx: CContext):
         if len(ctx.bot.config.counting.successes) == 0:
             await ctx.send('No users have counted yet.')
             return
-
+        
         if len(ctx.bot.config.counting.highest_user_count) == 0:
             await ctx.send('No users have counted yet.')
             return
-
+        
         lb_success: dict[str, int] = sort_dict_by_value_h2l(ctx.bot.config.counting.successes)
         lb_user_number: dict[str, int] = sort_dict_by_value_h2l(ctx.bot.config.counting.highest_user_count)
         
@@ -85,8 +87,8 @@ class Counting(commands.Cog, name='Counting'):
         await ctx.send(embed=num_user_embed)
     
     @commands.command(name='counting_stats', aliases=['cs'],
-            help='View counting stats for a user',
-            usage='f!counting_stats <user>')
+                      help='View counting stats for a user',
+                      usage='f!counting_stats <user>')
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def counting_stats(self, ctx: CContext, member: discord.Member | discord.User | None):
         if member is None:
@@ -111,7 +113,7 @@ class Counting(commands.Cog, name='Counting'):
     @commands.command(name='calculate', aliases=['calc'],
                       help='Calculate a mathematical expression',
                       usage='f!calculate <expression>')
-    @commands.cooldown(1, 1, commands.BucketType.user)  
+    @commands.cooldown(1, 1, commands.BucketType.user)
     async def calculate(self, ctx: CContext, *, expression: str) -> None:
         s = expression.lower()
         for char in string.whitespace:
@@ -125,7 +127,6 @@ class Counting(commands.Cog, name='Counting'):
         
         if s.endswith('>'):
             s = s[:-1]
-            
         
         if not count_only_allowed_chars(s):
             await ctx.safe_reply('The expression contains invalid characters.')
@@ -154,7 +155,7 @@ class Counting(commands.Cog, name='Counting'):
             return
         
         await ctx.safe_reply(f"Result: {result}")
-        
+
 
 async def setup(bot: CoolBot) -> None:
     await bot.add_cog(Counting(bot))

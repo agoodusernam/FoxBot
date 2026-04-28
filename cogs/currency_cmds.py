@@ -14,6 +14,7 @@ from currency.curr_config import CURRENCY_NAME, INTEREST_RATE, SALES_TAX
 
 salary_offers: dict[int, dict[str, int]] = {}
 
+
 # Create pagination view
 class ShopView(discord.ui.View):
     def __init__(self, embeds) -> None:
@@ -44,8 +45,8 @@ class ShopView(discord.ui.View):
     # View will be automatically removed from the message
 
 
-#TODO: Add other money making activities like hunting, fishing and others
-#TODO: Add illegal jobs
+# TODO: Add other money making activities like hunting, fishing and others
+# TODO: Add illegal jobs
 class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=is_dev, hidden=True)):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -53,7 +54,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='balance', aliases=['bal'],
                       brief='Check your balance',
                       help='Check your current money and bank balance')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def balance_cmd(self, ctx: CContext):
         profile = await get_profile(ctx.author.id)
         wallet = int(profile.wallet)
@@ -64,7 +65,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='Check the top balances',
                       help='Check the top users with the highest balances',
                       usage='f!baltop')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def baltop_cmd(self, ctx: CContext):
         top_users = await curr_utils.get_top_balances()
         if not top_users:
@@ -83,7 +84,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='Deposit money into your bank',
                       help='Deposit some of your money from your wallet into your bank',
                       usage='f!deposit <amount>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def deposit_cmd(self, ctx: CContext, amount: int):
         if amount <= 0:
             await ctx.send('You must deposit a positive amount!')
@@ -94,14 +95,14 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             return
         profile.wallet -= amount
         profile.bank += amount
- 
+        
         await ctx.send(f'Deposited {amount} {CURRENCY_NAME} into your bank!')
     
     @commands.command(name='withdraw', aliases=['with'],
                       brief='Withdraw money from your bank',
                       help='Withdraw some of your money from your bank into your wallet',
                       usage='f!withdraw <amount>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def withdraw_cmd(self, ctx: CContext, amount: int):
         if amount <= 0:
             await ctx.send('You must withdraw a positive amount!')
@@ -113,14 +114,14 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         profile.bank -= amount
         profile.wallet += amount
- 
+        
         await ctx.send(f'Withdrew {amount} {CURRENCY_NAME} from your bank!')
     
     @commands.command(name='pay', aliases=['give'],
                       brief='Pay another user',
                       help='Pay another user some of your money',
                       usage='f!pay <user> <amount>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def pay_cmd(self, ctx: CContext, user: discord.Member, amount: int):
         if user is None:
             await ctx.send('You must specify a valid user to pay!')
@@ -145,37 +146,37 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='work',
                       brief='Work to earn money',
                       help='Work to earn some money. You can do this every day.')
-    @commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)  
+    @commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)
     async def work_cmd(self, ctx: CContext):
-        #TODO: Check for promotions and raises
+        # TODO: Check for promotions and raises
         profile = await get_profile(ctx.author)
         if profile.work_income <= 0:
             await ctx.send(f'You have no job! Choose a job first using `{ctx.bot.command_prefix}job`.')
             return
-            
+        
         profile.inc_age()
         fired = profile.fire_chance > random.random()
         if fired:
             await ctx.send('You were fired from your job! You need to find a new job using the `job` command.')
             await ctx.send('A severance package has been deposited into your wallet.')
             profile.fire()
-     
+            
             return
         
         with profile.batch():
             if profile.debt > 0:
                 profile.debt = profile.debt * (1 + INTEREST_RATE)
-                
+            
             profile.wallet += profile.work_income
             profile.work_experience += 1 * profile.job.experience_multiplier
-            profile.next_income_mult = 1.0 # Reset income multiplier after working
+            profile.next_income_mult = 1.0  # Reset income multiplier after working
             profile.fire_chance *= 0.8  # Working reduces fire risk
         
         if profile.work_experience % 12 == 11:
             # Every year of experience, give them a raise between 1 and 5%
             raise_amount = random.uniform(0.01, 0.05)
             profile.work_income = profile.work_income * Decimal(1 + raise_amount)
-            await ctx.send(f'You have been a good employee and received a {raise_amount*100:.1f}% raise!')
+            await ctx.send(f'You have been a good employee and received a {raise_amount * 100:.1f}% raise!')
         
         next_job = profile.job.get_next_job()
         if isinstance(next_job, list):
@@ -184,7 +185,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         if next_job is None:
             await ctx.send(f'You worked hard and earned {profile.earnings} {CURRENCY_NAME}!')
             return
-            
+        
         exp_qualified = False
         school_qualified = False
         clearance_qualified = False
@@ -197,12 +198,12 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         if exp_qualified and school_qualified and clearance_qualified:
             profile.job = next_job
-            salary_multiplier = 1 + (random.randint(0, next_job.salary_variance * 10) /1000)
+            salary_multiplier = 1 + (random.randint(0, next_job.salary_variance * 10) / 1000)
             # Salary multiplier to 0.1% precision
             profile.work_income = next_job.salary * Decimal(salary_multiplier)
             await ctx.send(f'Congratulations! You have been promoted to {next_job.name}!')
             await ctx.send(f'New income: {profile.work_income} {CURRENCY_NAME} per year.')
-            
+        
         elif not exp_qualified:
             # Don't notify if they wouldn't have the experience to get a promotion
             pass
@@ -211,21 +212,19 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             await ctx.send(f'You need a higher school qualification to be promoted to {next_job.name}.')
             await ctx.send(f'Required: {next_job.req_school.to_string()}, You have: {profile.school_qualification.to_string()}')
             await ctx.send(f'Use `{ctx.bot.command_prefix}school` to study for a higher qualification.')
-            
+        
         elif not clearance_qualified:
             await ctx.send(f'You need a higher security clearance to be promoted to {next_job.name}.')
             await ctx.send(f'Required: {next_job.req_clearance.to_string()}, You have: {profile.security_clearance.to_string()}')
             await ctx.send(f"Use `{ctx.bot.command_prefix}clearance` to apply for a higher clearance level.")
         
-        
- 
         await ctx.send(f'You worked hard and earned {profile.earnings} {CURRENCY_NAME}')
     
     @commands.command(name='quit',
                       brief='Quit your current job',
                       help='Quit your current job so you can get a new one',
                       usage='f!quit')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def quit_cmd(self, ctx: CContext):
         profile = await get_profile(ctx.author)
         if profile.work_income <= 0:
@@ -239,7 +238,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
     @commands.command(name='debt',
                       brief='Check your debt',
                       help='Check how much debt you have')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def debt_cmd(self, ctx: CContext):
         profile = await get_profile(ctx.author)
         if profile.debt <= 0:
@@ -251,7 +250,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='Pay off your debt',
                       help='Pay off some of your debt from loans',
                       usage='f!pay_debt <amount>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def pay_debt_cmd(self, ctx: CContext, amount: int):
         if amount <= 0:
             await ctx.send('You must pay a positive amount!')
@@ -278,20 +277,18 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             await ctx.send(f'Paid off {amount} {CURRENCY_NAME} of your debt!')
         else:
             await ctx.send(f'You have paid off all your {amount} {CURRENCY_NAME} debt!')
-        
- 
     
     @commands.command(name='get_loan', aliases=['loan'],
                       brief='Get a loan',
                       help='Get a loan to increase your wallet balance',
                       usage='f!get_loan <amount>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def get_loan_cmd(self, ctx: CContext, amount: typing.Union[int, str]) -> None:
         if isinstance(amount, str):
             # discord.py tries to convert to int first, if that fails we just get the string
             await ctx.send("You must specify a valid integer amount to get a loan")
             return
-            
+        
         if amount <= 0:
             await ctx.send('You must request a positive loan amount!')
             return
@@ -308,7 +305,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         profile.debt = Decimal(amount)
         profile.wallet += amount
- 
+        
         await ctx.send(f'You have taken a loan of {amount} {CURRENCY_NAME}. Remember to pay it back with interest!')
         return
     
@@ -316,7 +313,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='Check your credit score',
                       help='Check your current credit score',
                       usage='f!credit_score')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def credit_score_cmd(self, ctx: CContext):
         profile = await get_profile(ctx.author)
         credit_score = profile.credit_score
@@ -328,7 +325,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='View the shop',
                       help='View the items available for purchase in the shop',
                       usage='f!shop')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def shop_cmd(self, ctx: CContext):
         embed = discord.Embed(title='Shop', description='Items available for purchase', colour=discord.Colour.green())
         if ctx.guild is not None and hasattr(ctx.guild, 'icon') and ctx.guild.icon:
@@ -343,7 +340,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             category_embed = discord.Embed(
                     title=f'Shop - {category.name}',
                     description=category.description,
-                    colour=discord.Colour.green()
+                    colour=discord.Colour.green(),
             )
             
             # Safely set thumbnail
@@ -375,7 +372,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='View the black market',
                       help='View the items available for purchase in the black market',
                       usage='f!blackmarket')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def blackmarket_cmd(self, ctx: CContext):
         embed = discord.Embed(title='Black Market', description='Items available for purchase',
                               colour=discord.Colour.dark_red())
@@ -390,7 +387,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             category_embed = discord.Embed(
                     title=f'Black Market - {category.name}',
                     description=category.description,
-                    colour=discord.Colour.dark_red()
+                    colour=discord.Colour.dark_red(),
             )
             
             if ctx.guild is not None and hasattr(ctx.guild, 'icon') and ctx.guild.icon:
@@ -418,7 +415,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='Buy an item from the shop',
                       help='Buy an item from the shop or black market',
                       usage='f!buy <item_name> [quantity]')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def buy_cmd(self, ctx: CContext, *, arg: str):
         # Split the arguments into item name and quantity
         args: list[str] = arg.strip().split()
@@ -496,7 +493,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='Check your inventory',
                       help='Check the items you own in your inventory',
                       usage='f!inventory')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def inventory_cmd(self, ctx: CContext):
         profile = await get_profile(ctx.author)
         inventory = profile.inventory
@@ -517,7 +514,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='Use an item from your inventory',
                       help='Use an item from your inventory to gain its benefits',
                       usage='f!use <item_name>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def use_cmd(self, ctx: CContext, *, item_name: str) -> None:
         profile: Profile = await get_profile(ctx.author)
         item_name = item_name.lower()
@@ -529,7 +526,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             return
         if item_name in profile.bm_inventory:
             illegal = True
-            active_inv = profile.bm_inventory # type: ignore
+            active_inv = profile.bm_inventory  # type: ignore
         
         item_quantity: int = active_inv[item_name][1]
         if item_quantity <= 0:
@@ -538,12 +535,10 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         item = active_inv[item_name][0]
         
-        
         if illegal:
             profile.remove_bm_item(item_name)
         else:
             profile.remove_normal_item(item_name)
-        
         
         if isinstance(item, DrugItem):
             od = random.random() <= item.od_chance
@@ -559,7 +554,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                 await ctx.send(f'You used {item.name} and felt its effects.')
                 with profile.batch():
                     profile.next_income_mult = item.ranged_income_mult()
-                    profile.fire_chance =  item.work_catch_risk
+                    profile.fire_chance = item.work_catch_risk
                 return
         
         elif isinstance(item, GunItem):
@@ -571,7 +566,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='Sell an item from your inventory',
                       help='Sell an item from your inventory for money',
                       usage='f!sell <item_name> [quantity]')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def sell_cmd(self, ctx: CContext, item_name: str, amount: int = 1):
         # Split the arguments into item name and quantity
         item_name = item_name.lower().strip()
@@ -592,7 +587,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         if item_quantity <= 0:
             await ctx.send(f'You do not own any {item_name}!')
             return
-            
+        
         # Calculate the total price
         if isinstance(item, BlackMarketItem):
             total_price = Decimal(item.price * item.resale_mult * amount)
@@ -628,15 +623,15 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         for tree in collector.all_job_trees:
             best_jobs = self._get_best_qualified_jobs(tree, profile)
-
+            
             for job in best_jobs:
                 if job.name == profile.job.name:
                     continue
-
+                
                 salary_mult = 1 + (random.randint(0, job.salary_variance * 10) / 1000)
                 salary = int(job.salary * salary_mult)
                 salary_offers[ctx.author.id][job.name] = salary
-
+                
                 value = (f'Yearly salary: {salary} {CURRENCY_NAME}\n'
                          f'Required Work Experience: {job.req_experience} years\n')
                 if job.req_school != SchoolQualif.HIGH_SCHOOL:
@@ -645,42 +640,42 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                     value += f'Clearance: {job.req_clearance.to_string()}\n'
                 if job.experience_multiplier > 1.0:
                     value += f'Work Experience Multiplier: {job.experience_multiplier}x'
-
+                
                 embed.add_field(
-                    name=f"{job.name} ({tree.name.replace('_', ' ').title()})",
-                    value=value,
-                    inline=False
+                        name=f"{job.name} ({tree.name.replace('_', ' ').title()})",
+                        value=value,
+                        inline=False,
                 )
-
+        
         if len(embed.fields) == 0:
             embed.description = 'No jobs available for your qualifications yet.'
-
+        
         await ctx.send(embed=embed)
-
+    
     @staticmethod
     def _get_best_qualified_jobs(tree: 'JobTree', profile: 'Profile') -> list:
         """Walk the tree from highest level to lowest. Return the jobs at the
         first (i.e. best) level the user fully qualifies for."""
         for level in reversed(tree.jobs):
             jobs_at_level = level if isinstance(level, list) else [level]
-
+            
             qualified = [
                 job for job in jobs_at_level
                 if (profile.work_experience >= job.req_experience
                     and profile.school_qualification >= job.req_school
                     and profile.security_clearance >= job.req_clearance)
             ]
-
+            
             if qualified:
                 return qualified
-
+        
         return []
     
     @commands.command(name='job',
                       brief='Apply for a job',
                       help='Apply for a job from the available jobs list',
                       usage='f!job <job_name>')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def job_cmd(self, ctx: CContext, *, job_name: str):
         global salary_offers
         if ctx.author.id not in salary_offers or not salary_offers[ctx.author.id]:
@@ -723,7 +718,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       brief='Check your profile',
                       help='Check your job, income, qualifications, and other details',
                       usage='f!profile')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def profile_cmd(self, ctx: CContext):
         profile = await get_profile(ctx.author)
         embed = discord.Embed(title=f"{ctx.author.display_name}'s Profile", colour=discord.Colour.purple())

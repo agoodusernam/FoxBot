@@ -93,7 +93,7 @@ async def log_msg(message: discord.Message) -> bool:
         'id':                 str(message.id),
         'channel':            message.channel.name if hasattr(message.channel, 'name') and isinstance(message.channel.name, str) else 'Unknown',
         'channel_id':         str(message.channel.id),
-        'edits': []
+        'edits':              [],
     }
     
     if os.getenv('LOCAL_SAVE') == 'True':

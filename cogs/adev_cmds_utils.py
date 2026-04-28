@@ -29,9 +29,11 @@ def run_func(loop: asyncio.AbstractEventLoop, func_name: str, ctx: CContext) -> 
     asyncio.set_event_loop(loop)
     return loop.run_until_complete(aexec(func_name, ctx))
 
+
 def add_to_env(key: str, value: str) -> None:
     with open('.env', 'a') as f:
         f.write(f'{key}={value}\n')
+
 
 async def shutdown(bot: CoolBot, update=False, restart=False, time: int = 0) -> None:
     action: str
@@ -41,7 +43,7 @@ async def shutdown(bot: CoolBot, update=False, restart=False, time: int = 0) -> 
         action = 'restarting'
     else:
         action = 'updating'
-        
+    
     if time != 0:
         logger.info(f'Waiting {time} seconds before {action}')
         await asyncio.sleep(time)
@@ -54,7 +56,7 @@ async def shutdown(bot: CoolBot, update=False, restart=False, time: int = 0) -> 
     
     if success is not None:
         logger.error(f'Bot encountered an error saving config while shutting down!\n{success}')
-        
+    
     await bot.close()
     
     if update:
@@ -99,7 +101,7 @@ async def upload_all_history(channel: discord.TextChannel) -> None:
             'timestamp':          message.created_at.timestamp(),
             'id':                 str(message.id),
             'channel':            message.channel.name,
-            'channel_id':         str(message.channel.id)
+            'channel_id':         str(message.channel.id),
         }
         bulk_data.append(json_data)
     
@@ -128,6 +130,7 @@ async def upload_whole_server(guild: discord.Guild, author: discord.User | disco
     
     logger.info('Finished uploading all messages from server:', guild.name)
     await dm.send(f'Finished uploading all messages from server: {guild.name}')
+
 
 if __name__ == '__main__':
     add_to_env('test', 'ffffff')

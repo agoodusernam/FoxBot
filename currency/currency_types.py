@@ -262,12 +262,14 @@ class Job:
             return None
         return self.tree.jobs[self.tree_index + 1]
 
+
 unemployed_job = Job(
         name="Unemployed",
         req_experience=0,
         salary=0,
         salary_variance=0,
 )
+
 
 @dataclass
 class ShopItem:
@@ -291,6 +293,7 @@ class ShopItem:
         if not hasattr(self, 'resale_mult'):
             self.resale_mult: Decimal = Decimal('0.9')
 
+
 @dataclass
 class PerkItem(ShopItem):
     """
@@ -307,6 +310,7 @@ class PerkItem(ShopItem):
               returns a coroutine evaluating to a boolean.
     """
     perk: list[Callable[[CContext, discord.Member], Coroutine[Any, Any, bool]]]
+
 
 @dataclass
 class HouseItem(ShopItem):
@@ -505,6 +509,7 @@ def transform_val_for_db(val: Any) -> str | int | float:
         return val.level
     raise TypeError(f'Invalid type for DB: {type(val)}')
 
+
 class _BatchContext:
     """Context manager for batching Profile attribute changes into a single DB call."""
     
@@ -563,9 +568,9 @@ class Profile:
         except AttributeError:
             super().__setattr__('_Profile__initialised', False)
             initialised = False
-
+        
         super().__setattr__(item, value)
-
+        
         if not item.startswith('_') and initialised:
             if item == 'inventory':
                 new_val = self._inventory_to_basic()
@@ -573,7 +578,7 @@ class Profile:
                 new_val = self._bm_inventory_to_basic()
             else:
                 new_val = transform_val_for_db(getattr(self, item))
-
+            
             batching = object.__getattribute__(self, '_Profile__batching')
             if batching:
                 pending = object.__getattribute__(self, '_Profile__pending_updates')
@@ -645,7 +650,7 @@ class Profile:
         self.work_income = Decimal(0)
     
     def fire(self) -> None:
-        self.wallet += self.earnings * 2 # 2 months severance
+        self.wallet += self.earnings * 2  # 2 months severance
         self.work_income = Decimal(0)
         self.job = unemployed_job
         self.fire_chance = BASE_FIRE_CHANCE
@@ -728,8 +733,6 @@ class Profile:
         else:
             item_name = item
         
-        
-        
         if item_name in self.inventory:
             self.inventory[item_name] = (self.inventory[item_name][0], self.inventory[item_name][1] + amount)
             return True
@@ -801,7 +804,7 @@ class Profile:
         for name, item in inv.items():
             if _is_invalid_db_item(item):
                 continue
-                
+            
             obj: ShopItem | None = collector.normal_item_from_str(str(item[0]))
             if obj is None:
                 logger.error(f'Item in inventory could not be found: {item[0]}')
@@ -815,7 +818,7 @@ class Profile:
     async def reset_db_entry(self) -> bool:
         if not await self._self_in_db():
             return await self._add_to_db()
-            
+        
         removed: bool = await self._delete_from_db()
         if not removed:
             logger.error('Profile was not deleted from DB.')
@@ -847,7 +850,7 @@ class Profile:
                 lottery_tickets=self.lottery_tickets,
                 inventory=self._inventory_to_basic(),
                 illegal_items=self._bm_inventory_to_basic(),
-                )
+        )
     
     @classmethod
     def from_DBProfile(cls, profile: DBProfile) -> Self:
@@ -868,7 +871,7 @@ class Profile:
                 debt=Decimal(profile['debt']),
                 age=profile['age'],
                 lottery_tickets=profile['lottery_tickets'],
-                )
+        )
         obj.credit_score = profile['credit_score']
         obj.fire_chance = profile['fire_chance']
         obj._basic_to_inventory(profile['inventory'])

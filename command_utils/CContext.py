@@ -19,12 +19,14 @@ from config.bot_config import BotConfig, load_config
 
 logger = logging.getLogger('discord')
 
+
 class NoChannel:
-    async def send(self, *args, **kwargs) -> discord.Message: ... # type: ignore
+    async def send(self, *args, **kwargs) -> discord.Message: ...  # type: ignore
 
 
 class CContext(commands.Context["CoolBot"]):
     bot: "CoolBot"
+    
     async def delete(self) -> bool:
         """Delete the command message if possible.
         Returns:
@@ -73,7 +75,7 @@ class CContext(commands.Context["CoolBot"]):
         except Exception as e:
             logger.warning(f"Failed to send safe reply, Exception: {e}")
             return None
-        
+
 
 class CoolBot(commands.Bot):
     def __init__(self, *args: tuple[Any, Any], **kwargs: Any) -> None:
@@ -100,7 +102,6 @@ class CoolBot(commands.Bot):
         self.last_sent_dt: datetime.datetime = discord.utils.utcnow()
         self.last_tts_sent_time: float | None = None
         self.uptime_session: aiohttp.ClientSession | None = None
-        
     
     @property
     def avg_latency(self) -> float:
@@ -117,7 +118,6 @@ class CoolBot(commands.Bot):
         
         await self.uptime_session.get(endpoint + str(self.avg_latency))
     
-        
     async def get_context(self, message: discord.Message | discord.Interaction, *, cls=CContext) -> Any:
         return await super().get_context(message, cls=cls)
     
@@ -125,7 +125,7 @@ class CoolBot(commands.Bot):
     async def safe_delete(message: discord.Message) -> bool:
         try:
             await message.delete()
-            
+        
         except discord.Forbidden:
             logger.warning(f"Failed to delete message {message.id} in {message.channel.id}. Insufficient permissions.")
             return False
@@ -136,7 +136,7 @@ class CoolBot(commands.Bot):
         
         except discord.HTTPException as e:
             logger.error(f"Failed to delete message {message.id} in {message.channel.id}:" +
-            f"Status: {e.status}, Code: {e.code}, Text: {e.text}")
+                         f"Status: {e.status}, Code: {e.code}, Text: {e.text}")
             return False
         
         return True
@@ -148,14 +148,14 @@ class CoolBot(commands.Bot):
                 await self.logs_channel.send(f'{pings} The bot encountered an error!\n{err}')
             except discord.HTTPException as e:
                 logger.error(f'Failed to post error message to channel: {e}')
-                
+            
             return
         else:
             try:
                 await channel.send(f'{pings} The bot encountered an error!\n{err}')
             except discord.HTTPException as e:
                 logger.error(f'Failed to post error message to channel {channel.name}: {e}')
-        
+    
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
         await super().on_error(event_method, args, kwargs)
         await self.log_error(event_method)

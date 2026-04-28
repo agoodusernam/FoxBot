@@ -9,10 +9,12 @@ from utils import db_stuff
 
 logger = logging.getLogger('discord')
 
+
 class VoiceSession(TypedDict):
     channel_id: str
     channel_name: str
     joined_at: datetime.datetime
+
 
 active_voice_sessions: dict[int, VoiceSession] = {}
 
@@ -28,7 +30,7 @@ async def handle_join(member: discord.Member, after: discord.VoiceState | discor
         active_voice_sessions[member.id] = {
             'channel_id':   str(after.channel.id),
             'channel_name': after.channel.name,
-            'joined_at':    discord.utils.utcnow()
+            'joined_at':    discord.utils.utcnow(),
         }
     else:
         logger.info(f'{member.name} joined {after.name}')
@@ -37,7 +39,7 @@ async def handle_join(member: discord.Member, after: discord.VoiceState | discor
         active_voice_sessions[member.id] = {
             'channel_id':   str(after.id),
             'channel_name': after.name,
-            'joined_at':    discord.utils.utcnow()
+            'joined_at':    discord.utils.utcnow(),
         }
 
 
@@ -62,7 +64,7 @@ async def handle_leave(member: discord.Member) -> None:
         'user_id':          str(member.id),
         'channel_id':       join_data['channel_id'],
         'duration_seconds': duration_seconds,
-        'timestamp':        int(leave_time.timestamp())
+        'timestamp':        int(leave_time.timestamp()),
     }
     
     await db_stuff.send_voice_session(voice_session)
@@ -95,6 +97,7 @@ async def leave_all(bot: CoolBot) -> None:
             logger.warning(f"Member with ID {member_id} not found, clearing session data")
             del active_voice_sessions[member_id]
 
+
 async def reconnect_all(bot: CoolBot) -> None:
     """Force reconnect all active voice sessions"""
     await leave_all(bot)
@@ -108,6 +111,7 @@ async def reconnect_all(bot: CoolBot) -> None:
             
             await handle_join(member, channel)
             logger.info(f'Reconnected voice state for {member.name} in {channel.name}')
+
 
 def get_voice_sessions() -> dict[int, VoiceSession]:
     return active_voice_sessions

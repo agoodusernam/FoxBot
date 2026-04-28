@@ -19,6 +19,7 @@ from utils import db_stuff
 
 logger = logging.getLogger('discord')
 
+
 class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     """Admin commands for managing the server and users."""
     
@@ -112,8 +113,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Provides statistics about messages sent in the server with graphical representation',
                       usage='f!anag')
     @commands.check(is_admin)
-    @commands.cooldown(1, 2, commands.BucketType.guild)  
-    async def analyse_graph(self, ctx: CContext,user: typing.Optional[discord.Object] = None, *, args: str = ''):
+    @commands.cooldown(1, 2, commands.BucketType.guild)
+    async def analyse_graph(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
         await text_analysis.format_analysis(ctx, graph=True, to_analyse=user, flag=args)
     
     @commands.command(name='analyse_voice', aliases=['anavc'],
@@ -121,7 +122,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Provides statistics about voice channel usage in the server',
                       usage='f!anavc [user_id/mention]')
     @commands.check(is_admin)
-    @commands.cooldown(1, 2, commands.BucketType.user)  
+    @commands.cooldown(1, 2, commands.BucketType.user)
     async def analyse_voice(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
         include_left = False
         dm_user = False
@@ -129,7 +130,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             include_left = True
         if args.strip() == '-dm':
             dm_user = True
-            
+        
         await voice_analysis.format_voice_analysis(ctx, graph=False, user=user, include_left=include_left, dm_user=dm_user)
     
     @commands.command(name='analyse_vc_graph', aliases=['anavcg'],
@@ -137,7 +138,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Provides statistics about messages sent in the server with graphical representation',
                       usage='f!anavcg')
     @commands.check(is_admin)
-    @commands.cooldown(1, 2, commands.BucketType.guild)  
+    @commands.cooldown(1, 2, commands.BucketType.guild)
     async def analyse_vc_graph(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
         include_left = False
         dm_user = False
@@ -150,14 +151,13 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await voice_analysis.format_voice_analysis(ctx, graph=True, user=user, include_left=include_left, dm_user=dm_user)
     
     @commands.command(name='time_in_vc', aliases=["tiv"],
-            brief="Get the time spent in a voice channel",
-            help="Get the time a specific user has spent in a specific channel",
-            usage="f!tiv <user> <channel>")
+                      brief="Get the time spent in a voice channel",
+                      help="Get the time a specific user has spent in a specific channel",
+                      usage="f!tiv <user> <channel>")
     @commands.check(is_admin)
-    @commands.cooldown(1, 2, commands.BucketType.user) 
+    @commands.cooldown(1, 2, commands.BucketType.user)
     async def time_in_vc(self, ctx: CContext, user: discord.User, channel: discord.VoiceChannel):
         await voice_analysis.user_time_in_channel(ctx, user, channel)
-        
     
     @commands.command(name='blacklist',
                       brief='Blacklist a user',
@@ -177,11 +177,10 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         
         if ctx.bot.blacklist.add_user(u_id):
             await ctx.send(f'User **{user.display_name}** has been blacklisted.')
-            
+        
         else:
             await ctx.message.channel.send(f'User **{user.display_name}** is already blacklisted.', delete_after=ctx.bot.del_after)
             return
-        
     
     @commands.command(name='unblacklist',
                       brief='Remove user from blacklist',
@@ -197,7 +196,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         
         if ctx.bot.blacklist.remove_user(u_id):
             await ctx.send(f'User **{user.display_name}** has been removed from the blacklist.')
-            
+        
         else:
             await ctx.send(f'User **{user.display_name}** was not blacklisted.', delete_after=ctx.bot.del_after)
             return
@@ -207,7 +206,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Makes the bot say the specified message',
                       usage='f!echo [channel id] <message>')
     @commands.check(is_admin)
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     async def echo_cmd(self, ctx: CContext, *, message: str):
         if message is None:
             await ctx.send('Nothing to echo.', delete_after=ctx.bot.del_after)
@@ -218,7 +217,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         split_message: list[str] = msg.split()
         try:
             channel_id: int = int(split_message[0].replace('#', '', 1).replace('<', '', 1).replace('>', '', 1))
-            channel: Any = ctx.bot.get_channel(channel_id) # I wanted to type this but i gave up
+            channel: Any = ctx.bot.get_channel(channel_id)  # I wanted to type this but i gave up
             if channel is None:
                 raise ValueError
             msg = msg.replace(str(channel_id), '', 1)
@@ -283,7 +282,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       brief='Send the last modlog message',
                       help='Admin only: Send the last modlog message',
                       usage='f!last_log')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.check(is_staff)
     async def send_last_log(self, ctx: CContext):
         await ctx.delete()
@@ -296,7 +295,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       brief='Send the last modlog message anonymously',
                       help='Admin only: Send the last modlog message without mentioning the moderator',
                       usage='f!last_log_anonymous')
-    @commands.cooldown(1, 5, commands.BucketType.user)  
+    @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.check(is_staff)
     async def send_last_log_anonymous(self, ctx: CContext):
         await ctx.delete()
@@ -308,7 +307,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!warn <user_id/mention> <reason>')
     @commands.check(is_admin)
     async def warn(self, ctx: CContext, member: discord.Member, *,
-                   reason: str = 'No reason provided'):
+                   reason: str = 'No reason provided',
+                   ):
         await ctx.delete()
         
         if member is None:
@@ -350,11 +350,11 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         embed = discord.Embed(title=f'Warns for {member.display_name}', description=warn_list,
                               color=discord.Color.red())
         await ctx.send(embed=embed)
-        
+    
     @commands.command(name='verify', aliases=['ver', 'v'],
-                        brief='Verify a user',
-                        help='Admin only: Assign the verified role to a user',
-                        usage='f!verify <user_id/mention>')
+                      brief='Verify a user',
+                      help='Admin only: Assign the verified role to a user',
+                      usage='f!verify <user_id/mention>')
     @commands.guild_only()
     @commands.check(is_staff)
     async def verify(self, ctx: CContext, member: discord.Member):
@@ -364,7 +364,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         if member is None:
             await ctx.send('User not found.', delete_after=ctx.bot.del_after)
             return
-        
         
         roles: list[discord.Role] = []
         for role_id in ctx.bot.config.verified_roles:
@@ -379,9 +378,9 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await ctx.send(f'{member.display_name} has been verified.', delete_after=ctx.bot.del_after)
     
     @commands.command(name='unverify', aliases=['uver', 'uv'],
-            brief='Verify a user',
-            help='Admin only: Assign the verified role to a user',
-            usage='f!unverify <user_id/mention>')
+                      brief='Verify a user',
+                      help='Admin only: Assign the verified role to a user',
+                      usage='f!unverify <user_id/mention>')
     @commands.guild_only()
     @commands.check(is_staff)
     async def unverify(self, ctx: CContext, member: discord.Member):
@@ -403,7 +402,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await member.remove_roles(*roles, reason='Unverified by admin', atomic=True)
         
         await ctx.send(f'{member.display_name} has been unverified.', delete_after=ctx.bot.del_after)
-        
     
     @commands.command(name='last_messages', aliases=['lastmsgs', 'last_msgs'],
                       brief='Fetch last messages from a user',
@@ -449,10 +447,10 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                         formatted_messages += f'\nAttachment: {len(attachments)}{"".join(path.suffixes)}'
                         attachments.append(path)
             formatted_messages += '\n'
-            
+        
         if len(formatted_messages) > 2000:
             formatted_messages = formatted_messages[:1995] + '...'
-            
+        
         await ctx.send(f"Last {number_of_messages} sent by {member.display_name}:")
         await ctx.send(formatted_messages, suppress_embeds=True)
         if attachments:
@@ -461,7 +459,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.command(name='landmine', aliases=['lm'],
                       brief='Set landmines in a channel',
                       help='Admin only: Set a specified number of landmines in a channel',
-                      usage='f!landmine [channel_id] [amount]'
+                      usage='f!landmine [channel_id] [amount]',
                       )
     @commands.check(is_admin)
     @guild_only()
@@ -549,7 +547,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             await ctx.send(f'Counting saves for {member.display_name} have been removed.')
         else:
             await ctx.send(f'{member.display_name} now has **{amount}** counting save(s).')
-        
+    
     @commands.command(name='stoptts')
     @commands.check(is_admin)
     async def stop_tts(self, ctx: CContext):
@@ -561,7 +559,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             return
         ctx.bot.vc_client.stop()
         await ctx.send("TTS has been stopped.")
-    
+
 
 async def setup(bot: CoolBot):
     await bot.add_cog(AdminCmds(bot))

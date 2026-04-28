@@ -12,7 +12,8 @@ from currency.currency_types import Profile
 
 
 async def rob_success(ctx: CContext, profile: Profile, target: discord.Member, target_profile:
-                        Profile):
+Profile,
+                      ):
     multiplier = Decimal(str(random.uniform(0.01, 0.1)))
     amount = math.floor(target_profile.wallet * multiplier)
     if amount > 0:
@@ -27,7 +28,8 @@ async def rob_success(ctx: CContext, profile: Profile, target: discord.Member, t
 
 
 async def rob_success_og(ctx: CContext, profile: Profile, target: discord.Member,
-                         target_profile: Profile):
+                         target_profile: Profile,
+                         ):
     await ctx.send(f'You successfully robbed {target.display_name} and stole some money!')
     # Calculate the amount to steal, between 1 and 5% of the target's wallet
     multiplier = Decimal(str(random.uniform(0.01, 0.05)))
@@ -73,7 +75,7 @@ async def got_shot(ctx: CContext, profile: Profile, target: discord.Member):
     if added_to_debt and payable > 0:
         await ctx.send(
                 f"As you couldn't pay it all of at once, {amount - payable} {curr_config.CURRENCY_NAME} was added to " +
-                f'your debt, remember to pay it back!'
+                f'your debt, remember to pay it back!',
         )
     return
 
@@ -90,7 +92,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
                       brief='Rob someone',
                       help="Attempt to steal from someone's wallet.",
                       usage='rob <target>')
-    @commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)  
+    @commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)
     async def rob_cmd(self, ctx: CContext, target: discord.Member) -> None:
         if target.id == ctx.author.id:
             await ctx.send('You cannot rob yourself!')
@@ -118,7 +120,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
                 # 50% chance of failure
                 await ctx.send(f'You were caught trying to rob {target.display_name} and they ran away!')
                 return None
-            
+        
         elif not profile.has_gun and target_profile.has_gun:
             # User has no gun, target has a gun
             # 90% chance of failure
@@ -141,7 +143,7 @@ class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_c
                 # 10% chance of failure
                 await ctx.send(f'You were caught trying to rob {target.display_name} and they ran away!')
                 return None
-            
+        
         else:
             # User has a gun, target has a gun
             # 50% chance of success

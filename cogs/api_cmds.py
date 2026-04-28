@@ -16,7 +16,8 @@ from utils import utils
 
 logger = logging.getLogger('discord')
 
-MAX_VT_FILE_SIZE: Final[int] = 100*1024*1024
+MAX_VT_FILE_SIZE: Final[int] = 100 * 1024 * 1024
+
 
 class ApiCommands(commands.Cog, name='Images and APIs'):
     """These commands fetch images and data from various APIs."""
@@ -27,7 +28,7 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
     @commands.command(name='nasa', aliases=['nasa_pic', 'nasa_apod', 'nasapic'],
                       brief="NASA's picture of the day",
                       help="Get NASA's Astronomy Picture of the Day with explanation")
-    @commands.cooldown(1, 5, BucketType.guild)  
+    @commands.cooldown(1, 5, BucketType.guild)
     async def nasa_pic(self, ctx: CContext) -> None:
         # TODO: This is kind of cursed, fix it later
         # You may be wondering why I can't post the URL directly,
@@ -57,63 +58,63 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
     @commands.command(name='dog', aliases=['dogpic', 'dog_pic'],
                       brief='Get a random dog picture',
                       help='Fetches and displays a random dog picture from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def dogpic(self, ctx: CContext) -> None:
         await api_utils.get_dog_pic(ctx)
     
     @commands.command(name='cat', aliases=['catpic', 'cat_pic'],
                       brief='Get a random cat picture',
                       help='Fetches and displays a random cat picture from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def catpic(self, ctx: CContext) -> None:
         await api_utils.get_cat_pic(ctx)
     
     @commands.command(name='fox', aliases=['foxpic', 'fox_pic'],
                       brief='Get a random fox picture',
                       help='Fetches and displays a random fox picture from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def foxpic(self, ctx: CContext) -> None:
         await api_utils.get_fox_pic(ctx)
     
     @commands.command(name='insult', aliases=['insults'],
                       brief='Get a random insult',
                       help='Fetches and displays a random insult from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def insult(self, ctx: CContext) -> None:
         await api_utils.get_insult(ctx)
     
     @commands.command(name='advice', aliases=['advise', 'give_advice'],
                       brief='Get random advice',
                       help='Fetches and displays a random piece of advice from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def advice(self, ctx: CContext) -> None:
         await api_utils.get_advice(ctx)
     
     @commands.command(name='joke', aliases=['jokes'],
                       brief='Get a random joke',
                       help='Fetches and displays a random joke from an API')
-    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def joke(self, ctx: CContext) -> None:
         await api_utils.get_joke(ctx)
     
     @commands.command(name='wyr', aliases=['would_you_rather', 'wouldyourather'],
                       brief="Get a random 'Would You Rather' question",
                       help="Fetches and displays a random 'Would You Rather' question from an API")
-    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def wyr(self, ctx: CContext) -> None:
         await api_utils.get_wyr(ctx)
     
     @commands.command(name='no',
                       brief="Get a random 'no' response",
                       help="Fetches and displays a random 'no' response from an API")
-    @commands.cooldown(1, 5, commands.BucketType.guild)  
+    @commands.cooldown(1, 5, commands.BucketType.guild)
     async def no(self, ctx: CContext) -> None:
         await api_utils.get_no(ctx)
     
     @commands.command(name='virus_total_hash', aliases=['virustotalhash', 'vt_hash', 'vth'],
                       brief='Get file information from VirusTotal',
                       help='Get information about a file from VirusTotal using its hash',
-                      usage='f!vt_hash <hash>'
+                      usage='f!vt_hash <hash>',
                       )
     @commands.cooldown(3, 10, commands.BucketType.guild)
     async def virus_total_hash(self, ctx: CContext, given_hash: str) -> None:
@@ -165,6 +166,7 @@ class ApiCommands(commands.Cog, name='Images and APIs'):
             await ctx.send(embed=api_utils.create_vt_file_embed(result))
         
         await ctx.send(ctx.author.mention)
+
 
 async def setup(bot):
     await bot.add_cog(ApiCommands(bot))

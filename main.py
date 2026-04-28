@@ -28,6 +28,7 @@ def on_exit() -> None:
 bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True)
 logger = logging.getLogger('discord')
 
+
 def check_devs_reset(obj: Any) -> bool:
     if not obj:
         return True
@@ -39,12 +40,11 @@ def check_devs_reset(obj: Any) -> bool:
         if not isinstance(i, int):
             return True
     
-    
     if list(obj)[0] == 0 and len(obj) == 1:
         return True
     
     return False
-    
+
 
 @bot.event
 async def on_ready() -> None:
@@ -101,7 +101,7 @@ async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandErr
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.send('This command is on cooldown. Please try again in ' +
                        f'{utils.seconds_to_human_readable(error.retry_after)}.')
-        
+    
     elif isinstance(error, commands.NoPrivateMessage):
         await ctx.send('This command cannot be used in private messages.')
     
@@ -161,10 +161,12 @@ async def not_blacklisted(ctx: CContext) -> bool:
         return False
     return True
 
+
 @bot.event
 async def on_message(message: discord.Message) -> None:
     # Suppressed because we are listening for messages in cogs/message_events.py
     _ = message
+
 
 # Run the bot
 token = os.getenv('TOKEN')

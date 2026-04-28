@@ -269,12 +269,12 @@ async def get_vt_hash_info(given_hash: str, return_err: Literal[True]) -> VTInfo
 async def get_vt_hash_info(
         given_hash: str,
         return_err: bool = False,
-        ) -> VTInfo | str | dict[str, Any]:
+) -> VTInfo | str | dict[str, Any]:
     
     logger.debug(f'Getting VT info for hash: {given_hash}')
     async with _get_vt_client() as client:
         response: dict[str, Any] = await (await client.get_async('/files/' + given_hash)).json_async()
-        
+    
     logger.debug(f'VT response for hash_info: {response}')
     try:
         return VTInfo(response['data'])
@@ -297,7 +297,7 @@ async def upload_file_vt(f: IO[bytes], zip_password: str | None = None) -> VTInf
     
     sha256_hash = hasher.hexdigest()
     logger.debug(f'File read, hashed {hashed_len} bytes, SHA256 hash: {sha256_hash}')
-
+    
     resp = await get_vt_hash_info(sha256_hash, return_err=True)
     if isinstance(resp, VTInfo):
         logger.debug('File already scanned, returning VT info')

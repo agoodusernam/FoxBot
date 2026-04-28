@@ -40,6 +40,7 @@ async def try_uid_to_discord_obj(uid: int, bot: CoolBot) -> discord.User | disco
     
     return None
 
+
 class TTS(commands.Cog, name='TTS'):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
@@ -108,7 +109,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
                 self.bot.config.today = utils.formatted_today()
                 logging.debug('Processing command in staging bot.')
                 await self.bot.process_commands(message)
-                
+            
             elif not commands_enabled and message.content.startswith(self.bot.command_prefix):
                 await message.channel.send('This is the staging bot. Commands are currently disabled.')
             
@@ -161,7 +162,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         if message.content.startswith('!f'):
             tts_cog = self.bot.get_cog('TTS')
             if tts_cog:
-                await tts_cog.tts_msg(message) # type: ignore
+                await tts_cog.tts_msg(message)  # type: ignore
             else:
                 logger.error('TTS cog not loaded.')
     
@@ -181,7 +182,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         if payload.channel_id != self.bot.config.counting.channel:
             return
-
+        
         if payload.message_id != self.bot.config.counting.last_counted_message_id:
             return
         
@@ -217,23 +218,26 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         if isinstance(message, discord.Message):
             content = message.content
-            if content.strip() in no_post: return
-            if content.strip().startswith('f!v'): return
+            if content.strip() in no_post:
+                return
+            if content.strip().startswith('f!v'):
+                return
             author_obj = message.author
-            
+        
         else:
             if not message.get('edits'):
                 content = message['content']
             else:
                 content = message['edits'][-1]['content']
-                
-            if content.strip() == 'f!update': return
-            if content.strip().startswith('f!v'): return
+            
+            if content.strip() == 'f!update':
+                return
+            if content.strip().startswith('f!v'):
+                return
             author_obj = await try_uid_to_discord_obj(int(message['author_id']), self.bot)
         
         if content.strip() == '':
             content = 'Message had no content, it may have been an embed or was just an attachment.'
-        
         
         if author_obj is None:
             assert isinstance(message, dict)
@@ -253,7 +257,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
                 content,
                 discord.Color.red(),
                 f'Message by {display_name} was deleted in <#{channel_id}>',
-                f'ID: {message_id}'
+                f'ID: {message_id}',
         )
         
         if not isinstance(self.logs_channel, discord.TextChannel):
@@ -291,11 +295,11 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         if (payload.channel_id == self.bot.config.counting.channel
                 and payload.message_id == self.bot.config.counting.last_counted_message_id):
-
+            
             if not self.bot.config.counting.last_highest_count_edited:
                 await payload.message.channel.send(
-                    f'{payload.message.author.mention} edited their message. '
-                    f'The next number is `{self.bot.config.counting.last_count + 1}`'
+                        f'{payload.message.author.mention} edited their message. '
+                        f'The next number is `{self.bot.config.counting.last_count + 1}`',
                 )
         
         before_content: str
@@ -320,12 +324,12 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             return
         
         await self.post_edit_to_log(before_content, after_content,
-                payload.message.author, payload.channel_id, payload.message_id, payload.message.jump_url)
-    
+                                    payload.message.author, payload.channel_id, payload.message_id, payload.message.jump_url)
     
     async def post_edit_to_log(self, before_content: str, after_content: str,
-                              author: discord.Member | discord.User,
-                              channel_id: int, message_id: int, jump_url: str) -> None:
+                               author: discord.Member | discord.User,
+                               channel_id: int, message_id: int, jump_url: str,
+                               ) -> None:
         """
         Post the edited message to the log channel.
         """
@@ -351,7 +355,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
                 description,
                 discord.Color.blurple(),
                 f'{author.mention} edited their message in <#{channel_id}>',
-                f'ID: {message_id}'
+                f'ID: {message_id}',
         )
         
         if not isinstance(self.logs_channel, discord.TextChannel):

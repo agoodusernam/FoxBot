@@ -11,7 +11,7 @@ from currency.currency_types import (
     DrugItem,
     BlackMarketCategory,
     GunItem,
-    )
+)
 
 # Shop Items
 
@@ -21,7 +21,7 @@ private_vc = PerkItem(
         description="A private voice channel for you and your friends.",
         price=10_000,
         stock=-1,
-        perk=[perks.create_private_vc]
+        perk=[perks.create_private_vc],
 )
 
 rich_role = PerkItem(
@@ -29,7 +29,7 @@ rich_role = PerkItem(
         description="A special role for those who are very rich.",
         price=1_000_000,
         stock=-1,
-        perk=[perks.give_rich_role]
+        perk=[perks.give_rich_role],
 )
 
 send_announce = PerkItem(
@@ -37,13 +37,13 @@ send_announce = PerkItem(
         description="Allows you to send an announcement in the server.",
         price=100_000,
         stock=-1,
-        perk=[perks.send_announcement]
+        perk=[perks.send_announcement],
 )
 
 special_perks = ShopCategory(
         name="Special Items",
         description="Unique perks that enhance your experience.",
-        items=[private_vc, rich_role, send_announce]
+        items=[private_vc, rich_role, send_announce],
 )
 register_shop_category(special_perks)
 
@@ -87,7 +87,7 @@ mansion = HouseItem(
 properties = ShopCategory(
         name="Properties",
         description="Houses and properties you can buy or rent.",
-        items=[small_house, medium_house, large_house, mansion]
+        items=[small_house, medium_house, large_house, mansion],
 )
 register_shop_category(properties)
 
@@ -173,7 +173,7 @@ cars = ShopCategory(
         name="Cars",
         description="Vehicles to drive around in style.",
         items=[honda_civic, nissan_versa, toyota_mirai, bmw_430i, bmw_740i, mercedes_amg_gt,
-               porche_911_gt3_rs, rr_phantom, ferrari_sf90, bespoke_rr_phantom, bugatti_tourbillon]
+               porche_911_gt3_rs, rr_phantom, ferrari_sf90, bespoke_rr_phantom, bugatti_tourbillon],
 )
 register_shop_category(cars)
 
@@ -206,7 +206,7 @@ cocaine = DrugItem(
         income_multiplier=0.8,
         work_catch_risk=0.3,
         uses=10,
-        od_chance=0.01
+        od_chance=0.01,
 )
 
 lsd = DrugItem(
@@ -250,7 +250,7 @@ methamphetamine = DrugItem(
         income_multiplier=1.3,
         work_catch_risk=0.25,
         uses=10,
-        od_chance=0.05
+        od_chance=0.05,
 )
 
 fentanyl = DrugItem(
@@ -265,7 +265,7 @@ fentanyl = DrugItem(
         income_multiplier=1.5,
         work_catch_risk=0.3,
         uses=1,
-        od_chance=0.2
+        od_chance=0.2,
 )
 
 ominous_knife = BlackMarketItem(
@@ -276,7 +276,7 @@ ominous_knife = BlackMarketItem(
         resale_mult=Decimal(0),
         cops_risk=0,
         scam_risk=0,
-        trace_back=False
+        trace_back=False,
 )
 
 sig_p320_m1 = GunItem(
@@ -288,7 +288,7 @@ sig_p320_m1 = GunItem(
         cops_risk=0.05,
         scam_risk=0.05,
         trace_back=0.5,
-        suppressed=False
+        suppressed=False,
 )
 
 glock_17_gen5 = GunItem(
@@ -300,7 +300,7 @@ glock_17_gen5 = GunItem(
         cops_risk=0.05,
         scam_risk=0.07,
         trace_back=0.5,
-        suppressed=False
+        suppressed=False,
 )
 
 m1911_a1 = GunItem(
@@ -312,7 +312,7 @@ m1911_a1 = GunItem(
         cops_risk=0,
         scam_risk=0,
         trace_back=False,
-        suppressed=False
+        suppressed=False,
 )
 
 the_colt = GunItem(
@@ -324,7 +324,7 @@ the_colt = GunItem(
         cops_risk=0,
         scam_risk=0,
         trace_back=False,
-        suppressed=False
+        suppressed=False,
 )
 
 mr556 = GunItem(
@@ -336,7 +336,7 @@ mr556 = GunItem(
         cops_risk=0.1,
         scam_risk=0.1,
         trace_back=0.15,
-        suppressed=False
+        suppressed=False,
 )
 
 sig_mcx_spear = GunItem(
@@ -348,7 +348,7 @@ sig_mcx_spear = GunItem(
         cops_risk=0.1,
         scam_risk=0.15,
         trace_back=0.15,
-        suppressed=True
+        suppressed=True,
 )
 
 hk417 = GunItem(
@@ -360,7 +360,7 @@ hk417 = GunItem(
         cops_risk=0.2,
         scam_risk=0.05,
         trace_back=0.2,
-        suppressed=False
+        suppressed=False,
 )
 
 sig_mx7 = GunItem(
@@ -372,7 +372,7 @@ sig_mx7 = GunItem(
         cops_risk=0.2,
         scam_risk=0.05,
         trace_back=0.2,
-        suppressed=True
+        suppressed=True,
 )
 
 ak_47 = GunItem(
@@ -384,7 +384,7 @@ ak_47 = GunItem(
         cops_risk=0.05,
         scam_risk=0.1,
         trace_back=False,
-        suppressed=False
+        suppressed=False,
 )
 
 m39_emr = GunItem(
@@ -396,7 +396,7 @@ m39_emr = GunItem(
         cops_risk=0.2,
         scam_risk=0.1,
         trace_back=0.3,
-        suppressed=False
+        suppressed=False,
 )
 
 barrett_m82 = GunItem(
@@ -408,7 +408,7 @@ barrett_m82 = GunItem(
         cops_risk=0.2,
         scam_risk=0.15,
         trace_back=0.5,
-        suppressed=False
+        suppressed=False,
 )
 
 l115a3_awm = GunItem(
@@ -420,13 +420,13 @@ l115a3_awm = GunItem(
         cops_risk=0.2,
         scam_risk=0.1,
         trace_back=0.2,
-        suppressed=True
+        suppressed=True,
 )
 
 drugs = BlackMarketCategory(
         name="Drugs",
         description="Various drugs that may or may kill you.",
-        items=[white_powder, cocaine, lsd, weed, methamphetamine, fentanyl]
+        items=[white_powder, cocaine, lsd, weed, methamphetamine, fentanyl],
 )
 register_shop_category(drugs)
 
@@ -434,6 +434,6 @@ weapons = BlackMarketCategory(
         name="Weapons",
         description="Weapons that you can use to kill people",
         items=[ominous_knife, sig_p320_m1, glock_17_gen5, m1911_a1, the_colt, mr556, sig_mcx_spear, hk417, sig_mx7,
-               ak_47, m39_emr, barrett_m82, l115a3_awm]
+               ak_47, m39_emr, barrett_m82, l115a3_awm],
 )
 register_shop_category(weapons)

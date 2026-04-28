@@ -41,7 +41,6 @@ class MemberEvents(commands.Cog, name="Member Events"):
             self.member_logs_channel = logs_channel
             return True
         return True
-        
     
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -53,10 +52,14 @@ class MemberEvents(commands.Cog, name="Member Events"):
         
         member_count: str = str(member.guild.member_count if member.guild.member_count else len(member.guild.members))
         suffix: str
-        if member_count[-1] == '1': suffix = 'st'
-        elif member_count[-1] == '2': suffix = 'nd'
-        elif member_count[-1] == '3': suffix = 'rd'
-        else: suffix = 'th'
+        if member_count[-1] == '1':
+            suffix = 'st'
+        elif member_count[-1] == '2':
+            suffix = 'nd'
+        elif member_count[-1] == '3':
+            suffix = 'rd'
+        else:
+            suffix = 'th'
         description: str = f'{member.mention}, {member_count}{suffix} to join.\n'
         description += f'Current display name: {member.display_name}\n'
         description += f'Account created {time_ago(member.created_at)}\n'
@@ -66,15 +69,13 @@ class MemberEvents(commands.Cog, name="Member Events"):
         if member.system:
             description += 'This user is a Discord system user (represents Discord officially).\n'
         
-        
         embed = create_log_embed(member.name,
-                member.display_avatar.url,
-                description,
-                discord.Color.from_rgb(102, 219, 174),
-                'Member joined',
-                f'ID: {member.id}',
-        )
-        
+                                 member.display_avatar.url,
+                                 description,
+                                 discord.Color.from_rgb(102, 219, 174),
+                                 'Member joined',
+                                 f'ID: {member.id}',
+                                 )
         
         await self.jl_logs_channel.send(embed=embed)
     
@@ -98,7 +99,7 @@ class MemberEvents(commands.Cog, name="Member Events"):
                 description,
                 discord.Color.yellow(),
                 'Member left',
-                f'ID: {member.id}'
+                f'ID: {member.id}',
         )
         
         await self.jl_logs_channel.send(embed=embed)
@@ -166,7 +167,7 @@ class MemberEvents(commands.Cog, name="Member Events"):
                     f'{after.mention} changed their username from {before.name} to {after.name}',
                     discord.Color.blue(),
                     'Username changed',
-                    )
+            )
             
             await self.member_logs_channel.send(embed=embed)
     
@@ -191,6 +192,7 @@ class MemberEvents(commands.Cog, name="Member Events"):
         
         embed = create_log_embed(user.name, user.display_avatar.url, f'{user.mention} was unbanned.', discord.Color.green(), 'Member unbanned', f'ID: {user.id}')
         await self.member_logs_channel.send(embed=embed)
+
 
 async def setup(bot: CoolBot):
     await bot.add_cog(MemberEvents(bot))

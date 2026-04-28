@@ -34,36 +34,36 @@ class ConfigCog(commands.Cog, name="Configuration"):
             # Show all config sections
             embed = discord.Embed(title="Bot Configuration", color=discord.Color.blue())
             embed.add_field(name="Available Sections",
-                          value="• basic - Basic bot settings\n"
-                                "• users - User permission lists\n"
-                                "• logging - Logging configuration\n"
-                                "• reaction_roles - Reaction role settings",
-                          inline=False)
+                            value="• basic - Basic bot settings\n"
+                                  "• users - User permission lists\n"
+                                  "• logging - Logging configuration\n"
+                                  "• reaction_roles - Reaction role settings",
+                            inline=False)
             embed.add_field(name="Usage",
-                          value=f"`{ctx.prefix}config <section>` to view section details",
-                          inline=False)
+                            value=f"`{ctx.prefix}config <section>` to view section details",
+                            inline=False)
             await ctx.send(embed=embed)
             return
         
         section = section.lower()
         
         if section == "basic":
-            await self._handle_generic_config(ctx, self.bot.config, key, value, 
-                                            exclude_keys={'no_log', 'send_blacklist', 'logging_channels', 'reaction_roles', 'admin_ids', 'dev_ids', 'blacklist_ids'})
+            await self._handle_generic_config(ctx, self.bot.config, key, value,
+                                              exclude_keys={'no_log', 'send_blacklist', 'logging_channels', 'reaction_roles', 'admin_ids', 'dev_ids', 'blacklist_ids'})
         elif section == "users":
             await self._handle_users_config(ctx)
         elif section == "logging":
-             await self._handle_generic_config(ctx, self.bot.config.logging_channels, key, value)
+            await self._handle_generic_config(ctx, self.bot.config.logging_channels, key, value)
         elif section == "reaction_roles":
-             await self._handle_generic_config(ctx, self.bot.config.reaction_roles, key, value)
-             
+            await self._handle_generic_config(ctx, self.bot.config.reaction_roles, key, value)
+        
         else:
             await ctx.send(f"Unknown section: {section}", delete_after=self.bot.config.del_after)
     
     async def _handle_generic_config(self, ctx: CContext, config_obj: ConfigBase, key: str | None, value: str | None, exclude_keys: set[str] | None = None):
         if exclude_keys is None:
             exclude_keys = set()
-
+        
         if key is None:
             embed = discord.Embed(title=f"{type(config_obj).__name__} Configuration", color=discord.Color.blue())
             
@@ -72,7 +72,7 @@ class ConfigCog(commands.Cog, name="Configuration"):
             for f in dataclasses.fields(config_obj):
                 if f.name in exclude_keys:
                     continue
-                    
+                
                 val = getattr(config_obj, f.name)
                 # Format value for display
                 if isinstance(val, list):
@@ -81,32 +81,32 @@ class ConfigCog(commands.Cog, name="Configuration"):
                     val_str = f"{{...}} ({len(val)} items)"
                 else:
                     val_str = f"`{val}`"
-                    
+                
                 field_list.append(f"• **{f.name}**: {val_str}")
             
             if not field_list:
                 embed.description = "No configurable fields in this section."
             else:
                 embed.description = "\n".join(field_list)
-                
+            
             await ctx.send(embed=embed)
             return
         
         key = key.lower()
         if not hasattr(config_obj, key) or key in exclude_keys:
-             await ctx.send(f"Unknown key: {key}", delete_after=self.bot.config.del_after)
-             return
+            await ctx.send(f"Unknown key: {key}", delete_after=self.bot.config.del_after)
+            return
         
         target_field = next((f for f in dataclasses.fields(config_obj) if f.name == key), None)
         if not target_field:
-             await ctx.send(f"Unknown key (not in fields): {key}", delete_after=self.bot.config.del_after)
-             return
+            await ctx.send(f"Unknown key (not in fields): {key}", delete_after=self.bot.config.del_after)
+            return
         
         if value is None:
             val = getattr(config_obj, key)
             await ctx.send(f"`{key}`: `{val}`")
             return
-            
+        
         type_hints = get_type_hints(type(config_obj))
         type_hint = type_hints.get(key, target_field.type)
         

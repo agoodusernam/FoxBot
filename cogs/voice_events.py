@@ -8,6 +8,7 @@ from cogs.voice_events_utils import handle_join, handle_move, handle_leave
 
 logger = logging.getLogger('discord')
 
+
 class VoiceLogging(commands.Cog, name='Voice Logging'):
     def __init__(self, bot: CoolBot):
         self.bot = bot
@@ -30,7 +31,7 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
         if before.channel is None and after.channel is not None:
             await handle_join(member, after)
             embed = discord.Embed(title=f'{member.display_name} joined #{after.channel.name}',
-                    color=discord.Color.green(), description=f'{member.mention} joined {after.channel.mention}')
+                                  color=discord.Color.green(), description=f'{member.mention} joined {after.channel.mention}')
             embed.set_author(name=member.name, icon_url=url)
             embed.timestamp = discord.utils.utcnow()
             if logging_channel:
@@ -42,7 +43,7 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
             await handle_leave(member)
             if logging_channel:
                 embed = discord.Embed(title=f'{member.display_name} left #{before.channel.name}',
-                        color=discord.Color.red(), description=f'{member.mention} left {before.channel.mention}')
+                                      color=discord.Color.red(), description=f'{member.mention} left {before.channel.mention}')
                 embed.set_author(name=member.name, icon_url=url)
                 embed.timestamp = discord.utils.utcnow()
                 await logging_channel.send(embed=embed)
@@ -69,7 +70,7 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
             await handle_move(member, before, after)
             embed = discord.Embed(title=f'{member.display_name} moved from #{before.channel.name} to'
                                         f' #{after.channel.name}', color=discord.Color.blue(), description=
-                    f'{member.mention} moved from {before.channel.mention} to {after.channel.mention}')
+                                  f'{member.mention} moved from {before.channel.mention} to {after.channel.mention}')
             embed.set_author(name=member.name, icon_url=url)
             embed.timestamp = discord.utils.utcnow()
             if logging_channel:

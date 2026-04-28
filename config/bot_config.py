@@ -13,10 +13,12 @@ import utils.utils
 
 logger = logging.getLogger('discord')
 
+
 @dataclass
 class ConfigBase:
     """Base configuration class with common methods"""
     pass
+
 
 @dataclass
 class NoLogConfig(ConfigBase):
@@ -66,16 +68,16 @@ class CountingConfig(ConfigBase):
     last_counted_message_id: str = "0"
     last_highest_count_edited: bool = False
     saves: dict[str, int] = field(default_factory=dict)
-
+    
     def add_fail(self, user_id: int) -> None:
         self.fails[str(user_id)] = self.fails.get(str(user_id), 0) + 1
-
+    
     def reset_fails(self, user_id: int) -> bool:
         if str(user_id) not in self.fails:
             return False
         self.fails[str(user_id)] = 0
         return True
-
+    
     def set_saves(self, user_id: int, count: int) -> None:
         if count <= 0:
             self.saves.pop(str(user_id), None)
@@ -92,7 +94,7 @@ class CountingConfig(ConfigBase):
         if remaining == 0:
             del self.saves[str(user_id)]
         return remaining
-
+    
     def user_counted(self, user_id: str, number: int, message_id: str) -> None:
         logger.debug(f"User {user_id}, in message {message_id} counted {number}")
         self.successes[user_id] = self.successes.get(user_id, 0) + 1
@@ -117,7 +119,7 @@ class BotConfig(ConfigBase):
     
     # Counting
     counting: CountingConfig = field(default_factory=CountingConfig)
-
+    
     # misc
     logs_path: Path = Path("logs").resolve()
     vc_lb_channel_id: int = 0
@@ -127,7 +129,6 @@ class BotConfig(ConfigBase):
     join_leave_log_channel_id: int = 0
     member_logs_channel_id: int = 0
     bot_logs_channel_id: int = 0
-    
     
     # User permissions
     admin_ids: set[int] = field(default_factory=set)
@@ -148,57 +149,57 @@ class BotConfig(ConfigBase):
     def get_default_config(cls) -> dict[str, Any]:
         """Returns default configuration dictionary"""
         return {
-            "command_prefix":   "f!",
-            "del_after":        3,
-            "admin_ids":        [],
-            "dev_ids":          [],
-            "blacklist_ids":    [],
-            "maintenance_mode": False,
-            "guild_id":         0,
-            "no_log":           {
+            "command_prefix":            "f!",
+            "del_after":                 3,
+            "admin_ids":                 [],
+            "dev_ids":                   [],
+            "blacklist_ids":             [],
+            "maintenance_mode":          False,
+            "guild_id":                  0,
+            "no_log":                    {
                 "user_ids":     [],
                 "channel_ids":  [],
-                "category_ids": []
+                "category_ids": [],
             },
-            "send_blacklist":   {
+            "send_blacklist":            {
                 "channel_ids":  [],
                 "category_ids": []
             },
-            "logging_channels": {
+            "logging_channels":          {
                 "voice":       0,
                 "moderation":  0,
                 "public_logs": 0
             },
-            "reaction_roles":   {
+            "reaction_roles":            {
                 "message_id":    0,
                 "emoji_to_role": {}
             },
             
-            "verified_roles":   [],
-            "staff_role_id":    0,
-            "staging":          False,
-            "tts_requires_role": False,
-            "required_tts_role": 0,
-            "counting": {
-                "channel": 0,
-                "highest_count": 0,
-                "last_count": 0,
-                "last_count_user": 0,
-                "ban_role": 0,
-                "fail_role": 0,
-                "fails": {},
-                "successes": {},
-                "highest_user_count": {},
-                "last_counted_message_id": "0",
+            "verified_roles":            [],
+            "staff_role_id":             0,
+            "staging":                   False,
+            "tts_requires_role":         False,
+            "required_tts_role":         0,
+            "counting":                  {
+                "channel":                   0,
+                "highest_count":             0,
+                "last_count":                0,
+                "last_count_user":           0,
+                "ban_role":                  0,
+                "fail_role":                 0,
+                "fails":                     {},
+                "successes":                 {},
+                "highest_user_count":        {},
+                "last_counted_message_id":   "0",
                 "last_highest_count_edited": False,
-                "saves": {},
+                "saves":                     {},
             },
-            "logs_path": Path("logs"),
-            "vc_lb_channel_id": 0,
-            "msg_log_channel_id": 0,
+            "logs_path":                 Path("logs"),
+            "vc_lb_channel_id":          0,
+            "msg_log_channel_id":        0,
             "join_leave_log_channel_id": 0,
-            "member_logs_channel_id": 0,
-            "bot_logs_channel_id": 0,
+            "member_logs_channel_id":    0,
+            "bot_logs_channel_id":       0,
         }
     
     @classmethod
@@ -221,22 +222,22 @@ class BotConfig(ConfigBase):
         config.join_leave_log_channel_id = data.get("join_leave_log_channel_id", config.join_leave_log_channel_id)
         config.member_logs_channel_id = data.get("member_logs_channel_id", config.member_logs_channel_id)
         config.bot_logs_channel_id = data.get("bot_logs_channel_id", config.bot_logs_channel_id)
-
+        
         if "counting" in data:
             c = data["counting"]
             config.counting = CountingConfig(
-                channel=c.get("channel", 0),
-                highest_count=c.get("highest_count", 0),
-                last_count=c.get("last_count", 0),
-                last_count_user=c.get("last_count_user", 0),
-                ban_role=c.get("ban_role", 0),
-                fail_role=c.get("fail_role", 0),
-                fails=c.get("fails", {}),
-                successes=c.get("successes", {}),
-                highest_user_count=c.get("highest_user_count", {}),
-                last_counted_message_id=str(c.get("last_counted_message_id", "0")),
-                last_highest_count_edited=c.get("last_highest_count_edited", False),
-                saves={str(k): v for k, v in c.get("saves", {}).items()},
+                    channel=c.get("channel", 0),
+                    highest_count=c.get("highest_count", 0),
+                    last_count=c.get("last_count", 0),
+                    last_count_user=c.get("last_count_user", 0),
+                    ban_role=c.get("ban_role", 0),
+                    fail_role=c.get("fail_role", 0),
+                    fails=c.get("fails", {}),
+                    successes=c.get("successes", {}),
+                    highest_user_count=c.get("highest_user_count", {}),
+                    last_counted_message_id=str(c.get("last_counted_message_id", "0")),
+                    last_highest_count_edited=c.get("last_highest_count_edited", False),
+                    saves={str(k): v for k, v in c.get("saves", {}).items()},
             )
         
         # User permissions
@@ -281,58 +282,58 @@ class BotConfig(ConfigBase):
     def to_dict(self) -> dict[str, Any]:
         """Convert BotConfig to dictionary for saving"""
         return {
-            "command_prefix":   self.command_prefix,
-            "del_after":        self.del_after,
-            "maintenance_mode": self.maintenance_mode,
-            "guild_id":         self.guild_id,
-            "admin_ids":        list(self.admin_ids),
-            "dev_ids":          list(self.dev_ids),
-            "blacklist_ids":    list(self.blacklist_ids),
-            "staff_role_id":    self.staff_role_id,
+            "command_prefix":            self.command_prefix,
+            "del_after":                 self.del_after,
+            "maintenance_mode":          self.maintenance_mode,
+            "guild_id":                  self.guild_id,
+            "admin_ids":                 list(self.admin_ids),
+            "dev_ids":                   list(self.dev_ids),
+            "blacklist_ids":             list(self.blacklist_ids),
+            "staff_role_id":             self.staff_role_id,
             
-            "no_log":           {
+            "no_log":                    {
                 "user_ids":     self.no_log.user_ids,
                 "channel_ids":  self.no_log.channel_ids,
                 "category_ids": self.no_log.category_ids
             },
-            "send_blacklist":   {
+            "send_blacklist":            {
                 "channel_ids":  self.send_blacklist.channel_ids,
                 "category_ids": self.send_blacklist.category_ids
             },
-            "logging_channels": {
+            "logging_channels":          {
                 "voice":       self.logging_channels.voice,
                 "moderation":  self.logging_channels.moderation,
                 "public_logs": self.logging_channels.public_logs
             },
-            "reaction_roles":   {
+            "reaction_roles":            {
                 "message_id":    self.reaction_roles.message_id,
                 "emoji_to_role": self.reaction_roles.emoji_to_role
             },
             
-            "verified_roles":    self.verified_roles,
-            "staging":           self.staging,
-            "tts_requires_role": self.tts_requires_role,
-            "required_tts_role": self.required_tts_role,
-            "counting": {
-                "channel":                  self.counting.channel,
-                "highest_count":            self.counting.highest_count,
-                "last_count":               self.counting.last_count,
-                "last_count_user":          self.counting.last_count_user,
-                "ban_role":                 self.counting.ban_role,
-                "fail_role":                self.counting.fail_role,
-                "fails":                    self.counting.fails,
-                "successes":                self.counting.successes,
-                "highest_user_count":       self.counting.highest_user_count,
-                "last_counted_message_id":  self.counting.last_counted_message_id,
+            "verified_roles":            self.verified_roles,
+            "staging":                   self.staging,
+            "tts_requires_role":         self.tts_requires_role,
+            "required_tts_role":         self.required_tts_role,
+            "counting":                  {
+                "channel":                   self.counting.channel,
+                "highest_count":             self.counting.highest_count,
+                "last_count":                self.counting.last_count,
+                "last_count_user":           self.counting.last_count_user,
+                "ban_role":                  self.counting.ban_role,
+                "fail_role":                 self.counting.fail_role,
+                "fails":                     self.counting.fails,
+                "successes":                 self.counting.successes,
+                "highest_user_count":        self.counting.highest_user_count,
+                "last_counted_message_id":   self.counting.last_counted_message_id,
                 "last_highest_count_edited": self.counting.last_highest_count_edited,
-                "saves":                    self.counting.saves,
+                "saves":                     self.counting.saves,
             },
-            "logs_path":                str(self.logs_path),
-            "vc_lb_channel_id":         self.vc_lb_channel_id,
-            "msg_log_channel_id":       self.msg_log_channel_id,
+            "logs_path":                 str(self.logs_path),
+            "vc_lb_channel_id":          self.vc_lb_channel_id,
+            "msg_log_channel_id":        self.msg_log_channel_id,
             "join_leave_log_channel_id": self.join_leave_log_channel_id,
-            "member_logs_channel_id":   self.member_logs_channel_id,
-            "bot_logs_channel_id":      self.bot_logs_channel_id,
+            "member_logs_channel_id":    self.member_logs_channel_id,
+            "bot_logs_channel_id":       self.bot_logs_channel_id,
         }
     
     def save(self, config_path: Path = Path("config.json")) -> None | str:
@@ -340,7 +341,7 @@ class BotConfig(ConfigBase):
         json_str: str
         logger.debug(f"Saving config to {config_path}")
         try:
-            _ = json.dumps(self.to_dict()) # make sure it's valid json first
+            _ = json.dumps(self.to_dict())  # make sure it's valid json first
             with open(config_path, "w", encoding="utf-8") as f:
                 json.dump(self.to_dict(), f, indent=4)
             return None
@@ -348,7 +349,7 @@ class BotConfig(ConfigBase):
         except OSError as e:
             logger.error(f'Failed to write config: {e}')
             return str(e)
-            
+        
         except TypeError as e:
             logger.warning(f'Failed to serialise config: {e}')
         
@@ -367,7 +368,6 @@ class BotConfig(ConfigBase):
         
         logger.error(f'Could not serialise config. Not saving. Before: {self.to_dict()}, after: {json_str}')
         return "Could not serialise config. Check logs."
-    
     
     def reload(self, config_path: Path = Path("config.json")) -> None:
         """Reload configuration from file"""
@@ -399,13 +399,15 @@ class BotConfig(ConfigBase):
         if item is None:
             raise KeyError(f"Key '{key}' not found in config")
         return item
-    
+
+
 def move_invalid_config(config_path: Path = Path("config.json")) -> None:
     """Move invalid config file to backup"""
     logger.debug("Moving invalid config to backup")
     backup_path = Path("invalid_config.json")
     if config_path.exists():
         config_path.rename(backup_path)
+
 
 def load_config(config_path: Path = Path("config.json")) -> BotConfig:
     """Load configuration from file or create default"""
@@ -422,7 +424,7 @@ def load_config(config_path: Path = Path("config.json")) -> BotConfig:
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-
+        
         logger.info("Configuration loaded successfully")
         config = BotConfig.from_dict(data)
         config.save(config_path)
