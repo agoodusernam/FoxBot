@@ -96,18 +96,18 @@ class Counting(commands.Cog, name='Counting'):
         fails: int | None = counting.fails.get(str(member.id))
         highest: int | None = counting.highest_user_count.get(str(member.id))
         saves: int = counting.saves.get(str(member.id), 0)
-
+        
         if successes is None and fails is None and highest is None:
             await ctx.send(f'{member.display_name} has not counted yet.')
             return
-
+        
         embed = discord.Embed(title=f'Counting Stats — {member.display_name}', color=discord.Color.blue())
         embed.add_field(name='Successful Counts', value=successes if successes is not None else 0, inline=True)
         embed.add_field(name='Fails', value=fails if fails is not None else 0, inline=True)
         embed.add_field(name='Highest Count', value=highest if highest is not None else 0, inline=True)
         embed.add_field(name='Saves', value=saves, inline=True)
         await ctx.send(embed=embed)
-
+    
     @commands.command(name='calculate', aliases=['calc'],
                       help='Calculate a mathematical expression',
                       usage='f!calculate <expression>')
@@ -118,7 +118,7 @@ class Counting(commands.Cog, name='Counting'):
             s = s.replace(char, "")
         
         if s.startswith('<') and s.endswith('>'):
-            await ctx.send('You do not need to surround the expression with <> when using this command.')
+            await ctx.send('You do not need to surround the expression with <>.')
         
         if s.startswith('<'):
             s = s[1:]

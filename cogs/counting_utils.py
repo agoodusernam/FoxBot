@@ -253,7 +253,7 @@ async def try_use_save(message: discord.Message, bot: CoolBot) -> bool:
     if remaining < 0:
         return False
     await message.reply(
-        f"<@{message.author.id}> would have ruined it, but used a save! You have **{remaining}** save{'s' if remaining == 1 else ''} remaining."
+        f"<@{message.author.id}> would have ruined it, but used a save! You have **{remaining}** save{'s' if remaining != 1 else ''} remaining."
     )
     await message.add_reaction("🛡️")
     return True
