@@ -250,7 +250,7 @@ def eval_count_msg(message: str) -> tuple[BitwiseDecimal, CountStatus]:
 async def try_use_save(message: discord.Message, bot: CoolBot) -> bool:
     """Consumes one save for the message author. Returns True if a save was used."""
     remaining = bot.config.counting.use_save(message.author.id)
-    if remaining < 0:
+    if remaining <= 0:
         return False
     await message.reply(
             f"<@{message.author.id}> would have ruined it, but used a save! You have **{remaining}** save{'s' if remaining != 1 else ''} remaining.",
