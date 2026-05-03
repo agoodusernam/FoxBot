@@ -44,7 +44,7 @@ def make_sync(future: Awaitable[T] | None) -> T | None:
 def get_id_from_str(u_id: str) -> int:
     """
 	Converts a string representation of a user or channel ID to an integer ID.
-	:param u_id: str: The string representation of the user or channel ID, which may include special characters like <, >, @, or #.
+	:param u_id: str: The string representation of the user or channel ID.
 	:return: int: The integer ID extracted from the string.
 	:raises ValueError: If the string does not represent a valid ID.
 	"""

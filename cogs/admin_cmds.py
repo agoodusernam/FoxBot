@@ -525,7 +525,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Reset the number of failed counting attempts by a user',
                       usage='f!reset_counting_fails <user>')
     @commands.check(is_admin)
-    async def reset_count_fails(self, ctx: CContext, member: discord.Member):
+    async def reset_count_fails(self, ctx: CContext, member: discord.Member) -> None:
         reset: bool = ctx.bot.config.counting.reset_fails(member.id)
         if reset:
             await ctx.send(f'Counting fails for {member.display_name} have been reset.')
@@ -538,7 +538,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Set the number of counting saves for a user',
                       usage='f!set_counting_saves <user> <amount>')
     @commands.check(is_admin)
-    async def set_counting_saves(self, ctx: CContext, member: discord.Member, amount: int):
+    async def set_counting_saves(self, ctx: CContext, member: discord.Member, amount: int) -> None:
         if amount < 0:
             await ctx.send('Amount must be 0 or greater.', delete_after=ctx.bot.del_after)
             return
@@ -550,7 +550,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     
     @commands.command(name='stoptts')
     @commands.check(is_admin)
-    async def stop_tts(self, ctx: CContext):
+    async def stop_tts(self, ctx: CContext) -> None:
         if ctx.bot.vc_client is None:
             await ctx.send('Bot is not connected to a voice call')
             return
@@ -559,6 +559,16 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             return
         ctx.bot.vc_client.stop()
         await ctx.send("TTS has been stopped.")
+    
+    @commands.command(name="role_all",
+                      brief="Apply a role to everyone")
+    @commands.check(is_admin)
+    @guild_only()
+    async def role_all(self, ctx: CContext, role: discord.Role) -> None:
+        if ctx.guild is None:
+            return
+        for member in ctx.guild.members:
+            await member.add_roles(role, atomic=True)
 
 
 async def setup(bot: CoolBot):

@@ -72,12 +72,8 @@ class SerialisedRole(TypedDict):
     # else, icon[1] is the absolute file path to the role icon image as a str.
     id: int
 
-
-class ChannelBase(TypedDict):
+class SerialisedChannel(TypedDict):
     id: int
-
-
-class SerialisedChannel(ChannelBase):
     channel_type: Literal["text", "voice", "category", "stage", "forum"]
     name: str
     category: int | None
