@@ -61,7 +61,7 @@ async def shutdown(bot: CoolBot, update=False, restart=False, time: int = 0) -> 
     
     if update:
         logger.debug('Updating')
-        os.system('git pull https://github.com/agoodusernam/FoxBot.git')
+        os.system('git pull https://git.nerds-inc.com/HardlineMouse16/FoxBot.git ')
         os.system('pip install -r requirements.txt')
     
     if restart:
