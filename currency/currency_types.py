@@ -502,7 +502,7 @@ def transform_val_for_db(val: Any) -> str | int | float:
     if isinstance(val, Decimal):
         return str(val)
     if isinstance(val, Job):
-        return str(val.name)
+        return val.name
     if isinstance(val, SchoolQualif):
         return val.level
     if isinstance(val, SecurityClearance):

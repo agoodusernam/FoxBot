@@ -97,7 +97,7 @@ async def on_ready() -> None:
 
 
 @bot.event
-async def on_command_error(ctx: CContext, error: discord.ext.commands.CommandError) -> None:
+async def on_command_error(ctx: CContext, error: commands.CommandError) -> None:
     if isinstance(error, commands.CommandOnCooldown):
         await ctx.send('This command is on cooldown. Please try again in ' +
                        f'{utils.seconds_to_human_readable(error.retry_after)}.')
@@ -133,16 +133,16 @@ async def load_extensions() -> None:
                 await bot.load_extension(f'cogs.{filename[:-3]}')
                 logger.info(f'Loaded {filename[:-3]}')
             
-            except discord.ext.commands.ExtensionNotFound:
+            except commands.ExtensionNotFound:
                 logger.error(f'Extension not found: {filename[:-3]}')
             
-            except discord.ext.commands.ExtensionAlreadyLoaded:
+            except commands.ExtensionAlreadyLoaded:
                 logger.warning(f'Extension already loaded: {filename[:-3]}')
             
-            except discord.ext.commands.NoEntryPointError:
+            except commands.NoEntryPointError:
                 logger.error(f'No entry point found for extension {filename[:-3]}')
             
-            except discord.ext.commands.ExtensionFailed as e:
+            except commands.ExtensionFailed as e:
                 logger.error(f'Extension {filename[:-3]} encountered an error:\n{e}')
             
             except Exception as e:

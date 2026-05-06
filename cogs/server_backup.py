@@ -33,6 +33,7 @@ class Backup(commands.Cog):
     @commands.guild_only()
     async def load_backup(self, ctx: CContext, g_id: str):
         assert ctx.guild is not None
+        assert ctx.guild.self_role is not None
         if not ctx.guild.me.guild_permissions.administrator:
             await ctx.send('Bot requires administrator permissions to load')
             return
@@ -49,7 +50,6 @@ class Backup(commands.Cog):
                 await channel.delete()
             except discord.NotFound:
                 pass
-        
         for role in ctx.guild.roles:
             if role.name == '@everyone' or role.id == ctx.guild.self_role.id:
                 continue

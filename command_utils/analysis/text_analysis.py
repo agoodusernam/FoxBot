@@ -146,7 +146,7 @@ def check_required_message_keys(message: Mapping[str, Any]) -> bool:
     return all(key in message for key in required_keys)
 
 
-def to_dbm(message: dict[Any, Any] | DBMessage) -> DBMessage:
+def to_dbm(message: Mapping[Any, Any] | DBMessage) -> DBMessage:
     return DBMessage(
             author=message['author'],
             author_id=message['author_id'],
@@ -163,7 +163,7 @@ def to_dbm(message: dict[Any, Any] | DBMessage) -> DBMessage:
     )
 
 
-async def remove_invalid_messages(messages: list[DBMessage | dict[str, Any]] | None) -> list[DBMessage]:
+async def remove_invalid_messages(messages: list[Mapping[str, Any] | DBMessage] | None) -> list[DBMessage]:
     valid_messages: list[DBMessage] = []
     if messages is None:
         return valid_messages
@@ -206,7 +206,7 @@ async def get_valid_messages(flag: str | None = None, ctx: CContext | None = Non
     
     all_messages: list[DBMessage] = [msg for msg in messages if msg['author_id'] not in EXCLUDED_USER_IDS]
     
-    valid_messages: list[DBMessage] = await remove_invalid_messages(all_messages)
+    valid_messages: list[DBMessage] = await remove_invalid_messages(all_messages) # type: ignore[arg-type]
     
     if flag in TIME_FILTERS:
         filter_name, time_delta = TIME_FILTERS[flag]
@@ -748,11 +748,11 @@ async def analyse_single_user_cmd(ctx: CContext, member: discord.User,
     msg += f"Most recent message sent at: **<t:{result['most_recent_message']}>**"
     
     if dm_user:
-        channel: DMChannel | None = member.dm_channel
-        if channel is None:
-            channel = await member.create_dm()
-        if channel is not None:
-            await channel.send(msg)
+        dm_channel: DMChannel | None = member.dm_channel
+        if dm_channel is None:
+            dm_channel = await member.create_dm()
+        if dm_channel is not None:
+            await dm_channel.send(msg)
         else:
             await ctx.send('Failed to create dm with user.')
     else:

@@ -4,7 +4,7 @@ import math
 import random
 from typing import Any, Generator
 
-import cachetools
+import cachetools  # type: ignore[import-untyped]
 from dateutil.relativedelta import relativedelta, MO  # type: ignore[import-untyped]
 
 from cogs import api_cmds_utils

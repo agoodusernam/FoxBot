@@ -28,9 +28,9 @@ def get_file_creation_time(path: Path) -> int:
     on_linux: bool = sys.platform == "linux" or sys.platform == "linux2"
     creation_time: int
     if on_linux:
-        creation_time = round(statx.statx(str(path)).btime)
+        creation_time = round(statx.statx(str(path)).btime) # type: ignore[arg-type]
     else:
-        creation_time = round(path.stat().st_birthtime)  # type: ignore
+        creation_time = round(path.stat().st_birthtime) # type: ignore[arg-type,attr-defined]
     return creation_time
 
 
@@ -313,7 +313,7 @@ async def load_roles(roles: Reversible[SerialisedRole], server: discord.Guild) -
         if role['name'] == '@everyone':
             await server.default_role.edit(permissions=permissions)
             logger.debug(f'Adding everyone role "{role["name"]}", ID: {role["id"]} to role map')
-            id_map[int(role['id'])] = server.default_role
+            id_map[role['id']] = server.default_role
             continue
         
         colour: discord.Colour = discord.Colour.from_rgb(*role['colour'])

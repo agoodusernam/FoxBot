@@ -105,7 +105,7 @@ class FunCommands(commands.Cog, name='Fun'):
             logger.info(f'Suggestion sent: {suggestion}')
         
         except discord.Forbidden as exc:
-            raise discord.ext.commands.BotMissingPermissions(["manage_channels", "manage_threads", "create_public_threads"]) from exc
+            raise commands.BotMissingPermissions(["manage_channels", "manage_threads", "create_public_threads"]) from exc
         
         except discord.NotFound:
             logger.error('Channel not found for sending suggestion.')
@@ -339,7 +339,7 @@ class FunCommands(commands.Cog, name='Fun'):
         await channel.send(embed=embed)
         await voice_analysis.generate_voice_activity_graph(channel, self.bot, lb, 5)
     
-    @discord.ext.tasks.loop(seconds=59)
+    @loop(seconds=59)
     async def check_tts_leave(self) -> None:
         logger.debug('Checking for TTS disconnect')
         if self.bot.vc_client is None and self.bot.last_tts_sent_time is None:
@@ -370,7 +370,7 @@ class FunCommands(commands.Cog, name='Fun'):
         
         return
     
-    @discord.ext.tasks.loop(seconds=59)
+    @loop(seconds=59)
     async def send_vc_lb(self) -> None:
         global current_monday
         now: datetime.datetime = datetime.datetime.now(datetime.UTC)
@@ -403,7 +403,7 @@ class FunCommands(commands.Cog, name='Fun'):
         await channel.send(embed=embed)
         await voice_analysis.generate_voice_activity_graph(channel, self.bot, lb, 5, send_errors=False)
     
-    @discord.ext.tasks.loop(minutes=1)
+    @loop(minutes=1)
     async def add_ping(self) -> None:
         await self.bot.add_ping()
     

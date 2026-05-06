@@ -6,6 +6,7 @@ from collections import Counter
 from pathlib import Path
 from statistics import median
 from typing import Any, NotRequired, TypeVar, TypedDict
+from collections.abc import Mapping
 
 import discord
 from discord import DMChannel
@@ -79,10 +80,11 @@ class VoiceAnalysisResult(TypedDict):
     weekly_active: NotRequired[WeeklyActiveStats]
 
 
-T = TypeVar('T', UserVoiceStats, ChannelVoiceStats, ChannelVoiceStats)
+T = TypeVar('T', UserVoiceStats, ChannelVoiceStats)
 
 
 def add_time_stats(stats: T, seconds: int) -> T:
+    assert isinstance(stats, dict)
     total = stats.get('total_seconds', 0)
     stats['total_seconds'] = total + seconds
     return stats
@@ -157,7 +159,7 @@ def _merge_adjacent_sessions(sessions: list[DBVoiceSession], max_gap_seconds: in
     return untimed + merged
 
 
-async def remove_invalid_voice_sessions(sessions: list[dict[str, Any]], merge_sessions: bool = True) -> tuple[list[DBVoiceSession], int] | None:
+async def remove_invalid_voice_sessions(sessions: list[Mapping[str, Any]], merge_sessions: bool = True) -> tuple[list[DBVoiceSession], int] | None:
     required_keys = {'user_id', 'channel_id', 'duration_seconds'}
     valid_sessions: list[DBVoiceSession] = []
     total_seconds: int = 0
@@ -537,7 +539,7 @@ async def voice_analysis(ctx: CContext, graph: bool = False, include_left: bool 
     await ctx.send(result)
     if graph:
         try:
-            await generate_voice_activity_graph(ctx.channel, ctx.bot, stats, 15)
+            await generate_voice_activity_graph(ctx.channel, ctx.bot, stats, 15) # type: ignore[arg-type]
         except Exception as e:
             logger.error(f'Error generating voice activity graph: {traceback.format_exc()}')
             await ctx.send(f'Error generating graph: {e}')
@@ -677,7 +679,7 @@ async def generate_voice_activity_graph(channel: discord.TextChannel, bot: CoolB
         name = await try_resolve_uid(int(user_data['user_id']), bot)
         
         usernames.append(name if name is not None else f"ID:{user_data['user_id']}")
-        voice_time_hours.append(int(total_seconds) / 3600)
+        voice_time_hours.append(total_seconds / 3600)
     
     if not usernames:
         logger.error("No user voice activity data to graph.")

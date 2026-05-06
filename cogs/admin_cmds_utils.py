@@ -19,7 +19,7 @@ def sort_by_timestamp(messages: list[DBMessage]) -> list[DatetimeDBMessage]:
     return sorted(new_msgs, key=lambda x: x['timestamp'], reverse=True)
 
 
-async def last_log(ctx: discord.ext.commands.Context, anonymous: bool = False) -> None:
+async def last_log(ctx: commands.Context, anonymous: bool = False) -> None:
     mod_log_channel = ctx.bot.get_channel(1329367677940006952)  # Channel where the carlbot logs are sent
     pub_logs_channel = ctx.bot.get_channel(1345300442376310885)  # Public logs channel (#guillotine)
     

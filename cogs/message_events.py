@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 import discord
@@ -203,7 +204,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         await channel.send(f'<@{author_id}> deleted their message. The next number is `{self.bot.config.counting.last_count + 1}`')
     
-    async def post_deleted_to_log(self, message: discord.Message | dict[str, Any], channel_id: int, message_id: int):
+    async def post_deleted_to_log(self, message: discord.Message | Mapping[str, Any], channel_id: int, message_id: int):
         """
         Post the deleted message to the log channel.
         """

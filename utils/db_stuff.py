@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 from collections.abc import Mapping
@@ -53,7 +52,9 @@ async def _connect() -> AsyncMongoClient[Mapping[str, Any]] | None:
     
     uri = os.getenv('MONGO_URI')
     
-    client: AsyncMongoClient[Mapping[str, Any]] = AsyncMongoClient(uri, server_api=ServerApi('1'), serverSelectionTimeoutMS=5000, tls=True,
+    client: AsyncMongoClient[Mapping[str, Any]] = AsyncMongoClient(uri,
+                                                                   server_api=ServerApi('1'),
+                                                                   serverSelectionTimeoutMS=5000, tls=True,
                                                                    tlsCertificateKeyFile="mongo_cert.pem")
     try:
         await client.admin.command('ping')

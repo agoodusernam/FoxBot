@@ -70,10 +70,10 @@ class SerialisedRole(TypedDict):
     icon: tuple[bool, str] | None
     # if icon[0] is True, icon[1] is the unicode emoji as a str.
     # else, icon[1] is the absolute file path to the role icon image as a str.
-    id: int
+    id: int | str
 
 class SerialisedChannel(TypedDict):
-    id: int
+    id: int | str
     channel_type: Literal["text", "voice", "category", "stage", "forum"]
     name: str
     category: int | None

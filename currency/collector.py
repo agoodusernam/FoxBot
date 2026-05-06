@@ -5,7 +5,6 @@ if TYPE_CHECKING:
     
     T = TypeVar('T', bound=Job | JobTree | ShopItem | ShopCategory)
 else:
-    # Python 3.14 has lazily evaluates type annotations
     T = TypeVar('T')
 
 all_jobs: list[Job] = []

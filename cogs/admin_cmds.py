@@ -1,3 +1,4 @@
+from typing import Mapping
 import datetime
 import logging
 import typing
@@ -420,8 +421,8 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                            delete_after=ctx.bot.del_after)
             return
         
-        all_messages: Any = await db_stuff.cached_download_all()
-        t_messages: list[DBMessage] = await remove_invalid_messages(all_messages)
+        all_messages: list[Mapping[str, Any]] | None = await db_stuff.cached_download_all()
+        t_messages: list[DBMessage] = await remove_invalid_messages(all_messages) # type: ignore[arg-type]
         t_messages = [msg for msg in t_messages if msg['author_id'] == str(member.id)]
         messages: list[DatetimeDBMessage] = sort_by_timestamp(t_messages)[:number_of_messages]
         if not messages:

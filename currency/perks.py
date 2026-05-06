@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 from discord.ext.commands import Context
 
 
@@ -14,7 +15,7 @@ async def create_private_vc(ctx: Context, member: discord.Member) -> bool:
     # Create the voice channel
     category = discord.utils.get(guild.categories, id=1081760248878071888)
     if category is None:
-        raise discord.ext.commands.CommandError("Something terrible has happened")
+        raise commands.CommandError("Something terrible has happened")
     
     try:
         private_vc = await guild.create_voice_channel(vc_name, category=category, position=len(category.channels),
@@ -34,16 +35,16 @@ async def create_private_vc(ctx: Context, member: discord.Member) -> bool:
         await member.move_to(private_vc)
     
     except discord.NotFound:
-        raise discord.ext.commands.CommandError("The role or member being edited is not part of the guild.")
+        raise commands.CommandError("The role or member being edited is not part of the guild.")
     
     except discord.Forbidden:
-        raise discord.ext.commands.BotMissingPermissions(["manage_channels"])
+        raise commands.BotMissingPermissions(["manage_channels"])
     
     except discord.HTTPException as e:
-        raise discord.ext.commands.CommandError(f"Failed to create voice channel: {e}")
+        raise commands.CommandError(f"Failed to create voice channel: {e}")
     
     except Exception as e:
-        raise discord.ext.commands.CommandError(f"An unexpected error occurred: {e}")
+        raise commands.CommandError(f"An unexpected error occurred: {e}")
     
     return True
 
@@ -56,13 +57,13 @@ async def give_rich_role(ctx: Context, member: discord.Member) -> bool:
     """
     rich_role = discord.utils.get(member.guild.roles, id=1394949504888999957)
     if rich_role is None:
-        raise discord.ext.commands.RoleNotFound("Rich role not found in the server.")
+        raise commands.RoleNotFound("Rich role not found in the server.")
     
     try:
         await member.add_roles(rich_role)
     
     except discord.Forbidden:
-        raise discord.ext.commands.BotMissingPermissions(["manage_roles"])
+        raise commands.BotMissingPermissions(["manage_roles"])
     
     return True
 
