@@ -158,7 +158,7 @@ class FunCommands(commands.Cog, name='Fun'):
                       help="Get the link to the bot's source code on GitHub")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def code(self, ctx: CContext):
-        await ctx.send('You can find the source code for this bot on GitHub: https://github.com/agoodusernam/FoxBot')
+        await ctx.send('You can find the source code for this bot here: https://git.nerds-inc.com/HardlineMouse16/FoxBot')
     
     @commands.command(name='lines_of_code', aliases=['lines', 'loc'],
                       brief='Get the number of lines of code in the bot',
