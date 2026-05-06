@@ -1,0 +1,16 @@
+name: Push Mirror
+run-name: Push Mirror
+on: [push]
+jobs:
+  sync-mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to GitHub
+        run: |
+          git remote add github https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/agoodusernam/FoxBot.git
+          git push --mirror github
