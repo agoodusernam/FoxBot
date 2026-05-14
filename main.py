@@ -2,6 +2,8 @@
 import atexit
 import logging
 import os
+import signal
+import sys
 from typing import Any
 from collections.abc import Collection
 
@@ -167,6 +169,11 @@ async def on_message(message: discord.Message) -> None:
     # Suppressed because we are listening for messages in cogs/message_events.py
     _ = message
 
+def ignore_hup(signum, frame) -> None:
+    pass
+
+if sys.platform == "linux" or sys.platform == "linux2":
+    signal.signal(signal.SIGHUP, ignore_hup)
 
 # Run the bot
 token = os.getenv('TOKEN')

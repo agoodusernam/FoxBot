@@ -116,7 +116,7 @@ class BitwiseDecimal(decimal.Decimal):
     def __xor__(self, other) -> "BitwiseDecimal":
         return BitwiseDecimal(round(self) ^ round(other))
     
-    def __invert__(self):
+    def __invert__(self) -> "BitwiseDecimal":
         return BitwiseDecimal(~round(self))
     
     def __lshift__(self, other) -> "BitwiseDecimal":
