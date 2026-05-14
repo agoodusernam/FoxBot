@@ -80,7 +80,7 @@ class CContext(commands.Context["CoolBot"]):
 class CoolBot(commands.Bot):
     def __init__(self, *args: tuple[Any, Any], **kwargs: Any) -> None:
         self.config: BotConfig = load_config()
-        cool_logging.setup_colour_logging(self.config.logs_path)
+        cool_logging.setup_logging(self.config.logs_path)
         
         kwargs['command_prefix'] = self.config.command_prefix
         super().__init__(*args, **kwargs)
