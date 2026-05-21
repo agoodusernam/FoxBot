@@ -116,7 +116,11 @@ class CoolBot(commands.Bot):
         if self.uptime_session is None:
             self.uptime_session = aiohttp.ClientSession()
         
-        await self.uptime_session.get(endpoint + f"{self.latency * 1000:.2f}")
+        try:
+            logger.debug("Sending push uptime")
+            await self.uptime_session.get(endpoint + f"{self.latency * 1000:.2f}")
+        except aiohttp.ClientError as e:
+            logger.error(f"Failed to send uptime push: {e}")
     
     async def get_context(self, message: discord.Message | discord.Interaction, *, cls=CContext) -> Any:
         return await super().get_context(message, cls=cls)
