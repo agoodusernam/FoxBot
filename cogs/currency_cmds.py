@@ -148,22 +148,20 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       help='Work to earn some money. You can do this every day.')
     @commands.cooldown(1, 24 * 60 * 60, commands.BucketType.user)
     async def work_cmd(self, ctx: CContext):
-        # TODO: Check for promotions and raises
         profile = await get_profile(ctx.author)
         if profile.work_income <= 0:
             await ctx.send(f'You have no job! Choose a job first using `{ctx.bot.command_prefix}job`.')
             return
-        
-        profile.inc_age()
-        fired = profile.fire_chance > random.random()
-        if fired:
-            await ctx.send('You were fired from your job! You need to find a new job using the `job` command.')
-            await ctx.send('A severance package has been deposited into your wallet.')
-            profile.fire()
-            
-            return
-        
+
         with profile.batch():
+            profile.inc_age()
+            fired = profile.fire_chance > random.random()
+            if fired:
+                await ctx.send('You were fired from your job! You need to find a new job using the `job` command.')
+                await ctx.send('A severance package has been deposited into your wallet.')
+                profile.fire()
+                return
+
             if profile.debt > 0:
                 profile.debt = profile.debt * (1 + INTEREST_RATE)
             
@@ -196,7 +194,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         if profile.security_clearance >= next_job.req_clearance:
             clearance_qualified = True
         
-        if exp_qualified and school_qualified and clearance_qualified:
+        if all((exp_qualified, school_qualified, clearance_qualified)):
             profile.job = next_job
             salary_multiplier = 1 + (random.randint(0, next_job.salary_variance * 10) / 1000)
             # Salary multiplier to 0.1% precision

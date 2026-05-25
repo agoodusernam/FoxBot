@@ -430,7 +430,7 @@ async def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | 
         return None
 
 
-async def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by=None, direction: Literal["asc", "desc"] = "asc", limit: int = 0) -> list[Mapping[str, Any]] | None:
+async def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by=None, direction: Literal["asc", "desc"] = "asc", limit: int = 0) -> list[dict[str, Any]] | None:
     """
     Generic function to retrieve multiple documents from a specified MongoDB await collection.
 
