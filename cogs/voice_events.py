@@ -11,7 +11,7 @@ logger = logging.getLogger('discord')
 
 class VoiceLogging(commands.Cog, name='Voice Logging'):
     def __init__(self, bot: CoolBot):
-        self.bot = bot
+        self.bot: CoolBot = bot
     
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
@@ -88,5 +88,5 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
                 self.bot.vc_client = None
 
 
-async def setup(bot):
+async def setup(bot: CoolBot):
     await bot.add_cog(VoiceLogging(bot))
