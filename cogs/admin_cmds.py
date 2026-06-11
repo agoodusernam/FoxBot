@@ -32,7 +32,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Timeout a user for 28 days',
                       usage='f!rek <user_id/mention>')
     @commands.check(is_admin)
-    async def rek(self, ctx: CContext, members: commands.Greedy[discord.Member] | None = None) -> None:
+    async def rek(self, ctx: CContext, members: commands.Greedy[discord.Member] = None) -> None:
         
         if members is None:
             await ctx.delete()
