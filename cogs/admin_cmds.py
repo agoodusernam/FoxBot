@@ -32,31 +32,19 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Timeout a user for 28 days',
                       usage='f!rek <user_id/mention>')
     @commands.check(is_admin)
-    async def rek(self, ctx: CContext, member: discord.Member) -> None:
+    async def rek(self, ctx: CContext, members: commands.Greedy[discord.Member] | None = None) -> None:
         
-        if member is None:
+        if members is None:
             await ctx.delete()
             await ctx.send(f'User not found.', delete_after=ctx.bot.del_after)
             return
-        
-        await member.timeout(datetime.timedelta(days=28), reason='get rekt nerd')
-        await ctx.send(f'{member.display_name} has been rekt.')
-        return
-    
-    @commands.command(name='rekp',
-                      brief='Absolutely rek a user privately',
-                      help='Admin only: Timeout a user for 28 days and delete the message',
-                      usage='f!rek <user_id/mention>')
-    @commands.check(is_admin)
-    async def rekp(self, ctx: CContext, member: discord.Member) -> None:
-        await ctx.delete()
-        
-        if member is None:
-            await ctx.send(f'User not found.', delete_after=ctx.bot.del_after)
-            return
-        
-        await member.timeout(datetime.timedelta(days=28), reason='get rekt nerd')
-        await ctx.send(f'{member.display_name} has been rekt.', delete_after=ctx.bot.del_after)
+
+        for member in members:
+            try:
+                await member.timeout(datetime.timedelta(days=28), reason='get rekt nerd')
+                await ctx.send(f'{member.display_name} has been rekt.')
+            except:
+                pass
         return
     
     @commands.command(name='hardlockdown',
