@@ -1,7 +1,7 @@
 cachetools~=7.1.4
 pymongo~=4.17.0
 python-dotenv~=1.2.2
-matplotlib~=3.10.9
+matplotlib~=3.11.0
 discord.py~=2.7.1
 pynacl~=1.6.2
 gtts~=2.5.4

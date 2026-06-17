@@ -450,10 +450,11 @@ async def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_
     else:
         mongo_direction = pymongo.DESCENDING
     
-    if sort_by is None:
-        results = collection.find(query)
-        return [dict(result) async for result in results]
     try:
+        if sort_by is None:
+            results = collection.find(query)
+            return [dict(result) async for result in results]
+    
         if limit > 0:
             results = collection.find(query).sort(sort_by, mongo_direction).limit(limit)
         else:

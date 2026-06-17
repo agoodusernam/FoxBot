@@ -410,7 +410,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
             return
         
         all_messages: list[Mapping[str, Any]] | None = await db_stuff.cached_download_all()
-        t_messages: list[DBMessage] = await remove_invalid_messages(all_messages) # type: ignore[arg-type]
+        t_messages: list[DBMessage] = await remove_invalid_messages(all_messages)
         t_messages = [msg for msg in t_messages if msg['author_id'] == str(member.id)]
         messages: list[DatetimeDBMessage] = sort_by_timestamp(t_messages)[:number_of_messages]
         if not messages:

@@ -163,7 +163,7 @@ def to_dbm(message: Mapping[Any, Any] | DBMessage) -> DBMessage:
     )
 
 
-async def remove_invalid_messages(messages: list[Mapping[str, Any] | DBMessage] | None) -> list[DBMessage]:
+async def remove_invalid_messages(messages: list[Mapping[str, Any] | dict[str, Any] | DBMessage] | None) -> list[DBMessage]:
     valid_messages: list[DBMessage] = []
     if messages is None:
         return valid_messages

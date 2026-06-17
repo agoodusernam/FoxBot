@@ -1,3 +1,5 @@
+import contextlib
+import datetime
 import logging
 from collections.abc import Mapping
 from typing import Any
@@ -8,8 +10,10 @@ from discord.ext import commands
 import cogs.counting_utils as counting_utils
 import cogs.message_events_utils as message_events_utils
 from command_utils.CContext import CContext, CoolBot
+from command_utils.analysis.text_analysis import DBMessage, remove_invalid_messages
 from command_utils.embed_util import create_log_embed
 from utils import utils, db_stuff
+from utils.db_stuff import get_many_from_db
 
 logger = logging.getLogger('discord')
 
@@ -41,7 +45,75 @@ async def try_uid_to_discord_obj(uid: int, bot: CoolBot) -> discord.User | disco
     
     return None
 
+channel_cache: dict[int, discord.abc.GuildChannel | discord.Thread | None] = {}
 
+async def get_channel_by_id(channel_id: int, bot: CoolBot) -> discord.abc.GuildChannel | discord.Thread | None:
+    global channel_cache
+    if channel_id in channel_cache:
+        return channel_cache[channel_id]
+    
+    channel: discord.abc.GuildChannel | discord.Thread | discord.abc.PrivateChannel | None
+    channel = bot.get_channel(channel_id)
+    if isinstance(channel, discord.abc.PrivateChannel):
+        channel_cache[channel_id] = None
+        return None
+    
+    if channel is not None:
+        channel_cache[channel_id] = channel
+        return channel
+    
+    channel = await bot.fetch_channel(channel_id)
+    if isinstance(channel, discord.abc.PrivateChannel) or channel is None:
+        channel_cache[channel_id] = None
+        return None
+    channel_cache[channel_id] = channel
+    return channel
+    
+
+async def timeout_delete(message: discord.Message, bot: CoolBot) -> None:
+    if not isinstance(message.author, discord.Member):
+        return
+    try:
+        await message.author.timeout(datetime.timedelta(days=7),
+                                     reason="User send message in banned channel")
+    except discord.HTTPException as e:
+        logger.error(f"Failed to timeout user: {message.author.display_name}, {e}")
+    
+    try:
+        await message.delete()
+    except discord.HTTPException as e:
+        logger.error(f"Failed to delete message: {message.id}, {e}")
+    
+    filter_time: float = discord.utils.utcnow().timestamp() - 5*60
+    author_messages: list[dict[str, Any]] | None = await get_many_from_db(
+      "messages",
+      {"author_id": str(message.author.id), "timestamp": {"$gte": filter_time}},
+      sort_by="timestamp", direction="desc", limit=200
+    )
+    # limit to reduce DB load + increase response time.
+    # any user is unlikely to send 200 messages in 5 mins anyway, even when spamming.
+    if not author_messages:
+        logger.info("Found no messages to delete.")
+        return
+    
+    t_messages: list[DBMessage] = await remove_invalid_messages(author_messages)
+    by_channel: dict[int, list[discord.Object]] = {}
+    for msg in t_messages:
+        by_channel[int(msg["channel_id"])].append(discord.Object(msg["id"]))
+    
+    for channel, msgs in by_channel.items():
+        with contextlib.suppress(discord.HTTPException):
+            channel_obj = await get_channel_by_id(channel, bot)
+            if channel_obj is None or not hasattr(channel_obj, "delete_messages"):
+                logger.info(f"No valid channel with id {channel}")
+                continue
+            
+            for chunk in [msgs[i:i+100] for i in range(0, len(msgs), 100)]:
+                await channel_obj.delete_messages(chunk)
+    
+    channel_cache.clear()
+                
+    
 class TTS(commands.Cog, name='TTS'):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
@@ -94,6 +166,10 @@ class MessageLogging(commands.Cog, name='Message Logging'):
     async def on_message(self, message: discord.Message):
         logger.debug('Received message from %s: %s', message.author.display_name, message.content)
         if message.author.bot:
+            return
+        
+        if message.channel.id == self.bot.config.ban_channel_id:
+            await timeout_delete(message, self.bot)
             return
         
         commands_enabled: bool = True

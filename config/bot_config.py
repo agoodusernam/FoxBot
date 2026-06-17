@@ -7,6 +7,8 @@ from typing import Any, Self
 from dataclasses import dataclass, field
 from pathlib import Path
 import json
+from xml import dom
+
 import discord
 
 import utils.utils
@@ -123,6 +125,7 @@ class BotConfig(ConfigBase):
     # misc
     logs_path: Path = Path("logs").resolve()
     vc_lb_channel_id: int = 0
+    ban_channel_id: int = 0
     
     # logging
     msg_log_channel_id: int = 0
@@ -196,6 +199,7 @@ class BotConfig(ConfigBase):
             },
             "logs_path":                 Path("logs"),
             "vc_lb_channel_id":          0,
+            "ban_channel_id": 0,
             "msg_log_channel_id":        0,
             "join_leave_log_channel_id": 0,
             "member_logs_channel_id":    0,
@@ -218,6 +222,7 @@ class BotConfig(ConfigBase):
         config.required_tts_role = data.get("required_tts_role", config.required_tts_role)
         config.logs_path = Path(data.get("logs_path", config.logs_path)).resolve()
         config.vc_lb_channel_id = data.get("vc_lb_channel_id", config.vc_lb_channel_id)
+        config.ban_channel_id = data.get("ban_channel_id", config.ban_channel_id)
         config.msg_log_channel_id = data.get("msg_log_channel_id", config.msg_log_channel_id)
         config.join_leave_log_channel_id = data.get("join_leave_log_channel_id", config.join_leave_log_channel_id)
         config.member_logs_channel_id = data.get("member_logs_channel_id", config.member_logs_channel_id)
@@ -330,6 +335,7 @@ class BotConfig(ConfigBase):
             },
             "logs_path":                 str(self.logs_path),
             "vc_lb_channel_id":          self.vc_lb_channel_id,
+            "ban_channel_id": self.ban_channel_id,
             "msg_log_channel_id":        self.msg_log_channel_id,
             "join_leave_log_channel_id": self.join_leave_log_channel_id,
             "member_logs_channel_id":    self.member_logs_channel_id,
