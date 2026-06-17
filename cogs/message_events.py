@@ -99,6 +99,8 @@ async def timeout_delete(message: discord.Message, bot: CoolBot) -> None:
     t_messages: list[DBMessage] = await remove_invalid_messages(author_messages)
     by_channel: dict[int, list[discord.Object]] = {}
     for msg in t_messages:
+        if int(msg["channel_id"]) not in by_channel:
+            by_channel[int(msg["channel_id"])] = []
         by_channel[int(msg["channel_id"])].append(discord.Object(msg["id"]))
     
     for channel, msgs in by_channel.items():
