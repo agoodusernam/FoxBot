@@ -4,11 +4,11 @@ import re
 import discord
 from discord.ext import commands
 
-from command_utils.analysis.text_analysis import DBMessage, DatetimeDBMessage
+from command_utils.analysis.text_analysis import DatetimeDBMessage, DBMessage
 
 
 def dt_from_timestamp(timestamp: float) -> datetime.datetime:
-    return datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc)
+    return datetime.datetime.fromtimestamp(timestamp, tz=datetime.UTC)
 
 
 def sort_by_timestamp(messages: list[DBMessage]) -> list[DatetimeDBMessage]:
@@ -27,7 +27,7 @@ async def last_log(ctx: commands.Context, anonymous: bool = False) -> None:
         await ctx.send('Mod log channel or public logs channel not found.', delete_after=ctx.bot.del_after)
         return
     
-    last_mod_log_message: discord.Message = [msg async for msg in mod_log_channel.history(limit=1)][0]
+    last_mod_log_message: discord.Message = next(msg async for msg in mod_log_channel.history(limit=1))
     if last_mod_log_message.content == 'Posted':
         await ctx.send('This log has already been sent to the public logs channel.', delete_after=ctx.bot.del_after)
         return

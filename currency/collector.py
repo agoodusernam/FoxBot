@@ -46,7 +46,7 @@ def register_shop_category(category: ShopCategory) -> None:
     return
 
 
-def _get_from_name(name: str, container: list[T], default: T | None = None) -> T | None:
+def _get_from_name[T](name: str, container: list[T], default: T | None = None) -> T | None:
     for item in container:
         if item.name.lower() == name.lower():
             return item

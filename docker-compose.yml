@@ -1,0 +1,15 @@
+services:
+  foxbot:
+    build: .
+    image: foxbot
+    container_name: foxbot
+    restart: "no"
+    env_file: .env
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./icons:/app/icons
+      - ./nasa:/app/nasa
+      - ./config.json:/app/config.json
+      - ./blacklist_users.json:/app/blacklist_users.json
+      - ./mongo_cert.pem:/app/mongo_cert.pem:ro

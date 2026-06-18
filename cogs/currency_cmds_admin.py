@@ -1,5 +1,6 @@
-import discord
 from decimal import Decimal
+
+import discord
 from discord.ext import commands
 
 from command_utils.CContext import CContext
@@ -10,7 +11,7 @@ from currency.curr_utils import get_profile
 
 
 class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
-                        command_attrs=dict(add_check=is_dev, hidden=True)):
+                        command_attrs={"add_check": is_dev, "hidden": True}):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     

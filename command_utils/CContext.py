@@ -4,14 +4,14 @@ import logging
 import os
 import threading
 import time
-from pathlib import Path
-from typing import Any, Optional
 from collections import deque
+from pathlib import Path
+from typing import Any
 
 import aiohttp
+import discord
 from discord import Message
 from discord.ext import commands
-import discord
 
 import cool_logging
 from config.blacklist_manager import BlacklistManager
@@ -25,7 +25,7 @@ class NoChannel:
 
 
 class CContext(commands.Context["CoolBot"]):
-    bot: "CoolBot"
+    bot: CoolBot
     
     async def delete(self) -> bool:
         """Delete the command message if possible.
@@ -49,7 +49,7 @@ class CContext(commands.Context["CoolBot"]):
         
         return True
     
-    async def safe_reply(self, content: Optional[str] = None, **kwargs: Any) -> Message | None:
+    async def safe_reply(self, content: str | None = None, **kwargs: Any) -> Message | None:
         """
         Reply to a message safely, handling exceptions.
         Will still raise any exceptions that aren't related to the sending of the actual message
@@ -99,6 +99,7 @@ class CoolBot(commands.Bot):
         self._pings: deque[float] = deque(maxlen=30)
         self.logs_channel: discord.TextChannel | NoChannel = NoChannel()
         self.update_queued: bool = False
+        self.exit_code: int = 0
         self.last_sent_dt: datetime.datetime = discord.utils.utcnow()
         self.last_tts_sent_time: float | None = None
         self.uptime_session: aiohttp.ClientSession | None = None

@@ -2,9 +2,9 @@
 Blacklist management utilities
 """
 import json
+import logging
 from collections.abc import Iterator
 from pathlib import Path
-import logging
 
 logger = logging.getLogger('discord')
 
@@ -26,7 +26,7 @@ class BlacklistManager:
             return
         
         try:
-            with open(self._blacklist_path, "r", encoding="utf-8") as f:
+            with open(self._blacklist_path, encoding="utf-8") as f:
                 self._blacklist_ids = json.load(f)['ids']
         except Exception as e:
             logger.error(f"Error loading blacklist: {e}")

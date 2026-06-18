@@ -1,8 +1,8 @@
+import datetime
 import logging
 import os
 from collections.abc import Mapping
 from typing import Any, Literal
-import datetime
 
 import cachetools
 import discord
@@ -403,7 +403,7 @@ async def insert_many_db_entries(collection_name: str, query: list[Mapping[str, 
         if result.acknowledged:
             logger.info(f'Inserted {len(result.inserted_ids)} entries into {collection_name} collection')
             return len(result.inserted_ids)
-        logger.warning(f'Insert operation not acknowledged')
+        logger.warning('Insert operation not acknowledged')
     except Exception as e:
         logger.error(f'Error inserting entries to {collection_name} collection: {e}')
         return None
@@ -430,7 +430,13 @@ async def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | 
         return None
 
 
-async def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_by=None, direction: Literal["asc", "desc"] = "asc", limit: int = 0) -> list[dict[str, Any]] | None:
+async def get_many_from_db(
+        collection_name: str,
+        query: Mapping[str, Any],
+        sort_by=None,
+        direction: Literal["asc", "desc"] = "asc",
+        limit: int = 0
+    ) -> list[dict[str, Any]] | None:
     """
     Generic function to retrieve multiple documents from a specified MongoDB await collection.
 
@@ -445,10 +451,8 @@ async def get_many_from_db(collection_name: str, query: Mapping[str, Any], sort_
     
     db = client['discord']
     collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
-    if direction.lower() == 'asc':
-        mongo_direction = pymongo.ASCENDING
-    else:
-        mongo_direction = pymongo.DESCENDING
+
+    mongo_direction = pymongo.ASCENDING if direction.lower() == 'asc' else pymongo.DESCENDING
     
     try:
         if sort_by is None:

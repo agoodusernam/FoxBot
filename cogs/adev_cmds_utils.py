@@ -1,8 +1,6 @@
 import asyncio
 import gc
 import logging
-import os
-import sys
 from typing import Any
 
 import discord
@@ -13,11 +11,16 @@ from utils import db_stuff
 
 logger = logging.getLogger('discord')
 
+# Exit codes read by the host supervisor (supervise.sh) to decide what to do
+# after the container exits.
+EXIT_SHUTDOWN = 0   # stay down
+EXIT_RESTART = 42   # recreate the container
+EXIT_UPDATE = 43    # git pull + rebuild on the host, then recreate
+
 
 async def aexec(func_name: str, context: CContext) -> Any:
     locs: dict[str, Any] = {}
     # noinspection PyUnusedLocal
-    ctx = context
     # The "ctx" var exists, so 'ctx'. functions can be run from here.
     logger.debug(f'Running function: {func_name}')
     
@@ -56,17 +59,16 @@ async def shutdown(bot: CoolBot, update=False, restart=False, time: int = 0) -> 
     
     if success is not None:
         logger.error(f'Bot encountered an error saving config while shutting down!\n{success}')
-    
-    await bot.close()
-    
+
     if update:
-        logger.debug('Updating')
-        os.system('git pull')
-        os.system('pip install -r requirements.txt')
-    
-    if restart:
-        logger.debug('Restarting')
-        os.execv(sys.executable, ['python'] + sys.argv)
+        bot.exit_code = EXIT_UPDATE
+    elif restart:
+        bot.exit_code = EXIT_RESTART
+    else:
+        bot.exit_code = EXIT_SHUTDOWN
+
+    logger.info(f'{action} with exit code {bot.exit_code}')
+    await bot.close()
 
 
 async def upload_all_history(channel: discord.TextChannel) -> None:
@@ -76,7 +78,7 @@ async def upload_all_history(channel: discord.TextChannel) -> None:
     messages = [message async for message in channel.history(limit=None)]
     logger.info(f'Downloaded {len(messages)} messages from channel: {channel.name}, ID: {channel.id}')
     bulk_data: list[dict[str, Any]] = []
-    for i, message in enumerate(messages):
+    for message in messages:
         if not isinstance(message.channel, discord.TextChannel):
             logger.info("Message channel is not a TextChannel, skipping...")
             continue
@@ -85,11 +87,7 @@ async def upload_all_history(channel: discord.TextChannel) -> None:
         if message.attachments:
             has_attachment = True
         
-        if message.reference is None:
-            reply = None
-        
-        else:
-            reply = str(message.reference.message_id)
+        reply = None if message.reference is None else str(message.reference.message_id)
         
         json_data = {
             'author':             message.author.name,

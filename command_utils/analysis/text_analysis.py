@@ -5,15 +5,16 @@ import logging
 import statistics
 import string
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Final, Literal, Mapping, NotRequired, TypedDict
+from typing import Any, Final, Literal, NotRequired, TypedDict
 
 import discord
 from discord import DMChannel
 from matplotlib import pyplot as plt
 
-from command_utils.CContext import CContext
 from command_utils.analysis.ana_utils import try_resolve_channel_id, try_resolve_uid
+from command_utils.CContext import CContext
 from utils import db_stuff
 
 logger = logging.getLogger('discord')
@@ -552,7 +553,7 @@ async def format_analysis(ctx: CContext, graph: bool = False, to_analyse: discor
             await ctx.send("The input is not be a valid user.")
             return
         
-        dm_user: bool = True if flag == 'dm' else False
+        dm_user: bool = flag == 'dm'
         await analyse_single_user_cmd(ctx, to_ana_user, flag, dm_user)
         await new_msg.delete()
         return

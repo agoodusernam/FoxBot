@@ -2,10 +2,11 @@ import datetime
 import logging
 import math
 import random
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 import cachetools  # type: ignore[import-untyped]
-from dateutil.relativedelta import relativedelta, MO  # type: ignore[import-untyped]
+from dateutil.relativedelta import MO, relativedelta  # type: ignore[import-untyped]
 
 from cogs import api_cmds_utils
 from command_utils.CContext import CContext
@@ -15,7 +16,7 @@ logger = logging.getLogger('discord')
 last_commit_cache: cachetools.TTLCache[None, tuple[int, str, dict[str, int]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 
 
-def monday_generator() -> Generator[datetime.datetime, None, None]:
+def monday_generator() -> Generator[datetime.datetime]:
     dt = datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time(), tzinfo=datetime.UTC)
     next_monday = dt + relativedelta(days=+1, weekday=MO(+1))
     while True:

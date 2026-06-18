@@ -1,0 +1,68 @@
+[project]
+name = "foxbot"
+version = "0.1.0"
+description = "Discord bot for the FoxesHaven server"
+readme = "README.md"
+requires-python = ">=3.14"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "cachetools~=7.1.4",
+    "pymongo~=4.17.0",
+    "python-dotenv~=1.2.2",
+    "matplotlib~=3.11.0",
+    "discord.py~=2.7.1",
+    "pynacl~=1.6.2",
+    "gtts~=2.5.4",
+    "psutil~=7.2.2",
+    "aiohttp~=3.14.1",
+    "python-dateutil~=2.9.0.post0",
+    "pystatx~=0.1",
+    "vt-py~=0.22.0",
+    "davey~=0.1.5",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13",
+    "ruff>=0.8",
+    "pylint>=3.3",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 140
+target-version = "py314"
+
+[tool.ruff.lint]
+ignore = ["W293"]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
+    "SIM",
+    "RUF",
+]
+
+[tool.mypy]
+python_version = "3.14"
+
+[[tool.mypy.overrides]]
+module = [
+    "cachetools.*",
+    "gtts.*",
+    "vt.*",
+    "pystatx.*",
+    "davey.*",
+    "dateutil.*",
+    "nacl.*",
+]
+ignore_missing_imports = true
+
+[tool.pylint.main]
+disable = ["C0303"]

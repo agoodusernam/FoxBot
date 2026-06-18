@@ -1,16 +1,16 @@
 import asyncio
 import datetime
 import json
+import logging
 import os
 import shutil
 import socket
+from collections.abc import Awaitable
 from io import TextIOWrapper
 from pathlib import Path
 from typing import Any, TypeVar
-from collections.abc import Awaitable
-import logging
-import aiohttp
 
+import aiohttp
 import cachetools.func  # type: ignore[import-untyped]
 import discord
 import discord.ext.commands
@@ -23,13 +23,10 @@ T = TypeVar('T')
 
 
 def user_has_role(member: discord.Member, role_id: int) -> bool:
-    for role in member.roles:
-        if role.id == role_id:
-            return True
-    return False
+    return any(role.id == role_id for role in member.roles)
 
 
-def make_sync(future: Awaitable[T] | None) -> T | None:
+def make_sync[T](future: Awaitable[T] | None) -> T | None:
     if future is None:
         return None
     try:
@@ -56,7 +53,7 @@ def get_id_from_str(u_id: str) -> int:
     try:
         return int(u_id)
     except ValueError:
-        raise ValueError("Invalid user ID")
+        raise ValueError("Invalid user ID") from None
 
 
 def formatted_today() -> str:
@@ -151,9 +148,8 @@ async def download_from_url(path: str | Path, url: str) -> None:
 	:param url: str: The URL from which the file will be downloaded.
 	:return: None
 	"""
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
-            response = await resp.read()
+    async with aiohttp.ClientSession() as session, session.get(url) as resp:
+        response = await resp.read()
     
     with open(path, 'wb') as file:
         file.write(response)
@@ -256,7 +252,7 @@ def copy_attach_to_temp(src: list[Path]) -> bool:
         dest.unlink()
         dest.mkdir(parents=True)
     
-    for root, dirs, files in os.walk(dest):
+    for root, _, files in os.walk(dest):
         for f in files:
             os.unlink(os.path.join(root, f))
     
@@ -292,7 +288,7 @@ def loc_total() -> tuple[int, int]:
                 continue
             file_path = os.path.join(root, file)
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, encoding='utf-8') as f:
                     line_count = sum(1 for _ in f)
                 total_lines += line_count
                 total_files += 1
@@ -308,7 +304,7 @@ def internet(host: str = "1.1.1.1", port: int = 53, timeout: int = 3) -> bool:
         socket.setdefaulttimeout(timeout)
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
         return True
-    except socket.error as ex:
+    except OSError as ex:
         print(ex)
         return False
 
@@ -383,18 +379,14 @@ def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_ty
         
         # Handle primitives
         if current is None or isinstance(current, (bool, int, float, str)):
-            if isinstance(parent, dict):
-                parent[key] = current
-            elif isinstance(parent, list):  # list
+            if isinstance(parent, (dict, list)):
                 parent[key] = current
             continue
         
         # Handle containers
         if isinstance(current, dict):
             new_container: dict | list = {}
-            if isinstance(parent, dict):
-                parent[key] = new_container
-            elif isinstance(parent, list):
+            if isinstance(parent, (dict, list)):
                 parent[key] = new_container
             for k, v in current.items():
                 stack.append((v, new_container, k))
@@ -402,9 +394,7 @@ def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_ty
         
         if isinstance(current, (list, tuple)):
             new_list: list = [SKIP] * len(current)
-            if isinstance(parent, dict):
-                parent[key] = new_list
-            elif isinstance(parent, list):
+            if isinstance(parent, (dict, list)):
                 parent[key] = new_list
             for i, item in enumerate(current):
                 stack.append((item, new_list, i))
@@ -413,9 +403,7 @@ def _preprocess_for_json(obj: Any, skip_unserializable: bool = False) -> json_ty
         # Handle other objects - try to convert to string
         meaningful = has_meaningful_str(current)
         if meaningful is not None:
-            if isinstance(parent, dict):
-                parent[key] = meaningful
-            elif isinstance(parent, list):
+            if isinstance(parent, (dict, list)):
                 parent[key] = meaningful
             continue
         
@@ -472,7 +460,7 @@ def num_in_list(obj: list[Any]) -> int:
 
 def num_k_v_total(obj: dict[Any, Any]) -> int:
     total: int = 0
-    for k, v in obj.items():
+    for _, v in obj.items():
         if isinstance(v, dict):
             total += 1 + num_k_v_total(v)
         elif isinstance(v, list):

@@ -10,10 +10,10 @@ from discord.ext import commands
 import cogs.counting_utils as counting_utils
 import cogs.message_events_utils as message_events_utils
 from cogs.message_events_utils import try_uid_to_discord_obj
-from command_utils.CContext import CContext, CoolBot
 from command_utils.analysis.text_analysis import DBMessage, remove_invalid_messages
+from command_utils.CContext import CContext, CoolBot
 from command_utils.embed_util import create_log_embed
-from utils import utils, db_stuff
+from utils import db_stuff, utils
 from utils.db_stuff import get_many_from_db
 
 logger = logging.getLogger('discord')
@@ -253,10 +253,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             author_obj = message.author
         
         else:
-            if not message.get('edits'):
-                content = message['content']
-            else:
-                content = message['edits'][-1]['content']
+            content = message['content'] if not message.get('edits') else message['edits'][-1]['content']
             
             if content.strip() == 'f!update':
                 return
@@ -322,9 +319,9 @@ class MessageLogging(commands.Cog, name='Message Logging'):
             return
         
         if (payload.channel_id == self.bot.config.counting.channel
-                and payload.message_id == self.bot.config.counting.last_counted_message_id):
-            
-            if not self.bot.config.counting.last_highest_count_edited:
+                and payload.message_id == self.bot.config.counting.last_counted_message_id
+                and not self.bot.config.counting.last_highest_count_edited):
+                
                 await payload.message.channel.send(
                         f'{payload.message.author.mention} edited their message. '
                         f'The next number is `{self.bot.config.counting.last_count + 1}`',
@@ -342,10 +339,7 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         
         after_content = payload.message.content
         
-        if not db_msg.get('edits'):
-            before_content = db_msg['content']
-        else:
-            before_content = db_msg['edits'][-1]['content']
+        before_content = db_msg['content'] if not db_msg.get('edits') else db_msg['edits'][-1]['content']
         
         if before_content.strip() == after_content.strip():
             logger.debug('Received edit event for message with no content change.')
@@ -362,8 +356,6 @@ class MessageLogging(commands.Cog, name='Message Logging'):
         Post the edited message to the log channel.
         """
         assert self.bot.user is not None
-        display_name: str
-        name: str
         description: str
         
         if author.id == self.bot.user.id:

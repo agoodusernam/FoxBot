@@ -1,5 +1,5 @@
 import datetime
-from typing import TypedDict, Self
+from typing import Self, TypedDict
 
 import discord
 from dateutil.relativedelta import relativedelta  # type: ignore[import-untyped]

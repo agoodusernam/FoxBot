@@ -7,9 +7,9 @@ import re
 
 import discord
 
-from command_utils.CContext import CoolBot
 from command_utils.analysis.text_analysis import DBMessage
-from utils import utils, db_stuff
+from command_utils.CContext import CoolBot
+from utils import db_stuff, utils
 
 logger = logging.getLogger('discord')
 
@@ -42,7 +42,7 @@ async def landmine_explode(message: discord.Message, bot: CoolBot, forced: bool 
     msg: str = random.choice(msgs)
     if msg == "nuke":
         await message.author.timeout(datetime.timedelta(seconds=60), reason='Nuke exploded')
-        await message.reply(f'A nuclear bomb went off below your feet! You cannot talk for 60 seconds.')
+        await message.reply('A nuclear bomb went off below your feet! You cannot talk for 60 seconds.')
     else:
         await message.author.timeout(datetime.timedelta(seconds=10), reason='Landmine exploded')
         await message.reply(f'{msg} You cannot talk for 10 seconds.')
@@ -66,7 +66,7 @@ async def check_landmine(message: discord.Message, bot: CoolBot) -> None:
         await landmine_explode(message, bot, forced=True)
         return
     
-    if message.channel.id not in bot.landmine_channels.keys():
+    if message.channel.id not in bot.landmine_channels:
         return
     
     if (message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids or
@@ -91,7 +91,9 @@ async def log_msg(message: discord.Message) -> bool:
         'HasAttachments':     has_attachment,
         'timestamp':          message.created_at.timestamp(),
         'id':                 str(message.id),
-        'channel':            message.channel.name if hasattr(message.channel, 'name') and isinstance(message.channel.name, str) else 'Unknown',
+        'channel':            message.channel.name if hasattr(message.channel, 'name')
+                                                      and isinstance(message.channel.name, str)
+                                                      else 'Unknown',
         'channel_id':         str(message.channel.id),
         'edits':              [],
     }
@@ -121,10 +123,7 @@ async def try_uid_to_discord_obj(uid: int, bot: CoolBot) -> discord.User | disco
     
     guild_member: discord.Member | None
     
-    if guild is not None:
-        guild_member = guild.get_member(uid)
-    else:
-        guild_member = None
+    guild_member = guild.get_member(uid) if guild is not None else None
     
     if isinstance(guild_member, discord.Member):
         return guild_member

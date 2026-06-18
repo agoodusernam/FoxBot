@@ -1,7 +1,6 @@
-from typing import Mapping
 import datetime
 import logging
-import typing
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -11,17 +10,17 @@ from discord.ext import commands
 from discord.ext.commands import guild_only
 
 import utils.utils
-from cogs.admin_cmds_utils import sort_by_timestamp, last_log
-from command_utils.CContext import CContext, CoolBot
+from cogs.admin_cmds_utils import last_log, sort_by_timestamp
 from command_utils.analysis import text_analysis, voice_analysis
-from command_utils.analysis.text_analysis import DBMessage, DatetimeDBMessage, remove_invalid_messages
+from command_utils.analysis.text_analysis import DatetimeDBMessage, DBMessage, remove_invalid_messages
+from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_admin, is_staff
 from utils import db_stuff
 
 logger = logging.getLogger('discord')
 
 
-class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
+class AdminCmds(commands.Cog, name='Admin', command_attrs={'hidden': True}):
     """Admin commands for managing the server and users."""
     
     def __init__(self, bot: CoolBot) -> None:
@@ -34,16 +33,16 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.check(is_admin)
     async def rek(self, ctx: CContext, members: commands.Greedy[discord.Member]) -> None:
         
-        if members is None:
+        if not members:
             await ctx.delete()
-            await ctx.send(f'User not found.', delete_after=ctx.bot.del_after)
+            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
             return
 
         for member in members:
             try:
                 await member.timeout(datetime.timedelta(days=28), reason='get rekt nerd')
                 await ctx.send(f'{member.display_name} has been rekt.')
-            except:
+            except discord.HTTPException:
                 pass
         return
     
@@ -94,7 +93,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!ana [user_id/mention]')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)
-    async def analyse(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
+    async def analyse(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ''):
         await text_analysis.format_analysis(ctx, graph=False, to_analyse=user, flag=args)
     
     @commands.command(name='analyse_graph', aliases=['anag'],
@@ -103,7 +102,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!anag')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)
-    async def analyse_graph(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
+    async def analyse_graph(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ''):
         await text_analysis.format_analysis(ctx, graph=True, to_analyse=user, flag=args)
     
     @commands.command(name='analyse_voice', aliases=['anavc'],
@@ -112,7 +111,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!anavc [user_id/mention]')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.user)
-    async def analyse_voice(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
+    async def analyse_voice(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ''):
         include_left = False
         dm_user = False
         if args.strip() == '-il':
@@ -128,7 +127,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       usage='f!anavcg')
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)
-    async def analyse_vc_graph(self, ctx: CContext, user: typing.Optional[discord.Object] = None, *, args: str = ''):
+    async def analyse_vc_graph(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ''):
         include_left = False
         dm_user = False
         if args.strip() == '-il':
@@ -295,9 +294,11 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       help='Admin only: Warn a user without showing in the public logs',
                       usage='f!warn <user_id/mention> <reason>')
     @commands.check(is_admin)
-    async def warn(self, ctx: CContext, member: discord.Member, *,
+    async def warn(self,
+                   ctx: CContext,
+                   member: discord.Member, *,
                    reason: str = 'No reason provided',
-                   ):
+        ) -> None:
         await ctx.delete()
         
         data = {
@@ -342,10 +343,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await ctx.delete()
         assert ctx.guild is not None
         
-        if member is None:
-            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
-            return
-        
         roles: list[discord.Role] = []
         for role_id in ctx.bot.config.verified_roles:
             role = discord.utils.get(ctx.guild.roles, id=role_id)
@@ -368,10 +365,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
         await ctx.delete()
         assert ctx.guild is not None
         
-        if member is None:
-            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
-            return
-        
         roles: list[discord.Role] = []
         for role_id in ctx.bot.config.verified_roles:
             role = discord.utils.get(ctx.guild.roles, id=role_id)
@@ -391,10 +384,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.check(is_staff)
     async def last_messages(self, ctx: CContext, member: discord.User, number_of_messages: int = 5):
         await ctx.delete()
-        
-        if member is None:
-            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
-            return
         
         if number_of_messages < 1:
             await ctx.send('Please specify a number between above 0 for the number of messages.',
@@ -444,7 +433,7 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                       )
     @commands.check(is_admin)
     @guild_only()
-    async def landmine(self, ctx: CContext, channel_or_amount: typing.Union[discord.TextChannel, int], amount: int = 0) -> None:
+    async def landmine(self, ctx: CContext, channel_or_amount: discord.TextChannel | int, amount: int = 0) -> None:
         if isinstance(channel_or_amount, int):
             channel = ctx.channel
             amount = channel_or_amount

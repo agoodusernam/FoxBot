@@ -14,8 +14,7 @@ import discord.ext.commands
 from command_utils.CContext import CContext
 from currency import collector
 from currency.curr_config import BASE_CREDIT_SCORE, BASE_FIRE_CHANCE, INCOME_TAX
-from utils import db_stuff
-from utils import utils
+from utils import db_stuff, utils
 
 logger = logging.getLogger('discord')
 
@@ -99,7 +98,7 @@ class SchoolQualif(enum.Enum):
         try:
             return cls[s.upper().replace(" ", "_")]
         except KeyError:
-            raise ValueError(f"Invalid school qualification: {s}")
+            raise ValueError(f"Invalid school qualification: {s}") from None
     
     def to_string(self) -> str:
         """
@@ -167,11 +166,11 @@ class SecurityClearance(enum.Enum):
         return self.value == other.value
     
     @classmethod
-    def from_string(cls, s: str) -> 'SecurityClearance':
+    def from_string(cls, s: str) -> SecurityClearance:
         try:
             return cls[s.upper().replace(" ", "_")]
         except KeyError:
-            raise ValueError(f"Invalid security clearance: {s}")
+            raise ValueError(f"Invalid security clearance: {s}") from None
     
     def __str__(self) -> str:
         return self.name.replace('_', ' ').title()
@@ -198,7 +197,7 @@ class JobTree:
     If there are multiple jobs at the same level, they are grouped in a list.
     """
     name: str
-    jobs: "list[Job | list[Job]]"
+    jobs: list[Job | list[Job]]
     
     def __post_init__(self):
         """
@@ -214,10 +213,10 @@ class JobTree:
                 job.tree = self
                 job.tree_index = i
     
-    def __iter__(self) -> Iterator["Job | list[Job]"]:
+    def __iter__(self) -> Iterator[Job | list[Job]]:
         return iter(self.jobs)
     
-    def all_jobs_flat(self) -> "list[Job]":
+    def all_jobs_flat(self) -> list[Job]:
         jobs: list[Job] = []
         for job in self.jobs:
             if isinstance(job, list):
@@ -253,7 +252,7 @@ class Job:
     req_school: SchoolQualif = SchoolQualif.NONE
     req_clearance: SecurityClearance = SecurityClearance.NONE
     
-    def get_next_job(self) -> "Job | list[Job] | None":
+    def get_next_job(self) -> Job | list[Job] | None:
         """
         Finds the next job or list of jobs in the job tree.
         :return: The next job(s) in the sequence, or None if it's the last one.
@@ -288,7 +287,7 @@ class ShopItem:
     stock: int
     
     def __post_init__(self) -> None:
-        self.category: "ShopCategory" = ShopCategory.NONE()
+        self.category: ShopCategory = ShopCategory.NONE()
         self.invalid: bool = False
         if not hasattr(self, 'resale_mult'):
             self.resale_mult: Decimal = Decimal('0.9')
@@ -341,7 +340,7 @@ class BlackMarketItem(ShopItem):
         trace_back (bool | float): Whether the item can be traced back to the buyer or seller. This can also be a
         float representing the chance of being traced back.
     """
-    resale_mult: Decimal = Decimal(0.5)
+    resale_mult: Decimal = Decimal('0.5')
     cops_risk: float = 0.1
     scam_risk: float = 0.1
     trace_back: bool | float = True
@@ -513,7 +512,7 @@ def transform_val_for_db(val: Any) -> str | int | float:
 class _BatchContext:
     """Context manager for batching Profile attribute changes into a single DB call."""
     
-    def __init__(self, profile: "Profile") -> None:
+    def __init__(self, profile: Profile) -> None:
         self._profile = profile
     
     def __enter__(self) -> None:
@@ -607,10 +606,7 @@ class Profile:
     
     @property
     def has_gun(self) -> bool:
-        for item, _ in self.bm_inventory.values():
-            if isinstance(item, GunItem):
-                return True
-        return False
+        return any(isinstance(item, GunItem) for item, _ in self.bm_inventory.values())
     
     @property
     def credit_score(self) -> int:
@@ -682,10 +678,7 @@ class Profile:
         elif amount < 0:
             raise ValueError('Amount may not be negative')
         
-        if isinstance(item, ShopItem):
-            item_name = item.name
-        else:
-            item_name = item
+        item_name = item.name if isinstance(item, ShopItem) else item
         
         if item not in self.inventory:
             return None
@@ -706,10 +699,7 @@ class Profile:
         if amount == 0:
             raise ValueError('Amount may not be 0')
         
-        if isinstance(item, BlackMarketItem):
-            item_name = item.name
-        else:
-            item_name = item
+        item_name = item.name if isinstance(item, BlackMarketItem) else item
         
         if item not in self.bm_inventory:
             return None
@@ -880,10 +870,7 @@ class Profile:
     
     @classmethod
     async def fetch_from_user_id(cls, user_id: str | int) -> Self:
-        if isinstance(user_id, int):
-            str_user_id = str(user_id)
-        else:
-            str_user_id = user_id
+        str_user_id = str(user_id) if isinstance(user_id, int) else user_id
         profile = await db_stuff.get_from_db('currency', {'user_id': user_id})
         if profile is None:
             new_profile = cls(user_id=str_user_id)

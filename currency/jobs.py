@@ -1,5 +1,5 @@
 from currency import collector
-from currency.currency_types import Job, SchoolQualif, JobTree, SecurityClearance
+from currency.currency_types import Job, JobTree, SchoolQualif, SecurityClearance
 
 # Retail Jobs
 cashier = Job(

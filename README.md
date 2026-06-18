@@ -1,6 +1,6 @@
-## FoxesHaven bot
+## FoxBot
 
-This is a bot for the <a href="https://discord.gg/foxeshaven">FoxesHaven</a> Discord server, which provides useful and
+This is a bot for my friend's Discord server, which provides useful and
 fun commands.
 
 Repo: <a href="https://git.nerds-inc.com/HardlineMouse16/FoxBot">https://git.nerds-inc.com/HardlineMouse16/FoxBot</a>
@@ -12,7 +12,7 @@ If you want to use this bot on your own server, follow this guide:
 Don't
 
 Jokes aside, you probably shouldn't use this bot on your own server. It's not made to run for other servers and is
-specifically designed for the foxeshaven server. I have done my best to make it customisable, but if doing that would
+specifically designed for my friend's server. I have done my best to make it customisable, but if doing that would
 have taken more time or added complexity, I didn't. There are still quite a few magic numbers and other server specific
 things in the code.
 
@@ -24,4 +24,3 @@ Primarily made for, and uses features only added in, Python 3.14, so I can't gua
 
 If you want to contribute, feel free to open a pull request or an issue.
 I have tried to make everything readable and typed properly, but it's still not perfect.
-If you have any questions, send me a message on discord (@hl6) or open an issue.

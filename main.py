@@ -4,8 +4,8 @@ import logging
 import os
 import signal
 import sys
-from typing import Any
 from collections.abc import Collection
+from typing import Any
 
 import discord
 import discord.utils
@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 import help_cmd
 from cogs import voice_events_utils
-from command_utils.CContext import CoolBot, CContext
+from command_utils.CContext import CContext, CoolBot
 from utils import db_stuff, utils
 
 load_dotenv()
@@ -42,11 +42,7 @@ def check_devs_reset(obj: Any) -> bool:
         if not isinstance(i, int):
             return True
     
-    if list(obj)[0] == 0 and len(obj) == 1:
-        return True
-    
-    return False
-
+    return next(iter(obj)) == 0 and len(obj) == 1
 
 @bot.event
 async def on_ready() -> None:
@@ -182,3 +178,4 @@ if not isinstance(token, str):
 
 bot.help_command = help_cmd.CustomHelpCommand()
 bot.run(token=token, reconnect=True, log_handler=None)
+sys.exit(bot.exit_code)

@@ -3,17 +3,17 @@ import logging
 import tempfile
 import traceback
 from collections import Counter
+from collections.abc import Mapping
 from pathlib import Path
 from statistics import median
-from typing import Any, NotRequired, TypeVar, TypedDict
-from collections.abc import Mapping
+from typing import Any, NotRequired, TypedDict, TypeVar
 
 import discord
 from discord import DMChannel
 from matplotlib import pyplot as plt
 
-from command_utils.CContext import CContext, CoolBot
 from command_utils.analysis.ana_utils import try_resolve_channel_id, try_resolve_uid
+from command_utils.CContext import CContext, CoolBot
 from utils import db_stuff
 
 logger = logging.getLogger('discord')
@@ -83,7 +83,7 @@ class VoiceAnalysisResult(TypedDict):
 T = TypeVar('T', UserVoiceStats, ChannelVoiceStats)
 
 
-def add_time_stats(stats: T, seconds: int) -> T:
+def add_time_stats[T: (UserVoiceStats, ChannelVoiceStats)](stats: T, seconds: int) -> T:
     assert isinstance(stats, dict)
     total = stats.get('total_seconds', 0)
     stats['total_seconds'] = total + seconds
@@ -159,7 +159,10 @@ def _merge_adjacent_sessions(sessions: list[DBVoiceSession], max_gap_seconds: in
     return untimed + merged
 
 
-async def remove_invalid_voice_sessions(sessions: list[Mapping[str, Any]], merge_sessions: bool = True) -> tuple[list[DBVoiceSession], int] | None:
+async def remove_invalid_voice_sessions(
+        sessions: list[Mapping[str, Any]],
+        merge_sessions: bool = True
+    ) -> tuple[list[DBVoiceSession], int] | None:
     required_keys = {'user_id', 'channel_id', 'duration_seconds'}
     valid_sessions: list[DBVoiceSession] = []
     total_seconds: int = 0
@@ -174,7 +177,12 @@ async def remove_invalid_voice_sessions(sessions: list[Mapping[str, Any]], merge
             continue
         
         total_seconds += session['duration_seconds']
-        valid_session = DBVoiceSession(user_id=session['user_id'], channel_id=session['channel_id'], duration_seconds=session['duration_seconds'], _id=session['_id'])
+        valid_session = DBVoiceSession(
+            user_id=session['user_id'],
+            channel_id=session['channel_id'],
+            duration_seconds=session['duration_seconds'],
+            _id=session['_id']
+        )
         
         if 'timestamp' in session:
             valid_session['timestamp'] = session['timestamp']
@@ -222,9 +230,8 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
     channel_stats: dict[str, ChannelVoiceStats] = {}
     for session in sessions:
         user_id = session['user_id']
-        if not include_left and guild is not None:
-            if guild.get_member(int(user_id)) is None:
-                continue
+        if not include_left and guild is not None and guild.get_member(int(user_id)) is None:
+            continue
         
         user_stat: UserVoiceStats = user_stats.get(user_id, {'user_id': user_id, 'total_seconds': 0})
         user_stats[user_id] = add_time_stats(user_stat, session['duration_seconds'])
@@ -232,7 +239,7 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
         
         channel_id = session['channel_id']
         if guild is not None:
-            exists = not (discord.utils.get(guild.channels, id=int(channel_id)) is None)
+            exists = discord.utils.get(guild.channels, id=int(channel_id)) is not None
             if not exists:
                 continue
         
@@ -309,13 +316,13 @@ async def get_voice_statistics(include_left: bool = False, guild: discord.Guild 
     median_session_duration = int(median(session_durations)) if session_durations else 0
     
     # Weekly unique active users
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     one_week_ago = now - datetime.timedelta(days=7)
     two_weeks_ago = now - datetime.timedelta(days=14)
     this_week_users: set[str] = set()
     last_week_users: set[str] = set()
     for s in timed_sessions:
-        session_time = datetime.datetime.fromtimestamp(s['timestamp'], datetime.timezone.utc)
+        session_time = datetime.datetime.fromtimestamp(s['timestamp'], datetime.UTC)
         if session_time >= one_week_ago:
             this_week_users.add(s['user_id'])
         elif session_time >= two_weeks_ago:
@@ -460,7 +467,7 @@ async def get_user_voice_statistics(user_id: str) -> UserVoiceAnalysisResult | N
         day_counter: Counter[int] = Counter()
         for s in timed_user_sessions:
             start_ts = s['timestamp'] - s['duration_seconds']
-            start_dt = datetime.datetime.fromtimestamp(start_ts, tz=datetime.timezone.utc)
+            start_dt = datetime.datetime.fromtimestamp(start_ts, tz=datetime.UTC)
             hour_counter[start_dt.hour] += s['duration_seconds']
             day_counter[start_dt.weekday()] += s['duration_seconds']
         
@@ -659,10 +666,7 @@ async def generate_voice_activity_graph(channel: discord.TextChannel, bot: CoolB
         count: The amount of users to show on the graph
         send_errors: Whether to send an error message if no data is available
     """
-    if isinstance(stats, list):
-        top_users = stats[:count]
-    else:
-        top_users = stats["active_users_lb"][:count]
+    top_users = stats[:count] if isinstance(stats, list) else stats["active_users_lb"][:count]
     
     if not top_users:
         logger.error("No user voice activity data to graph.")

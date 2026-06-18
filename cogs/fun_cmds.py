@@ -6,7 +6,6 @@ import os
 import random
 import string
 import time
-import typing
 from typing import Any
 
 import discord
@@ -15,11 +14,10 @@ from discord.ext.commands import guild_only
 from discord.ext.tasks import loop
 from gtts import gTTS  # type: ignore[import-untyped]
 
-from cogs import fun_cmds_utils
-from cogs import voice_events_utils
 import utils.utils
-from command_utils.CContext import CContext, CoolBot
+from cogs import fun_cmds_utils, voice_events_utils
 from command_utils.analysis import voice_analysis
+from command_utils.CContext import CContext, CoolBot
 
 logger = logging.getLogger('discord')
 
@@ -44,7 +42,8 @@ class FunCommands(commands.Cog, name='Fun'):
             try:
                 first_val = int(first_val[1:].strip())
             except ValueError:
-                await ctx.send('Invalid value. Please provide valid numbers for the dice roll, e.g. `f!dice 1 6`, or `f!dice 6`, or `f!dice d6`')
+                await ctx.send('Invalid value. Please provide valid numbers for the dice roll, e.g. ' +
+                               '`f!dice 1 6`, or `f!dice 6`, or `f!dice d6`')
                 return
         await fun_cmds_utils.dice_roll(ctx, first_val, second_val)
     
@@ -251,7 +250,7 @@ class FunCommands(commands.Cog, name='Fun'):
         
         discord.opus.load_opus(opus)
         if ctx.bot.vc_client is not None:
-            if not ctx.bot.vc_client.channel.id == state.channel.id:
+            if ctx.bot.vc_client.channel.id != state.channel.id:
                 await ctx.bot.vc_client.move_to(state.channel)
             vc_client = ctx.bot.vc_client
         else:
@@ -313,7 +312,7 @@ class FunCommands(commands.Cog, name='Fun'):
                       brief="Send the voice call leaderboard",
                       help="Send the voice call leaderboard to the current channel")
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def manual_send_vc_lb(self, ctx: CContext, channel: typing.Optional[discord.TextChannel]) -> None:
+    async def manual_send_vc_lb(self, ctx: CContext, channel: discord.TextChannel | None) -> None:
         if channel is None:
             channel = ctx.channel  # type: ignore
         

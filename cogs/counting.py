@@ -2,16 +2,16 @@ import string
 from typing import TypeVar
 
 import discord
+from counting_utils import CountStatus, count_only_allowed_chars, eval_count_msg
 from discord.ext import commands
 
 from command_utils.CContext import CContext, CoolBot
-from cogs.counting_utils import *
 
 T = TypeVar('T')
 
 
-def sort_dict_by_value_h2l(d: dict[T, int]) -> dict[T, int]:
-    return {k: v for k, v in sorted(d.items(), key=lambda item: item[1], reverse=True)}
+def sort_dict_by_value_h2l[T](d: dict[T, int]) -> dict[T, int]:
+    return dict(sorted(d.items(), key=lambda item: item[1], reverse=True))
 
 
 class Counting(commands.Cog, name='Counting'):

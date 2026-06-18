@@ -1,25 +1,26 @@
 import asyncio
+import json
+import logging
+import shutil
 import sys
 from collections.abc import Callable, Reversible
 from pathlib import Path
-import json
-from typing import overload, Any
-import shutil
+from typing import Any, overload
+
+import discord
+
 # noinspection PyPackageRequirements
 import statx  # type: ignore[import-untyped]
-import logging
 
 from type_stuff.permission_types import (
+    CategoryChannel,
     PermissionOverwriteDict,
+    SerialisedChannel,
+    SerialisedGuild,
     SerialisedRole,
     TextChannel,
     VoiceChannel,
-    CategoryChannel,
-    SerialisedChannel,
-    SerialisedGuild,
 )
-
-import discord
 
 logger = logging.getLogger('discord')
 
@@ -27,15 +28,13 @@ logger = logging.getLogger('discord')
 def get_file_creation_time(path: Path) -> int:
     on_linux: bool = sys.platform == "linux" or sys.platform == "linux2"
     creation_time: int
-    if on_linux:
-        creation_time = round(statx.statx(str(path)).btime) # type: ignore[arg-type]
-    else:
-        creation_time = round(path.stat().st_birthtime) # type: ignore[arg-type,attr-defined]
+    creation_time = round(statx.statx(str(path)).btime) if on_linux else round(path.stat().st_birthtime)
+
     return creation_time
 
 
 def _serialise_perm_overwrite(overwrite: discord.PermissionOverwrite) -> PermissionOverwriteDict:
-    return {k: v for k, v in overwrite}  # type: ignore[return-value]
+    return {k: v for k, v in overwrite}  # type: ignore[return-value] # ruff: ignore C416
 
 
 def _serialise_perm_overwrite_channel(channel: discord.abc.GuildChannel) -> dict[int, PermissionOverwriteDict]:
@@ -75,7 +74,7 @@ async def save_guild(guild: discord.Guild) -> None | str:
         guild_path = guild_folder / f'{guild.id}_{round(discord.utils.utcnow().timestamp())}.json'
     
     try:
-        with open(guild_path, 'wt+') as f:
+        with open(guild_path, 'w+') as f:
             json.dump(guild_data, f, indent=4)
     except OSError as e:
         return f'Failed writing json to {guild_path}: {e}'
@@ -290,7 +289,7 @@ def get_most_recent_backup(g_id: str | int) -> str | dict[Any, Any]:
         return most_recent_backup
     
     try:
-        with open(most_recent_backup, 'rt') as f:
+        with open(most_recent_backup) as f:
             backup: dict[Any, Any] = json.load(f)
         
         return backup
@@ -352,7 +351,10 @@ def _perm_overwrite(perms: PermissionOverwriteDict) -> discord.PermissionOverwri
     return ow
 
 
-def _overwrites_for_discord(ows: dict[int, PermissionOverwriteDict], role_map: dict[int, discord.Role]) -> dict[discord.Role, discord.PermissionOverwrite]:
+def _overwrites_for_discord(
+        ows: dict[int, PermissionOverwriteDict],
+        role_map: dict[int, discord.Role]
+    ) -> dict[discord.Role, discord.PermissionOverwrite]:
     disc_ows: dict[discord.Role, discord.PermissionOverwrite] = {}
     for role_id, ow in ows.items():
         logger.debug(f'Getting role ID: {role_id} for perm overwrite')
@@ -360,7 +362,13 @@ def _overwrites_for_discord(ows: dict[int, PermissionOverwriteDict], role_map: d
     return disc_ows
 
 
-async def load_channel(channel: SerialisedChannel, role_map: dict[int, discord.Role], server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None], category: discord.CategoryChannel | None = None) -> discord.CategoryChannel | None:
+async def load_channel(
+        channel: SerialisedChannel,
+        role_map: dict[int, discord.Role],
+        server: discord.Guild,
+        add_to_map: Callable[[int, discord.abc.GuildChannel], None],
+        category: discord.CategoryChannel | None = None
+    ) -> discord.CategoryChannel | None:
     await asyncio.sleep(0.5)
     match channel['channel_type']:
         case 'text':
@@ -374,7 +382,13 @@ async def load_channel(channel: SerialisedChannel, role_map: dict[int, discord.R
     return None
 
 
-async def load_text_channel(channel: TextChannel, role_map: dict[int, discord.Role], server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None], category: discord.CategoryChannel | None = None):
+async def load_text_channel(
+        channel: TextChannel,
+        role_map: dict[int, discord.Role],
+        server: discord.Guild,
+        add_to_map: Callable[[int, discord.abc.GuildChannel], None],
+        category: discord.CategoryChannel | None = None
+    ) -> None:
     kwargs: dict[str, Any] = {}
     kwargs['name'] = channel['name']
     logger.debug(f'Loading text channel {channel['name']}')
@@ -393,7 +407,13 @@ async def load_text_channel(channel: TextChannel, role_map: dict[int, discord.Ro
     add_to_map(channel['id'], await server.create_text_channel(**kwargs))
 
 
-async def load_voice_channel(channel: VoiceChannel, role_map: dict[int, discord.Role], server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None], category: discord.CategoryChannel | None = None):
+async def load_voice_channel(
+        channel: VoiceChannel,
+        role_map: dict[int, discord.Role],
+        server: discord.Guild,
+        add_to_map: Callable[[int, discord.abc.GuildChannel], None],
+        category: discord.CategoryChannel | None = None
+    ) -> None:
     kwargs: dict[str, Any] = {}
     kwargs['name'] = channel['name']
     logger.debug(f'Loading voice channel {channel['name']}')
@@ -412,7 +432,11 @@ async def load_voice_channel(channel: VoiceChannel, role_map: dict[int, discord.
     add_to_map(channel['id'], await server.create_voice_channel(**kwargs))
 
 
-async def load_category(category: CategoryChannel, role_map: dict[int, discord.Role], server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None]) -> discord.CategoryChannel:
+async def load_category(
+        category: CategoryChannel,
+        role_map: dict[int, discord.Role],
+        server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None]
+    ) -> discord.CategoryChannel:
     ows: dict[discord.Role, discord.PermissionOverwrite] = _overwrites_for_discord(category['overwrites'], role_map)
     cat: discord.CategoryChannel = await server.create_category(
             name=category['name'],
@@ -423,7 +447,12 @@ async def load_category(category: CategoryChannel, role_map: dict[int, discord.R
     return cat
 
 
-async def load_categories(categories: list[CategoryChannel], role_map: dict[int, discord.Role], server: discord.Guild, add_to_map: Callable[[int, discord.abc.GuildChannel], None]):
+async def load_categories(
+        categories: list[CategoryChannel],
+        role_map: dict[int, discord.Role],
+        server: discord.Guild,
+        add_to_map: Callable[[int, discord.abc.GuildChannel], None]
+    ) -> None:
     logger.debug('Loading all categories')
     for category in categories:
         category_obj = await load_channel(category, role_map, server, add_to_map)

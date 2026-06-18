@@ -35,16 +35,16 @@ async def create_private_vc(ctx: Context, member: discord.Member) -> bool:
         await member.move_to(private_vc)
     
     except discord.NotFound:
-        raise commands.CommandError("The role or member being edited is not part of the guild.")
+        raise commands.CommandError("The role or member being edited is not part of the guild.") from None
     
-    except discord.Forbidden:
-        raise commands.BotMissingPermissions(["manage_channels"])
+    except discord.Forbidden as e:
+        raise commands.BotMissingPermissions(["manage_channels"]) from e
     
     except discord.HTTPException as e:
-        raise commands.CommandError(f"Failed to create voice channel: {e}")
+        raise commands.CommandError(f"Failed to create voice channel: {e}") from e
     
     except Exception as e:
-        raise commands.CommandError(f"An unexpected error occurred: {e}")
+        raise commands.CommandError(f"An unexpected error occurred: {e}") from e
     
     return True
 
@@ -63,7 +63,7 @@ async def give_rich_role(ctx: Context, member: discord.Member) -> bool:
         await member.add_roles(rich_role)
     
     except discord.Forbidden:
-        raise commands.BotMissingPermissions(["manage_roles"])
+        raise commands.BotMissingPermissions(["manage_roles"]) from None
     
     return True
 

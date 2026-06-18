@@ -3,8 +3,8 @@ import logging
 import discord
 from discord.ext import commands
 
+from cogs.voice_events_utils import handle_join, handle_leave, handle_move
 from command_utils.CContext import CoolBot
-from cogs.voice_events_utils import handle_join, handle_move, handle_leave
 
 logger = logging.getLogger('discord')
 
@@ -48,13 +48,11 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
                 embed.timestamp = discord.utils.utcnow()
                 await logging_channel.send(embed=embed)
             
-            if before.channel.name.startswith('private_'):
-                if before.channel and len(before.channel.members) == 0:
-                    await before.channel.delete(reason='Private VC empty after member left')
+            if before.channel.name.startswith('private_') and before.channel and len(before.channel.members) == 0:
+                await before.channel.delete(reason='Private VC empty after member left')
             
-            if before.channel.name.startswith('temp_'):
-                if before.channel and len(before.channel.members) == 0:
-                    await before.channel.delete(reason='Temp VC empty after member left')
+            if before.channel.name.startswith('temp_') and before.channel and len(before.channel.members) == 0:
+                await before.channel.delete(reason='Temp VC empty after member left')
             
             if self.bot.vc_client is None:
                 return
@@ -76,9 +74,8 @@ class VoiceLogging(commands.Cog, name='Voice Logging'):
             if logging_channel:
                 await logging_channel.send(embed=embed)
             
-            if before.channel.name.startswith('private_'):
-                if before.channel and len(before.channel.members) == 0:
-                    await before.channel.delete(reason='Private VC empty after member left')
+            if before.channel.name.startswith('private_') and before.channel and len(before.channel.members) == 0:
+                await before.channel.delete(reason='Private VC empty after member left')
             
             if self.bot.vc_client is None:
                 return

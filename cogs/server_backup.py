@@ -1,12 +1,13 @@
 import asyncio
+import contextlib
 from typing import Any
 
 import discord
 from discord.ext import commands
 
-from command_utils.CContext import CoolBot, CContext
+from cogs.server_backup_utils import get_most_recent_backup, load_backup, save_guild
+from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_admin
-from cogs.server_backup_utils import save_guild, get_most_recent_backup, load_backup
 
 
 class Backup(commands.Cog):
@@ -46,10 +47,8 @@ class Backup(commands.Cog):
         
         for channel in ctx.guild.channels:
             await asyncio.sleep(0.2)
-            try:
+            with contextlib.suppress(discord.NotFound):
                 await channel.delete()
-            except discord.NotFound:
-                pass
         for role in ctx.guild.roles:
             if role.name == '@everyone' or role.id == ctx.guild.self_role.id:
                 continue

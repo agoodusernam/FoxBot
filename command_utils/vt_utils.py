@@ -4,7 +4,7 @@ import typing
 
 import aiohttp
 import vt  # type: ignore[import-untyped]
-from vt import Object, ClientResponse
+from vt import ClientResponse, Object
 
 logger = logging.getLogger('discord')
 

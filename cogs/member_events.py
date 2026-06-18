@@ -3,9 +3,20 @@ import logging
 import discord
 from discord.ext import commands
 
+from cogs.member_events_utils import (
+    MISSING,
+    MissingType,
+    UserChange,
+    avatar_update_embed,
+    get_member_changes,
+    get_user_changes,
+    nick_update_embed,
+    roles_changed_embed,
+    time_ago,
+    timeout_embed,
+)
 from command_utils.CContext import CoolBot
 from command_utils.embed_util import create_log_embed
-from cogs.member_events_utils import time_ago, get_member_changes, MISSING, nick_update_embed, roles_changed_embed, timeout_embed, MissingType, avatar_update_embed, get_user_changes, UserChange
 
 logger = logging.getLogger('discord')
 
@@ -123,13 +134,23 @@ class MemberEvents(commands.Cog, name="Member Events"):
         if changes['roles_added'] is not MISSING:
             assert not isinstance(changes['roles_added'], MissingType)
             logger.debug(f'{after.name} added roles: {", ".join([c.name for c in changes["roles_added"]])}')
-            embed = roles_changed_embed(changes["roles_added"], after, 'Roles added', 'added to')
+            embed = roles_changed_embed(
+                changes["roles_added"],
+                after,
+                'Roles added',
+                'added to'
+            )
             await self.member_logs_channel.send(embed=embed)
         
         if changes['roles_removed'] is not MISSING:
             assert not isinstance(changes['roles_removed'], MissingType)
             logger.debug(f'{after.name} removed roles: {", ".join([c.name for c in changes["roles_removed"]])}')
-            embed = roles_changed_embed(changes["roles_removed"], after, 'Roles removed', 'removed from')
+            embed = roles_changed_embed(
+                changes["roles_removed"],
+                after,
+                'Roles removed',
+                'removed from'
+            )
             await self.member_logs_channel.send(embed=embed)
         
         if changes['timed_out_until'] is not MISSING:
@@ -179,7 +200,14 @@ class MemberEvents(commands.Cog, name="Member Events"):
         
         assert self.member_logs_channel is not None
         
-        embed = create_log_embed(user.name, user.display_avatar.url, f'{user.mention} was banned.', discord.Color.red(), 'Member banned', f'ID: {user.id}')
+        embed = create_log_embed(
+            user.name,
+            user.display_avatar.url,
+            f'{user.mention} was banned.',
+            discord.Color.red(),
+            'Member banned',
+            f'ID: {user.id}'
+        )
         await self.member_logs_channel.send(embed=embed)
     
     @commands.Cog.listener()
@@ -190,7 +218,14 @@ class MemberEvents(commands.Cog, name="Member Events"):
         
         assert self.member_logs_channel is not None
         
-        embed = create_log_embed(user.name, user.display_avatar.url, f'{user.mention} was unbanned.', discord.Color.green(), 'Member unbanned', f'ID: {user.id}')
+        embed = create_log_embed(
+            user.name,
+            user.display_avatar.url,
+            f'{user.mention} was unbanned.',
+            discord.Color.green(),
+            'Member unbanned',
+            f'ID: {user.id}'
+        )
         await self.member_logs_channel.send(embed=embed)
 
 

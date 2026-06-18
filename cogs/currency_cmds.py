@@ -1,5 +1,4 @@
 import random
-import typing
 from decimal import Decimal
 
 import discord
@@ -8,9 +7,19 @@ from discord.ext import commands
 from command_utils.CContext import CContext
 from command_utils.checks import is_dev
 from currency import collector, curr_utils
-from currency.curr_utils import get_profile
-from currency.currency_types import BlackMarketItem, DrugItem, GunItem, HouseItem, JobTree, Profile, SchoolQualif, SecurityClearance, ShopItem
 from currency.curr_config import CURRENCY_NAME, INTEREST_RATE, SALES_TAX
+from currency.curr_utils import get_profile
+from currency.currency_types import (
+    BlackMarketItem,
+    DrugItem,
+    GunItem,
+    HouseItem,
+    JobTree,
+    Profile,
+    SchoolQualif,
+    SecurityClearance,
+    ShopItem,
+)
 
 salary_offers: dict[int, dict[str, int]] = {}
 
@@ -47,7 +56,7 @@ class ShopView(discord.ui.View):
 
 # TODO: Add other money making activities like hunting, fishing and others
 # TODO: Add illegal jobs
-class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=is_dev, hidden=True)):
+class CurrencyCmds(commands.Cog, name='Currency', command_attrs={'add_check': is_dev, 'hidden': True}):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
     
@@ -281,7 +290,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                       help='Get a loan to increase your wallet balance',
                       usage='f!get_loan <amount>')
     @commands.cooldown(1, 5, commands.BucketType.user)
-    async def get_loan_cmd(self, ctx: CContext, amount: typing.Union[int, str]) -> None:
+    async def get_loan_cmd(self, ctx: CContext, amount: int | str) -> None:
         if isinstance(amount, str):
             # discord.py tries to convert to int first, if that fails we just get the string
             await ctx.send("You must specify a valid integer amount to get a loan")
@@ -298,7 +307,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         if profile.max_loan < amount:
             await ctx.send(f'You cannot take a loan of {amount} {CURRENCY_NAME}. ')
-            await ctx.send(f'Increase max loan size by increasing income or credit score.')
+            await ctx.send('Increase max loan size by increasing income or credit score.')
             return
         
         profile.debt = Decimal(amount)
@@ -316,7 +325,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         profile = await get_profile(ctx.author)
         credit_score = profile.credit_score
         await ctx.send(f'Your current credit score is {credit_score}. ' +
-                       f'Improve it by paying off loans and maintaining a good balance.')
+                       'Improve it by paying off loans and maintaining a good balance.')
         return
     
     @commands.command(name='shop', aliases=['store'],
@@ -432,20 +441,16 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
             quantity = 1
             q_given = False
         
-        if q_given:
-            item_name = ' '.join(args[:-1]).lower()
-        else:
-            item_name = ' '.join(args).lower()
+        item_name = ' '.join(args[:-1]).lower() if q_given else ' '.join(args).lower()
         
         item = collector.item_from_str(item_name)
         if item is None:
             await ctx.send(f"No item found with name '{item_name}'")
             return
         stock = await curr_utils.get_stock(item)
-        if stock != -1:
-            if stock < quantity:
-                await ctx.send(f'Not enough stock for {item.name}. Available: {stock}, Requested: {quantity}')
-                return
+        if stock != -1 and stock < quantity:
+            await ctx.send(f'Not enough stock for {item.name}. Available: {stock}, Requested: {quantity}')
+            return
         total_price: Decimal = (item.price * SALES_TAX) * quantity
         profile = await get_profile(ctx.author)
         
@@ -556,8 +561,8 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
                 return
         
         elif isinstance(item, GunItem):
-            await ctx.send(f'You cannot use guns directly.')
-            await ctx.send(f'Use them in a command that requires a gun, like `hunt` or `rob`.')
+            await ctx.send('You cannot use guns directly.')
+            await ctx.send('Use them in a command that requires a gun, like `hunt` or `rob`.')
         return
     
     @commands.command(name='sell',
@@ -651,7 +656,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         await ctx.send(embed=embed)
     
     @staticmethod
-    def _get_best_qualified_jobs(tree: 'JobTree', profile: 'Profile') -> list:
+    def _get_best_qualified_jobs(tree: JobTree, profile: Profile) -> list:
         """Walk the tree from highest level to lowest. Return the jobs at the
         first (i.e. best) level the user fully qualifies for."""
         for level in reversed(tree.jobs):
@@ -687,7 +692,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         job_name = job_name.strip().lower()
         matched_job = None
-        for offered_job in salary_offers[ctx.author.id].keys():
+        for offered_job in salary_offers[ctx.author.id]:
             if offered_job.lower() == job_name:
                 matched_job = offered_job
                 break
@@ -724,7 +729,7 @@ class CurrencyCmds(commands.Cog, name='Currency', command_attrs=dict(add_check=i
         
         embed.add_field(name='Job', value=profile.job.name, inline=True)
         embed.add_field(name='Income', value=f"{profile.work_income // 12} {CURRENCY_NAME} per month " +
-                                             f"before taxes" if profile.work_income > 0 else '0', inline=True)
+                                             "before taxes" if profile.work_income > 0 else '0', inline=True)
         embed.add_field(name='Work Experience', value=f"{profile.work_experience // 12} years", inline=True)
         embed.add_field(name='School qualification', value=profile.school_qualification.to_string(), inline=True)
         if profile.security_clearance != SecurityClearance.NONE:

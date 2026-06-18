@@ -2,6 +2,7 @@ import logging
 import logging.handlers
 from pathlib import Path
 
+
 def setup_logging(path: Path | str) -> None:
     if isinstance(path, str):
         path = Path(path)

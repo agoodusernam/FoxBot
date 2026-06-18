@@ -21,7 +21,14 @@ class ConfigCog(commands.Cog, name="Configuration"):
     
     @commands.command(name="config", brief="View or modify bot configuration")
     @commands.check(is_dev)
-    async def config_command(self, ctx: CContext, section: str | None = None, key: str | None = None, *, value: str | None = None):
+    async def config_command(
+            self,
+            ctx: CContext,
+            section: str | None = None,
+            key: str | None = None,
+            *,
+            value: str | None = None
+        ) -> None:
         """
         View or modify bot configuration
         Usage:
@@ -49,7 +56,15 @@ class ConfigCog(commands.Cog, name="Configuration"):
         
         if section == "basic":
             await self._handle_generic_config(ctx, self.bot.config, key, value,
-                                              exclude_keys={'no_log', 'send_blacklist', 'logging_channels', 'reaction_roles', 'admin_ids', 'dev_ids', 'blacklist_ids'})
+                                              exclude_keys={
+                                                  'no_log',
+                                                  'send_blacklist',
+                                                  'logging_channels',
+                                                  'reaction_roles',
+                                                  'admin_ids',
+                                                  'dev_ids',
+                                                  'blacklist_ids'
+                                              })
         elif section == "users":
             await self._handle_users_config(ctx)
         elif section == "logging":
@@ -60,7 +75,14 @@ class ConfigCog(commands.Cog, name="Configuration"):
         else:
             await ctx.send(f"Unknown section: {section}", delete_after=self.bot.config.del_after)
     
-    async def _handle_generic_config(self, ctx: CContext, config_obj: ConfigBase, key: str | None, value: str | None, exclude_keys: set[str] | None = None):
+    async def _handle_generic_config(
+            self,
+            ctx: CContext,
+            config_obj: ConfigBase,
+            key: str | None,
+            value: str | None,
+            exclude_keys: set[str] | None = None
+        ) -> None:
         if exclude_keys is None:
             exclude_keys = set()
         

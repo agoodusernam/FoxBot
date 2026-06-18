@@ -2,12 +2,11 @@ import hashlib
 import logging
 import os
 import random
-from typing import Any, IO, Literal, overload
+from typing import IO, Any, Literal, overload
 
-import discord.ext.commands
 import aiohttp
+import discord.ext.commands
 from discord.ext.commands import Context
-import vt  # type: ignore[import-untyped]
 
 from command_utils.vt_utils import ZipVTClient
 
@@ -51,7 +50,7 @@ class VTInfo:
         self.threat_classification: str = 'Unknown'
         self.threat_label: str = 'Unknown'
         
-        if attributes.get('popular_threat_classification', None) is not None:
+        if attributes.get('popular_threat_classification') is not None:
             categories: list[dict] = attributes['popular_threat_classification']['popular_threat_category']
             categories = sorted(categories, key=lambda x: x['count'], reverse=True)
             self.threat_classification = categories[0]['value']
@@ -307,7 +306,7 @@ async def upload_file_vt(f: IO[bytes], zip_password: str | None = None) -> VTInf
         logger.warning('API usage quota exceeded.')
         return "API usage quota exceeded. Please try again later."
     
-    if not resp.get("error", {}).get("code") == "NotFoundError":
+    if resp.get("error", {}).get("code") != "NotFoundError":
         logger.error(f'Error uploading file to VT, unknown error. Error: {resp}')
         return "An unknown error has occurred."
     

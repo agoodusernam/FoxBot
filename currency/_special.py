@@ -1,4 +1,4 @@
-from currency.currency_types import Job, ShopItem, BlackMarketItem
+from currency.currency_types import BlackMarketItem, Job, ShopItem
 
 invalid_item: ShopItem = ShopItem(
         name='Invalid',

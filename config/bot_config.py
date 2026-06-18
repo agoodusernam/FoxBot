@@ -2,12 +2,12 @@
 Enhanced Bot Configuration System
 Provides type-safe, validated configuration with easy bot.config.* access
 """
+import datetime
+import json
 import logging
-from typing import Any, Self
 from dataclasses import dataclass, field
 from pathlib import Path
-import json
-from xml import dom
+from typing import Any, Self
 
 import discord
 
@@ -123,7 +123,7 @@ class BotConfig(ConfigBase):
     counting: CountingConfig = field(default_factory=CountingConfig)
     
     # misc
-    logs_path: Path = Path("logs").resolve()
+    logs_path: Path = Path("logs")
     vc_lb_channel_id: int = 0
     ban_channel_id: int = 0
     
@@ -147,6 +147,10 @@ class BotConfig(ConfigBase):
     
     # Dynamic properties (not saved to config)
     today: str | None = field(default=None, init=False)
+    
+    def __post_init__(self) -> None:
+        self.logs_path = self.logs_path.resolve()
+        self.today = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d")
     
     @classmethod
     def get_default_config(cls) -> dict[str, Any]:
@@ -379,7 +383,7 @@ class BotConfig(ConfigBase):
         """Reload configuration from file"""
         logger.debug("Reloading config")
         if config_path.exists():
-            with open(config_path, "r", encoding="utf-8") as f:
+            with open(config_path, encoding="utf-8") as f:
                 data = json.load(f)
             new_config = self.from_dict(data)
             self.__dict__.update(new_config.__dict__)
@@ -428,7 +432,7 @@ def load_config(config_path: Path = Path("config.json")) -> BotConfig:
         return config
     
     try:
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             data = json.load(f)
         
         logger.info("Configuration loaded successfully")

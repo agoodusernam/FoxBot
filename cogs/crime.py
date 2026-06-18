@@ -75,12 +75,12 @@ async def got_shot(ctx: CContext, profile: Profile, target: discord.Member):
     if added_to_debt and payable > 0:
         await ctx.send(
                 f"As you couldn't pay it all of at once, {amount - payable} {curr_config.CURRENCY_NAME} was added to " +
-                f'your debt, remember to pay it back!',
+                'your debt, remember to pay it back!',
         )
     return
 
 
-class CrimeCog(commands.Cog, name='Crime', command_attrs=dict(hidden=True, add_check=is_dev)):
+class CrimeCog(commands.Cog, name='Crime', command_attrs={'hidden': True, 'add_check': is_dev}):
     """
     A cog for handling crime-related commands in the bot.
     """

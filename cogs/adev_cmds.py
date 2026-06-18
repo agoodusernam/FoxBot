@@ -7,10 +7,9 @@ from datetime import timedelta
 import discord
 import psutil
 from discord.ext import commands
-from discord.ext import tasks
 
-from cogs import adev_cmds_utils, voice_events_utils
 import utils.utils
+from cogs import adev_cmds_utils, voice_events_utils
 from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_dev
 
@@ -19,7 +18,7 @@ from command_utils.checks import is_dev
 logger = logging.getLogger('discord')
 
 
-class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_check=is_dev)):
+class DevCommands(commands.Cog, name='Dev', command_attrs={'hidden': True, 'add_check': is_dev}):
     """Developer commands for bot maintenance and management."""
     
     def __init__(self, bot: CoolBot):
@@ -193,7 +192,7 @@ class DevCommands(commands.Cog, name='Dev', command_attrs=dict(hidden=True, add_
     
     @commands.command(name='add_to_env')
     async def add_to_env(self, ctx: CContext, key: str, value: str):
-        if not ctx.author.id == 542798185857286144:
+        if ctx.author.id != 542798185857286144:
             return
         await ctx.delete()
         key = key.upper()
