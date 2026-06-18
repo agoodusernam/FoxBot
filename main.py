@@ -91,7 +91,7 @@ async def on_ready() -> None:
     logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
     logger.info('------')
     
-    await bot.change_presence(activity=discord.CustomActivity(name='f!help'))
+    await bot.change_presence(activity=discord.CustomActivity(name='f!help for help'))
 
 
 @bot.event
