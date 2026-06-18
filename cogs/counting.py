@@ -2,7 +2,7 @@ import string
 from typing import TypeVar
 
 import discord
-from counting_utils import CountStatus, count_only_allowed_chars, eval_count_msg
+from cogs.counting_utils import CountStatus, count_only_allowed_chars, eval_count_msg
 from discord.ext import commands
 
 from command_utils.CContext import CContext, CoolBot
