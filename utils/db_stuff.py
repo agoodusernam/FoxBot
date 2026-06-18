@@ -409,7 +409,7 @@ async def insert_many_db_entries(collection_name: str, query: list[Mapping[str, 
         return None
 
 
-async def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | Mapping[str, Any]:
+async def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | dict[str, Any]:
     """
     Generic function to retrieve data from a specified MongoDB await collection.
     """
@@ -481,3 +481,9 @@ async def edit_db_message(message_id: str, content: str) -> bool:
     edits = current.get('edits', [])
     edits.append({'timestamp': datetime.datetime.now(datetime.UTC).timestamp(), 'content': content})
     return await edit_db_entry('messages', {'id': message_id}, {'edits': edits})
+
+async def get_xp_all() -> list[dict[str, Any]] | None:
+    return await get_many_from_db('xp', {})
+
+async def get_xp_user(user_id: str) -> dict[str, Any] | None:
+    return await get_from_db('xp', {'user_id': user_id})
