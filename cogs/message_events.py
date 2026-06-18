@@ -9,6 +9,7 @@ from discord.ext import commands
 
 import cogs.counting_utils as counting_utils
 import cogs.message_events_utils as message_events_utils
+from cogs.message_events_utils import try_uid_to_discord_obj
 from command_utils.CContext import CContext, CoolBot
 from command_utils.analysis.text_analysis import DBMessage, remove_invalid_messages
 from command_utils.embed_util import create_log_embed
@@ -16,59 +17,6 @@ from utils import utils, db_stuff
 from utils.db_stuff import get_many_from_db
 
 logger = logging.getLogger('discord')
-
-
-async def try_uid_to_discord_obj(uid: int, bot: CoolBot) -> discord.User | discord.Member | None:
-    """
-    Attempt to resolve a user ID to a display name.
-    If the user's display name can't be found, return their ID as a string.
-    """
-    guild: discord.Guild | None = bot.get_guild(bot.config.guild_id)
-    
-    guild_member: discord.Member | None
-    
-    if guild is not None:
-        guild_member = guild.get_member(uid)
-    else:
-        guild_member = None
-    
-    if isinstance(guild_member, discord.Member):
-        return guild_member
-    
-    try:
-        fetched = await bot.fetch_user(uid)
-        if isinstance(fetched, discord.User):
-            return fetched
-    
-    except (discord.NotFound, discord.HTTPException):
-        pass
-    
-    return None
-
-channel_cache: dict[int, discord.abc.GuildChannel | discord.Thread | None] = {}
-
-async def get_channel_by_id(channel_id: int, bot: CoolBot) -> discord.abc.GuildChannel | discord.Thread | None:
-    global channel_cache
-    if channel_id in channel_cache:
-        return channel_cache[channel_id]
-    
-    channel: discord.abc.GuildChannel | discord.Thread | discord.abc.PrivateChannel | None
-    channel = bot.get_channel(channel_id)
-    if isinstance(channel, discord.abc.PrivateChannel):
-        channel_cache[channel_id] = None
-        return None
-    
-    if channel is not None:
-        channel_cache[channel_id] = channel
-        return channel
-    
-    channel = await bot.fetch_channel(channel_id)
-    if isinstance(channel, discord.abc.PrivateChannel) or channel is None:
-        channel_cache[channel_id] = None
-        return None
-    channel_cache[channel_id] = channel
-    return channel
-    
 
 async def timeout_delete(message: discord.Message, bot: CoolBot) -> None:
     if not isinstance(message.author, discord.Member):
@@ -105,7 +53,7 @@ async def timeout_delete(message: discord.Message, bot: CoolBot) -> None:
     
     for channel, msgs in by_channel.items():
         with contextlib.suppress(discord.HTTPException):
-            channel_obj = await get_channel_by_id(channel, bot)
+            channel_obj = await message_events_utils.get_channel_by_id(channel, bot)
             if channel_obj is None or not hasattr(channel_obj, "delete_messages"):
                 logger.info(f"No valid channel with id {channel}")
                 continue
@@ -113,7 +61,8 @@ async def timeout_delete(message: discord.Message, bot: CoolBot) -> None:
             for chunk in [msgs[i:i+100] for i in range(0, len(msgs), 100)]:
                 await channel_obj.delete_messages(chunk)
     
-    channel_cache.clear()
+    await message_events_utils.post_log(message, bot)
+    message_events_utils.clear_channel_cache()
                 
     
 class TTS(commands.Cog, name='TTS'):

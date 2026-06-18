@@ -300,10 +300,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
                    ):
         await ctx.delete()
         
-        if member is None:
-            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
-            return
-        
         data = {
             'user_id':   member.id,
             'reason':    reason,
@@ -321,10 +317,6 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs=dict(hidden=True)):
     @commands.check(is_admin)
     async def view_warns(self, ctx: CContext, member: discord.Member):
         await ctx.delete()
-        
-        if member is None:
-            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
-            return
         
         warns = await db_stuff.get_many_from_db("warns", {"user_id": member.id})
         if not warns:
