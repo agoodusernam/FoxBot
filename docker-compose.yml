@@ -6,10 +6,6 @@ services:
     restart: "no"
     env_file: .env
     volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-      - ./icons:/app/icons
-      - ./nasa:/app/nasa
-      - ./config.json:/app/config.json
-      - ./blacklist_users.json:/app/blacklist_users.json
+      - .:/app                     # source live-mounted; code updates need no rebuild
+      - /app/.venv                 # anonymous volume keeps the image-built venv
       - ./mongo_cert.pem:/app/mongo_cert.pem:ro

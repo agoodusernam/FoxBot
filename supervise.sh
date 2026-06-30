@@ -7,8 +7,11 @@ readonly EXIT_SHUTDOWN=0
 readonly EXIT_RESTART=42
 readonly EXIT_UPDATE=43
 
+# Build the image once up front (first run, or to pick up Dockerfile changes).
+docker compose build
+
 while true; do
-    docker compose up -d --build
+    docker compose up -d
 
     code=$(docker wait "${SERVICE}")
     docker compose rm -f "${SERVICE}" >/dev/null
@@ -22,9 +25,17 @@ while true; do
             echo "Restart requested (exit ${code}); recreating."
             ;;
         "${EXIT_UPDATE}")
-            echo "Update requested (exit ${code}); pulling and rebuilding."
+            echo "Update requested (exit ${code}); pulling."
+            before=$(git rev-parse HEAD)
             git pull
-            docker compose build
+            # Code is bind-mounted, so it is live without a rebuild.
+            # Only rebuild when dependencies or the Dockerfile changed.
+            if ! git diff --quiet "${before}" HEAD -- pyproject.toml uv.lock Dockerfile; then
+                echo "Dependencies/Dockerfile changed; rebuilding image."
+                docker compose build
+            else
+                echo "Code-only update; skipping rebuild."
+            fi
             ;;
         *)
             echo "Unexpected exit ${code}; recreating."
