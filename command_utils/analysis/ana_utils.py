@@ -40,6 +40,8 @@ async def try_resolve_uid(uid: int, bot: CoolBot) -> str:
     if guild is not None:
         guild_member = guild.get_member(uid)
         if guild_member is not None:
+            if guild_member.name.startswith('deleted_user_'):
+                return await _resolve_deleted_uid(uid)
             return guild_member.display_name
     
     try:
