@@ -11,10 +11,10 @@ from command_utils.analysis.text_analysis import DBMessage
 from command_utils.CContext import CoolBot
 from utils import db_stuff, utils
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
-regex = r'\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])'
-url_pattern = re.compile(regex, re.IGNORECASE)
+url_regex = r"\b((?:https?|ftp|file):\/\/[-a-zA-Z0-9+&@#\/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#\/%=~_|])"
+url_pattern = re.compile(url_regex, re.IGNORECASE)
 
 
 def url_in_string(string: str) -> bool:
@@ -31,31 +31,38 @@ def url_in_string(string: str) -> bool:
 
 async def landmine_explode(message: discord.Message, bot: CoolBot, forced: bool = False) -> None:
     assert not isinstance(message.author, discord.User)
-    msgs: list[str] = ["Landmine exploded!", "You stepped in a claymore!", "A grenade exploded next to you!",
-                       "A rogue cluster bomblet went off!", "You tripped down some stairs. (How did you manage that one?)",
-                       "You went too close to a proximity mine.", "A tree fell on you. (What an idiot)",
-                       "You were hit by a car.", "You got struck by lightning.", "You fell off a cliff.",
-                       "You tripped on a rock and drowned in a puddle.",
-                       "A subspace tripmine appeared under you and detonated.",
-                       "You fell beyond the event horizon of a black hole and disappeared forever.",
-                       "nuke"]
+    msgs: list[str] = [
+        "Landmine exploded!",
+        "You stepped in a claymore!",
+        "A grenade exploded next to you!",
+        "A rogue cluster bomblet went off!",
+        "You tripped down some stairs. (How did you manage that one?)",
+        "You went too close to a proximity mine.",
+        "A tree fell on you. (What an idiot)",
+        "You were hit by a car.",
+        "You got struck by lightning.",
+        "You fell off a cliff.",
+        "You tripped on a rock and drowned in a puddle.",
+        "A subspace tripmine appeared under you and detonated.",
+        "You fell beyond the event horizon of a black hole and disappeared forever.",
+        "nuke",
+    ]
     msg: str = random.choice(msgs)
     if msg == "nuke":
-        await message.author.timeout(datetime.timedelta(seconds=60), reason='Nuke exploded')
-        await message.reply('A nuclear bomb went off below your feet! You cannot talk for 60 seconds.')
+        await message.author.timeout(datetime.timedelta(seconds=60), reason="Nuke exploded")
+        await message.reply("A nuclear bomb went off below your feet! You cannot talk for 60 seconds.")
     else:
-        await message.author.timeout(datetime.timedelta(seconds=10), reason='Landmine exploded')
-        await message.reply(f'{msg} You cannot talk for 10 seconds.')
+        await message.author.timeout(datetime.timedelta(seconds=10), reason="Landmine exploded")
+        await message.reply(f"{msg} You cannot talk for 10 seconds.")
     
     if not forced:
-        await message.channel.send(
-                f'There are now {bot.landmine_channels[message.channel.id] - 1} traps left in this channel.')
+        await message.channel.send(f"There are now {bot.landmine_channels[message.channel.id] - 1} traps left in this channel.")
         bot.landmine_channels[message.channel.id] -= 1
         if bot.landmine_channels[message.channel.id] == 0:
             del bot.landmine_channels[message.channel.id]
     else:
         left = bot.landmine_channels.get(message.channel.id, 0)
-        await message.channel.send(f'There are now {left} traps left in this channel.')
+        await message.channel.send("f'There are now {left} traps left in this channel.'")
         bot.forced_landmines.remove(message.author.id)
 
 
@@ -69,8 +76,11 @@ async def check_landmine(message: discord.Message, bot: CoolBot) -> None:
     if message.channel.id not in bot.landmine_channels:
         return
     
-    if (message.author.id in bot.config.admin_ids or message.author.id in bot.config.dev_ids or
-            message.author.guild_permissions.administrator):
+    if (
+        message.author.id in bot.config.admin_ids
+        or message.author.id in bot.config.dev_ids
+        or message.author.guild_permissions.administrator
+    ):
         return
     
     if random.random() < 0.05:
@@ -83,30 +93,28 @@ async def log_msg(message: discord.Message) -> bool:
     reply: str | None = None if message.reference is None else str(message.reference.message_id)
     
     json_data: DBMessage = {
-        'author':             message.author.name,
-        'author_id':          str(message.author.id),
-        'author_global_name': message.author.global_name if message.author.global_name is not None else message.author.name,
-        'content':            message.content,
-        'reply_to':           reply,
-        'HasAttachments':     has_attachment,
-        'timestamp':          message.created_at.timestamp(),
-        'id':                 str(message.id),
-        'channel':            message.channel.name if hasattr(message.channel, 'name')
-                                                      and isinstance(message.channel.name, str)
-                                                      else 'Unknown',
-        'channel_id':         str(message.channel.id),
-        'edits':              [],
+        "author": message.author.name,
+        "author_id": str(message.author.id),
+        "author_global_name": message.author.global_name if message.author.global_name is not None else message.author.name,
+        "content": message.content,
+        "reply_to": reply,
+        "HasAttachments": has_attachment,
+        "timestamp": message.created_at.timestamp(),
+        "id": str(message.id),
+        "channel": message.channel.name if hasattr(message.channel, "name") and isinstance(message.channel.name, str) else "Unknown",
+        "channel_id": str(message.channel.id),
+        "edits": [],
     }
     
-    if os.getenv('LOCAL_SAVE') == 'True':
+    if os.getenv("LOCAL_SAVE") == "True":
         with utils.make_file() as file:
-            file.write(json.dumps(json_data, ensure_ascii=False) + '\n')
+            file.write(json.dumps(json_data, ensure_ascii=False) + "\n")
     
-    logger.info(f'Message from {message.author.display_name} [#{message.channel}]: {message.content}')
+    logger.info(f"Message from {message.author.display_name} [#{message.channel}]: {message.content}")
     if has_attachment:
-        if os.environ.get('LOCAL_IMG_SAVE') == 'True':
+        if os.environ.get("LOCAL_IMG_SAVE") == "True":
             saved = await utils.save_attachments(message)
-            logger.debug(f'Saved {saved} attachments for message {message.id}')
+            logger.debug(f"Saved {saved} attachments for message {message.id}")
         else:
             for attachment in message.attachments:
                 await db_stuff.send_attachment(message, attachment)
@@ -133,7 +141,7 @@ async def try_uid_to_discord_obj(uid: int, bot: CoolBot) -> discord.User | disco
         if isinstance(fetched, discord.User):
             return fetched
     
-    except (discord.NotFound, discord.HTTPException):
+    except discord.NotFound, discord.HTTPException:
         pass
     
     return None
@@ -164,14 +172,19 @@ async def get_channel_by_id(channel_id: int, bot: CoolBot) -> discord.abc.GuildC
     _channel_cache[channel_id] = channel
     return channel
 
+
 async def post_log(message: discord.Message, bot: CoolBot) -> None:
     channel = await get_channel_by_id(1345300442376310885, bot)
-    msg: str = (f"Point and laugh! {message.author.mention} sent " +
-                f"a message in <#{bot.config.ban_channel_id}> and has been timed out for a week! What an idiot.")
+    logger.debug(f"Posting log for message {message.id} in channel {channel.name if channel is not None else 'Unknown'}")
+    msg: str = (
+        f"Point and laugh! {message.author.mention} sent "
+        + f"a message in <#{bot.config.ban_channel_id}> and has been timed out for a week! What an idiot."
+    )
     if channel is None:
         logger.error("Public logs channel not found.")
         return
     await channel.send(msg)
+
 
 def clear_channel_cache() -> None:
     global _channel_cache

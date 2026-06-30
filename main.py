@@ -1,4 +1,3 @@
-# pylint: disable=trailing-whitespace, line-too-long
 import atexit
 import logging
 import os
@@ -26,8 +25,7 @@ def on_exit() -> None:
     utils.make_sync(db_stuff.disconnect())
     utils.make_sync(bot.uptime_session.close() if bot.uptime_session else None)
 
-
-bot = CoolBot(intents=discord.Intents.all(), case_insensitive=True)
+bot: CoolBot = CoolBot(intents=discord.Intents.all(), case_insensitive=True)
 logger = logging.getLogger('discord')
 
 

@@ -7,14 +7,12 @@ from typing import Any
 import discord
 from discord.ext import commands
 
-import cogs.counting_utils as counting_utils
-import cogs.message_events_utils as message_events_utils
+from cogs import counting_utils, message_events_utils
 from cogs.message_events_utils import try_uid_to_discord_obj
 from command_utils.analysis.text_analysis import DBMessage, remove_invalid_messages
 from command_utils.CContext import CContext, CoolBot
 from command_utils.embed_util import create_log_embed
 from utils import db_stuff, utils
-from utils.db_stuff import get_many_from_db
 
 logger = logging.getLogger('discord')
 
@@ -33,7 +31,7 @@ async def timeout_delete(message: discord.Message, bot: CoolBot) -> None:
         logger.error(f"Failed to delete message: {message.id}, {e}")
     
     filter_time: float = discord.utils.utcnow().timestamp() - 5*60
-    author_messages: list[dict[str, Any]] | None = await get_many_from_db(
+    author_messages: list[dict[str, Any]] | None = await db_stuff.get_many_from_db(
       "messages",
       {"author_id": str(message.author.id), "timestamp": {"$gte": filter_time}},
       sort_by="timestamp", direction="desc", limit=200
@@ -63,9 +61,9 @@ async def timeout_delete(message: discord.Message, bot: CoolBot) -> None:
     
     await message_events_utils.post_log(message, bot)
     message_events_utils.clear_channel_cache()
-                
     
-class TTS(commands.Cog, name='TTS'):
+
+class TTS(commands.Cog, name="TTS"):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
     
@@ -108,7 +106,7 @@ class TTS(commands.Cog, name='TTS'):
         await ctx.invoke(command, message=message.content.replace("!f", "").strip())  # type: ignore
 
 
-class MessageLogging(commands.Cog, name='Message Logging'):
+class MessageLogging(commands.Cog, name="Message Logging"):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
         self.logs_channel: discord.TextChannel | None = None

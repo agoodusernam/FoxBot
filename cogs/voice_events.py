@@ -9,7 +9,7 @@ from command_utils.CContext import CoolBot
 logger = logging.getLogger('discord')
 
 
-class VoiceLogging(commands.Cog, name='Voice Logging'):
+class VoiceLogging(commands.Cog, name="Voice Logging"):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
     
