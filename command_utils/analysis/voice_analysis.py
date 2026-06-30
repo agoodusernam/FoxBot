@@ -79,14 +79,10 @@ class VoiceAnalysisResult(TypedDict):
     median_session_duration: NotRequired[int]
     weekly_active: NotRequired[WeeklyActiveStats]
 
-
 T = TypeVar('T', UserVoiceStats, ChannelVoiceStats)
 
-
 def add_time_stats[T: (UserVoiceStats, ChannelVoiceStats)](stats: T, seconds: int) -> T:
-    assert isinstance(stats, dict)
-    total = stats.get('total_seconds', 0)
-    stats['total_seconds'] = total + seconds
+    stats['total_seconds'] = stats.get('total_seconds', 0) + seconds
     return stats
 
 
@@ -198,7 +194,10 @@ async def remove_invalid_voice_sessions(
     return valid_sessions, merged_total
 
 
-async def get_valid_voice_sessions(skip_cache: bool = False, merge_sessions: bool = True) -> tuple[list[DBVoiceSession], int] | None:
+async def get_valid_voice_sessions(
+        skip_cache: bool = False,
+        merge_sessions: bool = True
+    ) -> tuple[list[DBVoiceSession], int] | None:
     sessions = await db_stuff.cached_download_voice_sessions(skip_cache)
     
     if not sessions:

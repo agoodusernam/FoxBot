@@ -389,7 +389,7 @@ async def del_many_db_entries(collection_name: str, query: Mapping[str, Any]) ->
 
 async def insert_many_db_entries(collection_name: str, query: list[Mapping[str, Any]]) -> int | None:
     """
-    Generic function to delete multiple entries from a specified MongoDB await collection.
+    Generic function to insert multiple entries into a specified MongoDB await collection.
     """
     client = await _connect()
     if not client:

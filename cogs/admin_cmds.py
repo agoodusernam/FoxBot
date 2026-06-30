@@ -1,5 +1,6 @@
 import datetime
 import logging
+import secrets
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -10,7 +11,7 @@ from discord.ext import commands
 from discord.ext.commands import guild_only
 
 import utils.utils
-from cogs.admin_cmds_utils import last_log, sort_by_timestamp
+from cogs.admin_cmds_utils import last_log, sort_by_timestamp, get_member_by_id, rek_random_in_channel
 from command_utils.analysis import text_analysis, voice_analysis
 from command_utils.analysis.text_analysis import DatetimeDBMessage, DBMessage, remove_invalid_messages
 from command_utils.CContext import CContext, CoolBot
@@ -45,6 +46,25 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs={'hidden': True}):
             except discord.HTTPException:
                 pass
         return
+    
+    @commands.command(name='vcrek',
+                      brief='rek a random user in a vc',
+                      help='Admin only: Timeout a random user in a voice channel for 28 days',
+                      usage='f!vcrek [channel_id]')
+    @commands.check(is_admin)
+    @guild_only()
+    async def vcrek(self, ctx: CContext, channel: discord.VoiceChannel | None = None) -> None:
+        assert ctx.guild is not None
+        assert isinstance(ctx.author, discord.Member)
+        if channel is not None:
+            await rek_random_in_channel(ctx, channel)
+            return
+        
+        if ctx.author.voice is None or ctx.author.voice.channel is None:
+            await ctx.send("You must either specify a voice channel, or be in a voice channel to use this command.")
+            return
+        await rek_random_in_channel(ctx, ctx.author.voice.channel)
+        
     
     @commands.command(name='hardlockdown',
                       brief='Lock down the entire server',

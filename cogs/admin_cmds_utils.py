@@ -1,11 +1,48 @@
 import datetime
 import re
+import secrets
 
 import discord
 from discord.ext import commands
 
 from command_utils.analysis.text_analysis import DatetimeDBMessage, DBMessage
+from command_utils.CContext import CContext
 
+
+async def get_member_by_id(ctx: CContext, member_id: int) -> discord.Member | None:
+    if ctx.guild is None:
+        return None
+    member = ctx.guild.get_member(member_id)
+    if member is not None:
+        return member
+    try:
+        return await ctx.guild.fetch_member(member_id)
+    except discord.HTTPException:
+        return None
+    
+async def rek_random_in_channel(ctx: CContext, channel: discord.VoiceChannel | discord.StageChannel):
+    users: list[int] = list(channel.voice_states)
+    valid_users: list[int] = []
+    for user in users:
+        if user not in ctx.bot.admin_ids:
+            valid_users.append(user)
+
+    if not valid_users:
+        await ctx.send("No users in the specified channel.")
+        return
+
+    to_rek: int = secrets.choice(valid_users)
+    member: discord.Member | None = await get_member_by_id(ctx, to_rek)
+    if member is None:
+        await ctx.send("User not found.")
+        return
+    
+    try:
+        await member.timeout(datetime.timedelta(days=28), reason="get rekt nerd")
+        await ctx.send(f"{member.display_name} has been rekt.")
+    except discord.HTTPException:
+        await ctx.send("Failed to rekt user.")
+    return
 
 def dt_from_timestamp(timestamp: float) -> datetime.datetime:
     return datetime.datetime.fromtimestamp(timestamp, tz=datetime.UTC)
