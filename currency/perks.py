@@ -51,8 +51,8 @@ async def create_private_vc(ctx: Context, member: discord.Member) -> bool:
 
 async def give_rich_role(ctx: Context, member: discord.Member) -> bool:
     """
-    Gives the 'Rich' role to the member.
-    :param member: The member to whom to give the 'Rich' role.
+    Gives the "Rich" role to the member.
+    :param member: The member to whom to give the "Rich" role.
     :param ctx: The context in which the command is invoked.
     """
     rich_role = discord.utils.get(member.guild.roles, id=1394949504888999957)

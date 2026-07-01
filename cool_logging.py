@@ -45,5 +45,5 @@ def ensure_logs_path(path: Path) -> None:
     if path.is_file():
         path.unlink()
     
-    if not path.exists():
+    if not path.parent.exists():
         path.mkdir(parents=True)

@@ -8,7 +8,7 @@ import discord
 from command_utils.CContext import CoolBot
 from utils import db_stuff
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 
 class VoiceSession(TypedDict):
@@ -26,50 +26,49 @@ async def handle_join(member: discord.Member, after: discord.VoiceState | discor
     with voice_sessions_lock:
         if isinstance(after, discord.VoiceState):
             if after.channel is None:
-                logger.error(f'{member.name} joined a voice state with no channel')
+                logger.error(f"{member.name} joined a voice state with no channel")
                 return
-            logger.info(f'{member.name} joined {after.channel.name}')
-
+            logger.info(f"{member.name} joined {after.channel.name}")
+            
             active_voice_sessions[member.id] = {
-                'channel_id':   str(after.channel.id),
-                'channel_name': after.channel.name,
-                'joined_at':    discord.utils.utcnow(),
+                "channel_id":   str(after.channel.id),
+                "channel_name": after.channel.name,
+                "joined_at":    discord.utils.utcnow(),
             }
         else:
-            logger.info(f'{member.name} joined {after.name}')
-
-            # Record join time
+            logger.info(f"{member.name} joined {after.name}")
+            
             active_voice_sessions[member.id] = {
-                'channel_id':   str(after.id),
-                'channel_name': after.name,
-                'joined_at':    discord.utils.utcnow(),
+                "channel_id":   str(after.id),
+                "channel_name": after.name,
+                "joined_at":    discord.utils.utcnow(),
             }
 
 
 async def handle_leave(member: discord.Member) -> None:
     """Track when a user leaves a voice channel and upload session data"""
-    logger.info(f'{member.name} left {active_voice_sessions[member.id]["channel_name"]}')
+    logger.info(f"{member.name} left {active_voice_sessions[member.id]["channel_name"]}")
     with voice_sessions_lock:
         # Get join data
         if member.id not in active_voice_sessions:
             logger.error(f"No join record found for {member.name}")
             return
-
+        
         join_data = active_voice_sessions[member.id]
         leave_time = discord.utils.utcnow()
-        join_time = join_data['joined_at']
-
+        join_time = join_data["joined_at"]
+        
         # Calculate duration
         duration_seconds = int((leave_time - join_time).total_seconds())
-
+        
         # Create voice session document
         voice_session = {
-            'user_id':          str(member.id),
-            'channel_id':       join_data['channel_id'],
-            'duration_seconds': duration_seconds,
-            'timestamp':        int(leave_time.timestamp()),
+            "user_id":          str(member.id),
+            "channel_id":       join_data["channel_id"],
+            "duration_seconds": duration_seconds,
+            "timestamp":        int(leave_time.timestamp()),
         }
-
+        
         await db_stuff.send_voice_session(voice_session)
 
         # Clear session data
@@ -79,14 +78,14 @@ async def handle_leave(member: discord.Member) -> None:
 async def handle_move(member: discord.Member, before: discord.VoiceState, after: discord.VoiceState) -> None:
     """Handle a user moving from one channel to another"""
     if before.channel is None or after.channel is None:
-        logger.error(f'{member.name} moved but one of the channels is None')
+        logger.error(f"{member.name} moved but one of the channels is None")
         return
-    logger.info(f'{member.name} moved from {before.channel.name} to {after.channel.name}')
+    logger.info(f"{member.name} moved from {before.channel.name} to {after.channel.name}")
 
     with voice_sessions_lock:
         # First record the "leave" from the previous channel
         await handle_leave(member)
-
+        
         # Then record the "join" to the new channel
         await handle_join(member, after)
 
@@ -114,7 +113,7 @@ async def reconnect_all(bot: CoolBot) -> None:
                 continue
             
             await handle_join(member, channel)
-            logger.info(f'Reconnected voice state for {member.name} in {channel.name}')
+            logger.info(f"Reconnected voice state for {member.name} in {channel.name}")
 
 
 def get_voice_sessions() -> dict[int, VoiceSession]:

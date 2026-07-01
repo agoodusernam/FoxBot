@@ -9,7 +9,7 @@ import discord
 
 from command_utils.analysis.text_analysis import DBMessage
 from command_utils.CContext import CoolBot
-from utils import db_stuff, utils
+from utils import db_stuff, discord_utils, utils
 
 logger = logging.getLogger("discord")
 
@@ -62,7 +62,7 @@ async def landmine_explode(message: discord.Message, bot: CoolBot, forced: bool 
             del bot.landmine_channels[message.channel.id]
     else:
         left = bot.landmine_channels.get(message.channel.id, 0)
-        await message.channel.send("f'There are now {left} traps left in this channel.'")
+        await message.channel.send(f"There are now {left} traps left in this channel.")
         bot.forced_landmines.remove(message.author.id)
 
 
@@ -121,60 +121,8 @@ async def log_msg(message: discord.Message) -> bool:
     
     return await db_stuff.send_message(json_data)
 
-
-async def try_uid_to_discord_obj(uid: int, bot: CoolBot) -> discord.User | discord.Member | None:
-    """
-    Attempt to resolve a user ID to a display name.
-    If the user's display name can't be found, return their ID as a string.
-    """
-    guild: discord.Guild | None = bot.get_guild(bot.config.guild_id)
-    
-    guild_member: discord.Member | None
-    
-    guild_member = guild.get_member(uid) if guild is not None else None
-    
-    if isinstance(guild_member, discord.Member):
-        return guild_member
-    
-    try:
-        fetched = await bot.fetch_user(uid)
-        if isinstance(fetched, discord.User):
-            return fetched
-    
-    except discord.NotFound, discord.HTTPException:
-        pass
-    
-    return None
-
-
-_channel_cache: dict[int, discord.abc.GuildChannel | discord.Thread | None] = {}
-
-
-async def get_channel_by_id(channel_id: int, bot: CoolBot) -> discord.abc.GuildChannel | discord.Thread | None:
-    global _channel_cache
-    if channel_id in _channel_cache:
-        return _channel_cache[channel_id]
-    
-    channel: discord.abc.GuildChannel | discord.Thread | discord.abc.PrivateChannel | None
-    channel = bot.get_channel(channel_id)
-    if isinstance(channel, discord.abc.PrivateChannel):
-        _channel_cache[channel_id] = None
-        return None
-    
-    if channel is not None:
-        _channel_cache[channel_id] = channel
-        return channel
-    
-    channel = await bot.fetch_channel(channel_id)
-    if isinstance(channel, discord.abc.PrivateChannel) or channel is None:
-        _channel_cache[channel_id] = None
-        return None
-    _channel_cache[channel_id] = channel
-    return channel
-
-
 async def post_log(message: discord.Message, bot: CoolBot) -> None:
-    channel = await get_channel_by_id(1345300442376310885, bot)
+    channel = await discord_utils.get_channel_by_id(1345300442376310885, bot)
     logger.debug(f"Posting log for message {message.id} in channel {channel.name if channel is not None else 'Unknown'}")
     msg: str = (
         f"Point and laugh! {message.author.mention} sent "
@@ -184,8 +132,3 @@ async def post_log(message: discord.Message, bot: CoolBot) -> None:
         logger.error("Public logs channel not found.")
         return
     await channel.send(msg)
-
-
-def clear_channel_cache() -> None:
-    global _channel_cache
-    _channel_cache.clear()

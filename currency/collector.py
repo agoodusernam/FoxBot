@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, TypeVar
 if TYPE_CHECKING:
     from currency.currency_types import BlackMarketCategory, BlackMarketItem, Job, JobTree, ShopCategory, ShopItem
     
-    T = TypeVar('T', bound=Job | JobTree | ShopItem | ShopCategory)
+    T = TypeVar("T", bound=Job | JobTree | ShopItem | ShopCategory)
 else:
-    T = TypeVar('T')
+    T = TypeVar("T")
 
 all_jobs: list[Job] = []
 all_job_trees: list[JobTree] = []

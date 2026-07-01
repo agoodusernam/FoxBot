@@ -9,7 +9,7 @@ from cogs import voice_events_utils
 from command_utils.CContext import CContext, CoolBot
 from utils import db_stuff
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 # Exit codes read by the host supervisor (supervise.sh) to decide what to do
 # after the container exits.
@@ -21,11 +21,11 @@ EXIT_UPDATE = 43    # git pull + rebuild on the host, then recreate
 async def aexec(func_name: str, context: CContext) -> Any:
     locs: dict[str, Any] = {}
     # noinspection PyUnusedLocal
-    # The "ctx" var exists, so 'ctx'. functions can be run from here.
-    logger.debug(f'Running function: {func_name}')
+    # The "ctx" var exists, so "ctx". functions can be run from here.
+    logger.debug(f"Running function: {func_name}")
     
-    exec(f'async def __ex(): await discord.utils.maybe_coroutine({func_name})', globals(), locs)
-    return await locs['__ex']()
+    exec(f"async def __ex(): await discord.utils.maybe_coroutine({func_name})", globals(), locs)
+    return await locs["__ex"]()
 
 
 def run_func(loop: asyncio.AbstractEventLoop, func_name: str, ctx: CContext) -> Any:
@@ -34,31 +34,31 @@ def run_func(loop: asyncio.AbstractEventLoop, func_name: str, ctx: CContext) -> 
 
 
 def add_to_env(key: str, value: str) -> None:
-    with open('.env', 'a') as f:
-        f.write(f'{key}={value}\n')
+    with open(".env", "a") as f:
+        f.write(f"{key}={value}\n")
 
 
 async def shutdown(bot: CoolBot, update=False, restart=False, time: int = 0) -> None:
     action: str
     if not update and not restart:
-        action = 'shutting down'
+        action = "shutting down"
     elif restart and not update:
-        action = 'restarting'
+        action = "restarting"
     else:
-        action = 'updating'
+        action = "updating"
     
     if time != 0:
-        logger.info(f'Waiting {time} seconds before {action}')
+        logger.info(f"Waiting {time} seconds before {action}")
         await asyncio.sleep(time)
     
-    logger.info('Shutting down')
+    logger.info("Shutting down")
     await voice_events_utils.leave_all(bot)
     db_stuff.disable_connection()
     await db_stuff.disconnect()
     success = bot.config.save()
     
     if success is not None:
-        logger.error(f'Bot encountered an error saving config while shutting down!\n{success}')
+        logger.error(f"Bot encountered an error saving config while shutting down!\n{success}")
 
     if update:
         bot.exit_code = EXIT_UPDATE
@@ -67,16 +67,16 @@ async def shutdown(bot: CoolBot, update=False, restart=False, time: int = 0) -> 
     else:
         bot.exit_code = EXIT_SHUTDOWN
 
-    logger.info(f'{action} with exit code {bot.exit_code}')
+    logger.info(f"{action} with exit code {bot.exit_code}")
     await bot.close()
 
 
 async def upload_all_history(channel: discord.TextChannel) -> None:
-    logger.info(f'Deleting old messages from channel: {channel.name}, ID: {channel.id}')
+    logger.info(f"Deleting old messages from channel: {channel.name}, ID: {channel.id}")
     await db_stuff.del_channel_from_db(channel)
-    logger.info(f'Starting to download all messages from channel: {channel.name}, ID: {channel.id}')
+    logger.info(f"Starting to download all messages from channel: {channel.name}, ID: {channel.id}")
     messages = [message async for message in channel.history(limit=None)]
-    logger.info(f'Downloaded {len(messages)} messages from channel: {channel.name}, ID: {channel.id}')
+    logger.info(f"Downloaded {len(messages)} messages from channel: {channel.name}, ID: {channel.id}")
     bulk_data: list[dict[str, Any]] = []
     for message in messages:
         if not isinstance(message.channel, discord.TextChannel):
@@ -90,16 +90,16 @@ async def upload_all_history(channel: discord.TextChannel) -> None:
         reply = None if message.reference is None else str(message.reference.message_id)
         
         json_data = {
-            'author':             message.author.name,
-            'author_id':          str(message.author.id),
-            'author_global_name': message.author.global_name,
-            'content':            message.content,
-            'reply_to':           reply,
-            'HasAttachments':     has_attachment,
-            'timestamp':          message.created_at.timestamp(),
-            'id':                 str(message.id),
-            'channel':            message.channel.name,
-            'channel_id':         str(message.channel.id),
+            "author":             message.author.name,
+            "author_id":          str(message.author.id),
+            "author_global_name": message.author.global_name,
+            "content":            message.content,
+            "reply_to":           reply,
+            "HasAttachments":     has_attachment,
+            "timestamp":          message.created_at.timestamp(),
+            "id":                 str(message.id),
+            "channel":            message.channel.name,
+            "channel_id":         str(message.channel.id),
         }
         bulk_data.append(json_data)
     
@@ -110,25 +110,21 @@ async def upload_all_history(channel: discord.TextChannel) -> None:
 
 async def upload_whole_server(guild: discord.Guild, author: discord.User | discord.Member, nolog_channels: list[int]) -> None:
     dm = await author.create_dm()
-    await dm.send(f'Starting to download all messages from server: {guild.name}')
-    await dm.send('--------------------------')
+    await dm.send(f"Starting to download all messages from server: {guild.name}")
+    await dm.send("--------------------------")
     for channel in guild.text_channels:
         if channel.id in nolog_channels:
-            await dm.send(f'Skipping channel {channel.name} as it is in the nolog list')
-            await dm.send('--------------------------')
+            await dm.send(f"Skipping channel {channel.name} as it is in the nolog list")
+            await dm.send("--------------------------")
             continue
         if channel.permissions_for(guild.me).read_message_history:
-            await dm.send(f'Uploading messages from channel: {channel.name}')
+            await dm.send(f"Uploading messages from channel: {channel.name}")
             await upload_all_history(channel)
-            await dm.send(f'Finished uploading all messages from channel: {channel.name}')
-            await dm.send('--------------------------')
+            await dm.send(f"Finished uploading all messages from channel: {channel.name}")
+            await dm.send("--------------------------")
         else:
-            await dm.send(f'Skipping channel {channel.name} due to insufficient permissions')
-            await dm.send('--------------------------')
+            await dm.send(f"Skipping channel {channel.name} due to insufficient permissions")
+            await dm.send("--------------------------")
     
-    logger.info('Finished uploading all messages from server:', guild.name)
-    await dm.send(f'Finished uploading all messages from server: {guild.name}')
-
-
-if __name__ == '__main__':
-    add_to_env('test', 'ffffff')
+    logger.info("Finished uploading all messages from server:", guild.name)
+    await dm.send(f"Finished uploading all messages from server: {guild.name}")

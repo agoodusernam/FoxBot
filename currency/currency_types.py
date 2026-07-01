@@ -16,7 +16,7 @@ from currency import collector
 from currency.curr_config import BASE_CREDIT_SCORE, BASE_FIRE_CHANCE, INCOME_TAX
 from utils import db_stuff, utils
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 
 def _is_invalid_db_item(item: list[str | int]) -> bool:
@@ -55,7 +55,7 @@ class SchoolQualif(enum.Enum):
     DOCTORATE = PHD
     POLYMATH = (5, 50_000, 10)  # Special fictional qualification, not required for any job but gives a salary boost
     
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> tuple[int, int, int]:
         return self.value[item]
     
     def __gt__(self, other: object) -> bool:
@@ -105,7 +105,7 @@ class SchoolQualif(enum.Enum):
         Converts a SchoolQualif enum member to its string representation.
         :return: The string representation of the qualification.
         """
-        return self.name.replace('_', ' ').title()
+        return self.name.replace("_", " ").title()
     
     def __hash__(self) -> int:
         return super().__hash__()
@@ -173,7 +173,7 @@ class SecurityClearance(enum.Enum):
             raise ValueError(f"Invalid security clearance: {s}") from None
     
     def __str__(self) -> str:
-        return self.name.replace('_', ' ').title()
+        return self.name.replace("_", " ").title()
     
     to_string = __str__
     
@@ -199,7 +199,7 @@ class JobTree:
     name: str
     jobs: list[Job | list[Job]]
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """
         Post-initialisation to set the tree for each job.
         """
@@ -227,7 +227,7 @@ class JobTree:
     
     @classmethod
     def NONE(cls) -> Self:
-        return cls(name='None', jobs=[])
+        return cls(name="None", jobs=[])
 
 
 @dataclass
@@ -255,7 +255,7 @@ class Job:
     def get_next_job(self) -> Job | list[Job] | None:
         """
         Finds the next job or list of jobs in the job tree.
-        :return: The next job(s) in the sequence, or None if it's the last one.
+        :return: The next job(s) in the sequence, or None if it"s the last one.
         """
         if len(self.tree.jobs) == self.tree_index + 1:
             return None
@@ -289,8 +289,8 @@ class ShopItem:
     def __post_init__(self) -> None:
         self.category: ShopCategory = ShopCategory.NONE()
         self.invalid: bool = False
-        if not hasattr(self, 'resale_mult'):
-            self.resale_mult: Decimal = Decimal('0.9')
+        if not hasattr(self, "resale_mult"):
+            self.resale_mult: Decimal = Decimal("0.9")
 
 
 @dataclass
@@ -340,7 +340,7 @@ class BlackMarketItem(ShopItem):
         trace_back (bool | float): Whether the item can be traced back to the buyer or seller. This can also be a
         float representing the chance of being traced back.
     """
-    resale_mult: Decimal = Decimal('0.5')
+    resale_mult: Decimal = Decimal("0.5")
     cops_risk: float = 0.1
     scam_risk: float = 0.1
     trace_back: bool | float = True
@@ -423,7 +423,7 @@ class ShopCategory:
     
     @classmethod
     def NONE(cls) -> Self:
-        return cls(name='None', description='None', items=[])
+        return cls(name="None", description="None", items=[])
 
 
 @dataclass
@@ -457,7 +457,7 @@ class DBProfile(TypedDict):
     illegal_items: dict[str, list[str | int]]
     lottery_tickets: int
     # Is it redundant to store the name twice here?
-    # Yes. However, it's only like 20 bytes, so I don't really care
+    # Yes. However, it"s only like 20 bytes, so I don"t really care
 
 
 def validate_DBProfile(profile: Mapping[str, Any]) -> DBProfile:
@@ -465,23 +465,23 @@ def validate_DBProfile(profile: Mapping[str, Any]) -> DBProfile:
     Turn a message from the database into a valid DBProfile.
     Will raise KeyError if the profile is invalid.
     """
-    new_profile = DBProfile(user_id=profile['user_id'],
-                            wallet=profile.get('wallet', '500'),
-                            bank=profile.get('bank', '500'),
-                            work_income=profile.get('work_income', '0'),
-                            work_str=profile.get('work_str', 'Unemployed'),
-                            other_income=profile.get('other_income', '0'),
-                            next_income_mult=profile.get('next_income_mult', 1.0),
-                            work_experience=profile.get('work_experience', 0),
-                            school_qualification=profile.get('school_qualification', 0),
-                            security_clearance=profile.get('security_clearance', 0),
-                            fire_chance=profile.get('fire_chance', BASE_FIRE_CHANCE),
-                            debt=profile.get('debt', '0'),
-                            credit_score=profile.get('credit_score', BASE_CREDIT_SCORE),
-                            age=profile.get('age', 18 * 12),
-                            lottery_tickets=profile.get('lottery_tickets', 0),
-                            inventory=profile.get('inventory', {}),
-                            illegal_items=profile.get('illegal_items', {}),
+    new_profile = DBProfile(user_id=profile["user_id"],
+                            wallet=profile.get("wallet", "500"),
+                            bank=profile.get("bank", "500"),
+                            work_income=profile.get("work_income", "0"),
+                            work_str=profile.get("work_str", "Unemployed"),
+                            other_income=profile.get("other_income", "0"),
+                            next_income_mult=profile.get("next_income_mult", 1.0),
+                            work_experience=profile.get("work_experience", 0),
+                            school_qualification=profile.get("school_qualification", 0),
+                            security_clearance=profile.get("security_clearance", 0),
+                            fire_chance=profile.get("fire_chance", BASE_FIRE_CHANCE),
+                            debt=profile.get("debt", "0"),
+                            credit_score=profile.get("credit_score", BASE_CREDIT_SCORE),
+                            age=profile.get("age", 18 * 12),
+                            lottery_tickets=profile.get("lottery_tickets", 0),
+                            inventory=profile.get("inventory", {}),
+                            illegal_items=profile.get("illegal_items", {}),
                             )
     return new_profile
 
@@ -506,7 +506,7 @@ def transform_val_for_db(val: Any) -> str | int | float:
         return val.level
     if isinstance(val, SecurityClearance):
         return val.level
-    raise TypeError(f'Invalid type for DB: {type(val)}')
+    raise TypeError(f"Invalid type for DB: {type(val)}")
 
 
 class _BatchContext:
@@ -516,16 +516,16 @@ class _BatchContext:
         self._profile = profile
     
     def __enter__(self) -> None:
-        object.__setattr__(self._profile, '_Profile__batching', True)
-        object.__setattr__(self._profile, '_Profile__pending_updates', {})
+        object.__setattr__(self._profile, "_Profile__batching", True)
+        object.__setattr__(self._profile, "_Profile__pending_updates", {})
     
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        object.__setattr__(self._profile, '_Profile__batching', False)
-        pending = object.__getattribute__(self._profile, '_Profile__pending_updates')
+        object.__setattr__(self._profile, "_Profile__batching", False)
+        pending = object.__getattribute__(self._profile, "_Profile__pending_updates")
         if pending:
             # noinspection PyProtectedMember
             utils.make_sync(self._profile._update_db_data(pending))
-        object.__setattr__(self._profile, '_Profile__pending_updates', {})
+        object.__setattr__(self._profile, "_Profile__pending_updates", {})
 
 
 @dataclass
@@ -554,33 +554,33 @@ class Profile:
     _fire_chance: float = BASE_FIRE_CHANCE
     
     def __post_init__(self) -> None:
-        object.__setattr__(self, '_Profile__initialised', True)
-        object.__setattr__(self, '_Profile__batching', False)
-        object.__setattr__(self, '_Profile__pending_updates', {})
+        object.__setattr__(self, "_Profile__initialised", True)
+        object.__setattr__(self, "_Profile__batching", False)
+        object.__setattr__(self, "_Profile__pending_updates", {})
     
     def __setattr__(self, item: str, value: Any) -> None:
         # Is this scuffed?
-        # Yes. Absolutely, however, it's the best option to send to DB every change,
+        # Yes. Absolutely, however, it"s the best option to send to DB every change,
         # at least that I could think of.
         try:
-            initialised = object.__getattribute__(self, '_Profile__initialised')
+            initialised = object.__getattribute__(self, "_Profile__initialised")
         except AttributeError:
-            super().__setattr__('_Profile__initialised', False)
+            super().__setattr__("_Profile__initialised", False)
             initialised = False
         
         super().__setattr__(item, value)
         
-        if not item.startswith('_') and initialised:
-            if item == 'inventory':
+        if not item.startswith("_") and initialised:
+            if item == "inventory":
                 new_val = self._inventory_to_basic()
-            elif item == 'bm_inventory':
+            elif item == "bm_inventory":
                 new_val = self._bm_inventory_to_basic()
             else:
                 new_val = transform_val_for_db(getattr(self, item))
             
-            batching = object.__getattribute__(self, '_Profile__batching')
+            batching = object.__getattribute__(self, "_Profile__batching")
             if batching:
-                pending = object.__getattribute__(self, '_Profile__pending_updates')
+                pending = object.__getattribute__(self, "_Profile__pending_updates")
                 pending[item] = new_val
             else:
                 utils.make_sync(self._update_db_data({item: new_val}))
@@ -597,12 +597,12 @@ class Profile:
         return _BatchContext(self)
     
     async def _update_db_data(self, data: Mapping[str, Any]) -> bool:
-        return await db_stuff.edit_db_entry('currency', {'user_id': self.user_id}, data)
+        return await db_stuff.edit_db_entry("currency", {"user_id": self.user_id}, data)
     
     async def _add_to_db(self) -> bool:
         if await self._self_in_db():
-            raise RuntimeError('Profile already in DB')
-        return await db_stuff.send_to_db('currency', data=self.to_DBProfile())
+            raise RuntimeError("Profile already in DB")
+        return await db_stuff.send_to_db("currency", data=self.to_DBProfile())
     
     @property
     def has_gun(self) -> bool:
@@ -615,7 +615,7 @@ class Profile:
     @credit_score.setter
     def credit_score(self, value: int) -> None:
         if not isinstance(value, int):
-            raise TypeError('Credit score must be an integer')
+            raise TypeError("Credit score must be an integer")
         self._credit_score = min(value, 800)
     
     @property
@@ -637,7 +637,7 @@ class Profile:
     @fire_chance.setter
     def fire_chance(self, value: float) -> None:
         if not isinstance(value, float):
-            raise TypeError('Fire risk must be a float')
+            raise TypeError("Fire risk must be a float")
         self._fire_chance = max(value, BASE_FIRE_CHANCE)
     
     def reset_job(self) -> None:
@@ -671,12 +671,12 @@ class Profile:
         Returns the amount removed, or None if the item was not found.
         """
         if amount == 0:
-            raise ValueError('Amount may not be 0')
+            raise ValueError("Amount may not be 0")
         elif amount == -1:
             # Allow removing all items with -1 as the amount.
             pass
         elif amount < 0:
-            raise ValueError('Amount may not be negative')
+            raise ValueError("Amount may not be negative")
         
         item_name = item.name if isinstance(item, ShopItem) else item
         
@@ -697,7 +697,7 @@ class Profile:
         Returns the amount removed, or None if the item was not found.
         """
         if amount == 0:
-            raise ValueError('Amount may not be 0')
+            raise ValueError("Amount may not be 0")
         
         item_name = item.name if isinstance(item, BlackMarketItem) else item
         
@@ -714,7 +714,7 @@ class Profile:
     
     def add_normal_item(self, item: ShopItem | str, amount: int = 1) -> bool:
         if amount <= 0:
-            raise ValueError('Amount must be positive')
+            raise ValueError("Amount must be positive")
         
         item_obj: ShopItem | None = None
         if isinstance(item, ShopItem):
@@ -733,7 +733,7 @@ class Profile:
         
         item_obj = collector.normal_item_from_str(item_name)
         if item_obj is None:
-            logger.error(f'No item with that name was found: {item_name}')
+            logger.error(f"No item with that name was found: {item_name}")
             return False
         
         self.inventory[item_name] = (item_obj, amount)
@@ -741,7 +741,7 @@ class Profile:
     
     def add_bm_item(self, item: BlackMarketItem | str, amount: int = 1) -> None | str:
         if amount <= 0:
-            raise ValueError('Amount must be positive')
+            raise ValueError("Amount must be positive")
         
         item_obj: BlackMarketItem | None = None
         if isinstance(item, BlackMarketItem):
@@ -760,7 +760,7 @@ class Profile:
         
         item_obj = collector.bm_item_from_str(item_name)
         if item_obj is None:
-            return 'No item with that name was found.'
+            return "No item with that name was found."
         
         self.bm_inventory[item_name] = (item_obj, amount)
         return None
@@ -785,7 +785,7 @@ class Profile:
                 continue
             obj: BlackMarketItem | None = collector.bm_item_from_str(str(item[0]))
             if obj is None:
-                logger.error(f'Item in inventory could not be found: {item[0]}')
+                logger.error(f"Item in inventory could not be found: {item[0]}")
                 continue
             
             self.bm_inventory[name] = (obj, int(item[1]))
@@ -797,13 +797,13 @@ class Profile:
             
             obj: ShopItem | None = collector.normal_item_from_str(str(item[0]))
             if obj is None:
-                logger.error(f'Item in inventory could not be found: {item[0]}')
+                logger.error(f"Item in inventory could not be found: {item[0]}")
                 continue
             
             self.inventory[name] = (obj, int(item[1]))
     
     async def _delete_from_db(self) -> bool:
-        return await db_stuff.del_db_entry('currency', {'user_id': self.user_id})
+        return await db_stuff.del_db_entry("currency", {"user_id": self.user_id})
     
     async def reset_db_entry(self) -> bool:
         if not await self._self_in_db():
@@ -811,15 +811,15 @@ class Profile:
         
         removed: bool = await self._delete_from_db()
         if not removed:
-            logger.error('Profile was not deleted from DB.')
+            logger.error("Profile was not deleted from DB.")
             return False
         if await self._self_in_db():
-            logger.error('Profile was deleted from DB, but Profile is still there.')
+            logger.error("Profile was deleted from DB, but Profile is still there.")
             return False
         return await self._add_to_db()
     
     async def _self_in_db(self) -> bool:
-        return await db_stuff.get_from_db('currency', {'user_id': self.user_id}) is not None
+        return await db_stuff.get_from_db("currency", {"user_id": self.user_id}) is not None
     
     def to_DBProfile(self) -> DBProfile:
         return DBProfile(
@@ -844,34 +844,34 @@ class Profile:
     
     @classmethod
     def from_DBProfile(cls, profile: DBProfile) -> Self:
-        job = collector.job_from_str(profile['work_str'], unemployed_job)
+        job = collector.job_from_str(profile["work_str"], unemployed_job)
         if job is None:
-            raise ValueError(f'Job could not be fetched. {profile["work_str"]}')
+            raise ValueError(f"Job could not be fetched. {profile["work_str"]}")
         obj = cls(
-                user_id=profile['user_id'],
-                wallet=Decimal(profile['wallet']),
-                bank=Decimal(profile['bank']),
-                work_income=Decimal(profile['work_income']),
+                user_id=profile["user_id"],
+                wallet=Decimal(profile["wallet"]),
+                bank=Decimal(profile["bank"]),
+                work_income=Decimal(profile["work_income"]),
                 job=job,
-                other_income=Decimal(profile['other_income']),
-                next_income_mult=profile['next_income_mult'],
-                work_experience=profile['work_experience'],
-                school_qualification=SchoolQualif.from_level(profile['school_qualification']),
-                security_clearance=SecurityClearance(profile['security_clearance']),
-                debt=Decimal(profile['debt']),
-                age=profile['age'],
-                lottery_tickets=profile['lottery_tickets'],
+                other_income=Decimal(profile["other_income"]),
+                next_income_mult=profile["next_income_mult"],
+                work_experience=profile["work_experience"],
+                school_qualification=SchoolQualif.from_level(profile["school_qualification"]),
+                security_clearance=SecurityClearance(profile["security_clearance"]),
+                debt=Decimal(profile["debt"]),
+                age=profile["age"],
+                lottery_tickets=profile["lottery_tickets"],
         )
-        obj.credit_score = profile['credit_score']
-        obj.fire_chance = profile['fire_chance']
-        obj._basic_to_inventory(profile['inventory'])
-        obj._basic_bm_to_inventory(profile['illegal_items'])
+        obj.credit_score = profile["credit_score"]
+        obj.fire_chance = profile["fire_chance"]
+        obj._basic_to_inventory(profile["inventory"])
+        obj._basic_bm_to_inventory(profile["illegal_items"])
         return obj
     
     @classmethod
     async def fetch_from_user_id(cls, user_id: str | int) -> Self:
         str_user_id = str(user_id) if isinstance(user_id, int) else user_id
-        profile = await db_stuff.get_from_db('currency', {'user_id': user_id})
+        profile = await db_stuff.get_from_db("currency", {"user_id": user_id})
         if profile is None:
             new_profile = cls(user_id=str_user_id)
             await new_profile._add_to_db()

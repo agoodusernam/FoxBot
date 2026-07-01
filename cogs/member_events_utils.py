@@ -47,12 +47,12 @@ def time_ago(dt: datetime.datetime | int | float):
     now: datetime.datetime = datetime.datetime.now(datetime.UTC)
     delta: relativedelta = relativedelta(now, dt)
     t_times: dict[str, int] = {
-        'years':   delta.years,
-        'months':  delta.months,
-        'days':    delta.days,
-        'hours':   delta.hours,
-        'minutes': delta.minutes,
-        'seconds': delta.seconds,
+        "years":   delta.years,
+        "months":  delta.months,
+        "days":    delta.days,
+        "hours":   delta.hours,
+        "minutes": delta.minutes,
+        "seconds": delta.seconds,
     }
     slots: int = 0
     max_slots: int = 3
@@ -114,32 +114,32 @@ def get_changed_roles(before: list[discord.Role], after: list[discord.Role]) -> 
 def get_member_changes(before: discord.Member, after: discord.Member) -> MemberChange:
     added, removed = get_changed_roles(before.roles[1:], after.roles[1:])
     changes: MemberChange = {
-        'nick':            after.nick if after.nick != before.nick else MISSING,
-        'roles_added':     added if added else MISSING,
-        'roles_removed':   removed if removed else MISSING,
-        'timed_out_until': after.timed_out_until if after.timed_out_until != before.timed_out_until else MISSING,
-        'pending':         after.pending if after.pending != before.pending else MISSING,
-        'avatar':          after.guild_avatar if after.guild_avatar != before.guild_avatar else MISSING,
-        'flags':           after.flags if after.flags != before.flags else MISSING,
+        "nick":            after.nick if after.nick != before.nick else MISSING,
+        "roles_added":     added if added else MISSING,
+        "roles_removed":   removed if removed else MISSING,
+        "timed_out_until": after.timed_out_until if after.timed_out_until != before.timed_out_until else MISSING,
+        "pending":         after.pending if after.pending != before.pending else MISSING,
+        "avatar":          after.guild_avatar if after.guild_avatar != before.guild_avatar else MISSING,
+        "flags":           after.flags if after.flags != before.flags else MISSING,
     }
     return changes
 
 
 def get_user_changes(before: discord.User, after: discord.User) -> UserChange:
     changes: UserChange = {
-        'username': after.name if after.name != before.name else MISSING,
-        'avatar':   after.display_avatar if after.display_avatar != before.display_avatar else MISSING,
+        "username": after.name if after.name != before.name else MISSING,
+        "avatar":   after.display_avatar if after.display_avatar != before.display_avatar else MISSING,
     }
     return changes
 
 
 def nick_update_embed(before_nick: str | None, after: discord.Member) -> discord.Embed:
-    title: str = 'Nickname changed'
+    title: str = "Nickname changed"
     description: str
     if before_nick is None:
-        title = 'Nickname added'
+        title = "Nickname added"
         name = after.global_name if after.global_name is not None else after.name
-        description = f'{after.mention} ({name}) has been given the nickname:\n`{after.nick}`'
+        description = f"{after.mention} ({name}) has been given the nickname:\n`{after.nick}`"
     else:
         description = f"{after.mention}'s nickname was changed.\nBefore: `{before_nick}`\nAfter: `{after.nick}`"
     
@@ -157,7 +157,7 @@ def roles_changed_embed(changed: list[discord.Role], member: discord.Member, tit
     return create_log_embed(
             member.name,
             member.display_avatar.url,
-            f'Roles {desc} {member.mention}:\n{roles}',
+            f"Roles {desc} {member.mention}:\n{roles}",
             discord.Color.blurple(),
             title,
     )
@@ -168,19 +168,19 @@ def timeout_embed(member: discord.Member, until: datetime.datetime | None) -> di
         return create_log_embed(
                 member.name,
                 member.display_avatar.url,
-                f'Timeout removed from {member.mention}',
+                f"Timeout removed from {member.mention}",
                 discord.Color.green(),
-                'Timeout removed',
+                "Timeout removed",
         )
     
-    formatted_until: str = discord.utils.format_dt(until, style='F')
+    formatted_until: str = discord.utils.format_dt(until, style="F")
     
     return create_log_embed(
             member.name,
             member.display_avatar.url,
-            f'Timeout set for {member.mention} until {formatted_until}',
+            f"Timeout set for {member.mention} until {formatted_until}",
             discord.Color.red(),
-            'Timeout added',
+            "Timeout added",
     )
 
 
@@ -188,9 +188,9 @@ def avatar_update_embed(after: discord.Member | discord.User) -> discord.Embed:
     embed = create_log_embed(
             after.name,
             after.display_avatar.url,
-            f'{after.mention}',
+            f"{after.mention}",
             discord.Color.blurple(),
-            'Avatar update',
+            "Avatar update",
     )
     embed.set_thumbnail(url=after.display_avatar.url)
     return embed
@@ -200,7 +200,7 @@ def name_change_embed(before: discord.User, after: discord.User) -> discord.Embe
     return create_log_embed(
             after.name,
             after.display_avatar.url,
-            f'{after.mention} changed their name from {before.name} to {after.name}',
+            f"{after.mention} changed their name from {before.name} to {after.name}",
             discord.Color.blurple(),
-            'Name change',
+            "Name change",
     )

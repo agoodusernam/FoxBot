@@ -17,7 +17,7 @@ import cool_logging
 from config.blacklist_manager import BlacklistManager
 from config.bot_config import BotConfig, load_config
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 
 class NoChannel:
@@ -52,7 +52,7 @@ class CContext(commands.Context["CoolBot"]):
     async def safe_reply(self, content: str | None = None, **kwargs: Any) -> Message | None:
         """
         Reply to a message safely, handling exceptions.
-        Will still raise any exceptions that aren't related to the sending of the actual message
+        Will still raise any exceptions that aren"t related to the sending of the actual message
         Returns the sent message if successful, None otherwise.
         """
         try:
@@ -82,13 +82,13 @@ class CoolBot(commands.Bot):
         self.config: BotConfig = load_config()
         cool_logging.setup_logging(self.config.logs_path)
         
-        kwargs['command_prefix'] = self.config.command_prefix
+        kwargs["command_prefix"] = self.config.command_prefix
         super().__init__(*args, **kwargs)
         self.blacklist: BlacklistManager = BlacklistManager()
         self.admin_ids: set[int] = self.config.admin_ids
         self.dev_ids: set[int] = self.config.dev_ids
         self.del_after: int = self.config.del_after
-        self.config.today = datetime.datetime.now(datetime.UTC).strftime('%d-%m-%Y_%H-%M-%S')
+        self.config.today = datetime.datetime.now(datetime.UTC).strftime("%d-%m-%Y_%H-%M-%S")
         self.landmine_channels: dict[int, int] = {}
         self.forced_landmines: set[int] = set()
         self.dev_func_thread: threading.Thread | None = None
@@ -150,16 +150,16 @@ class CoolBot(commands.Bot):
         pings: str = ", ".join(f"<@{uid}>" for uid in self.config.dev_ids)
         if channel is None:
             try:
-                await self.logs_channel.send(f'{pings} The bot encountered an error!\n{err}')
+                await self.logs_channel.send(f"{pings} The bot encountered an error!\n{err}")
             except discord.HTTPException as e:
-                logger.error(f'Failed to post error message to channel: {e}')
+                logger.error(f"Failed to post error message to channel: {e}")
             
             return
         else:
             try:
-                await channel.send(f'{pings} The bot encountered an error!\n{err}')
+                await channel.send(f"{pings} The bot encountered an error!\n{err}")
             except discord.HTTPException as e:
-                logger.error(f'Failed to post error message to channel {channel.name}: {e}')
+                logger.error(f"Failed to post error message to channel {channel.name}: {e}")
     
     async def on_error(self, event_method: str, /, *args: Any, **kwargs: Any) -> None:
         await super().on_error(event_method, args, kwargs)

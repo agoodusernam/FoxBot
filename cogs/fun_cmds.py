@@ -19,71 +19,71 @@ from cogs import fun_cmds_utils, voice_events_utils
 from command_utils.analysis import voice_analysis
 from command_utils.CContext import CContext, CoolBot
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 monday_gen = fun_cmds_utils.monday_generator()
 current_monday: datetime.datetime = next(monday_gen)
 
 
-class FunCommands(commands.Cog, name='Fun'):
+class FunCommands(commands.Cog, name="Fun"):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
         self.check_tts_leave.start()
         self.send_vc_lb.start()
         self.add_ping.start()
     
-    @commands.command(name='dice', aliases=['roll', 'dice_roll'],
-                      brief='Roll a dice',
-                      help='Roll a dice between two values (inclusive)',
-                      usage='f!dice <min> <max>')
+    @commands.command(name="dice", aliases=["roll", "dice_roll"],
+                      brief="Roll a dice",
+                      help="Roll a dice between two values (inclusive)",
+                      usage="f!dice <min> <max>")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def dice(self, ctx: CContext, first_val: int | str, second_val: int = 1):
         if isinstance(first_val, str):
             try:
                 first_val = int(first_val[1:].strip())
             except ValueError:
-                await ctx.send('Invalid value. Please provide valid numbers for the dice roll, e.g. ' +
-                               '`f!dice 1 6`, or `f!dice 6`, or `f!dice d6`')
+                await ctx.send("Invalid value. Please provide valid numbers for the dice roll, e.g. " +
+                               "`f!dice 1 6`, or `f!dice 6`, or `f!dice d6`")
                 return
         await fun_cmds_utils.dice_roll(ctx, first_val, second_val)
     
-    @commands.command(name='flip', aliases=['coin_flip', 'coinflip'],
-                      brief='Flip a coin',
-                      help='Flip a coin and get either Heads or Tails')
+    @commands.command(name="flip", aliases=["coin_flip", "coinflip"],
+                      brief="Flip a coin",
+                      help="Flip a coin and get either Heads or Tails")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def flip(self, ctx: CContext):
-        await ctx.send(f'You flipped a coin and got: **{random.choice(['Heads', 'Tails'])}**')
+        await ctx.send(f"You flipped a coin and got: **{random.choice(["Heads", "Tails"])}**")
     
-    @commands.command(name='ping', aliases=['latency'],
+    @commands.command(name="ping", aliases=["latency"],
                       brief="Check the bot's latency",
                       help="Shows the bot's current latency in milliseconds")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def ping(self, ctx: CContext):
-        await ctx.send(f'{ctx.bot.latency * 1000:.1f}ms')
+        await ctx.send(f"{ctx.bot.latency * 1000:.1f}ms")
     
-    @commands.command(name='suggest', aliases=['suggestion'],
-                      brief='Submit a suggestion',
-                      help='Submit a suggestion for the bot',
-                      usage='f!suggest <suggestion>')
+    @commands.command(name="suggest", aliases=["suggestion"],
+                      brief="Submit a suggestion",
+                      help="Submit a suggestion for the bot",
+                      usage="f!suggest <suggestion>")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def suggest_cmd(self, ctx: CContext, *, suggestion: str):
         """
         Sends a suggestion to the designated channel and creates a thread for discussion.
         """
-        HELP_MSG = '''Please post your suggestions for the server or <@1377636535968600135> in here using `f!suggest <suggestion>`.
+        HELP_MSG = """Please post your suggestions for the server or <@1377636535968600135> in here using `f!suggest <suggestion>`.
         If you have any additional comments, please use the thread.
         ✅: Implemented
         💻: Working on it
         ❌: Will not add
 
         👍: Vote for suggestion
-        '''
+        """
         
         await ctx.delete()
         
         channel: Any = ctx.bot.get_channel(1379193761791213618)
         if not isinstance(channel, discord.TextChannel):
-            logger.error('Channel not found for sending suggestion.')
+            logger.error("Channel not found for sending suggestion.")
             return
         
         last_msgs = [message async for message in channel.history(limit=3)]
@@ -92,113 +92,113 @@ class FunCommands(commands.Cog, name='Fun'):
                 await message.delete()
         
         try:
-            embed = discord.Embed(title='Suggestion', description=suggestion, color=discord.Color.blue())
+            embed = discord.Embed(title="Suggestion", description=suggestion, color=discord.Color.blue())
             embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
             embed.timestamp = discord.utils.utcnow()
             msg = await channel.send(embed=embed)
-            await msg.add_reaction('👍')
+            await msg.add_reaction("👍")
             
-            await msg.create_thread(name=f'suggestion-{ctx.author.display_name}')
+            await msg.create_thread(name=f"suggestion-{ctx.author.display_name}")
             
             await channel.send(HELP_MSG)
-            logger.info(f'Suggestion sent: {suggestion}')
+            logger.info(f"Suggestion sent: {suggestion}")
         
         except discord.Forbidden as exc:
             raise commands.BotMissingPermissions(["manage_channels", "manage_threads", "create_public_threads"]) from exc
         
         except discord.NotFound:
-            logger.error('Channel not found for sending suggestion.')
+            logger.error("Channel not found for sending suggestion.")
         
         except discord.HTTPException as e:
-            logger.error(f'Failed to send suggestion: {e}')
+            logger.error(f"Failed to send suggestion: {e}")
     
-    @commands.command(name='8ball', aliases=['eight_ball', 'magic_8_ball'],
-                      brief='Ask the magic 8-ball a question',
-                      help='Ask the magic 8-ball a question and get a random answer')
+    @commands.command(name="8ball", aliases=["eight_ball", "magic_8_ball"],
+                      brief="Ask the magic 8-ball a question",
+                      help="Ask the magic 8-ball a question and get a random answer")
     @commands.cooldown(1, 3, commands.BucketType.user)
     async def eight_ball(self, ctx: CContext):
         pos_responses = [  # 10 positive responses
-            'It is certain', 'It is decidedly so', 'Without a doubt', 'Yes definitely',
-            'You may rely on it', 'As I see it, yes', 'Most likely', 'Outlook good',
-            'Yes', 'Signs point to yes',
+            "It is certain", "It is decidedly so", "Without a doubt", "Yes definitely",
+            "You may rely on it", "As I see it, yes", "Most likely", "Outlook good",
+            "Yes", "Signs point to yes",
         ]
         neut_responses = [  # 4 neutral responses
-            'Reply hazy try again', 'Better not tell you now', 'I see no clear answer',
+            "Reply hazy try again", "Better not tell you now", "I see no clear answer",
             "I shouldn't answer that",
         ]
         neg_responses = [  # 10 negative responses
-            "Don't count on it", 'Certainly not', 'My sources say unlikely',
-            'Outlook not so good', 'Very doubtful', 'No', 'Definitely not',
-            'You should not count on it', 'I would not rely on it', 'In my opinion, no',
+            "Don't count on it", "Certainly not", "My sources say unlikely",
+            "Outlook not so good", "Very doubtful", "No", "Definitely not",
+            "You should not count on it", "I would not rely on it", "In my opinion, no",
         ]
         responses = pos_responses + neut_responses + neg_responses
         answer = random.choice(responses)
-        logger.debug(f'Magic 8-ball answer: {answer}')
+        logger.debug(f"Magic 8-ball answer: {answer}")
         await ctx.typing()
         await asyncio.sleep(2)  # Simulate thinking time
-        await ctx.safe_reply(f'{answer}')
+        await ctx.safe_reply(f"{answer}")
     
-    @commands.command(name='owoify', aliases=['owo', 'uwu'],
-                      brief='Convert text to OwO language',
-                      help='Converts the given text to OwO language (UwU style)',
-                      usage='f!owo <text>')
+    @commands.command(name="owoify", aliases=["owo", "uwu"],
+                      brief="Convert text to OwO language",
+                      help="Converts the given text to OwO language (UwU style)",
+                      usage="f!owo <text>")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def owoify(self, ctx: CContext, *, text: str):
         # Simple conversion to OwO language
         # Why did I add this. I hate myself
-        owo_text = text.replace('r', 'w').replace('l', 'w').replace('v', 'w')
-        owo_text = owo_text.replace('th', 'd').replace('Th', 'D').replace('TH', 'D')
-        if owo_text.endswith('!'):
-            owo_text = owo_text + ' OwO'
+        owo_text = text.replace("r", "w").replace("l", "w").replace("v", "w")
+        owo_text = owo_text.replace("th", "d").replace("Th", "D").replace("TH", "D")
+        if owo_text.endswith("!"):
+            owo_text = owo_text + " OwO"
         await ctx.send(owo_text)
     
-    @commands.command(name='code', aliases=['source', 'github'],
+    @commands.command(name="code", aliases=["source", "github"],
                       brief="Get the bot's source code",
-                      help="Get the link to the bot's source code on GitHub")
+                      help="Get the link to the bot's source code")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def code(self, ctx: CContext):
-        await ctx.send('You can find the source code for this bot here: https://git.nerds-inc.com/HardlineMouse16/FoxBot')
+        await ctx.send("You can find the source code for this bot here: https://git.nerds-inc.com/HardlineMouse16/FoxBot")
     
-    @commands.command(name='lines_of_code', aliases=['lines', 'loc'],
-                      brief='Get the number of lines of code in the bot',
+    @commands.command(name="lines_of_code", aliases=["lines", "loc"],
+                      brief="Get the number of lines of code in the bot",
                       help="Get the number of lines of code in the bot's source code",
-                      usage='f!loc')
+                      usage="f!loc")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def lines_of_code(self, ctx: CContext):
         # function that returns the number of lines of code in a given directory recursively, excluding .venv
         total_lines, total_files = utils.utils.loc_total()
         
-        await ctx.send(f'There are {total_lines} lines of code across {total_files} Python files in this bot\'s source code.')
+        await ctx.send(f"There are {total_lines} lines of code across {total_files} Python files in this bot\"s source code.")
     
-    @commands.command(name='user_info',
-                      help='Get info about a user',
-                      usage='f!user_info <user>')
+    @commands.command(name="user_info",
+                      help="Get info about a user",
+                      usage="f!user_info <user>")
     @commands.cooldown(1, 2, commands.BucketType.user)
     async def user_info(self, ctx: CContext, user: discord.Member | discord.User | None = None) -> None:
         if user is None:
-            await ctx.send('Invalid user.')
+            await ctx.send("Invalid user.")
             return
         
-        embed = discord.Embed(title=f'Info about {user.display_name}', colour=discord.Colour.purple())
+        embed = discord.Embed(title=f"Info about {user.display_name}", colour=discord.Colour.purple())
         embed.set_thumbnail(url=user.display_avatar.url)
-        embed.add_field(name='User ID', value=str(user.id), inline=True)
-        embed.add_field(name='Bot Account', value='Yes' if user.bot else 'No', inline=True)
-        embed.add_field(name='Created', value=f'<t:{int(user.created_at.timestamp())}:F>', inline=False)
+        embed.add_field(name="User ID", value=str(user.id), inline=True)
+        embed.add_field(name="Bot Account", value="Yes" if user.bot else "No", inline=True)
+        embed.add_field(name="Created", value=f"<t:{int(user.created_at.timestamp())}:F>", inline=False)
         
         if isinstance(user, discord.Member):
             if user.joined_at is not None:
-                embed.add_field(name='Joined Server', value=f'<t:{int(user.joined_at.timestamp())}:F>', inline=False)
+                embed.add_field(name="Joined Server", value=f"<t:{int(user.joined_at.timestamp())}:F>", inline=False)
             if user.premium_since is not None:
-                embed.add_field(name='Boosting since', value=f'<t:{int(user.premium_since.timestamp())}:F>')
+                embed.add_field(name="Boosting since", value=f"<t:{int(user.premium_since.timestamp())}:F>")
             if user.timed_out_until is not None and user.is_timed_out():
-                embed.add_field(name='Timed out until', value=f'<t:{int(user.timed_out_until.timestamp())}:F>')
+                embed.add_field(name="Timed out until", value=f"<t:{int(user.timed_out_until.timestamp())}:F>")
         
         await ctx.send(embed=embed)
     
-    @commands.command(name='tts',
-                      brief='Send a text-to-speech message',
-                      help='Send a text-to-speech message in the current channel',
-                      usage='f!tts <message>')
+    @commands.command(name="tts",
+                      brief="Send a text-to-speech message",
+                      help="Send a text-to-speech message in the current channel",
+                      usage="f!tts <message>")
     @commands.cooldown(1, 1, commands.BucketType.guild)
     @guild_only()
     @commands.has_role(1405824995946532995)  # TODO: Make configurable
@@ -206,28 +206,28 @@ class FunCommands(commands.Cog, name='Fun'):
         if isinstance(ctx.author, discord.User):
             return
         
-        if message.strip() == '':
-            await ctx.send('Please provide a message to convert.')
+        if message.strip() == "":
+            await ctx.send("Please provide a message to convert.")
             return
         
         if len(message) > 50:
-            await ctx.send('TTS message too long.')
+            await ctx.send("TTS message too long.")
             return
         
         for s in message:
             if s not in string.printable:
-                await ctx.send('Invalid TTS message.')
+                await ctx.send("Invalid TTS message.")
                 return
         
-        opus = ctypes.util.find_library('opus')
+        opus = ctypes.util.find_library("opus")
         if opus is None:
-            await ctx.send('TTS command is unavailable.')
-            logger.error('Could not find opus library.')
+            await ctx.send("TTS command is unavailable.")
+            logger.error("Could not find opus library.")
             return
         
         state = ctx.author.voice
         if state is None or state.channel is None:
-            await ctx.send('You must be in a voice channel to use this command.')
+            await ctx.send("You must be in a voice channel to use this command.")
             return
         
         lock: asyncio.Lock = ctx.bot.tts_lock
@@ -238,15 +238,15 @@ class FunCommands(commands.Cog, name='Fun'):
         vc_client: discord.VoiceClient
         ctx.bot.last_tts_sent_time = time.time()
         await lock.acquire()
-        gTTS(text=message).save('msg.mp3')
+        gTTS(text=message).save("msg.mp3")
         
         def done(error: Exception | None) -> None:
             lock.release()
-            if os.path.exists('msg.mp3'):
-                os.remove('msg.mp3')
+            if os.path.exists("msg.mp3"):
+                os.remove("msg.mp3")
             
             if error:
-                logger.error(f'TTS playback error: {error}')
+                logger.error(f"TTS playback error: {error}")
         
         discord.opus.load_opus(opus)
         if ctx.bot.vc_client is not None:
@@ -257,29 +257,29 @@ class FunCommands(commands.Cog, name='Fun'):
             vc_client = await state.channel.connect(timeout=15.0, reconnect=False, self_deaf=True)
             ctx.bot.vc_client = vc_client
         
-        audio = discord.FFmpegPCMAudio(source='msg.mp3')
+        audio = discord.FFmpegPCMAudio(source="msg.mp3")
         vc_client.play(audio, after=done)
     
-    @commands.command(name='tts_leave', aliases=['tts_disconnect', "ttsl"],
-                      brief='Disconnect the bot from voice channel',
-                      help='Disconnect the bot from the voice channel it is currently in',
-                      usage='f!tts_leave')
+    @commands.command(name="tts_leave", aliases=["tts_disconnect", "ttsl"],
+                      brief="Disconnect the bot from voice channel",
+                      help="Disconnect the bot from the voice channel it is currently in",
+                      usage="f!tts_leave")
     @commands.cooldown(1, 1, commands.BucketType.guild)
     @guild_only()
     async def tts_leave(self, ctx: CContext):
         if ctx.bot.vc_client is None:
-            await ctx.send('The bot is not connected to a voice channel.')
+            await ctx.send("The bot is not connected to a voice channel.")
             ctx.bot.last_tts_sent_time = None
             return
         
         if ctx.bot.vc_client.is_connected():
             await ctx.bot.vc_client.disconnect()
-            await ctx.send('Bot has left the channel.')
+            await ctx.send("Bot has left the channel.")
         
         ctx.bot.vc_client = None
         ctx.bot.last_tts_sent_time = None
     
-    @commands.command(name='stats',
+    @commands.command(name="stats",
                       brief="Get bot statistics",
                       help="Get statistics about the bot")
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -289,12 +289,12 @@ class FunCommands(commands.Cog, name='Fun'):
         uptime = utils.utils.seconds_to_human_readable(time.time() - ctx.bot.start_time)
         ping = f"{self.bot.latency * 1000:.1f}"
         
-        embed = discord.Embed(title='Bot Statistics', colour=discord.Colour.purple())
-        embed.add_field(name='Lines of Code', value=loc, inline=True)
-        embed.add_field(name='Files', value=files, inline=True)
-        embed.add_field(name='Uptime', value=uptime, inline=True)
-        embed.add_field(name='Ping', value=ping + 'ms', inline=True)
-        embed.add_field(name='Avg Ping', value=f"{self.bot.avg_latency:.1f} ms", inline=True)
+        embed = discord.Embed(title="Bot Statistics", colour=discord.Colour.purple())
+        embed.add_field(name="Lines of Code", value=loc, inline=True)
+        embed.add_field(name="Files", value=files, inline=True)
+        embed.add_field(name="Uptime", value=uptime, inline=True)
+        embed.add_field(name="Ping", value=ping + "ms", inline=True)
+        embed.add_field(name="Avg Ping", value=f"{self.bot.avg_latency:.1f} ms", inline=True)
         commit = await fun_cmds_utils.cached_get_last_commit()
         
         if commit is None:
@@ -303,12 +303,12 @@ class FunCommands(commands.Cog, name='Fun'):
         
         commit_time, commit_message, changes = commit
         
-        embed.add_field(name='Last Commit at', value=f'<t:{commit_time}>', inline=False)
-        embed.add_field(name='Commit Message', value=commit_message, inline=False)
-        embed.add_field(name='Total lines changed', value=changes['total'], inline=False)
+        embed.add_field(name="Last Commit at", value=f"<t:{commit_time}>", inline=False)
+        embed.add_field(name="Commit Message", value=commit_message, inline=False)
+        embed.add_field(name="Total lines changed", value=changes["total"], inline=False)
         await ctx.send(embed=embed)
     
-    @commands.command(name='vc_lb',
+    @commands.command(name="vc_lb",
                       brief="Send the voice call leaderboard",
                       help="Send the voice call leaderboard to the current channel")
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -317,19 +317,19 @@ class FunCommands(commands.Cog, name='Fun'):
             channel = ctx.channel  # type: ignore
         
         if not isinstance(channel, (discord.TextChannel, discord.DMChannel)):
-            logger.error('VC leaderboard channel not found.')
+            logger.error("VC leaderboard channel not found.")
             return
         
         lb = await voice_analysis.voice_activity_this_week()
         
-        leaderboard_text = ''
+        leaderboard_text = ""
         
         for i, stat in enumerate(lb):
             formatted_time = voice_analysis.format_duration(stat["total_seconds"])
-            leaderboard_text += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
+            leaderboard_text += f"{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n"
         
         embed = discord.Embed(
-                title='Time spent in VCs leaderboard for last week:',
+                title="Time spent in VCs leaderboard for last week:",
                 description=leaderboard_text,
                 colour=discord.Colour.purple(),
         )
@@ -340,7 +340,7 @@ class FunCommands(commands.Cog, name='Fun'):
     
     @loop(seconds=59)
     async def check_tts_leave(self) -> None:
-        logger.debug('Checking for TTS disconnect')
+        logger.debug("Checking for TTS disconnect")
         if self.bot.vc_client is None and self.bot.last_tts_sent_time is None:
             return
         
@@ -381,19 +381,19 @@ class FunCommands(commands.Cog, name='Fun'):
         await asyncio.sleep(2)
         channel = self.bot.get_channel(self.bot.config.vc_lb_channel_id)
         if not isinstance(channel, discord.TextChannel):
-            logger.error('VC leaderboard channel not found.')
+            logger.error("VC leaderboard channel not found.")
             return
         
         lb = await voice_analysis.voice_activity_this_week(skip_cache=True)
         
-        leaderboard_text = ''
+        leaderboard_text = ""
         
         for i, stat in enumerate(lb):
             formatted_time = voice_analysis.format_duration(stat["total_seconds"])
-            leaderboard_text += f'{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n'
+            leaderboard_text += f"{i + 1}. <@{stat["user_id"]}>: {formatted_time}\n"
         
         embed = discord.Embed(
-                title='Time spent in VCs leaderboard for last week:',
+                title="Time spent in VCs leaderboard for last week:",
                 description=leaderboard_text,
                 colour=discord.Colour.purple(),
         )

@@ -24,7 +24,7 @@ __all__ = [
     "try_use_save"
 ]
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 
 class BitwiseDecimal(decimal.Decimal):
@@ -189,13 +189,13 @@ def count_only_allowed_chars(s: str) -> bool:
 
 def convert_to_base10(match: re.Match[str]) -> str:
     num_str: str = match.group(0)
-    if num_str.startswith('0b'):
+    if num_str.startswith("0b"):
         return str(int(num_str[2:], 2))
     
-    elif num_str.startswith('0o'):
+    elif num_str.startswith("0o"):
         return str(int(num_str[2:], 8))
     
-    elif num_str.startswith('0x'):
+    elif num_str.startswith("0x"):
         return str(int(num_str[2:], 16))
     
     else:
@@ -210,8 +210,8 @@ def eval_count_msg(message: str) -> tuple[BitwiseDecimal, CountStatus]:
     :return: tuple[BitwiseDecimal, CountStatus]: The evaluated result and the status of the evaluation.
     """
     message = message.replace("^", "[POWER_REPLACEMENT\u200B]")
-    message = message.replace('#', '^')
-    message = message.replace('[POWER_REPLACEMENT\u200B]', '**')
+    message = message.replace("#", "^")
+    message = message.replace("[POWER_REPLACEMENT\u200B]", "**")
     
     def timeout_handler(signum: int, frame: Any):
         raise TimeoutError
@@ -262,7 +262,7 @@ async def try_use_save(message: discord.Message, bot: CoolBot) -> bool:
     if remaining <= 0:
         return False
     await message.reply(
-            f"<@{message.author.id}> would have ruined it, but used a save! " +
+            f"{message.author.mention} would have ruined it, but used a save! " +
             f"You have **{remaining}** save{'s' if remaining != 1 else ''} remaining.",
     )
     await message.add_reaction("🛡️")
@@ -272,9 +272,10 @@ async def try_use_save(message: discord.Message, bot: CoolBot) -> bool:
 async def fail_count_number(message: discord.Message, bot: CoolBot, actual: BitwiseDecimal) -> None:
     if await try_use_save(message, bot):
         return None
-    actual = round(actual, 5)
-    await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.counting.last_count}**!! " +
-                        f"Next number is **1**. Your message evaluated to **{actual.normalize()}**.")
+    rounded_actual = round(actual, 5)
+    await message.reply(f"{message.author.mention} RUINED IT AT **{bot.config.counting.last_count}**!! " +
+                        "Next number is **1**. " +
+                        f"Your message evaluated to **{rounded_actual}** (rounded to 5 decimal places).")
     await fail_count(message, bot)
     return None
 
@@ -282,14 +283,14 @@ async def fail_count_number(message: discord.Message, bot: CoolBot, actual: Bitw
 async def fail_count_user(message: discord.Message, bot: CoolBot) -> None:
     if await try_use_save(message, bot):
         return None
-    await message.reply(f"<@{message.author.id}> RUINED IT AT **{bot.config.counting.last_count}**!! " +
+    await message.reply(f"{message.author.mention} RUINED IT AT **{bot.config.counting.last_count}**!! " +
                         "Next number is **1**. **You can't count two numbers in a row**.")
     await fail_count(message, bot)
     return None
 
 
 async def fail_count(message: discord.Message, bot: CoolBot) -> None:
-    logger.debug(f'Counting fail by user {message.author.id} at message {message.id}')
+    logger.debug(f"Counting fail by user {message.author.id} at message {message.id}")
     assert isinstance(message.author, discord.Member)
     
     bot.config.counting.last_count = 0
@@ -310,7 +311,7 @@ async def fail_count(message: discord.Message, bot: CoolBot) -> None:
 
 
 async def counting_msg(message: discord.Message, bot: CoolBot) -> bool:
-    logger.debug(f'Received counting message in channel {message.channel.id} with content: {message.content}')
+    logger.debug(f"Received counting message in channel {message.channel.id} with content: {message.content}")
     assert isinstance(message.author, discord.Member)
     s = message.content.lower()
     for char in string.whitespace:

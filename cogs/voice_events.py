@@ -5,8 +5,9 @@ from discord.ext import commands
 
 from cogs.voice_events_utils import handle_join, handle_leave, handle_move
 from command_utils.CContext import CoolBot
+from utils import discord_utils
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 
 class VoiceLogging(commands.Cog, name="Voice Logging"):
@@ -20,7 +21,10 @@ class VoiceLogging(commands.Cog, name="Voice Logging"):
         if self.bot.config.staging:
             return
         
-        logging_channel = self.bot.get_channel(self.bot.config.logging_channels.voice) if self.bot.config.logging_channels.voice else None
+        if self.bot.config.logging_channels.voice:
+            logging_channel = await discord_utils.get_channel_by_id(self.bot.config.logging_channels.voice, self.bot)
+        else:
+            logging_channel = None
         
         if not isinstance(logging_channel, discord.TextChannel):
             return
@@ -30,8 +34,8 @@ class VoiceLogging(commands.Cog, name="Voice Logging"):
         # Member joined channel
         if before.channel is None and after.channel is not None:
             await handle_join(member, after)
-            embed = discord.Embed(title=f'{member.display_name} joined #{after.channel.name}',
-                                  color=discord.Color.green(), description=f'{member.mention} joined {after.channel.mention}')
+            embed = discord.Embed(title=f"{member.display_name} joined #{after.channel.name}",
+                                  color=discord.Color.green(), description=f"{member.mention} joined {after.channel.mention}")
             embed.set_author(name=member.name, icon_url=url)
             embed.timestamp = discord.utils.utcnow()
             if logging_channel:
@@ -42,17 +46,17 @@ class VoiceLogging(commands.Cog, name="Voice Logging"):
         elif before.channel is not None and after.channel is None:
             await handle_leave(member)
             if logging_channel:
-                embed = discord.Embed(title=f'{member.display_name} left #{before.channel.name}',
-                                      color=discord.Color.red(), description=f'{member.mention} left {before.channel.mention}')
+                embed = discord.Embed(title=f"{member.display_name} left #{before.channel.name}",
+                                      color=discord.Color.red(), description=f"{member.mention} left {before.channel.mention}")
                 embed.set_author(name=member.name, icon_url=url)
                 embed.timestamp = discord.utils.utcnow()
                 await logging_channel.send(embed=embed)
             
-            if before.channel.name.startswith('private_') and before.channel and len(before.channel.members) == 0:
-                await before.channel.delete(reason='Private VC empty after member left')
+            if before.channel.name.startswith("private_") and before.channel and len(before.channel.members) == 0:
+                await before.channel.delete(reason="Private VC empty after member left")
             
-            if before.channel.name.startswith('temp_') and before.channel and len(before.channel.members) == 0:
-                await before.channel.delete(reason='Temp VC empty after member left')
+            if before.channel.name.startswith("temp_") and before.channel and len(before.channel.members) == 0:
+                await before.channel.delete(reason="Temp VC empty after member left")
             
             if self.bot.vc_client is None:
                 return
@@ -66,16 +70,16 @@ class VoiceLogging(commands.Cog, name="Voice Logging"):
             if before.channel is None or after.channel is None:
                 return
             await handle_move(member, before, after)
-            embed = discord.Embed(title=f'{member.display_name} moved from #{before.channel.name} to'
-                                        f' #{after.channel.name}', color=discord.Color.blue(), description=
-                                  f'{member.mention} moved from {before.channel.mention} to {after.channel.mention}')
+            embed = discord.Embed(title=f"{member.display_name} moved from #{before.channel.name} to"
+                                        f" #{after.channel.name}", color=discord.Color.blue(), description=
+                                  f"{member.mention} moved from {before.channel.mention} to {after.channel.mention}")
             embed.set_author(name=member.name, icon_url=url)
             embed.timestamp = discord.utils.utcnow()
             if logging_channel:
                 await logging_channel.send(embed=embed)
             
-            if before.channel.name.startswith('private_') and before.channel and len(before.channel.members) == 0:
-                await before.channel.delete(reason='Private VC empty after member left')
+            if before.channel.name.startswith("private_") and before.channel and len(before.channel.members) == 0:
+                await before.channel.delete(reason="Private VC empty after member left")
             
             if self.bot.vc_client is None:
                 return

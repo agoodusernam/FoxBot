@@ -25,11 +25,11 @@ async def get_stock(item: ShopItem) -> int:
     :param item: The name of the item to check stock for.
     :return: The stock amount of the item, or 0 if not found.
     """
-    item_from_db = await db_stuff.get_from_db(collection_name='shop_items', query={'item_name': item.name})
+    item_from_db = await db_stuff.get_from_db(collection_name="shop_items", query={"item_name": item.name})
     if item_from_db is None or item_from_db is False:
-        await db_stuff.send_to_db(collection_name='shop_items', data={"item_name": item.name, "stock": item.stock})
+        await db_stuff.send_to_db(collection_name="shop_items", data={"item_name": item.name, "stock": item.stock})
         return item.stock
-    return item_from_db['stock']
+    return item_from_db["stock"]
 
 
 async def set_stock(item: ShopItem, amount: int) -> None:
@@ -38,7 +38,7 @@ async def set_stock(item: ShopItem, amount: int) -> None:
     :param item: The ShopItem whose stock is to be set.
     :param amount: The new stock amount to set for the item.
     """
-    await db_stuff.edit_db_entry('shop_items', {'item_name': item.name}, {'stock': amount})
+    await db_stuff.edit_db_entry("shop_items", {"item_name": item.name}, {"stock": amount})
     return
 
 
@@ -48,8 +48,8 @@ async def get_top_balances(limit: int = 10) -> list[dict[str, int]] | None:
     :param limit: The number of top balances to fetch.
     :return: A list of dictionaries containing user IDs and their wallet balances.
     """
-    top_balances = await db_stuff.get_many_from_db(collection_name='currency', query={}, sort_by='wallet',
+    top_balances = await db_stuff.get_many_from_db(collection_name="currency", query={}, sort_by="wallet",
                                                    direction="desc", limit=limit)
     if top_balances is None:
         return None
-    return [{'user_id': profile['user_id'], 'wallet': profile['wallet']} for profile in top_balances]
+    return [{"user_id": profile["user_id"], "wallet": profile["wallet"]} for profile in top_balances]

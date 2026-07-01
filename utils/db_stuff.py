@@ -17,7 +17,7 @@ from pymongo.server_api import ServerApi
 
 from command_utils.analysis.text_analysis import DBMessage
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 # Global client instance
 _mongo_client: AsyncMongoClient[Mapping[str, Any]] | None = None
@@ -50,19 +50,19 @@ async def _connect() -> AsyncMongoClient[Mapping[str, Any]] | None:
     if _mongo_client is not None:
         return _mongo_client
     
-    uri = os.getenv('MONGO_URI')
-    
+    uri = os.getenv("MONGO_URI")
+    logger.debug("Connecting to MongoDB...")
     client: AsyncMongoClient[Mapping[str, Any]] = AsyncMongoClient(uri,
-                                                                   server_api=ServerApi('1'),
+                                                                   server_api=ServerApi("1"),
                                                                    serverSelectionTimeoutMS=5000, tls=True,
                                                                    tlsCertificateKeyFile="mongo_cert.pem")
     try:
-        await client.admin.command('ping')
+        ping = await client.admin.command("ping")
         _mongo_client = client  # Store the connection
-        logger.info('MongoDB connection established successfully')
+        logger.info(f"MongoDB connection established successfully: {ping}")
         return client
     except ConnectionError:
-        logger.error('Connection error while connecting to MongoDB')
+        logger.error("Connection error while connecting to MongoDB")
         return None
     except Exception as e:
         logger.error(f"An error occurred while connecting to MongoDB: {e}")
@@ -78,10 +78,10 @@ async def disconnect() -> bool:
     if _mongo_client is not None:
         try:
             await _mongo_client.close()
-            logger.info('MongoDB connection closed')
+            logger.info("MongoDB connection closed")
             return True
         except Exception as e:
-            logger.error(f'Error closing MongoDB connection: {e}')
+            logger.error(f"Error closing MongoDB connection: {e}")
         finally:
             _mongo_client = None
         
@@ -99,15 +99,15 @@ async def send_message(message: DBMessage) -> bool:
     if not client:
         return False
     
-    db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db['messages']
+    db = client["discord"]
+    collection: AsyncCollection[Mapping[str, Any]] = db["messages"]
     
     try:
         await collection.insert_one(dict(message))
-        logger.info('Message saved successfully')
+        logger.info("Message saved successfully")
         return True
     except Exception as e:
-        logger.error(f'Error saving message: {e}')
+        logger.error(f"Error saving message: {e}")
         return False
 
 
@@ -121,14 +121,14 @@ async def bulk_send_messages(messages: list[Mapping[str, Any]]) -> None:
     if not client:
         return
     
-    db: AsyncDatabase[Mapping[str, Any]] = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db['messages']
+    db: AsyncDatabase[Mapping[str, Any]] = client["discord"]
+    collection: AsyncCollection[Mapping[str, Any]] = db["messages"]
     
     try:
         await collection.insert_many(messages)
-        logger.info(f'{len(messages)} messages saved successfully')
+        logger.info(f"{len(messages)} messages saved successfully")
     except Exception as e:
-        logger.error(f'Error saving messages: {e}')
+        logger.error(f"Error saving messages: {e}")
 
 
 async def send_attachment(message: discord.Message, attachment: discord.Attachment) -> None:
@@ -142,8 +142,8 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
     if not client:
         return None
     
-    db = client['discord']
-    fs = AsyncGridFS(db, 'attachments')
+    db = client["discord"]
+    fs = AsyncGridFS(db, "attachments")
     
     try:
         # Download the attachment data
@@ -151,10 +151,10 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
         
         # Store metadata
         metadata = {
-            'message_id':   str(message.id),
-            'author_id':    str(message.author.id),
-            'content_type': attachment.content_type,
-            'timestamp':    message.created_at.timestamp(),
+            "message_id":   str(message.id),
+            "author_id":    str(message.author.id),
+            "content_type": attachment.content_type,
+            "timestamp":    message.created_at.timestamp(),
         }
         
         # Store file in GridFS
@@ -163,10 +163,10 @@ async def send_attachment(message: discord.Message, attachment: discord.Attachme
                 filename=attachment.filename,
                 metadata=metadata,
         )
-        logger.info(f'Attachment saved successfully: {attachment.filename}')
+        logger.info(f"Attachment saved successfully: {attachment.filename}")
         return None
     except Exception as e:
-        logger.error(f'Error saving attachment: {e}')
+        logger.error(f"Error saving attachment: {e}")
         return None
 
 
@@ -184,17 +184,17 @@ async def _download_all() -> list[Mapping[str, Any]] | None:
     if not client:
         return None
     
-    logger.info('Downloading all messages from MongoDB...')
+    logger.info("Downloading all messages from MongoDB...")
     
-    db = client['discord']
-    collection = db['messages']
+    db = client["discord"]
+    collection = db["messages"]
     
     try:
         messages = collection.find({})
         return [doc async for doc in messages]
     
     except Exception as e:
-        logger.error(f'DB Error retrieving messages: {e}')
+        logger.error(f"DB Error retrieving messages: {e}")
         return None
 
 
@@ -208,16 +208,16 @@ async def delete_message(ObjId: ObjectId) -> None:
     if not client:
         return
     
-    db = client['discord']
-    collection = db['messages']
+    db = client["discord"]
+    collection = db["messages"]
     try:
-        result = await collection.delete_one({'_id': ObjId})
+        result = await collection.delete_one({"_id": ObjId})
         if result.deleted_count > 0:
-            logger.info('Message deleted successfully')
+            logger.info("Message deleted successfully")
         else:
-            logger.warning('No message found with the given ID')
+            logger.warning("No message found with the given ID")
     except Exception as e:
-        logger.error(f'Error deleting message: {e}')
+        logger.error(f"Error deleting message: {e}")
 
 
 async def del_channel_from_db(channel: discord.TextChannel) -> None:
@@ -230,14 +230,14 @@ async def del_channel_from_db(channel: discord.TextChannel) -> None:
     if not client:
         return
     
-    db = client['discord']
-    collection = db['messages']
+    db = client["discord"]
+    collection = db["messages"]
     
     try:
-        result: DeleteResult = await collection.delete_many({'channel_id': channel.id})
-        logger.info(f'Deleted {result.deleted_count} messages from channel {channel.id}')
+        result: DeleteResult = await collection.delete_many({"channel_id": channel.id})
+        logger.info(f"Deleted {result.deleted_count} messages from channel {channel.id}")
     except Exception as e:
-        logger.error(f'Error deleting messages from channel {channel.id}: {e}')
+        logger.error(f"Error deleting messages from channel {channel.id}: {e}")
 
 
 async def send_voice_session(session_data: Mapping[str, Any]) -> None:
@@ -250,14 +250,14 @@ async def send_voice_session(session_data: Mapping[str, Any]) -> None:
     if not client:
         return
     
-    db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db['voice_sessions']
+    db = client["discord"]
+    collection: AsyncCollection[Mapping[str, Any]] = db["voice_sessions"]
     
     try:
         await collection.insert_one(session_data)
-        logger.info(f'Voice session for {session_data["user_id"]} saved successfully')
+        logger.info(f"Voice session for {session_data["user_id"]} saved successfully")
     except Exception as e:
-        logger.error(f'Error saving voice session: {e}')
+        logger.error(f"Error saving voice session: {e}")
 
 
 async def cached_download_voice_sessions(skip_cache: bool = False) -> list[Mapping[Any, Any]] | None:
@@ -276,14 +276,14 @@ async def _download_voice_sessions() -> list[Mapping[str, str | int]] | None:
     if not client:
         return None
     
-    db = client['discord']
-    collection: AsyncCollection[Mapping[str, Any]] = db['voice_sessions']
+    db = client["discord"]
+    collection: AsyncCollection[Mapping[str, Any]] = db["voice_sessions"]
     
     try:
         sessions = collection.find({})
         return [doc async for doc in sessions]
     except Exception as e:
-        logger.error(f'Error retrieving voice sessions: {e}')
+        logger.error(f"Error retrieving voice sessions: {e}")
         return None
 
 
@@ -295,18 +295,18 @@ async def send_to_db(collection_name: str, data: Mapping[str, Any]) -> bool:
     if not client:
         return False
     
-    db = client['discord']
+    db = client["discord"]
     collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
     
     try:
         result: InsertOneResult = await collection.insert_one(data)
         if result.acknowledged:
-            logger.info(f'Data sent successfully to {collection_name} collection')
+            logger.info(f"Data sent successfully to {collection_name} collection")
             return True
         
-        logger.warning(f'Data not acknowledged by MongoDB for {collection_name} collection')
+        logger.warning(f"Data not acknowledged by MongoDB for {collection_name} collection")
     except Exception as e:
-        logger.error(f'Error sending data to {collection_name} collection: {e}')
+        logger.error(f"Error sending data to {collection_name} collection: {e}")
     
     return False
 
@@ -319,20 +319,20 @@ async def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_d
     if not client:
         return False
     
-    db = client['discord']
+    db = client["discord"]
     collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
     
     try:
-        result = await collection.update_one(query, {'$set': update_data})
+        result = await collection.update_one(query, {"$set": update_data})
         if not result.acknowledged:
-            logger.error('Update operation not acknowledged')
+            logger.error("Update operation not acknowledged")
         
         if result.modified_count > 0:
             return True
         else:
-            logger.warning(f'No entry matched the query in {collection_name} collection')
+            logger.warning(f"No entry matched the query in {collection_name} collection")
     except Exception as e:
-        logger.error(f'Error updating entry in {collection_name} collection: {e}')
+        logger.error(f"Error updating entry in {collection_name} collection: {e}")
     
     return False
 
@@ -345,21 +345,21 @@ async def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> bool:
     if not client:
         return False
     
-    db = client['discord']
+    db = client["discord"]
     collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
     
     try:
         result: DeleteResult = await collection.delete_one(query)
         if not result.acknowledged:
-            logger.warning(f'DB entry deletion from {collection_name} collection not acknowledged. Query: {query}')
+            logger.warning(f"DB entry deletion from {collection_name} collection not acknowledged. Query: {query}")
             return False
         if result.deleted_count == 1:
-            logger.info(f'Entry deleted successfully from {collection_name} collection')
+            logger.info(f"Entry deleted successfully from {collection_name} collection")
             return True
         else:
-            logger.warning(f'No entry matched the query in {collection_name} collection')
+            logger.warning(f"No entry matched the query in {collection_name} collection")
     except Exception as e:
-        logger.error(f'Error deleting entry from {collection_name} collection: {e}')
+        logger.error(f"Error deleting entry from {collection_name} collection: {e}")
     
     return False
 
@@ -372,18 +372,18 @@ async def del_many_db_entries(collection_name: str, query: Mapping[str, Any]) ->
     if not client:
         return None
     
-    db = client['discord']
+    db = client["discord"]
     collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
     
     try:
         result: DeleteResult = await collection.delete_many(query)
         if not result.acknowledged:
-            logger.warning('Delete operation not acknowledged')
+            logger.warning("Delete operation not acknowledged")
             return None
-        logger.info(f'Deleted {result.deleted_count} entries from {collection_name} collection')
+        logger.info(f"Deleted {result.deleted_count} entries from {collection_name} collection")
         return result.deleted_count
     except Exception as e:
-        logger.error(f'Error deleting entries from {collection_name} collection: {e}')
+        logger.error(f"Error deleting entries from {collection_name} collection: {e}")
         return None
 
 
@@ -395,17 +395,17 @@ async def insert_many_db_entries(collection_name: str, query: list[Mapping[str, 
     if not client:
         return None
     
-    db = client['discord']
+    db = client["discord"]
     collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
     
     try:
         result: InsertManyResult = await collection.insert_many(query)
         if result.acknowledged:
-            logger.info(f'Inserted {len(result.inserted_ids)} entries into {collection_name} collection')
+            logger.info(f"Inserted {len(result.inserted_ids)} entries into {collection_name} collection")
             return len(result.inserted_ids)
-        logger.warning('Insert operation not acknowledged')
+        logger.warning("Insert operation not acknowledged")
     except Exception as e:
-        logger.error(f'Error inserting entries to {collection_name} collection: {e}')
+        logger.error(f"Error inserting entries to {collection_name} collection: {e}")
         return None
 
 
@@ -417,7 +417,7 @@ async def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | 
     if not client:
         return None
     
-    db = client['discord']
+    db = client["discord"]
     collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
     
     try:
@@ -426,7 +426,7 @@ async def get_from_db(collection_name: str, query: Mapping[str, Any]) -> None | 
             return None
         return dict(results)
     except Exception as e:
-        logger.error(f'Error retrieving data from {collection_name} collection: {e}')
+        logger.error(f"Error retrieving data from {collection_name} collection: {e}")
         return None
 
 
@@ -442,17 +442,17 @@ async def get_many_from_db(
 
     Direction should be either "asc" for ascending or "desc" for descending.
     """
-    if direction not in ['asc', 'desc']:
+    if direction not in ["asc", "desc"]:
         raise ValueError("Direction must be either 'asc' for ascending or 'desc' for descending.")
     
     client = await _connect()
     if not client:
         return None
     
-    db = client['discord']
+    db = client["discord"]
     collection: AsyncCollection[Mapping[str, Any]] = db[collection_name]
 
-    mongo_direction = pymongo.ASCENDING if direction.lower() == 'asc' else pymongo.DESCENDING
+    mongo_direction = pymongo.ASCENDING if direction.lower() == "asc" else pymongo.DESCENDING
     
     try:
         if sort_by is None:
@@ -466,24 +466,24 @@ async def get_many_from_db(
         
         return [dict(result) async for result in results]
     except Exception as e:
-        logger.error(f'Error retrieving data from {collection_name} collection: {e}')
+        logger.error(f"Error retrieving data from {collection_name} collection: {e}")
         return None
 
 
 async def edit_db_message(message_id: str, content: str) -> bool:
     logger.debug(f"Editing message {message_id}")
-    current = await get_from_db('messages', {'id': message_id})
+    current = await get_from_db("messages", {"id": message_id})
     
     if current is None:
-        logger.error(f'failed to edit message {message_id}. Message not found in DB')
+        logger.error(f"failed to edit message {message_id}. Message not found in DB")
         return False
     
-    edits = current.get('edits', [])
-    edits.append({'timestamp': datetime.datetime.now(datetime.UTC).timestamp(), 'content': content})
-    return await edit_db_entry('messages', {'id': message_id}, {'edits': edits})
+    edits = current.get("edits", [])
+    edits.append({"timestamp": datetime.datetime.now(datetime.UTC).timestamp(), "content": content})
+    return await edit_db_entry("messages", {"id": message_id}, {"edits": edits})
 
 async def get_xp_all() -> list[dict[str, Any]] | None:
-    return await get_many_from_db('xp', {})
+    return await get_many_from_db("xp", {})
 
 async def get_xp_user(user_id: str) -> dict[str, Any] | None:
-    return await get_from_db('xp', {'user_id': user_id})
+    return await get_from_db("xp", {"user_id": user_id})

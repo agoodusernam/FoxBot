@@ -11,7 +11,7 @@ from dateutil.relativedelta import MO, relativedelta  # type: ignore[import-unty
 from cogs import api_cmds_utils
 from command_utils.CContext import CContext
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 last_commit_cache: cachetools.TTLCache[None, tuple[int, str, dict[str, int]] | None] = cachetools.TTLCache(maxsize=1, ttl=300)
 
@@ -31,10 +31,10 @@ async def dice_roll(ctx: CContext, min_val: int, max_val: int) -> None:
     else:
         num = random.randint(max_val, min_val)
     if math.log10(num) > 1987:
-        await ctx.send('The output number would be too large to send in discord')
+        await ctx.send("The output number would be too large to send in discord")
         return
     
-    await ctx.send(f'You rolled a {num}')
+    await ctx.send(f"You rolled a {num}")
     return
 
 
@@ -53,18 +53,18 @@ async def _get_last_commit() -> None | tuple[int, str, dict[str, int]]:
     Returns None if an error occurs.
     Else, it returns a tuple containing the commit timestamp, commit message, and change stats.
     """
-    logger.debug('Getting latest commit info from GitHub...')
+    logger.debug("Getting latest commit info from GitHub...")
     
-    status, response = await api_cmds_utils.fetch_json('https://api.github.com/repos/agoodusernam/FoxBot/commits/master')
-    logger.debug(f'GitHub status code: {status}')
-    logger.debug(f'GitHub response: {response}')
+    status, response = await api_cmds_utils.fetch_json("https://api.github.com/repos/agoodusernam/FoxBot/commits/master")
+    logger.debug(f"GitHub status code: {status}")
+    logger.debug(f"GitHub response: {response}")
     if status != 200:
         return None
     
     body: dict[str, Any] = response
-    commit = body['commit']
-    message = commit['message']
-    date = commit['author']['date']
-    stats = body['stats']
-    change_stats: dict[str, int] = {'additions': stats['additions'], 'deletions': stats['deletions'], 'total': stats['total']}
+    commit = body["commit"]
+    message = commit["message"]
+    date = commit["author"]["date"]
+    stats = body["stats"]
+    change_stats: dict[str, int] = {"additions": stats["additions"], "deletions": stats["deletions"], "total": stats["total"]}
     return round(datetime.datetime.fromisoformat(date).timestamp()), message, change_stats

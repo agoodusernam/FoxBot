@@ -57,13 +57,13 @@ class ConfigCog(commands.Cog, name="Configuration"):
         if section == "basic":
             await self._handle_generic_config(ctx, self.bot.config, key, value,
                                               exclude_keys={
-                                                  'no_log',
-                                                  'send_blacklist',
-                                                  'logging_channels',
-                                                  'reaction_roles',
-                                                  'admin_ids',
-                                                  'dev_ids',
-                                                  'blacklist_ids'
+                                                  "no_log",
+                                                  "send_blacklist",
+                                                  "logging_channels",
+                                                  "reaction_roles",
+                                                  "admin_ids",
+                                                  "dev_ids",
+                                                  "blacklist_ids"
                                               })
         elif section == "users":
             await self._handle_users_config(ctx)

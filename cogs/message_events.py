@@ -8,20 +8,19 @@ import discord
 from discord.ext import commands
 
 from cogs import counting_utils, message_events_utils
-from cogs.message_events_utils import try_uid_to_discord_obj
 from command_utils.analysis.text_analysis import DBMessage, remove_invalid_messages
 from command_utils.CContext import CContext, CoolBot
 from command_utils.embed_util import create_log_embed
-from utils import db_stuff, utils
+from utils import db_stuff, discord_utils, utils
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 async def timeout_delete(message: discord.Message, bot: CoolBot) -> None:
     if not isinstance(message.author, discord.Member):
         return
     try:
         await message.author.timeout(datetime.timedelta(days=7),
-                                     reason="User send message in banned channel")
+                                     reason="User sent message in banned channel")
     except discord.HTTPException as e:
         logger.error(f"Failed to timeout user: {message.author.display_name}, {e}")
     
@@ -51,7 +50,7 @@ async def timeout_delete(message: discord.Message, bot: CoolBot) -> None:
     
     for channel, msgs in by_channel.items():
         with contextlib.suppress(discord.HTTPException):
-            channel_obj = await message_events_utils.get_channel_by_id(channel, bot)
+            channel_obj = await discord_utils.get_channel_by_id(channel, bot)
             if channel_obj is None or not hasattr(channel_obj, "delete_messages"):
                 logger.info(f"No valid channel with id {channel}")
                 continue
@@ -60,7 +59,6 @@ async def timeout_delete(message: discord.Message, bot: CoolBot) -> None:
                 await channel_obj.delete_messages(chunk)
     
     await message_events_utils.post_log(message, bot)
-    message_events_utils.clear_channel_cache()
     
 
 class TTS(commands.Cog, name="TTS"):
@@ -71,10 +69,10 @@ class TTS(commands.Cog, name="TTS"):
         ctx: CContext
         
         ctx = await self.bot.get_context(message)
-        command = self.bot.get_command('tts')
+        command = self.bot.get_command("tts")
         
         if not command:
-            logger.error('TTS command not found in bot commands.')
+            logger.error("TTS command not found in bot commands.")
             return
         
         if not self.bot.config.tts_requires_role:
@@ -84,23 +82,23 @@ class TTS(commands.Cog, name="TTS"):
             return
         
         if self.bot.config.required_tts_role == 0:
-            logger.warning('TTS role requirement is enabled, but no role ID is set in the config.')
-            await message.reply('TTS commands are currently unavailable.')
+            logger.warning("TTS role requirement is enabled, but no role ID is set in the config.")
+            await message.reply("TTS commands are currently unavailable.")
             return
         
         if isinstance(message.author, discord.User):
-            await message.reply('TTS commands are only available in guild channels.')
+            await message.reply("TTS commands are only available in guild channels.")
             return
         
         has_role: bool = utils.user_has_role(message.author, self.bot.config.required_tts_role)
         
         if not has_role:
-            await message.reply('You do not have the required role to use TTS commands.')
+            await message.reply("You do not have the required role to use TTS commands.")
             return
         
         logger.debug("Processing TTS command with role requirement.")
         if not command:
-            logger.error('TTS command not found in bot commands.')
+            logger.error("TTS command not found in bot commands.")
             return
         
         await ctx.invoke(command, message=message.content.replace("!f", "").strip())  # type: ignore
@@ -113,7 +111,7 @@ class MessageLogging(commands.Cog, name="Message Logging"):
     
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        logger.debug('Received message from %s: %s', message.author.display_name, message.content)
+        logger.debug("Received message from %s: %s", message.author.display_name, message.content)
         if message.author.bot:
             return
         
@@ -133,16 +131,16 @@ class MessageLogging(commands.Cog, name="Message Logging"):
         if self.bot.config.staging:
             if commands_enabled and message.content.startswith(self.bot.command_prefix):
                 self.bot.config.today = utils.formatted_today()
-                logging.debug('Processing command in staging bot.')
+                logging.debug("Processing command in staging bot.")
                 await self.bot.process_commands(message)
             
             elif not commands_enabled and message.content.startswith(self.bot.command_prefix):
-                await message.channel.send('This is the staging bot. Commands are currently disabled.')
+                await message.channel.send("This is the staging bot. Commands are currently disabled.")
             
             return
         
-        if message.content.startswith('\u200B'):
-            logger.info(f'[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}')
+        if message.content.startswith("\u200B"):
+            logger.info(f"[NOT LOGGED] Message from {message.author.global_name} [#{message.channel}]: {message.content}")
             return
         
         await message_events_utils.check_landmine(message, bot=self.bot)
@@ -154,24 +152,24 @@ class MessageLogging(commands.Cog, name="Message Logging"):
                          or message.author.id in self.bot.config.dev_ids)):
             # If the message contains a URL, delete it and send a warning
             await message.delete()
-            await message.channel.send('Please do not send links in this channel.', delete_after=self.bot.config.del_after)
+            await message.channel.send("Please do not send links in this channel.", delete_after=self.bot.config.del_after)
         
         if commands_enabled and message.content.startswith(self.bot.command_prefix):
             self.bot.config.today = utils.formatted_today()
-            logging.debug(f'Processing command "{message.content}"')
+            logging.debug(f"Processing command '{message.content}'")
             await self.bot.process_commands(message)
         
         
         elif not commands_enabled and message.content.startswith(self.bot.command_prefix):
-            await message.channel.send('The bot is currently in maintenance mode. Please try again later.')
+            await message.channel.send("The bot is currently in maintenance mode. Please try again later.")
             return
         
         if ((message.channel.id == 1346720879651848202) and (message.author.id == 542798185857286144) and
-                (message.content.startswith('FUN FACT'))):
-            await message.channel.send('<@&1352341336459841688>', delete_after=2)
+                (message.content.startswith("FUN FACT"))):
+            await message.channel.send("<@&1352341336459841688>", delete_after=2)
         
         if ((message.author != self.bot.user)
-                and hasattr(message.channel, 'category_id')
+                and hasattr(message.channel, "category_id")
                 and (message.author.id not in self.bot.config.no_log.user_ids)
                 and (message.channel.id not in self.bot.config.no_log.channel_ids)
                 and (message.channel.category_id not in self.bot.config.no_log.category_ids)):
@@ -185,22 +183,22 @@ class MessageLogging(commands.Cog, name="Message Logging"):
             if success is not None:
                 await self.bot.log_error(success)
         
-        if message.content.startswith('!f'):
-            tts_cog = self.bot.get_cog('TTS')
+        if message.content.startswith("!f"):
+            tts_cog = self.bot.get_cog("TTS")
             if tts_cog:
                 await tts_cog.tts_msg(message)  # type: ignore
             else:
-                logger.error('TTS cog not loaded.')
+                logger.error("TTS cog not loaded.")
     
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent) -> None:
-        logger.debug(f'Message {payload.message_id} deleted in {payload.channel_id}.')
+        logger.debug(f"Message {payload.message_id} deleted in {payload.channel_id}.")
         if self.bot.config.staging:
             return
         
-        db_msg = await db_stuff.get_from_db('messages', {'id': str(payload.message_id)})
+        db_msg = await db_stuff.get_from_db("messages", {"id": str(payload.message_id)})
         if db_msg is None:
-            logger.warning(f'Message {payload.message_id} not found in database.')
+            logger.warning(f"Message {payload.message_id} not found in database.")
             if payload.cached_message is not None:
                 await self.post_deleted_to_log(payload.cached_message, payload.channel_id, payload.message_id)
         else:
@@ -218,23 +216,23 @@ class MessageLogging(commands.Cog, name="Message Logging"):
             author_id = payload.cached_message.author.id
         else:
             if db_msg is not None:
-                author_id = int(db_msg['author_id'])
+                author_id = int(db_msg["author_id"])
         
         channel = self.bot.get_channel(payload.channel_id)
         assert isinstance(channel, discord.TextChannel)
         
         if author_id == 0:
-            await channel.send(f'Unknown user deleted their message. The next number is {self.bot.config.counting.last_count + 1}')
+            await channel.send(f"Unknown user deleted their message. The next number is {self.bot.config.counting.last_count + 1}")
             return
         
-        await channel.send(f'<@{author_id}> deleted their message. The next number is `{self.bot.config.counting.last_count + 1}`')
+        await channel.send(f"<@{author_id}> deleted their message. The next number is `{self.bot.config.counting.last_count + 1}`")
     
     async def post_deleted_to_log(self, message: discord.Message | Mapping[str, Any], channel_id: int, message_id: int):
         """
         Post the deleted message to the log channel.
         """
-        no_post: list[str] = ['update', 'shutdown', 'restart', 'qu']
-        no_post = ['f!' + i for i in no_post]
+        no_post: list[str] = ["update", "shutdown", "restart", "qu"]
+        no_post = ["f!" + i for i in no_post]
         assert self.bot.user is not None
         
         author_obj: discord.Member | discord.User | None
@@ -246,26 +244,26 @@ class MessageLogging(commands.Cog, name="Message Logging"):
             content = message.content
             if content.strip() in no_post:
                 return
-            if content.strip().startswith('f!v'):
+            if content.strip().startswith("f!v"):
                 return
             author_obj = message.author
         
         else:
-            content = message['content'] if not message.get('edits') else message['edits'][-1]['content']
+            content = message["content"] if not message.get("edits") else message["edits"][-1]["content"]
             
-            if content.strip() == 'f!update':
+            if content.strip() == "f!update":
                 return
-            if content.strip().startswith('f!v'):
+            if content.strip().startswith("f!v"):
                 return
-            author_obj = await try_uid_to_discord_obj(int(message['author_id']), self.bot)
+            author_obj = await discord_utils.get_user_by_id(int(message["author_id"]), self.bot)
         
-        if content.strip() == '':
-            content = 'Message had no content, it may have been an embed or was just an attachment.'
+        if content.strip() == "":
+            content = "Message had no content, it may have been an embed or was just an attachment."
         
         if author_obj is None:
             assert isinstance(message, dict)
-            display_name = f'<@{message['author_id']}>'
-            name = 'Unknown user'
+            display_name = f"<@{message["author_id"]}>"
+            name = "Unknown user"
         else:
             if author_obj.id == self.bot.user.id:
                 return
@@ -279,15 +277,15 @@ class MessageLogging(commands.Cog, name="Message Logging"):
                 url,
                 content,
                 discord.Color.red(),
-                f'Message by {display_name} was deleted in <#{channel_id}>',
-                f'ID: {message_id}',
+                f"Message by {display_name} was deleted in <#{channel_id}>",
+                f"ID: {message_id}",
         )
         
         if not isinstance(self.logs_channel, discord.TextChannel):
             logs_channel = self.bot.get_channel(self.bot.config.msg_log_channel_id)
             
             if not isinstance(logs_channel, discord.TextChannel):
-                logger.error(f'Message log channel not found or not of correct type. Type: {type(logs_channel)}.')
+                logger.error(f"Message log channel not found or not of correct type. Type: {type(logs_channel)}.")
                 return
             
             self.logs_channel = logs_channel
@@ -296,7 +294,7 @@ class MessageLogging(commands.Cog, name="Message Logging"):
     
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent) -> None:
-        logger.debug(f'Message {payload.message_id} edited in {payload.channel_id}')
+        logger.debug(f"Message {payload.message_id} edited in {payload.channel_id}")
         
         if self.bot.config.staging:
             return
@@ -312,7 +310,7 @@ class MessageLogging(commands.Cog, name="Message Logging"):
         if payload.channel_id in self.bot.config.no_log.channel_ids:
             return
         
-        if (hasattr(payload.message.channel, 'category_id')
+        if (hasattr(payload.message.channel, "category_id")
                 and payload.channel_id in self.bot.config.no_log.category_ids):
             return
         
@@ -321,26 +319,26 @@ class MessageLogging(commands.Cog, name="Message Logging"):
                 and not self.bot.config.counting.last_highest_count_edited):
                 
                 await payload.message.channel.send(
-                        f'{payload.message.author.mention} edited their message. '
-                        f'The next number is `{self.bot.config.counting.last_count + 1}`',
+                        f"{payload.message.author.mention} edited their message. "
+                        f"The next number is `{self.bot.config.counting.last_count + 1}`",
                 )
         
         before_content: str
         after_content: str
         
-        db_msg = await db_stuff.get_from_db('messages', {'id': str(payload.message_id)})
+        db_msg = await db_stuff.get_from_db("messages", {"id": str(payload.message_id)})
         await db_stuff.edit_db_message(str(payload.message_id), payload.message.content)
         
         if db_msg is None:
-            logger.error(f'Edited message {payload.message_id} not found in database.')
+            logger.error(f"Edited message {payload.message_id} not found in database.")
             return
         
         after_content = payload.message.content
         
-        before_content = db_msg['content'] if not db_msg.get('edits') else db_msg['edits'][-1]['content']
+        before_content = db_msg["content"] if not db_msg.get("edits") else db_msg["edits"][-1]["content"]
         
         if before_content.strip() == after_content.strip():
-            logger.debug('Received edit event for message with no content change.')
+            logger.debug("Received edit event for message with no content change.")
             return
         
         await self.post_edit_to_log(before_content, after_content,
@@ -359,28 +357,28 @@ class MessageLogging(commands.Cog, name="Message Logging"):
         if author.id == self.bot.user.id:
             return
         
-        if before_content.strip() == '':
-            before_content = '[No message content. Perhaps an embed or attachment?]'
-        if after_content.strip() == '':
-            after_content = '[No message content. Perhaps an embed or attachment?]'
+        if before_content.strip() == "":
+            before_content = "[No message content. Perhaps an embed or attachment?]"
+        if after_content.strip() == "":
+            after_content = "[No message content. Perhaps an embed or attachment?]"
         
-        description = '**Before:** ' + before_content + '\n**After:** ' + after_content
-        description += f'\n\n[Jump to message]({jump_url})'
+        description = "**Before:** " + before_content + "\n**After:** " + after_content
+        description += f"\n\n[Jump to message]({jump_url})"
         
         embed = create_log_embed(
                 author.name,
                 author.display_avatar.url,
                 description,
                 discord.Color.blurple(),
-                f'{author.mention} edited their message in <#{channel_id}>',
-                f'ID: {message_id}',
+                f"{author.mention} edited their message in <#{channel_id}>",
+                f"ID: {message_id}",
         )
         
         if not isinstance(self.logs_channel, discord.TextChannel):
             logs_channel = self.bot.get_channel(self.bot.config.msg_log_channel_id)
             
             if not isinstance(logs_channel, discord.TextChannel):
-                logger.error(f'Message log channel not found or not of correct type. Type: {type(logs_channel)}.')
+                logger.error(f"Message log channel not found or not of correct type. Type: {type(logs_channel)}.")
                 return
             
             self.logs_channel = logs_channel
@@ -388,7 +386,7 @@ class MessageLogging(commands.Cog, name="Message Logging"):
         await self.logs_channel.send(embed=embed)
 
 
-class ReactionEvents(commands.Cog, name='Reaction Logging'):
+class ReactionEvents(commands.Cog, name="Reaction Logging"):
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
     

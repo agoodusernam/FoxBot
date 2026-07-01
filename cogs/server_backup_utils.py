@@ -34,7 +34,7 @@ def get_file_creation_time(path: Path) -> int:
 
 
 def _serialise_perm_overwrite(overwrite: discord.PermissionOverwrite) -> PermissionOverwriteDict:
-    return {k: v for k, v in overwrite}  # type: ignore[return-value] # ruff: ignore C416
+    return {k: v for k, v in overwrite}  # type: ignore[return-value] # noqa: C416
 
 
 def _serialise_perm_overwrite_channel(channel: discord.abc.GuildChannel) -> dict[int, PermissionOverwriteDict]:

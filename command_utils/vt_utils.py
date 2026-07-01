@@ -6,7 +6,7 @@ import aiohttp
 import vt  # type: ignore[import-untyped]
 from vt import ClientResponse, Object
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 
 class ZipVTClient(vt.Client):
@@ -21,7 +21,7 @@ class ZipVTClient(vt.Client):
         if not isinstance(file, io.IOBase):
             raise TypeError(f"Expected a file to be a file object, got {type(file)}")
         
-        logger.debug('Starting upload of file to VT')
+        logger.debug("Starting upload of file to VT")
         
         # The snippet below could be replaced with this simpler code:
         #

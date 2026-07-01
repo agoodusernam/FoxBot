@@ -13,45 +13,45 @@ from cogs import adev_cmds_utils, voice_events_utils
 from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_dev
 
-# added the 'a' to the start of the file so it loads first
+# added the "a" to the start of the file so it loads first
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 
-class DevCommands(commands.Cog, name='Dev', command_attrs={'hidden': True, 'add_check': is_dev}):
+class DevCommands(commands.Cog, name="Dev", command_attrs={"hidden": True, "add_check": is_dev}):
     """Developer commands for bot maintenance and management."""
     
     def __init__(self, bot: CoolBot):
         self.bot: CoolBot = bot
         self.check_update.start()
     
-    @commands.command(name='restart',
-                      brief='Restart the bot',
-                      help='Dev only: restart the bot instance')
+    @commands.command(name="restart",
+                      brief="Restart the bot",
+                      help="Dev only: restart the bot instance")
     async def restart_cmd(self, ctx: CContext, time: int = 0):
         await ctx.delete()
         await adev_cmds_utils.shutdown(ctx.bot, update=False, restart=True, time=time)
     
-    @commands.command(name='shutdown',
-                      brief='Shutdown the bot',
-                      help='Dev only: Shutdown the bot instance')
+    @commands.command(name="shutdown",
+                      brief="Shutdown the bot",
+                      help="Dev only: Shutdown the bot instance")
     async def shutdown(self, ctx: CContext, time: int = 0):
         await ctx.delete()
         await adev_cmds_utils.shutdown(ctx.bot, update=False, restart=False, time=time)
     
-    @commands.command(name='update',
-                      brief='Update the bot code',
-                      help='Dev only: Update the bot code from the repository',
-                      usage='f!update')
+    @commands.command(name="update",
+                      brief="Update the bot code",
+                      help="Dev only: Update the bot code from the repository",
+                      usage="f!update")
     async def update(self, ctx: CContext, time: int = 0):
         await ctx.delete()
         await adev_cmds_utils.shutdown(ctx.bot, update=True, restart=True, time=time)
     
     """
-    @commands.command(name='upload_all_history',
-                      brief='Upload all messages from a server',
-                      help='Dev only: Upload all messages from a specific guild to the database',
-                      usage='f!upload_all_history')
+    @commands.command(name="upload_all_history",
+                      brief="Upload all messages from a server",
+                      help="Dev only: Upload all messages from a specific guild to the database",
+                      usage="f!upload_all_history")
     async def upload_all_history(self, ctx: CContext):
         await ctx.delete()
         if ctx.guild is None:
@@ -63,34 +63,34 @@ class DevCommands(commands.Cog, name='Dev', command_attrs={'hidden': True, 'add_
         await upload_whole_server(ctx.guild, ctx.author, nolog_channels)
     """
     
-    @commands.command(name='maintenance_mode',
-                      brief='Toggle maintenance mode',
-                      help='Dev only: Toggle maintenance mode for the bot',
-                      usage='f!maintenance_mode <on/off>')
+    @commands.command(name="maintenance_mode",
+                      brief="Toggle maintenance mode",
+                      help="Dev only: Toggle maintenance mode for the bot",
+                      usage="f!maintenance_mode <on/off>")
     async def maintenance_mode(self, ctx: CContext, mode: bool):
         await ctx.delete()
         
         ctx.bot.config.maintenance_mode = mode
         
-        status: str = 'enabled' if ctx.bot.config.maintenance_mode else 'disabled'
-        await ctx.send(f'Maintenance mode has been {status}.', delete_after=ctx.bot.del_after)
+        status: str = "enabled" if ctx.bot.config.maintenance_mode else "disabled"
+        await ctx.send(f"Maintenance mode has been {status}.", delete_after=ctx.bot.del_after)
     
-    @commands.command(name='reset_cooldowns',
-                      brief='Reset command cooldowns',
-                      help='Dev only: Reset all command cooldowns for the bot',
-                      usage='f!reset_cooldowns')
+    @commands.command(name="reset_cooldowns",
+                      brief="Reset command cooldowns",
+                      help="Dev only: Reset all command cooldowns for the bot",
+                      usage="f!reset_cooldowns")
     async def reset_cooldowns(self, ctx: CContext):
         await ctx.delete()
         
         for command in self.bot.commands:
             command.reset_cooldown(ctx)
         
-        await ctx.send('All command cooldowns have been reset.', delete_after=ctx.bot.del_after)
+        await ctx.send("All command cooldowns have been reset.", delete_after=ctx.bot.del_after)
     
-    @commands.command(name='run_func',
-                      brief='Run a function',
-                      help='Dev only: Run a function from the bot',
-                      usage='f!run_func <function_name>')
+    @commands.command(name="run_func",
+                      brief="Run a function",
+                      help="Dev only: Run a function from the bot",
+                      usage="f!run_func <function_name>")
     async def run_func(self, ctx: CContext, func_name: str):
         await ctx.delete()
         if ctx.author.id != 542798185857286144:
@@ -99,82 +99,82 @@ class DevCommands(commands.Cog, name='Dev', command_attrs={'hidden': True, 'add_
         ctx.bot.dev_func_thread = threading.Thread(target=adev_cmds_utils.run_func, args=(loop, func_name, ctx))
         ctx.bot.dev_func_thread.start()
     
-    @commands.command(name='debug_status',
-                      brief='Get debug status',
-                      help='Dev only: Get debug info about the bot',
-                      usage='f!debug_status')
+    @commands.command(name="debug_status",
+                      brief="Get debug status",
+                      help="Dev only: Get debug info about the bot",
+                      usage="f!debug_status")
     async def debug_status(self, ctx: CContext):
-        internet: str = 'Available' if utils.utils.internet() else 'Not Available'
+        internet: str = "Available" if utils.utils.internet() else "Not Available"
         ping: str = str(round(ctx.bot.latency * 1000, 1))
         
         process: psutil.Process = psutil.Process(os.getpid())
         py_cpu_usage: str = str(round(process.cpu_percent(interval=0.5), 2))
         py_mem_usage: str = str(round(process.memory_info().rss / (1024 * 1024), 2)) + "MiB"
         
-        tts_lock: str = 'Locked' if ctx.bot.tts_lock.locked() else 'Unlocked'
+        tts_lock: str = "Locked" if ctx.bot.tts_lock.locked() else "Unlocked"
         vc_client_status: str
         if ctx.bot.vc_client is None:
-            vc_client_status = 'No VC client'
+            vc_client_status = "No VC client"
         elif ctx.bot.vc_client.is_connected():
-            vc_client_status = f'Connected to {ctx.bot.vc_client.channel.name}'
+            vc_client_status = f"Connected to {ctx.bot.vc_client.channel.name}"
         else:
-            vc_client_status = 'Exists, not connected'
+            vc_client_status = "Exists, not connected"
         
         discord_version = discord.__version__
         
-        embed = discord.Embed(title='Debug Status', color=discord.Color.blue())
-        embed.add_field(name='Internet', value=internet, inline=True)
-        embed.add_field(name='Ping', value=ping, inline=True)
-        embed.add_field(name='Python CPU Usage', value=py_cpu_usage, inline=True)
-        embed.add_field(name='Python Memory Usage', value=py_mem_usage, inline=True)
-        embed.add_field(name='TTS Lock', value=tts_lock, inline=True)
-        embed.add_field(name='Voice Client', value=vc_client_status, inline=True)
-        embed.add_field(name='Discord.py Version', value=discord_version, inline=True)
+        embed = discord.Embed(title="Debug Status", color=discord.Color.blue())
+        embed.add_field(name="Internet", value=internet, inline=True)
+        embed.add_field(name="Ping", value=ping, inline=True)
+        embed.add_field(name="Python CPU Usage", value=py_cpu_usage, inline=True)
+        embed.add_field(name="Python Memory Usage", value=py_mem_usage, inline=True)
+        embed.add_field(name="TTS Lock", value=tts_lock, inline=True)
+        embed.add_field(name="Voice Client", value=vc_client_status, inline=True)
+        embed.add_field(name="Discord.py Version", value=discord_version, inline=True)
         
-        err_log_file = ctx.bot.log_path / 'err.log'
+        err_log_file = ctx.bot.log_path / "err.log"
         err_log = err_log_file.read_text()
-        if err_log.strip() != '':
-            last_5_errs = err_log.split('\n')[-5:]
-            embed.add_field(name='Last 5 Errors', value='\n'.join(last_5_errs), inline=False)
+        if err_log.strip() != "":
+            last_5_errs = err_log.split("\n")[-5:]
+            embed.add_field(name="Last 5 Errors", value="\n".join(last_5_errs), inline=False)
         
         await ctx.send(embed=embed)
     
-    @commands.command(name='debug_log', aliases=['debuglog', 'dlog'],
-                      brief='Get the debug log',
-                      help='Dev only: Send the debug log to the channel',
-                      usage='f!debug_log')
+    @commands.command(name="debug_log", aliases=["debuglog", "dlog"],
+                      brief="Get the debug log",
+                      help="Dev only: Send the debug log to the channel",
+                      usage="f!debug_log")
     async def debug_log(self, ctx: CContext):
-        await ctx.send(file=discord.File(ctx.bot.log_path / 'debug.log'))
+        await ctx.send(file=discord.File(ctx.bot.log_path / "debug.log"))
     
-    @commands.command(name='err_log', aliases=['error_log', 'errlog', 'elog'],
-                      brief='Get the error log',
-                      help='Dev only: Send the error log to the channel',
-                      usage='f!err_log')
+    @commands.command(name="err_log", aliases=["error_log", "errlog", "elog"],
+                      brief="Get the error log",
+                      help="Dev only: Send the error log to the channel",
+                      usage="f!err_log")
     async def err_log(self, ctx: CContext):
-        await ctx.send(file=discord.File(ctx.bot.log_path / 'err.log'))
+        await ctx.send(file=discord.File(ctx.bot.log_path / "err.log"))
     
-    @commands.command(name='add_admin')
+    @commands.command(name="add_admin")
     async def add_admin(self, ctx: CContext, user: discord.User | discord.Member):
         ctx.bot.config.admin_ids.add(user.id)
         ctx.bot.config.save()
-        await ctx.send(f'Added {user.display_name} as admin')
+        await ctx.send(f"Added {user.display_name} as admin")
     
-    @commands.command(name='remove_admin', aliases=['rm_admin'])
+    @commands.command(name="remove_admin", aliases=["rm_admin"])
     async def remove_admin(self, ctx: CContext, user: discord.User | discord.Member):
         try:
             ctx.bot.config.admin_ids.remove(user.id)
             ctx.bot.config.save()
-            await ctx.send(f'Successfully removed {user.display_name} as admin')
+            await ctx.send(f"Successfully removed {user.display_name} as admin")
         except KeyError:
-            await ctx.send('User was not an admin.')
+            await ctx.send("User was not an admin.")
     
-    @commands.command(name='queue_update', aliases=['qupdate', 'qu'])
+    @commands.command(name="queue_update", aliases=["qupdate", "qu"])
     async def queue_update(self, ctx: CContext):
         ctx.bot.update_queued = True
-        await ctx.send('Bot will update soon:tm:')
+        await ctx.send("Bot will update soon:tm:")
     
     @discord.ext.tasks.loop(minutes=1)
-    async def check_update(self):
+    async def check_update(self) -> None:
         if not self.bot.update_queued:
             return
         
@@ -187,22 +187,22 @@ class DevCommands(commands.Cog, name='Dev', command_attrs={'hidden': True, 'add_
         await adev_cmds_utils.shutdown(self.bot, update=True, restart=True)
     
     @check_update.before_loop
-    async def before_check_update(self):
+    async def before_check_update(self) -> None:
         await self.bot.wait_until_ready()
     
-    @commands.command(name='add_to_env')
+    @commands.command(name="add_to_env")
     async def add_to_env(self, ctx: CContext, key: str, value: str):
         if ctx.author.id != 542798185857286144:
             return
         await ctx.delete()
         key = key.upper()
         if key in os.environ:
-            await ctx.send(f'Key {key} already exists in environment variables.')
+            await ctx.send(f"Key {key} already exists in environment variables.")
             return
         
         os.environ[key] = value
         adev_cmds_utils.add_to_env(key, value)
-        await ctx.send(f'Added {key} to environment variables.')
+        await ctx.send(f"Added {key} to environment variables.")
 
 
 async def setup(bot: CoolBot):

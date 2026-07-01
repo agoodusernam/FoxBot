@@ -3,7 +3,7 @@ from decimal import Decimal
 import discord
 from discord.ext import commands
 
-from command_utils.CContext import CContext
+from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_dev
 from currency import collector, curr_utils
 from currency.curr_config import CURRENCY_NAME
@@ -12,8 +12,8 @@ from currency.curr_utils import get_profile
 
 class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
                         command_attrs={"add_check": is_dev, "hidden": True}):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+    def __init__(self, bot: CoolBot):
+        self.bot: CoolBot = bot
     
     @commands.command(name="set_wallet", aliases=["set_bal"],
                       brief="Set a user's wallet",
@@ -21,10 +21,6 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
                       usage="f!set_wallet<user> <amount>")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def set_wallet_cmd(self, ctx: CContext, user: discord.Member, amount: int):
-        if user is None:
-            await ctx.send("Invalid user ID or mention!")
-            return
-        
         if amount < 0:
             await ctx.send("You cannot set a negative balance!")
             return
@@ -39,10 +35,6 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
                       usage="f!set_bank <user> <amount>")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def set_bank_cmd(self, ctx: CContext, user: discord.Member, amount: int):
-        if user is None:
-            await ctx.send("Invalid user ID or mention!")
-            return
-        
         if amount < 0:
             await ctx.send("You cannot set a negative bank balance!")
             return
@@ -57,10 +49,6 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
                       usage="f!set_debt <user> <amount>")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def set_debt_cmd(self, ctx: CContext, user: discord.Member, amount: int):
-        if user is None:
-            await ctx.send("Invalid user ID or mention!")
-            return
-        
         if amount < 0:
             await ctx.send("You cannot set a negative debt!")
             return
@@ -75,10 +63,6 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
                       usage="f!set_income <user> <amount>")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def set_income_cmd(self, ctx: CContext, user: discord.Member, amount: int):
-        if user is None:
-            await ctx.send("Invalid user ID or mention!")
-            return
-        
         if amount < 0:
             await ctx.send("You cannot set a negative income!")
             return
@@ -111,10 +95,6 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
                       usage="f!reset_profile <user>")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def reset_profile_cmd(self, ctx: CContext, user: discord.Member):
-        if user is None:
-            await ctx.send("Invalid user ID or mention!")
-            return
-        
         profile = await get_profile(user)
         await profile.reset_db_entry()
         await ctx.send(f"Reset {user.display_name}'s currency profile to default values!")
@@ -125,10 +105,6 @@ class CurrencyCmdsAdmin(commands.Cog, name="Currency Admin",
                       usage="f!reset_job <user>")
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def reset_job_cmd(self, ctx: CContext, user: discord.Member):
-        if user is None:
-            await ctx.send("Invalid user ID or mention!")
-            return
-        
         profile = await get_profile(user)
         profile.reset_job()
         await ctx.send(f"Reset {user.display_name}'s job profile to default values!")

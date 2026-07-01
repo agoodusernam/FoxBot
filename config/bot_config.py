@@ -13,7 +13,7 @@ import discord
 
 import utils.utils
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 
 @dataclass
@@ -357,11 +357,11 @@ class BotConfig(ConfigBase):
             return None
         
         except OSError as e:
-            logger.error(f'Failed to write config: {e}')
+            logger.error(f"Failed to write config: {e}")
             return str(e)
         
         except TypeError as e:
-            logger.warning(f'Failed to serialise config: {e}')
+            logger.warning(f"Failed to serialise config: {e}")
         
         json_str = utils.utils.flexible_dumps(self.to_dict(), skip_unserializable=True)
         converted: dict[Any, Any] = json.loads(json_str)
@@ -369,14 +369,14 @@ class BotConfig(ConfigBase):
             try:
                 with open(config_path, "w", encoding="utf-8") as f:
                     json.dump(converted, f, indent=4)
-                logger.warning('Successfully wrote modified serialised config')
+                logger.warning("Successfully wrote modified serialised config")
                 return None
             
             except OSError as e:
-                logger.error(f'Failed to write modified serialised config {e}')
+                logger.error(f"Failed to write modified serialised config {e}")
                 return str(e)
         
-        logger.error(f'Could not serialise config. Not saving. Before: {self.to_dict()}, after: {json_str}')
+        logger.error(f"Could not serialise config. Not saving. Before: {self.to_dict()}, after: {json_str}")
         return "Could not serialise config. Check logs."
     
     def reload(self, config_path: Path = Path("config.json")) -> None:
@@ -392,7 +392,7 @@ class BotConfig(ConfigBase):
         """Convert emoji strings to discord.PartialEmoji objects"""
         emoji_dict = {}
         for emoji_str, role_id in self.reaction_roles.emoji_to_role.items():
-            if emoji_str.startswith('<') and emoji_str.endswith('>'):
+            if emoji_str.startswith("<") and emoji_str.endswith(">"):
                 # Custom emoji
                 emoji_dict[discord.PartialEmoji.from_str(emoji_str)] = role_id
             else:
@@ -428,7 +428,7 @@ def load_config(config_path: Path = Path("config.json")) -> BotConfig:
         config = BotConfig.from_dict(BotConfig.get_default_config())
         success = config.save()
         if success is not None:
-            logger.error(f'Failed to save config!\n{success}')
+            logger.error(f"Failed to save config!\n{success}")
         return config
     
     try:

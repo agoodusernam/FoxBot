@@ -1,6 +1,5 @@
 import datetime
 import logging
-import secrets
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -11,46 +10,46 @@ from discord.ext import commands
 from discord.ext.commands import guild_only
 
 import utils.utils
-from cogs.admin_cmds_utils import last_log, sort_by_timestamp, get_member_by_id, rek_random_in_channel
+from cogs.admin_cmds_utils import last_log, rek_random_in_channel, sort_by_timestamp
 from command_utils.analysis import text_analysis, voice_analysis
 from command_utils.analysis.text_analysis import DatetimeDBMessage, DBMessage, remove_invalid_messages
 from command_utils.CContext import CContext, CoolBot
 from command_utils.checks import is_admin, is_staff
-from utils import db_stuff
+from utils import db_stuff, discord_utils
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 
-class AdminCmds(commands.Cog, name='Admin', command_attrs={'hidden': True}):
+class AdminCmds(commands.Cog, name="Admin", command_attrs={"hidden": True}):
     """Admin commands for managing the server and users."""
     
     def __init__(self, bot: CoolBot) -> None:
         self.bot: CoolBot = bot
     
-    @commands.command(name='rek',
-                      brief='Absolutely rek a user',
-                      help='Admin only: Timeout a user for 28 days',
-                      usage='f!rek <user_id/mention>')
+    @commands.command(name="rek",
+                      brief="Absolutely rek a user",
+                      help="Admin only: Timeout a user for 28 days",
+                      usage="f!rek <user_id/mention>")
     @commands.check(is_admin)
     async def rek(self, ctx: CContext, members: commands.Greedy[discord.Member]) -> None:
         
         if not members:
             await ctx.delete()
-            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
+            await ctx.send("User not found.")
             return
 
         for member in members:
             try:
-                await member.timeout(datetime.timedelta(days=28), reason='get rekt nerd')
-                await ctx.send(f'{member.display_name} has been rekt.')
+                await member.timeout(datetime.timedelta(days=28), reason="get rekt nerd")
+                await ctx.send(f"{member.display_name} has been rekt.")
             except discord.HTTPException:
                 pass
         return
     
-    @commands.command(name='vcrek',
-                      brief='rek a random user in a vc',
-                      help='Admin only: Timeout a random user in a voice channel for 28 days',
-                      usage='f!vcrek [channel_id]')
+    @commands.command(name="vcrek",
+                      brief="rek a random user in a vc",
+                      help="Admin only: Timeout a random user in a voice channel for 28 days",
+                      usage="f!vcrek [channel_id]")
     @commands.check(is_admin)
     @guild_only()
     async def vcrek(self, ctx: CContext, channel: discord.VoiceChannel | None = None) -> None:
@@ -66,9 +65,9 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs={'hidden': True}):
         await rek_random_in_channel(ctx, ctx.author.voice.channel)
         
     
-    @commands.command(name='hardlockdown',
-                      brief='Lock down the entire server',
-                      help='Admin only: Timeout all non-admin users for 28 days')
+    @commands.command(name="hardlockdown",
+                      brief="Lock down the entire server",
+                      help="Admin only: Timeout all non-admin users for 1 hour")
     @commands.guild_only()
     @commands.check(is_admin)
     async def hard_lockdown(self, ctx: CContext):
@@ -77,17 +76,17 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs={'hidden': True}):
         for member in ctx.guild.members:
             if member.id in ctx.bot.admin_ids:
                 continue
-            try:
-                await member.timeout(datetime.timedelta(hours=1), reason='Hard lockdown initiated by admin')
-            except Exception as e:
-                logger.error(f'Error during hardlockdown for user {member.id}: {e}')
-                continue
+            await discord_utils.safe_timeout(
+                member,
+                datetime.timedelta(hours=1),
+                reason="Hard lockdown initiated by admin"
+            )
         
-        await ctx.message.channel.send('Hard lockdown initiated. All non-admin users have been timed out for 28 days.')
+        await ctx.message.channel.send("Hard lockdown initiated. All non-admin users have been timed out for an hour.")
     
-    @commands.command(name='unhardlockdown',
-                      brief='Unlock the server from hard lockdown',
-                      help='Admin only: Remove timeouts and blacklist from all users')
+    @commands.command(name="unhardlockdown",
+                      brief="Unlock the server from hard lockdown",
+                      help="Admin only: Remove timeouts and blacklist from all users")
     @commands.check(is_admin)
     @guild_only()
     async def unhard_lockdown(self, ctx: CContext):
@@ -98,67 +97,67 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs={'hidden': True}):
             if member.id in ctx.bot.admin_ids:
                 continue
             
-            try:
-                await member.timeout(None, reason='Hard lockdown lifted by admin')
-            except Exception as e:
-                logger.error(f'Error during unhardlockdown for user {member.id}: {e}')
-                continue
+            await discord_utils.safe_timeout(
+                member,
+                None,
+                reason="Hard lockdown lifted by admin"
+            )
         
-        await ctx.message.channel.send('Hard lockdown lifted. All users have been removed from timeout.',
+        await ctx.message.channel.send("Hard lockdown lifted. All users have been removed from timeout.",
                                        delete_after=ctx.bot.del_after)
     
-    @commands.command(name='analyse', aliases=['ana'],
-                      brief='Analyze server message data',
-                      help='Provides statistics about messages sent in the server',
-                      usage='f!ana [user_id/mention]')
+    @commands.command(name="analyse", aliases=["ana"],
+                      brief="Analyze server message data",
+                      help="Provides statistics about messages sent in the server",
+                      usage="f!ana [user_id/mention]")
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)
-    async def analyse(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ''):
+    async def analyse(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ""):
         await text_analysis.format_analysis(ctx, graph=False, to_analyse=user, flag=args)
     
-    @commands.command(name='analyse_graph', aliases=['anag'],
-                      brief='Analyze server message data with graphs',
-                      help='Provides statistics about messages sent in the server with graphical representation',
-                      usage='f!anag')
+    @commands.command(name="analyse_graph", aliases=["anag"],
+                      brief="Analyze server message data with graphs",
+                      help="Provides statistics about messages sent in the server with graphical representation",
+                      usage="f!anag")
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)
-    async def analyse_graph(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ''):
+    async def analyse_graph(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ""):
         await text_analysis.format_analysis(ctx, graph=True, to_analyse=user, flag=args)
     
-    @commands.command(name='analyse_voice', aliases=['anavc'],
-                      brief='Analyze voice channel usage',
-                      help='Provides statistics about voice channel usage in the server',
-                      usage='f!anavc [user_id/mention]')
+    @commands.command(name="analyse_voice", aliases=["anavc"],
+                      brief="Analyze voice channel usage",
+                      help="Provides statistics about voice channel usage in the server",
+                      usage="f!anavc [user_id/mention]")
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.user)
-    async def analyse_voice(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ''):
+    async def analyse_voice(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ""):
         include_left = False
         dm_user = False
-        if args.strip() == '-il':
+        if args.strip() == "-il":
             include_left = True
-        if args.strip() == '-dm':
+        if args.strip() == "-dm":
             dm_user = True
         
         await voice_analysis.format_voice_analysis(ctx, graph=False, user=user, include_left=include_left, dm_user=dm_user)
     
-    @commands.command(name='analyse_vc_graph', aliases=['anavcg'],
-                      brief='Analyze server message data with graphs',
-                      help='Provides statistics about messages sent in the server with graphical representation',
-                      usage='f!anavcg')
+    @commands.command(name="analyse_vc_graph", aliases=["anavcg"],
+                      brief="Analyze server message data with graphs",
+                      help="Provides statistics about messages sent in the server with graphical representation",
+                      usage="f!anavcg")
     @commands.check(is_admin)
     @commands.cooldown(1, 2, commands.BucketType.guild)
-    async def analyse_vc_graph(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ''):
+    async def analyse_vc_graph(self, ctx: CContext, user: discord.Object | None = None, *, args: str = ""):
         include_left = False
         dm_user = False
-        if args.strip() == '-il':
+        if args.strip() == "-il":
             include_left = True
         
-        if args.strip() == '-dm':
+        if args.strip() == "-dm":
             dm_user = True
         
         await voice_analysis.format_voice_analysis(ctx, graph=True, user=user, include_left=include_left, dm_user=dm_user)
     
-    @commands.command(name='time_in_vc', aliases=["tiv"],
+    @commands.command(name="time_in_vc", aliases=["tiv"],
                       brief="Get the time spent in a voice channel",
                       help="Get the time a specific user has spent in a specific channel",
                       usage="f!tiv <user> <channel>")
@@ -167,68 +166,56 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs={'hidden': True}):
     async def time_in_vc(self, ctx: CContext, user: discord.User, channel: discord.VoiceChannel):
         await voice_analysis.user_time_in_channel(ctx, user, channel)
     
-    @commands.command(name='blacklist',
-                      brief='Blacklist a user',
-                      help='Admin only: Prevent a user from using bot commands',
-                      usage='f!blacklist <user_id/mention>')
+    @commands.command(name="blacklist",
+                      brief="Blacklist a user",
+                      help="Admin only: Prevent a user from using bot commands",
+                      usage="f!blacklist <user_id/mention>")
     @commands.check(is_admin)
     async def blacklist_id(self, ctx: CContext, user: discord.User):
-        if user is None:
-            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
-            return
-        
         u_id = user.id
         
         if (u_id in ctx.bot.admin_ids) or (u_id in ctx.bot.dev_ids):
-            await ctx.message.channel.send('You cannot blacklist an admin.', delete_after=ctx.bot.del_after)
+            await ctx.message.channel.send("You cannot blacklist an admin.", delete_after=ctx.bot.del_after)
             return
         
         if ctx.bot.blacklist.add_user(u_id):
-            await ctx.send(f'User **{user.display_name}** has been blacklisted.')
+            await ctx.send(f"User **{user.display_name}** has been blacklisted.")
         
         else:
-            await ctx.message.channel.send(f'User **{user.display_name}** is already blacklisted.', delete_after=ctx.bot.del_after)
+            await ctx.message.channel.send(f"User **{user.display_name}** is already blacklisted.", delete_after=ctx.bot.del_after)
             return
     
-    @commands.command(name='unblacklist',
-                      brief='Remove user from blacklist',
-                      help='Admin only: Allow a blacklisted user to use bot commands again',
-                      usage='f!unblacklist <user_id/mention>')
+    @commands.command(name="unblacklist",
+                      brief="Remove user from blacklist",
+                      help="Admin only: Allow a blacklisted user to use bot commands again",
+                      usage="f!unblacklist <user_id/mention>")
     @commands.check(is_admin)
     async def unblacklist_id(self, ctx: CContext, user: discord.User):
-        if user is None:
-            await ctx.send('User not found.', delete_after=ctx.bot.del_after)
-            return
-        
         u_id = user.id
         
         if ctx.bot.blacklist.remove_user(u_id):
-            await ctx.send(f'User **{user.display_name}** has been removed from the blacklist.')
+            await ctx.send(f"User **{user.display_name}** has been removed from the blacklist.")
         
         else:
-            await ctx.send(f'User **{user.display_name}** was not blacklisted.', delete_after=ctx.bot.del_after)
+            await ctx.send(f"User **{user.display_name}** was not blacklisted.", delete_after=ctx.bot.del_after)
             return
     
-    @commands.command(name='echo',
-                      brief='Make the bot say something',
-                      help='Admin only: Makes the bot say the specified message',
-                      usage='f!echo [channel id] <message>')
+    @commands.command(name="echo",
+                      brief="Make the bot say something",
+                      help="Admin only: Makes the bot say the specified message",
+                      usage="f!echo [channel id] <message>")
     @commands.check(is_admin)
     @commands.cooldown(1, 5, commands.BucketType.user)
     async def echo_cmd(self, ctx: CContext, *, message: str):
-        if message is None:
-            await ctx.send('Nothing to echo.', delete_after=ctx.bot.del_after)
-            return
-        
         msg: str = message
         
         split_message: list[str] = msg.split()
         try:
-            channel_id: int = int(split_message[0].replace('#', '', 1).replace('<', '', 1).replace('>', '', 1))
+            channel_id: int = int(split_message[0].replace("#", "", 1).replace("<", "", 1).replace(">", "", 1))
             channel: Any = ctx.bot.get_channel(channel_id)  # I wanted to type this but i gave up
             if channel is None:
                 raise ValueError
-            msg = msg.replace(str(channel_id), '', 1)
+            msg = msg.replace(str(channel_id), "", 1)
         except ValueError:
             channel = ctx.channel
         
@@ -236,127 +223,122 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs={'hidden': True}):
         
         await ctx.delete()
     
-    @commands.command(name='edit_message',
-                      brief='Edit a message the bot has sent',
-                      help='Admin only: Edit a specific message sent by the bot',
-                      usage='f!edit_message <channel_id> <message_id> <new_content>')
+    @commands.command(name="edit_message",
+                      brief="Edit a message the bot has sent",
+                      help="Admin only: Edit a specific message sent by the bot",
+                      usage="f!edit_message <channel_id> <message_id> <new_content>")
     @commands.check(is_admin)
     async def edit_message_cmd(self, ctx: CContext, *, args: str):
         await ctx.delete()
         
-        split_args = args.split(' ', 2)
+        split_args = args.split(" ", 2)
         try:
             channel_id = int(split_args[0])
         except ValueError:
-            await ctx.send('Invalid channel ID format. Please provide a valid integer ID.',
-                           delete_after=ctx.bot.del_after)
+            await ctx.send("Invalid channel ID format. Please provide a valid integer ID.")
             return
         
         try:
             message_id = int(split_args[1])
-        
         except ValueError:
-            await ctx.send('Invalid message ID format. Please provide a valid integer ID.',
-                           delete_after=ctx.bot.del_after)
+            await ctx.send("Invalid message ID format. Please provide a valid integer ID.")
             return
         
         if len(split_args) < 3:
-            await ctx.send('Please provide the new content for the message.',
-                           delete_after=ctx.bot.del_after)
+            await ctx.send("Please provide the new content for the message.")
             return
         
         new_content = split_args[2]
         
-        message: discord.Message = await ctx.bot.get_channel(channel_id).fetch_message(message_id)
+        channel = await discord_utils.get_channel_by_id(channel_id, ctx.bot)
+        if channel is None:
+            await ctx.send(f"Channel with ID {channel_id} not found.")
+            return
+        message: discord.Message = await channel.fetch_message(message_id)
         if message.author.id != ctx.bot.user.id:
-            await ctx.send('You can only edit messages sent by the bot.',
-                           delete_after=ctx.bot.del_after)
+            await ctx.send("You can only edit messages sent by the bot.")
             return
         try:
             await message.edit(content=new_content)
-            await ctx.send(f'Message with ID {message_id} has been edited.',
-                           delete_after=ctx.bot.del_after)
+            await ctx.send(f"Message with ID {message_id} has been edited.")
         except discord.NotFound:
-            await ctx.send(f'Message with ID {message_id} not found.',
-                           delete_after=ctx.bot.del_after)
+            await ctx.send(f"Message with ID {message_id} not found.")
         except discord.Forbidden:
-            await ctx.send(f'Cannot edit message with ID {message_id}. Permission denied.',
-                           delete_after=ctx.bot.del_after)
+            await ctx.send(f"Cannot edit message with ID {message_id}. Permission denied.")
         except discord.HTTPException as e:
-            await ctx.send(f'Failed to edit message with ID {message_id}. Error: {e}',
-                           delete_after=ctx.bot.del_after)
+            await ctx.send(f"Failed to edit message with ID {message_id}. Error: {e}")
     
-    @commands.command(name='last_log', aliases=['lastlog', 'lastmodlog', 'last_modlog', 'modlog', 'log'],
-                      brief='Send the last modlog message',
-                      help='Admin only: Send the last modlog message',
-                      usage='f!last_log')
+    @commands.command(name="last_log", aliases=["lastlog", "lastmodlog", "last_modlog", "modlog", "log"],
+                      brief="Send the last modlog message",
+                      help="Admin only: Send the last modlog message",
+                      usage="f!last_log")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.check(is_staff)
     async def send_last_log(self, ctx: CContext):
         await ctx.delete()
         await last_log(ctx)
     
-    @commands.command(name='last_log_anonymous', aliases=['last_log_a', 'lastlog_anonymous', 'lastlog_a',
-                                                          'last_modlog_anonymous', 'last_modlog_a',
-                                                          'modlog_anonymous', 'modlog_a', 'log_anonymous', 'log_a',
-                                                          'loga'],
-                      brief='Send the last modlog message anonymously',
-                      help='Admin only: Send the last modlog message without mentioning the moderator',
-                      usage='f!last_log_anonymous')
+    @commands.command(name="last_log_anonymous", aliases=["last_log_a", "lastlog_anonymous", "lastlog_a",
+                                                          "last_modlog_anonymous", "last_modlog_a",
+                                                          "modlog_anonymous", "modlog_a", "log_anonymous", "log_a",
+                                                          "loga"],
+                      brief="Send the last modlog message anonymously",
+                      help="Admin only: Send the last modlog message without mentioning the moderator",
+                      usage="f!last_log_anonymous")
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.check(is_staff)
     async def send_last_log_anonymous(self, ctx: CContext):
         await ctx.delete()
         await last_log(ctx, anonymous=True)
     
-    @commands.command(name='warn',
-                      brief='Warn a user',
-                      help='Admin only: Warn a user without showing in the public logs',
-                      usage='f!warn <user_id/mention> <reason>')
+    @commands.command(name="warn",
+                      brief="Warn a user",
+                      help="Admin only: Warn a user without showing in the public logs",
+                      usage="f!warn <user_id/mention> <reason>")
     @commands.check(is_admin)
     async def warn(self,
                    ctx: CContext,
                    member: discord.Member, *,
-                   reason: str = 'No reason provided',
+                   reason: str = "No reason provided",
         ) -> None:
         await ctx.delete()
         
         data = {
-            'user_id':   member.id,
-            'reason':    reason,
-            'timestamp': int(discord.utils.utcnow().timestamp()),
-            'issuer_id': ctx.author.id,
+            "user_id":   member.id,
+            "reason":    reason,
+            "timestamp": int(discord.utils.utcnow().timestamp()),
+            "issuer_id": ctx.author.id,
         }
         
         await db_stuff.send_to_db("warns", data)
-        await ctx.send(f'{member.display_name} has been warned for: {reason}', delete_after=ctx.bot.del_after)
+        await ctx.send(f"{member.display_name} has been warned for: {reason}", delete_after=ctx.bot.del_after)
     
-    @commands.command(name='warns',
-                      brief='View warns for a user',
-                      help='Admin only: View all warns for a user',
-                      usage='f!warns <user_id/mention>')
+    @commands.command(name="warns",
+                      brief="View warns for a user",
+                      help="Admin only: View all warns for a user",
+                      usage="f!warns <user_id/mention>")
     @commands.check(is_admin)
     async def view_warns(self, ctx: CContext, member: discord.Member):
         await ctx.delete()
         
         warns = await db_stuff.get_many_from_db("warns", {"user_id": member.id})
         if not warns:
-            await ctx.send(f'{member.display_name} has no warns.', delete_after=ctx.bot.del_after)
+            await ctx.send(f"{member.display_name} has no warns.", delete_after=ctx.bot.del_after)
             return
         
-        warn_list = '\n'.join([f'**{i + 1}.** {warn["reason"]} (Issued by '
-                               f'{(await ctx.bot.fetch_user(warn["issuer_id"])).display_name} at '
-                               f'<t:{warn["timestamp"]}>)'
+        warn_list = "\n".join([f"**{i + 1}.** {warn["reason"]} (Issued by "
+                               f"{(await ctx.bot.fetch_user(warn["issuer_id"])).display_name} at "
+                               f"<t:{warn["timestamp"]}>)"
                                for i, warn in enumerate(warns)])
         
-        embed = discord.Embed(title=f'Warns for {member.display_name}', description=warn_list,
+        embed = discord.Embed(title=f"Warns for {member.display_name}", description=warn_list,
                               color=discord.Color.red())
         await ctx.send(embed=embed)
     
-    @commands.command(name='verify', aliases=['ver', 'v'],
-                      brief='Verify a user',
-                      help='Admin only: Assign the verified role to a user',
-                      usage='f!verify <user_id/mention>')
+    @commands.command(name="verify", aliases=["ver", "v"],
+                      brief="Verify a user",
+                      help="Admin only: Assign the verified role to a user",
+                      usage="f!verify <user_id/mention>")
     @commands.guild_only()
     @commands.check(is_staff)
     async def verify(self, ctx: CContext, member: discord.Member):
@@ -367,18 +349,18 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs={'hidden': True}):
         for role_id in ctx.bot.config.verified_roles:
             role = discord.utils.get(ctx.guild.roles, id=role_id)
             if role is None:
-                logger.error(f'Failed to find role with ID {role_id} for verification.')
+                logger.error(f"Failed to find role with ID {role_id} for verification.")
                 continue
             roles.append(role)
         
-        await member.add_roles(*roles, reason='Verified by admin')
+        await member.add_roles(*roles, reason="Verified by admin")
         
-        await ctx.send(f'{member.display_name} has been verified.', delete_after=ctx.bot.del_after)
+        await ctx.send(f"{member.display_name} has been verified.", delete_after=ctx.bot.del_after)
     
-    @commands.command(name='unverify', aliases=['uver', 'uv'],
-                      brief='Verify a user',
-                      help='Admin only: Assign the verified role to a user',
-                      usage='f!unverify <user_id/mention>')
+    @commands.command(name="unverify", aliases=["uver", "uv"],
+                      brief="Verify a user",
+                      help="Admin only: Assign the verified role to a user",
+                      usage="f!unverify <user_id/mention>")
     @commands.guild_only()
     @commands.check(is_staff)
     async def unverify(self, ctx: CContext, member: discord.Member):
@@ -389,67 +371,66 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs={'hidden': True}):
         for role_id in ctx.bot.config.verified_roles:
             role = discord.utils.get(ctx.guild.roles, id=role_id)
             if role is None:
-                logger.error(f'Failed to find role with ID {role_id} for verification.')
+                logger.error(f"Failed to find role with ID {role_id} for verification.")
                 continue
             roles.append(role)
         
-        await member.remove_roles(*roles, reason='Unverified by admin', atomic=True)
+        await member.remove_roles(*roles, reason="Unverified by admin", atomic=True)
         
-        await ctx.send(f'{member.display_name} has been unverified.', delete_after=ctx.bot.del_after)
+        await ctx.send(f"{member.display_name} has been unverified.", delete_after=ctx.bot.del_after)
     
-    @commands.command(name='last_messages', aliases=['lastmsgs', 'last_msgs'],
-                      brief='Fetch last messages from a user',
-                      help='Admin only: Fetch the last messages sent by a user in the server',
-                      usage='f!last_messages <user_id/mention> [number_of_messages]')
+    @commands.command(name="last_messages", aliases=["lastmsgs", "last_msgs"],
+                      brief="Fetch last messages from a user",
+                      help="Admin only: Fetch the last messages sent by a user in the server",
+                      usage="f!last_messages <user_id/mention> [number_of_messages]")
     @commands.check(is_staff)
     async def last_messages(self, ctx: CContext, member: discord.User, number_of_messages: int = 5):
         await ctx.delete()
         
         if number_of_messages < 1:
-            await ctx.send('Please specify a number between above 0 for the number of messages.',
-                           delete_after=ctx.bot.del_after)
+            await ctx.send("Please specify a number between above 0 for the number of messages.")
             return
         
         all_messages: list[Mapping[str, Any]] | None = await db_stuff.cached_download_all()
         t_messages: list[DBMessage] = await remove_invalid_messages(all_messages)
-        t_messages = [msg for msg in t_messages if msg['author_id'] == str(member.id)]
+        t_messages = [msg for msg in t_messages if msg["author_id"] == str(member.id)]
         messages: list[DatetimeDBMessage] = sort_by_timestamp(t_messages)[:number_of_messages]
         if not messages:
-            await ctx.send(f'No messages found for {member.display_name}.', delete_after=ctx.bot.del_after)
+            await ctx.send(f"No messages found for {member.display_name}.", delete_after=ctx.bot.del_after)
             return
         
         attachments: list[Path] = []
         
         formatted_messages: str = ""
         for msg in messages:
-            formatted_messages += f'**Channel:** <#{msg["channel_id"]}>\n'
-            formatted_messages += f'**Timestamp:** <t:{int(msg["timestamp"].timestamp())}>\n'
-            formatted_messages += f'**Content:** {discord.utils.escape_mentions(msg["content"])}'
+            formatted_messages += f"**Channel:** <#{msg["channel_id"]}>\n"
+            formatted_messages += f"**Timestamp:** <t:{int(msg["timestamp"].timestamp())}>\n"
+            formatted_messages += f"**Content:** {discord.utils.escape_mentions(msg["content"])}"
             if msg["HasAttachments"]:
                 attachment = utils.utils.get_attachment(msg["author_id"], msg["id"])
                 if attachment is None:
-                    formatted_messages += '\nMessage had attachment(s), but failed to retrieve them.'
+                    formatted_messages += "\nMessage had attachment(s), but failed to retrieve them."
                 elif isinstance(attachment, Path):
-                    formatted_messages += f'\nAttachment: {len(attachments)}{"".join(attachment.suffixes)}'
+                    formatted_messages += f"\nAttachment: {len(attachments)}{"".join(attachment.suffixes)}"
                     attachments.append(attachment)
                 else:
                     for path in attachment:
-                        formatted_messages += f'\nAttachment: {len(attachments)}{"".join(path.suffixes)}'
+                        formatted_messages += f"\nAttachment: {len(attachments)}{"".join(path.suffixes)}"
                         attachments.append(path)
-            formatted_messages += '\n'
+            formatted_messages += "\n"
         
         if len(formatted_messages) > 2000:
-            formatted_messages = formatted_messages[:1995] + '...'
+            formatted_messages = formatted_messages[:1995] + "..."
         
         await ctx.send(f"Last {number_of_messages} sent by {member.display_name}:")
         await ctx.send(formatted_messages, suppress_embeds=True)
         if attachments:
             utils.utils.copy_attach_to_temp(attachments)
     
-    @commands.command(name='landmine', aliases=['lm'],
-                      brief='Set landmines in a channel',
-                      help='Admin only: Set a specified number of landmines in a channel',
-                      usage='f!landmine [channel_id] [amount]',
+    @commands.command(name="landmine", aliases=["lm"],
+                      brief="Set landmines in a channel",
+                      help="Admin only: Set a specified number of landmines in a channel",
+                      usage="f!landmine [channel_id] [amount]",
                       )
     @commands.check(is_admin)
     @guild_only()
@@ -461,88 +442,87 @@ class AdminCmds(commands.Cog, name='Admin', command_attrs={'hidden': True}):
             channel = channel_or_amount
         
         if amount <= 0:
-            await ctx.send('Please specify the number of landmines.',
-                           delete_after=ctx.bot.del_after)
+            await ctx.send("Please specify the number of landmines.")
             return
         
         ctx.bot.landmine_channels[channel.id] = amount
-        assert hasattr(channel, 'mention')
-        await ctx.send(f'You have set {amount} landmines in {channel.mention}!')
+        assert hasattr(channel, "mention")
+        await ctx.send(f"You have set {amount} landmines in {channel.mention}!")
     
-    @commands.command(name='force_lm', aliases=['flm'],
-                      brief='Force a landmine',
-                      help='Admin only: Force a landmine for a specified user',
-                      usage='f!force_lm <user>')
+    @commands.command(name="force_lm", aliases=["flm"],
+                      brief="Force a landmine",
+                      help="Admin only: Force a landmine for a specified user",
+                      usage="f!force_lm <user>")
     @commands.check(is_admin)
     async def force_landmine(self, ctx: CContext, user: discord.Member) -> None:
         ctx.bot.forced_landmines.add(user.id)
         
-        await ctx.send(f'{user.display_name} has been forced into landmine the next time they send a message.')
+        await ctx.send(f"{user.display_name} has been forced into landmine the next time they send a message.")
     
-    @commands.command(name='landmines', aliases=['lm_list', 'lms'],
-                      brief='List landmines',
-                      help='Admin only: List all landmines',
-                      usage='f!landmines')
+    @commands.command(name="landmines", aliases=["lm_list", "lms"],
+                      brief="List landmines",
+                      help="Admin only: List all landmines",
+                      usage="f!landmines")
     @commands.check(is_admin)
     async def landmines(self, ctx: CContext) -> None:
         if not ctx.bot.landmine_channels:
-            await ctx.send('No landmines have been set.', delete_after=ctx.bot.del_after)
+            await ctx.send("No landmines have been set.")
             return
         
-        landmine_list = '\n'.join(
-                [f'Channel: <#{channel_id}> - Landmines: {amount}'
+        landmine_list = "\n".join(
+                [f"Channel: <#{channel_id}> - Landmines: {amount}"
                  for channel_id, amount in ctx.bot.landmine_channels.items()])
         
-        await ctx.send(f'Landmines set in the following channels:\n{landmine_list}')
+        await ctx.send(f"Landmines set in the following channels:\n{landmine_list}")
         
         if ctx.bot.forced_landmines:
-            forced_landmines_list = ', '.join(
-                    [f'<@{user_id}>' for user_id in ctx.bot.forced_landmines])
-            await ctx.send(f'Forced landmines for the following users: {forced_landmines_list}')
+            forced_landmines_list = ", ".join(
+                    [f"<@{user_id}>" for user_id in ctx.bot.forced_landmines])
+            await ctx.send(f"Forced landmines for the following users: {forced_landmines_list}")
     
-    @commands.command(name='clear_lm', aliases=['clm'],
-                      brief='Clear landmines',
-                      help='Admin only: Clear all landmines',
-                      usage='f!clear_lm')
+    @commands.command(name="clear_lm", aliases=["clm"],
+                      brief="Clear landmines",
+                      help="Admin only: Clear all landmines",
+                      usage="f!clear_lm")
     @commands.check(is_admin)
     async def clear_landmines(self, ctx: CContext) -> None:
-        ctx.bot.landmine_channels = {}
+        ctx.bot.landmine_channels.clear()
         
-        await ctx.send('All landmines have been cleared.')
+        await ctx.send("All landmines have been cleared.")
     
-    @commands.command(name='reset_counting_fails',
-                      brief='Reset the number of failed counting attempts',
-                      help='Admin only: Reset the number of failed counting attempts by a user',
-                      usage='f!reset_counting_fails <user>')
+    @commands.command(name="reset_counting_fails",
+                      brief="Reset the number of failed counting attempts",
+                      help="Admin only: Reset the number of failed counting attempts by a user",
+                      usage="f!reset_counting_fails <user>")
     @commands.check(is_admin)
     async def reset_count_fails(self, ctx: CContext, member: discord.Member) -> None:
         reset: bool = ctx.bot.config.counting.reset_fails(member.id)
         if reset:
-            await ctx.send(f'Counting fails for {member.display_name} have been reset.')
+            await ctx.send(f"Counting fails for {member.display_name} have been reset.")
             return
-        await ctx.send(f'{member.display_name} does not have any failed counting attempts to reset.')
+        await ctx.send(f"{member.display_name} does not have any failed counting attempts to reset.")
         return
     
-    @commands.command(name='set_counting_saves', aliases=['scs'],
-                      brief='Set counting saves for a user',
-                      help='Admin only: Set the number of counting saves for a user',
-                      usage='f!set_counting_saves <user> <amount>')
+    @commands.command(name="set_counting_saves", aliases=["scs"],
+                      brief="Set counting saves for a user",
+                      help="Admin only: Set the number of counting saves for a user",
+                      usage="f!set_counting_saves <user> <amount>")
     @commands.check(is_admin)
     async def set_counting_saves(self, ctx: CContext, member: discord.Member, amount: int) -> None:
         if amount < 0:
-            await ctx.send('Amount must be 0 or greater.', delete_after=ctx.bot.del_after)
+            await ctx.send("Amount must be 0 or greater.", delete_after=ctx.bot.del_after)
             return
         ctx.bot.config.counting.set_saves(member.id, amount)
         if amount == 0:
-            await ctx.send(f'Counting saves for {member.display_name} have been removed.')
+            await ctx.send(f"Counting saves for {member.display_name} have been removed.")
         else:
-            await ctx.send(f'{member.display_name} now has **{amount}** counting save(s).')
+            await ctx.send(f"{member.display_name} now has **{amount}** counting save(s).")
     
-    @commands.command(name='stoptts')
+    @commands.command(name="stoptts")
     @commands.check(is_admin)
     async def stop_tts(self, ctx: CContext) -> None:
         if ctx.bot.vc_client is None:
-            await ctx.send('Bot is not connected to a voice call')
+            await ctx.send("Bot is not connected to a voice call")
             return
         if not ctx.bot.vc_client.is_playing():
             await ctx.send("Was not playing anything.")

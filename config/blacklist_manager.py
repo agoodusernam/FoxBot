@@ -6,7 +6,7 @@ import logging
 from collections.abc import Iterator
 from pathlib import Path
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 
 class BlacklistManager:
@@ -27,7 +27,7 @@ class BlacklistManager:
         
         try:
             with open(self._blacklist_path, encoding="utf-8") as f:
-                self._blacklist_ids = json.load(f)['ids']
+                self._blacklist_ids = json.load(f)["ids"]
         except Exception as e:
             logger.error(f"Error loading blacklist: {e}")
             self._blacklist_ids = []
@@ -36,7 +36,7 @@ class BlacklistManager:
         """Save blacklist to file"""
         logger.debug(f"Saving blacklist to {self._blacklist_path}")
         with open(self._blacklist_path, "w", encoding="utf-8") as f:
-            to_save: dict[str, list[int]] = {'ids': self._blacklist_ids}
+            to_save: dict[str, list[int]] = {"ids": self._blacklist_ids}
             json.dump(to_save, f, indent=4)
     
     def add_user(self, user_id: int) -> bool:
