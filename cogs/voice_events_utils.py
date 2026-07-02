@@ -1,6 +1,6 @@
+import asyncio
 import datetime
 import logging
-import threading
 from typing import TypedDict
 
 import discord
@@ -18,12 +18,12 @@ class VoiceSession(TypedDict):
 
 
 active_voice_sessions: dict[int, VoiceSession] = {}
-voice_sessions_lock: threading.RLock = threading.RLock()
+voice_sessions_lock: asyncio.Lock = asyncio.Lock()
 
 
 async def handle_join(member: discord.Member, after: discord.VoiceState | discord.VoiceChannel) -> None:
     """Track when a user joins a voice channel"""
-    with voice_sessions_lock:
+    async with voice_sessions_lock:
         if isinstance(after, discord.VoiceState):
             if after.channel is None:
                 logger.error(f"{member.name} joined a voice state with no channel")
@@ -48,7 +48,7 @@ async def handle_join(member: discord.Member, after: discord.VoiceState | discor
 async def handle_leave(member: discord.Member) -> None:
     """Track when a user leaves a voice channel and upload session data"""
     logger.info(f"{member.name} left {active_voice_sessions[member.id]["channel_name"]}")
-    with voice_sessions_lock:
+    async with voice_sessions_lock:
         # Get join data
         if member.id not in active_voice_sessions:
             logger.error(f"No join record found for {member.name}")
@@ -82,7 +82,7 @@ async def handle_move(member: discord.Member, before: discord.VoiceState, after:
         return
     logger.info(f"{member.name} moved from {before.channel.name} to {after.channel.name}")
 
-    with voice_sessions_lock:
+    async with voice_sessions_lock:
         # First record the "leave" from the previous channel
         await handle_leave(member)
         

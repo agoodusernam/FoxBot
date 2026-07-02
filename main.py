@@ -26,7 +26,7 @@ def on_exit() -> None:
     utils.make_sync(bot.uptime_session.close() if bot.uptime_session else None)
 
 bot: CoolBot = CoolBot(intents=discord.Intents.all(), case_insensitive=True)
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 
 
 def check_devs_reset(obj: Any) -> bool:
@@ -70,81 +70,81 @@ async def on_ready() -> None:
                     continue
                 
                 await voice_events_utils.handle_join(member, channel)
-                logger.info(f'Reconnected voice state for {member.name} in {channel.name}')
+                logger.info(f"Reconnected voice state for {member.name} in {channel.name}")
     
     assert bot.user is not None
     logging_channel: Any = bot.get_channel(bot.config.bot_logs_channel_id)
     if not isinstance(logging_channel, discord.TextChannel):
-        logger.warning(f'No logging channel! ID: {bot.config.bot_logs_channel_id}')
+        logger.warning(f"No logging channel! ID: {bot.config.bot_logs_channel_id}")
     
     else:
         bot.logs_channel = logging_channel
-        logger.info(f'Registered logging channel {logging_channel.name}, ID: {logging_channel.id}')
+        logger.info(f"Registered logging channel {logging_channel.name}, ID: {logging_channel.id}")
     
     if check_devs_reset(bot.config.dev_ids):
         owner_ids: Collection[int] | None = bot.owner_ids
         bot.config.dev_ids = set(owner_ids) if owner_ids is not None else {0}
         bot.config.save()
     
-    logger.info(f'Logged in as {bot.user} (ID: {bot.user.id})')
-    logger.info('------')
+    logger.info(f"Logged in as {bot.user} (ID: {bot.user.id})")
+    logger.info("------")
     
-    await bot.change_presence(activity=discord.CustomActivity(name='f!help for help'))
+    await bot.change_presence(activity=discord.CustomActivity(name="f!help for help"))
 
 
 @bot.event
 async def on_command_error(ctx: CContext, error: commands.CommandError) -> None:
     if isinstance(error, commands.CommandOnCooldown):
-        await ctx.send('This command is on cooldown. Please try again in ' +
-                       f'{utils.seconds_to_human_readable(error.retry_after)}.')
+        await ctx.send("This command is on cooldown. Please try again in " +
+                       f"{utils.seconds_to_human_readable(error.retry_after)}.")
     
     elif isinstance(error, commands.NoPrivateMessage):
-        await ctx.send('This command cannot be used in private messages.')
+        await ctx.send("This command cannot be used in private messages.")
     
     elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send(f'Missing required argument: {error.param.name}')
+        await ctx.send(f"Missing required argument: {error.param.name}")
     
     elif isinstance(error, commands.BotMissingPermissions):
-        missing = ', '.join(error.missing_permissions)
-        await ctx.send(f'I am missing the following permissions to run this command: {missing}')
+        missing = ", ".join(error.missing_permissions)
+        await ctx.send(f"I am missing the following permissions to run this command: {missing}")
     
     elif isinstance(error, commands.CheckFailure):
-        await ctx.send('You do not have permission to use this command.')
+        await ctx.send("You do not have permission to use this command.")
     
     elif isinstance(error, commands.BadArgument):
-        await ctx.send(f'Bad argument: {error}')
+        await ctx.send(f"Bad argument: {error}")
     
     elif isinstance(error, commands.CommandNotFound):
-        await ctx.send(f'Command not found: {error}')
+        await ctx.send(f"Command not found: {error}")
     
     else:
-        logger.error(f'Error in command {ctx.command}: {error}', exc_info=error)
-        await bot.log_error(f'Error in command {ctx.command}: {error}')
+        logger.error(f"Error in command {ctx.command}: {error}", exc_info=error)
+        await bot.log_error(f"Error in command {ctx.command}: {error}")
 
 
 async def load_extensions() -> None:
-    for filename in os.listdir('./cogs'):
-        if filename.endswith('.py') and not filename[:-3].endswith("utils"):
+    for filename in os.listdir("./cogs"):
+        if filename.endswith(".py") and not filename[:-3].endswith("utils"):
             try:
-                await bot.load_extension(f'cogs.{filename[:-3]}')
-                logger.info(f'Loaded {filename[:-3]}')
+                await bot.load_extension(f"cogs.{filename[:-3]}")
+                logger.info(f"Loaded {filename[:-3]}")
             
             except commands.ExtensionNotFound:
-                logger.error(f'Extension not found: {filename[:-3]}')
+                logger.error(f"Extension not found: {filename[:-3]}")
             
             except commands.ExtensionAlreadyLoaded:
-                logger.warning(f'Extension already loaded: {filename[:-3]}')
+                logger.warning(f"Extension already loaded: {filename[:-3]}")
             
             except commands.NoEntryPointError:
-                logger.error(f'No entry point found for extension {filename[:-3]}')
+                logger.error(f"No entry point found for extension {filename[:-3]}")
             
             except commands.ExtensionFailed as e:
-                logger.error(f'Extension {filename[:-3]} encountered an error:\n{e}')
+                logger.error(f"Extension {filename[:-3]} encountered an error:\n{e}")
             
             except Exception as e:
-                logger.error(f'An error occurred while loading {filename[:-3]}:\n{e}')
+                logger.error(f"An error occurred while loading {filename[:-3]}:\n{e}")
         else:
-            logger.debug(f'Skipping {filename}')
+            logger.debug(f"Skipping {filename}")
 
 
 @bot.check
@@ -153,7 +153,7 @@ async def not_blacklisted(ctx: CContext) -> bool:
     Check if the user is blacklisted from using commands.
     """
     if bot.blacklist.is_blacklisted(ctx.author.id):
-        logger.debug(f'{ctx.author} is blacklisted.')
+        logger.debug(f"{ctx.author} is blacklisted.")
         return False
     return True
 
@@ -170,9 +170,9 @@ if sys.platform == "linux" or sys.platform == "linux2":
     signal.signal(signal.SIGHUP, ignore_hup)
 
 # Run the bot
-token = os.getenv('TOKEN')
+token = os.getenv("TOKEN")
 if not isinstance(token, str):
-    raise TypeError('TOKEN environment variable not set.')
+    raise TypeError("TOKEN environment variable not set.")
 
 bot.help_command = help_cmd.CustomHelpCommand()
 bot.run(token=token, reconnect=True, log_handler=None)

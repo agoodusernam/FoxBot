@@ -52,10 +52,13 @@ async def _connect() -> AsyncMongoClient[Mapping[str, Any]] | None:
     
     uri = os.getenv("MONGO_URI")
     logger.debug("Connecting to MongoDB...")
-    client: AsyncMongoClient[Mapping[str, Any]] = AsyncMongoClient(uri,
-                                                                   server_api=ServerApi("1"),
-                                                                   serverSelectionTimeoutMS=5000, tls=True,
-                                                                   tlsCertificateKeyFile="mongo_cert.pem")
+    client: AsyncMongoClient[Mapping[str, Any]] = AsyncMongoClient(
+        host=uri,
+        server_api=ServerApi("1"),
+        serverSelectionTimeoutMS=5000,
+        tls=True,
+        tlsCertificateKeyFile="mongo_cert.pem"
+    )
     try:
         ping = await client.admin.command("ping")
         _mongo_client = client  # Store the connection
@@ -212,7 +215,7 @@ async def delete_message(ObjId: ObjectId) -> None:
     collection = db["messages"]
     try:
         result = await collection.delete_one({"_id": ObjId})
-        if result.deleted_count > 0:
+        if result.acknowledged and result.deleted_count > 0:
             logger.info("Message deleted successfully")
         else:
             logger.warning("No message found with the given ID")
@@ -220,7 +223,7 @@ async def delete_message(ObjId: ObjectId) -> None:
         logger.error(f"Error deleting message: {e}")
 
 
-async def del_channel_from_db(channel: discord.TextChannel) -> None:
+async def del_channel_from_db(channel: discord.TextChannel) -> int | None:
     """
     Deletes all messages from a specific channel in the MongoDB database.
     :param channel: A discord.TextChannel object representing the channel to delete messages from.
@@ -228,16 +231,23 @@ async def del_channel_from_db(channel: discord.TextChannel) -> None:
     """
     client = await _connect()
     if not client:
-        return
+        return None
     
     db = client["discord"]
     collection = db["messages"]
     
     try:
         result: DeleteResult = await collection.delete_many({"channel_id": channel.id})
+        if not result.acknowledged:
+            logger.warning("Channel deletion was not acknowledged by MongoDB")
+            return 0
+        
         logger.info(f"Deleted {result.deleted_count} messages from channel {channel.id}")
+        return result.deleted_count
+    
     except Exception as e:
         logger.error(f"Error deleting messages from channel {channel.id}: {e}")
+        return None
 
 
 async def send_voice_session(session_data: Mapping[str, Any]) -> None:
@@ -254,7 +264,10 @@ async def send_voice_session(session_data: Mapping[str, Any]) -> None:
     collection: AsyncCollection[Mapping[str, Any]] = db["voice_sessions"]
     
     try:
-        await collection.insert_one(session_data)
+        result = await collection.insert_one(session_data)
+        if not result.acknowledged:
+            logger.warning("Voice session not acknowledged by MongoDB")
+            return
         logger.info(f"Voice session for {session_data["user_id"]} saved successfully")
     except Exception as e:
         logger.error(f"Error saving voice session: {e}")
@@ -300,7 +313,7 @@ async def send_to_db(collection_name: str, data: Mapping[str, Any]) -> bool:
     
     try:
         result: InsertOneResult = await collection.insert_one(data)
-        if result.acknowledged:
+        if not result.acknowledged:
             logger.info(f"Data sent successfully to {collection_name} collection")
             return True
         
@@ -326,6 +339,7 @@ async def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_d
         result = await collection.update_one(query, {"$set": update_data})
         if not result.acknowledged:
             logger.error("Update operation not acknowledged")
+            return False
         
         if result.modified_count > 0:
             return True
@@ -337,7 +351,7 @@ async def edit_db_entry(collection_name: str, query: Mapping[str, Any], update_d
     return False
 
 
-async def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> bool:
+async def del_db_entry(collection_name: str, query: dict[str, Any]) -> bool:
     """
     Generic function to delete an entry from a specified MongoDB await collection.
     """
@@ -364,7 +378,7 @@ async def del_db_entry(collection_name: str, query: Mapping[str, Any]) -> bool:
     return False
 
 
-async def del_many_db_entries(collection_name: str, query: Mapping[str, Any]) -> int | None:
+async def del_many_db_entries(collection_name: str, query: dict[str, Any]) -> int | None:
     """
     Generic function to delete multiple entries from a specified MongoDB await collection.
     """

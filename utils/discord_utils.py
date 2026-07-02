@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 import traceback
@@ -32,6 +33,7 @@ class TTLLRUCache[K, V](TTLCache[K, V]):
 _member_cache: TTLLRUCache[int, discord.Member | None] = TTLLRUCache(25, 300)
 _user_cache: TTLLRUCache[int, discord.User | None] = TTLLRUCache(25, 300)
 _channel_cache: TTLLRUCache[int, discord.abc.GuildChannel | discord.Thread | None] = TTLLRUCache(25, 300)
+_api_lock: asyncio.Lock = asyncio.Lock()
 
 async def _get_member_by_id(guild: discord.Guild, member_id: int) -> discord.Member | None:
     global _member_cache
@@ -64,8 +66,16 @@ async def get_member_by_id(member_id: int, bot: CoolBot) -> discord.Member | Non
     if guild is None:
         logger.error("Guild not found when trying to get member by ID.")
         return None
+    async with _api_lock:
+        return await _get_member_by_id(guild, member_id)
+
+async def _unsafe_get_member_by_id(member_id: int, bot: CoolBot) -> discord.Member | None:
+    guild: discord.Guild | None = bot.get_guild(bot.config.guild_id)
+    if guild is None:
+        logger.error("Guild not found when trying to get member by ID.")
+        return None
+
     return await _get_member_by_id(guild, member_id)
-    
 
 async def _get_user_by_id(
         user_id: int,
@@ -97,13 +107,19 @@ async def _get_user_by_id(
         return None
 
 async def get_user_by_id(user_id: int, bot: CoolBot) -> discord.User | discord.Member | None:
-    member = await get_member_by_id(user_id, bot)
+    async with _api_lock:
+        member = await get_member_by_id(user_id, bot)
     if member is not None:
         return member
-    return await _get_user_by_id(user_id, bot)
-    
+    async with _api_lock:
+        return await _unsafe_get_member_by_id(user_id, bot)
 
 async def get_channel_by_id(channel_id: int, bot: CoolBot) -> discord.abc.GuildChannel | discord.Thread | None:
+    async with _api_lock:
+        return await _get_channel_by_id(channel_id, bot)
+
+
+async def _get_channel_by_id(channel_id: int, bot: CoolBot) -> discord.abc.GuildChannel | discord.Thread | None:
     logger.debug(f"Getting channel {channel_id} by ID.")
     global _channel_cache
     if channel_id in _channel_cache:

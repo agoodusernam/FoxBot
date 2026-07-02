@@ -28,11 +28,15 @@ async def rek_random_in_channel(ctx: CContext, channel: discord.VoiceChannel | d
         await ctx.send("User not found.")
         return
     
-    success = await discord_utils.safe_timeout(member, datetime.timedelta(days=28), reason="get rekt nerd")
+    success = await discord_utils.safe_timeout(
+        member,
+        datetime.timedelta(days=28),
+        reason="get rekt nerd"
+    )
     if success:
         await ctx.send(f"{member.mention} has been rekt.")
     else:
-        await ctx.send("Failed to rekt user.")
+        await ctx.send(f"Failed to rek {member.display_name} user.")
     return
 
 def dt_from_timestamp(timestamp: float) -> datetime.datetime:

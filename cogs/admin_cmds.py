@@ -39,11 +39,13 @@ class AdminCmds(commands.Cog, name="Admin", command_attrs={"hidden": True}):
             return
 
         for member in members:
-            try:
-                await member.timeout(datetime.timedelta(days=28), reason="get rekt nerd")
-                await ctx.send(f"{member.display_name} has been rekt.")
-            except discord.HTTPException:
-                pass
+            success = await discord_utils.safe_timeout(
+                member,
+                datetime.timedelta(days=28),
+                reason="get rekt nerd"
+            )
+            if success:
+                await ctx.send(f"{member.mention} has been rekt.")
         return
     
     @commands.command(name="vcrek",
